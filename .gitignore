@@ -1,0 +1,32 @@
+# Environment — never commit real secrets
+.env
+.env.*
+!.env.example
+
+# Node / Next.js
+node_modules/
+frontend/.next/
+frontend/out/
+frontend/coverage/
+frontend/playwright-report/
+frontend/test-results/
+frontend/next-env.d.ts
+*.tsbuildinfo
+
+# Python
+__pycache__/
+*.py[cod]
+backend/.venv/
+.pytest_cache/
+.ruff_cache/
+backend/htmlcov/
+backend/.coverage
+
+# Generated API contract artifacts
+backend/openapi.json
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
