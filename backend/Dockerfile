@@ -7,7 +7,7 @@ WORKDIR /app
 
 # TODO: pin the uv image digest before the first production deploy.
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
-COPY pyproject.toml uv.lock README.md ./
+COPY pyproject.toml uv.lock README.md alembic.ini ./
 RUN uv sync --locked --no-dev --no-install-project
 
 COPY src ./src
@@ -27,4 +27,5 @@ COPY --from=builder --chown=appuser:appuser /app /app
 USER appuser
 EXPOSE 8000
 
-CMD ["uvicorn", "psihointegritet.main:app", "--app-dir", "src", "--host", "0.0.0.0", "--port", "8000"]
+# Railway injects PORT; local runs fall back to 8000.
+CMD ["sh", "-c", "uvicorn psihointegritet.main:app --app-dir src --host 0.0.0.0 --port ${PORT:-8000}"]

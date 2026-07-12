@@ -9,7 +9,7 @@ export default function NotFound() {
       </p>
       <Link
         href="/"
-        className="hover:bg-foreground/5 rounded-md border px-4 py-2 text-sm font-medium"
+        className="hover:bg-meadow/25 border-coffee/25 rounded-full border px-4 py-2 text-sm font-medium"
       >
         Nazad na početnu
       </Link>

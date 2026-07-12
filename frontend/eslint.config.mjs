@@ -18,6 +18,8 @@ const eslintConfig = defineConfig([
     "test-results/**",
     // Generated API contract — never edited or linted by hand:
     "src/types/api.generated.ts",
+    // Claude Design prototype bundle — reference material, not production code:
+    "design-handoff/**",
   ]),
 ]);
 

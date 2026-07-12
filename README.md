@@ -62,3 +62,7 @@ Backend: `uv sync --locked && uv run ruff format --check . && uv run ruff check 
 
 - `main` → production, `staging` → staging, `feature/*` → preview deploy.
 - Staging i production imaju odvojene baze, secrets i Clerk aplikacije — vidi [documentations/deployment-and-environments.md](documentations/deployment-and-environments.md).
+
+### Poktretanje dev servera
+
+./scripts/start-dev.sh

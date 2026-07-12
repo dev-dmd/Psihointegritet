@@ -1,28 +1,32 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Instrument_Sans, Newsreader } from "next/font/google";
 import "./globals.css";
 
 import { serverEnv } from "@/lib/validation/env";
 import { ToastProvider } from "@/providers/toast-provider";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const newsreader = Newsreader({
+  variable: "--font-newsreader",
   subsets: ["latin", "latin-ext"],
+  style: ["normal", "italic"],
+  weight: ["300", "400", "500"],
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const instrumentSans = Instrument_Sans({
+  variable: "--font-instrument-sans",
   subsets: ["latin", "latin-ext"],
+  style: ["normal", "italic"],
+  weight: ["400", "500", "600"],
 });
 
 export const metadata: Metadata = {
   metadataBase: new URL(serverEnv.NEXT_PUBLIC_APP_URL),
   title: {
-    default: "Psihointegritet — Digitalni centar",
+    default: "Psihointegritet — Digitalni centar za mentalno zdravlje",
     template: "%s | Psihointegritet",
   },
   description:
-    "Platforma za pronalaženje stručne psihološke podrške i zakazivanje razgovora sa terapeutima.",
+    "Psihointegritet povezuje psihoterapiju, savjetovanje, edukativne sadržaje, radionice i programe ličnog razvoja — online i uživo.",
 };
 
 export default function RootLayout({
@@ -33,7 +37,7 @@ export default function RootLayout({
   return (
     <html
       lang="sr-Latn"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${newsreader.variable} ${instrumentSans.variable} h-full antialiased`}
     >
       <body className="flex min-h-full flex-col">
         {children}

@@ -1,26 +1,92 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
+/*
+ * Psihointegritet design tokens — extracted from the Claude Design handoff
+ * (design-handoff/psihointegritet-web-dizajn-handoff). The bundled Marysoll
+ * design system is intentionally ignored per the handoff's CLAUDE.md.
+ */
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-instrument-sans), system-ui, sans-serif;
+  --font-serif: var(--font-newsreader), Georgia, serif;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+@theme {
+  /* Brand palette */
+  --color-canvas: #faf8f3; /* main page background */
+  --color-surface: #ffffff; /* card surface */
+  --color-forest: #2e3b2e; /* primary dark green */
+  --color-forest-hover: #3d4d3d; /* dark button hover */
+  --color-forest-soft: #4e5f4c; /* nav links, icon circles */
+  --color-forest-lift: #3a4a3a; /* animated CTA hover */
+  --color-sage: #8a9d82; /* eyebrows, accents */
+  --color-meadow: #c6d5a8; /* light green accent */
+  --color-meadow-hover: #d5e2bc;
+  --color-warm: #d1a48c; /* warm secondary accent */
+  --color-warm-hover: #ddb59f;
+  --color-coffee: #3a2e28; /* primary text */
+  --color-coffee-hover: #4d3d35;
+
+  /* Shadows */
+  --shadow-hero-card: 0 24px 64px rgba(58, 46, 40, 0.16);
+  --shadow-card-hover: 0 16px 40px rgba(58, 46, 40, 0.1);
+  --shadow-card-hover-lg: 0 18px 44px rgba(58, 46, 40, 0.1);
+  --shadow-row-hover: 0 10px 28px rgba(58, 46, 40, 0.1);
+  --shadow-pill: 0 10px 30px rgba(58, 46, 40, 0.14);
+  --shadow-drawer: -24px 0 64px rgba(58, 46, 40, 0.25);
+  --shadow-help: 0 12px 32px rgba(46, 59, 46, 0.35);
+
+  /* Motion */
+  --ease-soft: cubic-bezier(0.22, 1, 0.36, 1);
+
+  --animate-fade-up: fade-up 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+  --animate-fade-in: fade-in 0.3s ease both;
+  --animate-drawer-in: drawer-in 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
+
+  @keyframes fade-up {
+    from {
+      opacity: 0;
+      transform: translateY(16px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  @keyframes drawer-in {
+    from {
+      transform: translateX(48px);
+      opacity: 0;
+    }
+    to {
+      transform: translateX(0);
+      opacity: 1;
+    }
   }
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--color-canvas);
+  color: var(--color-coffee);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+::selection {
+  background: var(--color-meadow);
+  color: var(--color-forest);
 }
