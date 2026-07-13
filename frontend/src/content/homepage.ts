@@ -25,8 +25,9 @@ export interface ReasonCard {
 
 export interface TherapistProfile {
   id: string;
-  /** Placeholder monogram until real portraits are approved for publication. */
+  /** Fallback monogram shown when a portrait is unavailable. */
   initials: string;
+  imageSrc?: string;
   name: string;
   title: string;
   badge: string;
@@ -154,6 +155,7 @@ export const therapists: TherapistProfile[] = [
   {
     id: "as",
     initials: "AS",
+    imageSrc: "/therapists/as-terapeut.png",
     name: "A. S.",
     title: "Socijalni radnik i geštalt psihoterapeutkinja pod supervizijom",
     badge: "Individualni i partnerski rad",
@@ -171,6 +173,7 @@ export const therapists: TherapistProfile[] = [
   {
     id: "ms",
     initials: "MS",
+    imageSrc: "/therapists/ms-terapeut.png",
     name: "M. S.",
     title: "Pedagog i geštalt psihoterapeutkinja pod supervizijom",
     badge: "Adolescenti i odrasli",
@@ -182,6 +185,7 @@ export const therapists: TherapistProfile[] = [
   {
     id: "mj",
     initials: "MJ",
+    imageSrc: "/therapists/mj-terapeut.png",
     name: "M. J.",
     title: "Psiholog i geštalt psihoterapeut pod supervizijom",
     badge: "Individualni rad i parovi",

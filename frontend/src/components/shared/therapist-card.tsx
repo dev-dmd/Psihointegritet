@@ -11,7 +11,11 @@ export function TherapistCard({ therapist }: TherapistCardProps) {
   return (
     <article className="bg-surface border-coffee/6 hover:shadow-card-hover-lg flex flex-col gap-[22px] rounded-3xl border px-8 pt-[34px] pb-[30px] transition-all duration-[250ms] hover:-translate-y-1">
       <div className="flex items-start justify-between">
-        <MonogramAvatar initials={therapist.initials} name={therapist.name} />
+        <MonogramAvatar
+          initials={therapist.initials}
+          name={therapist.name}
+          imageSrc={therapist.imageSrc}
+        />
         <Chip variant="label">{therapist.badge}</Chip>
       </div>
       <div>

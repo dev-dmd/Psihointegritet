@@ -12,7 +12,7 @@
 
 @theme {
   /* Brand palette */
-  --color-canvas: #faf8f3; /* main page background */
+  --color-canvas: #f0f0f0; /* main page background */
   --color-surface: #ffffff; /* card surface */
   --color-forest: #2e3b2e; /* primary dark green */
   --color-forest-hover: #3d4d3d; /* dark button hover */
@@ -22,6 +22,7 @@
   --color-meadow: #c6d5a8; /* light green accent */
   --color-meadow-hover: #d5e2bc;
   --color-warm: #d1a48c; /* warm secondary accent */
+  --color-warm-shine: #ffa676; /* warm shine dot */
   --color-warm-hover: #ddb59f;
   --color-coffee: #3a2e28; /* primary text */
   --color-coffee-hover: #4d3d35;

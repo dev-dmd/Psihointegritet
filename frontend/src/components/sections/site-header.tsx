@@ -17,23 +17,26 @@ export function SiteHeader() {
             href="#vrh"
             className="col-start-1 flex items-baseline justify-self-start no-underline"
           >
-            <span className="text-forest font-serif text-xl font-medium tracking-[-0.01em] md:text-[25px]">
-              Psihointegritet
+            <span className="text-forest flex max-h-[48px] flex-col items-start gap-[1px] font-serif text-xl leading-none font-bold tracking-[-0.01em] md:text-[32px]">
+              <span>Psihointegritet</span>
+              <small className="text-forest-lift hidden text-[13px] leading-none font-normal tracking-[0.01em] md:block">
+                Digitalni centar za mentalno zdravlje
+              </small>
             </span>
             <span
               aria-hidden
-              className="bg-warm ml-1 inline-block h-1.5 w-1.5 rounded-full"
+              className="bg-warm-shine ml-1 inline-block h-1.5 w-1.5 rounded-full"
             />
           </a>
           <nav
             aria-label="Glavna navigacija"
-            className="col-start-2 hidden items-center gap-[clamp(12px,1.4vw,26px)] justify-self-center rounded-full border border-white/35 bg-gray-400/32 px-[clamp(18px,1.8vw,28px)] py-[13px] whitespace-nowrap backdrop-blur-[14px] lg:flex"
+            className="col-start-2 hidden items-center gap-[clamp(12px,1.4vw,26px)] justify-self-center rounded-full bg-gray-400/32 px-[clamp(18px,1.8vw,28px)] py-[13px] whitespace-nowrap backdrop-blur-[14px] lg:flex"
           >
             {navLinks.map((link) => (
               <a
                 key={link.href}
                 href={link.href}
-                className="text-forest-soft hover:text-forest text-[clamp(11px,0.55vw+6px,14px)] font-medium no-underline transition-colors duration-200"
+                className="text-forest text-[clamp(11px,0.55vw+6px,14px)] font-medium no-underline transition-colors duration-200 hover:underline"
               >
                 {link.label}
               </a>
@@ -53,11 +56,11 @@ export function SiteHeader() {
       <StickyBar>
         <a href="#vrh" className="flex items-baseline no-underline">
           <span className="text-forest font-serif text-[19px] font-medium tracking-[0.01em]">
-            PZMZ
+            PDC
           </span>
           <span
             aria-hidden
-            className="bg-warm ml-[3px] inline-block h-[5px] w-[5px] rounded-full"
+            className="bg-warm-shine ml-[3px] inline-block h-[5px] w-[5px] rounded-full"
           />
         </a>
         <nav
@@ -68,7 +71,7 @@ export function SiteHeader() {
             <a
               key={link.href}
               href={link.href}
-              className="text-forest-soft hover:text-forest text-[13px] font-medium no-underline transition-colors duration-200"
+              className="text-forest text-[13px] font-medium transition-colors duration-200 hover:underline"
             >
               {link.label}
             </a>
