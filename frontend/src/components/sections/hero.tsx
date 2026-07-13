@@ -2,6 +2,7 @@ import Image from "next/image";
 
 import { ButtonLink } from "@/components/ui/button-link";
 import { BookOpen, BrainCircuit, Ear, Headset, Users } from "lucide-react";
+import { clientLink, companies } from "@/content/homepage";
 
 const supportFormats = [
   { label: "Psihoterapija", Icon: BrainCircuit },
@@ -53,42 +54,34 @@ export function Hero() {
             </div>
           </div>
 
-          <div className="flex flex-col items-stretch gap-3">
-            <div className="bg-surface/80 relative flex h-60 items-center justify-center gap-2 rounded-xl px-4 py-2 shadow-xl shadow-gray-400 backdrop-blur-[10px]">
-              <Image
-                src="/images/hero.png"
-                alt="mentalno zdravlje"
-                fill
-                priority
-                sizes="(max-width: 500px) 100vw, 310px"
-                className="rounded-lg object-cover brightness-75"
-              />
+          <div className="mt-9 flex flex-col gap-7 self-stretch">
+            <a
+              href={companies.action.href}
+              className="border-warm/45 bg-warm/15 hover:border-warm hover:bg-warm/25 block rounded-[20px] border px-7 pt-[26px] pb-6 no-underline transition-colors duration-200"
+            >
+              <p className="text-coffee/55 mb-2.5 text-[11.5px] font-semibold tracking-[0.14em] uppercase">
+                {companies.eyebrow}
+              </p>
+              <p className="text-coffee mb-2 font-serif text-2xl leading-tight">
+                {companies.title}
+              </p>
+              <p className="text-coffee/70 mb-3.5 text-sm leading-relaxed">
+                {companies.description}
+              </p>
+              <span className="text-coffee inline-flex items-center gap-2 text-sm font-semibold">
+                {companies.action.label} <span aria-hidden>→</span>
+              </span>
+            </a>
 
-              <div className="absolute inset-x-2 bottom-3 flex items-start justify-between gap-1 sm:inset-x-4 sm:bottom-4 sm:gap-2">
-                {supportFormats.map(({ label, Icon }) => (
-                  <div
-                    key={label}
-                    className="flex min-w-0 flex-1 flex-col items-center gap-1.5 text-center"
-                  >
-                    <span className="flex h-8 w-8 items-center justify-center rounded-full border border-white/40 bg-gray-200/10 text-white backdrop-blur-[6px] sm:h-11 sm:w-11">
-                      <Icon className="h-4 w-4 sm:h-5 sm:w-5" />
-                    </span>
-                    <span className="text-[8px] leading-none font-medium text-white sm:text-[10px] md:text-[11px]">
-                      {label}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-            <div className="border-coffee/8 text-coffee/60 mt-2.5 border-t pt-5 text-center text-sm">
-              Već ste klijent?{" "}
+            <p className="text-coffee/60 mt-auto mb-3.5 text-center text-sm">
+              {clientLink.prefix}{" "}
               <a
-                href="#usluge"
+                href={clientLink.href}
                 className="text-forest font-semibold underline underline-offset-[3px]"
               >
-                Zakažite naredni termin
+                {clientLink.label}
               </a>
-            </div>
+            </p>
           </div>
         </div>
       </div>

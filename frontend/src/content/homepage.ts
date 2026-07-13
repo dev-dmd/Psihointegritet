@@ -16,6 +16,19 @@ export interface TrustItem {
   label: string;
 }
 
+export interface CompaniesContent {
+  eyebrow: string;
+  title: string;
+  description: string;
+  action: { label: string; href: string };
+}
+
+export interface ClientLink {
+  prefix: string;
+  label: string;
+  href: string;
+}
+
 export interface ReasonCard {
   number: string;
   title: string;
@@ -95,6 +108,20 @@ export const navLinks: NavLink[] = [
   { label: "Znanje i resursi", href: "#resursi" },
   { label: "O nama", href: "#onama" },
 ];
+
+export const companies: CompaniesContent = {
+  eyebrow: "Za organizacije",
+  title: "Rad sa kompanijama",
+  description:
+    "Radionice, edukacije i psihološka podrška za timove i zaposlene.",
+  action: { label: "Saznajte više", href: "/rad-sa-kompanijama" },
+};
+
+export const clientLink: ClientLink = {
+  prefix: "Već ste klijent?",
+  label: "Zakažite naredni termin",
+  href: "/zakazivanje",
+};
 
 export const footerServiceLinks: NavLink[] = [
   { label: "Individualna psihoterapija", href: "#usluge" },
