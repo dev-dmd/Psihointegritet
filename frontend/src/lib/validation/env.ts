@@ -5,13 +5,17 @@ import { z } from "zod";
 /**
  * Server-side environment validation. Imported from the root layout so an
  * invalid environment fails fast at build/startup instead of at request time.
- * Clerk keys are allowed to be empty until the auth milestone begins.
+ * The Clerk keys are required now that the auth milestone (Milestone 1) is
+ * active: the publishable key is needed by ClerkProvider and the secret key by
+ * `clerkMiddleware` in `proxy.ts`.
  */
 const serverEnvSchema = z.object({
   NEXT_PUBLIC_APP_URL: z.url(),
   NEXT_PUBLIC_API_URL: z.url(),
-  NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: z.string().default(""),
-  CLERK_SECRET_KEY: z.string().default(""),
+  NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: z
+    .string()
+    .min(1, "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY is required"),
+  CLERK_SECRET_KEY: z.string().min(1, "CLERK_SECRET_KEY is required"),
 });
 
 export type ServerEnv = z.infer<typeof serverEnvSchema>;

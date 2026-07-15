@@ -1,16 +1,7 @@
 import Image from "next/image";
 
 import { ButtonLink } from "@/components/ui/button-link";
-import { BookOpen, BrainCircuit, Ear, Headset, Users } from "lucide-react";
 import { clientLink, companies } from "@/content/homepage";
-
-const supportFormats = [
-  { label: "Psihoterapija", Icon: BrainCircuit },
-  { label: "Savjetovanje", Icon: Ear },
-  { label: "Edukacija", Icon: BookOpen },
-  { label: "Online", Icon: Headset },
-  { label: "Uživo", Icon: Users },
-];
 
 export function Hero() {
   return (

@@ -2,6 +2,8 @@ import { StickyBar } from "@/components/motion/sticky-bar";
 import { MobileMenu } from "@/components/sections/mobile-menu";
 import { AnimatedCtaLink } from "@/components/ui/animated-cta-link";
 import { navLinks } from "@/content/homepage";
+import { AuthMenu } from "@/lib/auth/clerk/auth-menu";
+import { MobileAuthSection } from "@/lib/auth/clerk/mobile-auth-section";
 
 /**
  * Transparent header over the hero plus the scroll-activated sticky pill.
@@ -43,12 +45,13 @@ export function SiteHeader() {
             ))}
           </nav>
           <div className="col-start-3 flex items-center gap-2.5 justify-self-end">
+            <AuthMenu />
             <AnimatedCtaLink
               href="#usluge"
               label="Zakaži termin"
               className="max-[480px]:hidden"
             />
-            <MobileMenu links={navLinks} />
+            <MobileMenu links={navLinks} authSlot={<MobileAuthSection />} />
           </div>
         </div>
       </header>
@@ -77,8 +80,13 @@ export function SiteHeader() {
             </a>
           ))}
         </nav>
+        <AuthMenu size="sm" />
         <AnimatedCtaLink href="#usluge" label="Zakaži termin" size="sm" />
-        <MobileMenu links={navLinks} variant="solid" />
+        <MobileMenu
+          links={navLinks}
+          variant="solid"
+          authSlot={<MobileAuthSection />}
+        />
       </StickyBar>
     </>
   );
