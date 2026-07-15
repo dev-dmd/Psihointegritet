@@ -30,3 +30,5 @@ backend/openapi.json
 Thumbs.db
 .idea/
 .vscode/
+.claude/
+documentations/
