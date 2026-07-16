@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Instrument_Sans, Newsreader } from "next/font/google";
 import "./globals.css";
 
+import { AuthProvider } from "@/lib/auth/clerk/auth-provider";
 import { serverEnv } from "@/lib/validation/env";
 import { ToastProvider } from "@/providers/toast-provider";
 
@@ -35,14 +36,16 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html
-      lang="sr-Latn"
-      className={`${newsreader.variable} ${instrumentSans.variable} h-full antialiased`}
-    >
-      <body className="flex min-h-full flex-col">
-        {children}
-        <ToastProvider />
-      </body>
-    </html>
+    <AuthProvider>
+      <html
+        lang="sr-Latn"
+        className={`${newsreader.variable} ${instrumentSans.variable} h-full antialiased`}
+      >
+        <body className="flex min-h-full flex-col">
+          {children}
+          <ToastProvider />
+        </body>
+      </html>
+    </AuthProvider>
   );
 }

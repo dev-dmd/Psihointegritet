@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { cloneElement, useEffect, useState, type ReactElement } from "react";
 import { createPortal } from "react-dom";
 
 import { cn } from "@/helpers/cn";
@@ -10,10 +10,20 @@ interface MobileMenuProps {
   links: NavLink[];
   /** glass — burger over the hero header; solid — inside the sticky pill. */
   variant?: "glass" | "solid";
+  /**
+   * Optional auth control rendered in the drawer footer. Provided as an element
+   * (never a function — this crosses the server/client boundary) so the drawer
+   * can inject `onNavigate` to close itself on tap without coupling to Clerk.
+   */
+  authSlot?: ReactElement<{ onNavigate?: () => void }>;
 }
 
 /** Burger trigger + slide-in navigation drawer, visible below the lg breakpoint. */
-export function MobileMenu({ links, variant = "glass" }: MobileMenuProps) {
+export function MobileMenu({
+  links,
+  variant = "glass",
+  authSlot,
+}: MobileMenuProps) {
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
@@ -115,6 +125,11 @@ export function MobileMenu({ links, variant = "glass" }: MobileMenuProps) {
                   >
                     Zakaži termin
                   </a>
+                  {authSlot
+                    ? cloneElement(authSlot, {
+                        onNavigate: () => setOpen(false),
+                      })
+                    : null}
                 </div>
               </div>
             </>,

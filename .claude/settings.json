@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git -C /home/dmdevelo/Desktop/dmdevelon_projects/Psihointegritet-digitalni-centar status --porcelain)",
+      "Bash(curl -s -o /dev/null --retry 30 --retry-all-errors --retry-delay 1 -w \"public / -> HTTP %{http_code}\\\\n\" http://localhost:3011/)",
+      "Bash(curl -s -o /dev/null -D - http://localhost:3011/nalog)",
+      "Bash(curl -s -o /dev/null -D - http://localhost:3011/superadmin)",
+      "Bash(curl -s -o /dev/null --retry 40 --retry-all-errors --retry-delay 1 -w \"public / -> HTTP %{http_code}\\\\n\" http://localhost:3011/)",
+      "Bash(curl -s -o /dev/null -D - http://localhost:3011/radni-prostor)",
+      "Bash(echo \"lint-exit=$?\")"
+    ]
+  }
+}
