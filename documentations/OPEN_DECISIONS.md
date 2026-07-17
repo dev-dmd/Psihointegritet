@@ -5,7 +5,7 @@ Otvorene odluke. **Doneto ide u `PRODUCT_DECISIONS.md`** i briše se odavde.
 **Gde piše:** master plan §13 (STOP lista) · §4 R0.1 · Proposal v1.1 §4 (Anjina lista)
 **Pravilo (MP §0, tačka 5):** ako se udari u otvorenu stavku — **stati i pitati**. Ne pogađati proizvodne, pravne, cenovne ni kliničke odluke.
 
-**Stanje 2026-07-17:** 3 rešene (S1 ostaje otvoren), 2 parcijalne, 7 otvorenih.
+**Stanje 2026-07-17:** S2/S13 rešeni, S5/S10 parcijalni, S1 otvoren + nove stavke Matching Engine-a (O-14/O-15) za potvrdu tima.
 
 ---
 
@@ -96,6 +96,25 @@ Tim treba da pregleda upitnik (trenutni kviz je nacrt): 5 koraka, `features/guid
 > **Gde piše:** MP §13 S6 · Proposal §4 #10 · **Blokira:** objavu radionice sa prijavom
 
 Datum, voditelj, cena, kapacitet, pravila prijave/otkazivanja. Dok ne stigne: `/radionice` je **informativna + „Prijavite interesovanje"**, bez datuma i bez prijave.
+
+---
+
+## 🟠 Matching Engine — potvrda tima (blokira sign-off R1.2, ne launch)
+
+> **Gde piše:** spec „Početna routing matrica" · MP §13 S11 · **Blokira:** R1.2.j sign-off
+> Engine je hardcoded v1 (`matching.ts`) sa konzervativnim pravilima. Tim treba da potvrdi ili ispravi:
+
+### O-14 · Routing matrica po terapeutu
+- **Anja** — prihvata li uzrast 16–17 ili **samo odrasle** (18+)? (sada: 18+)
+- **Marjan** — koja je najmlađa starosna granica? (sada: 18+, ne nudi se maloletnicima)
+- **Marija** — potvrda da radi 13+ sa adolescentima (sada: da)
+- Oblasti rada po terapeutu — potvrditi listu iz matrice (`matching.ts` `MATCHING_PROFILES`)
+
+### O-15 · Operativna pravila (za R2, ali utiču na v1 tekst)
+- Maksimalan broj novih klijenata po terapeutu (kapacitet) — sada nema ograničenja
+- Koje složenije situacije zahtevaju ljudski pregled pre prikazivanja rezultata (sada: samo „oporavak nakon nasilja/kriznog iskustva" → tim)
+- Ko može da preuzme nedodeljeni zahtev iz zajedničkog reda
+- Formulacija sigurnosnog izlaza (nije dijagnoza / nije hitna služba) — **vezano za S5**, čeka pravnu i stručnu potvrdu
 
 ---
 

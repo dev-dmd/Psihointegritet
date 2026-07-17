@@ -23,7 +23,7 @@ export function TherapistContactSection({
 }: {
   therapist: Therapist;
 }) {
-  const { openGuidance } = useGuidance();
+  const { openQuiz } = useGuidance();
 
   return (
     <section id="zakazivanje" className="scroll-mt-24 pt-[72px] md:pt-32">
@@ -50,7 +50,7 @@ export function TherapistContactSection({
                 </Link>
                 <button
                   type="button"
-                  onClick={openGuidance}
+                  onClick={openQuiz}
                   className="text-coffee cursor-pointer border-0 bg-transparent px-1 py-[13.5px] font-sans text-[15px] font-semibold underline underline-offset-[3px]"
                 >
                   Nisam siguran/na, pomozite mi da izaberem

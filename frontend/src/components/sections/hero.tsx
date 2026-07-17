@@ -1,6 +1,11 @@
 import Image from "next/image";
+import Link from "next/link";
 
 import { ButtonLink } from "@/components/ui/button-link";
+import {
+  GuidanceCtaButton,
+  GuidanceCtaText,
+} from "@/features/guidance/guidance-cta";
 import { clientLink, companies } from "@/content/homepage";
 
 export function Hero() {
@@ -32,11 +37,12 @@ export function Hero() {
               sadržaje, radionice i programe ličnog razvoja — online i uživo.
             </p>
             <div className="mt-6 flex flex-wrap items-center gap-3 md:mt-8">
-              <ButtonLink href="#podrska" className="w-full py-4 md:w-auto">
+              {/* Hero visitors usually aren't sure who fits — start the quiz directly. */}
+              <GuidanceCtaButton entry="quiz" className="w-full py-4 md:w-auto">
                 Pomozi mi da pronađem podršku
-              </ButtonLink>
+              </GuidanceCtaButton>
               <ButtonLink
-                href="#terapeuti"
+                href="/tim"
                 variant="outline"
                 className="w-full py-4 md:w-auto"
               >
@@ -46,8 +52,8 @@ export function Hero() {
           </div>
 
           <div className="mt-9 flex flex-col gap-7 self-stretch">
-            <a
-              href={companies.action.href}
+            <Link
+              href="/rad-sa-kompanijama"
               className="border-warm/45 bg-warm/15 hover:border-warm hover:bg-warm/25 block rounded-[20px] border px-7 pt-[26px] pb-6 no-underline transition-colors duration-200"
             >
               <p className="text-coffee/55 mb-2.5 text-[11.5px] font-semibold tracking-[0.14em] uppercase">
@@ -62,16 +68,13 @@ export function Hero() {
               <span className="text-coffee inline-flex items-center gap-2 text-sm font-semibold">
                 {companies.action.label} <span aria-hidden>→</span>
               </span>
-            </a>
+            </Link>
 
             <p className="text-coffee/60 mt-auto mb-3.5 text-center text-sm">
               {clientLink.prefix}{" "}
-              <a
-                href={clientLink.href}
-                className="text-forest font-semibold underline underline-offset-[3px]"
-              >
-                {clientLink.label}
-              </a>
+              {/* Returning clients already know who they see — open the chooser
+                  in „I know who I want" mode, no quiz. */}
+              <GuidanceCtaText>{clientLink.label}</GuidanceCtaText>
             </p>
           </div>
         </div>

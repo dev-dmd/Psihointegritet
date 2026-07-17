@@ -153,23 +153,28 @@ Svaki ima SUPERSEDED zaglavlje sa razlogom i zamenom. Arhivirano 2026-07-17: `PR
 | `/usluge` | 3 usluge + trajanje/cena/format + „okvirne cene" | ⬜ | Cene T7; napomena o okvirnosti obavezna |
 | `/radionice` | Informativno + „Prijavite interesovanje" | 🚫 S6 | **Bez datuma i bez prijave** dok S6 ne stigne |
 | `/znanje` | 3 najave članaka kao „u pripremi" | ⬜ | **Bez lažnih članaka** |
-| `/rad-sa-kompanijama` | B2B strana + forma | ⬜ | 🐞 `hero.tsx:50` već linkuje ovde → **404** |
+| `/rad-sa-kompanijama` | B2B strana + forma | 🟡 | **Stranica napravljena** (D-013); ponuda, 3 koraka, CTA → `/#kontakt`. Forma čeka R1.3. Rešen D2 (hero 404) |
 | `/o-nama` | Misija, način rada, lokacije, prva seansa | 🟡 | Ime rešeno (D-006); **tekst o lokacijama i adrese otvoreni** (O-02) |
 | `/zakazi` | Forma zahteva za termin | ⬜ | Prefill `?terapeut=slug`. 🐞 `hero.tsx:70` linkuje na `/zakazivanje` → **404**, a spec kaže `/zakazi` |
 | `/kontakt` | Opšti kontakt | 🚫 S10 | Email/telefon/mreže i dalje nepotvrđeni (O-06) |
 | `/privatnost` `/uslovi` `/kolacici` `/pravila-zakazivanja` | Pravni placeholderi „u pripremi — pravna potvrda" | 🚫 S5 | Pravac poznat (D-008), pravna potvrda nije. **Krizni disclaimer (T11) i dalje nedostaje.** Stranice se mogu napraviti kao placeholderi; tekst ne pišemo mi (MP §0, tačka 8) |
 
-### R1.2 — Vođeni izbor
+### R1.2 — Vođeni izbor / Intake & Matching Engine v1
+
+> **Prošireno 2026-07-17** u pun Matching Engine po CTO spec-u (D-012). Hardcoded na frontendu, bez perzistencije (T13). Booking forma i slanje su R1.3/R2.
 
 | ID | Zadatak | Gde piše | Status | Napomena |
 |---|---|---|---|---|
-| R1.2.a | Kviz — deterministički, bez perzistencije | MP §5 R1.2 · MP §1 T13 | ✅ | `features/guidance/quiz.ts`; 5 koraka; odgovori samo u memoriji |
-| R1.2.b | Drawer + launcher | MP §5 R1.2 | ✅ | Escape, scroll-lock, progress |
-| R1.2.c | Promovisati na `/pronadji-podrsku` | MP §5 R1.2 · Proposal §6 M1.3 | ⬜ | Ista pravila, puna strana + drawer ulaz |
-| R1.2.d | **„Zašto je prikazano"** po preporuci | MP §5 R1.2 · Proposal §5 | ⬜ | Sad postoji samo jedna generička rečenica (`guidance-drawer.tsx:156`) — ne kaže zašto **baš taj** terapeut |
-| R1.2.e | 2–4 opcije + linkovi na profile/`/zakazi` | MP §5 R1.2 | 🟡 | Preporuke rade; linkovi ne postoje jer nema ruta |
-| R1.2.f | Bez email gate-a pre rezultata | MP §1 T13 · Proposal §5 | ✅ | Nema ga |
-| R1.2.g | Pregled pitanja od tima | MP §13 S11 · Proposal §4/6 | 🚫 S11 | Blokira sign-off R1.2 |
+| R1.2.a | Matching engine — deterministički, bez perzistencije | MP §5 R1.2 · MP §1 T13 · Engines (Intake) | ✅ | `features/guidance/matching.ts`; 5 pitanja, tvrdi filteri, grane; 13 unit testova |
+| R1.2.b | Drawer: chooser → kviz → rezultat | MP §5 R1.2 | ✅ | `guidance-drawer.tsx`; Escape, scroll-lock, progress, nazad |
+| R1.2.c | Sigurnosni izlaz (nije dijagnoza / nije hitna služba) | spec §0 · MP §1 T11 | ✅ | Stalna traka iznad pitanja; **konačna formulacija čeka S5** |
+| R1.2.d | **Objašnjiv rezultat** — razlozi po terapeutu, bez skora | MP §5 R1.2 · Proposal §5 · spec | ✅ | Rečenice („oblast rada odgovara…"), nikad „87%" |
+| R1.2.e | Tri ulaza: „Zakaži termin" → chooser; hero/sekcija → kviz | spec | ✅ | Postojeći klijenti preskaču pitanja („Znam kog terapeuta") |
+| R1.2.f | Grane: B2B, tim-pregled, maloletnici, krizni oporavak | spec | ✅ | Krizni oporavak **nikad auto-Marjan** → tim; maloletnici → Marija + napomena |
+| R1.2.g | Rezultat kartice → `/tim/[slug]` | MP §5 R1.2 | ✅ | Bez email gate-a (T13); BookingWidget kasnije |
+| R1.2.h | Opciona textarea „svojim rečima" | spec | ✅ | Samo memorija — ništa se ne šalje ni čuva |
+| R1.2.i | Promovisati na `/pronadji-podrsku` (puna strana) | MP §5 R1.2 · Proposal §6 M1.3 | ⬜ | Drawer radi svuda; zasebna ruta još ne postoji |
+| R1.2.j | Pregled pitanja + routing matrice od tima | MP §13 S11 · Proposal §4/6 | 🚫 S11 | Blokira sign-off; nove otvorene stavke u `OPEN_DECISIONS` |
 
 ### R1.3 — Prijem upita i zahteva za termin (backend)
 
@@ -309,8 +314,8 @@ Svaki ima SUPERSEDED zaglavlje sa razlogom i zamenom. Arhivirano 2026-07-17: `PR
 | D1 | `versions/` prazan **i netrackovan**, a `railway.json:10` na deploy pokreće `alembic upgrade head` → **puca na fresh clone** | `backend/src/psihointegritet/db/migrations/versions/` | 🔴 latentan deploy failure |
 | D17 | **Footer je i dalje ijekavica i sad se vidi na svakoj javnoj stranici**: „savjetovanje… na jednom mjestu", „zamjenu za individualni razgovor". Isto i `midServices` („Partnersko savjetovanje", „Psihološko savjetovanje" — **T1/T2**), `reasons`, `featuredService` („Cijena") | `content/homepage.ts`, `site-footer.tsx` | 🟠 **R0.2 sweep** — ostatak homepage sadržaja |
 | D18 | Footer prikazuje **nepotvrđen email** `kontakt@psihointegritet.rs` i „Niš · online i uživo" (centar ima i Leskovac) | `site-footer.tsx:22-28` | 🟠 S10/O-06 |
-| D2 | Mrtav link → **404**: „Za organizacije" u hero kartici | `hero.tsx:50` → `/rad-sa-kompanijama` | 🟠 |
-| D3 | Mrtav link → **404**: „Već ste klijent?" | `hero.tsx:70` → `/zakazivanje` (spec: `/zakazi`) | 🟠 |
+| ~~D2~~ | ~~404: „Za organizacije" u hero kartici~~ | — | ✅ **REŠENO 2026-07-17** — `/rad-sa-kompanijama` napravljena, hero kartica je sad `Link` |
+| ~~D3~~ | ~~404: „Već ste klijent?"~~ | — | ✅ **REŠENO 2026-07-17** — link postao chooser trigger („Znam kog terapeuta"), ne ruta; taj use case je baš to |
 | D4 | `/health` ne proverava bazu, a `railway.json:8` ga koristi kao healthcheck → **deploy sa mrtvom bazom prijavljuje se kao zdrav** | `main.py:30` | 🟠 |
 | D5 | `backend/openapi.json` gitignorovan → gate za contract drift (MP §12) ne može da padne | `.gitignore:26` | 🟠 |
 | D6 | `backend/.env.local` sa **živim produkcijskim kredencijalima** u plaintextu (gitignorovan, nije u istoriji) | — | 🟠 razmotriti rotaciju |
