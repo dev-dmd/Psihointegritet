@@ -1,5 +1,7 @@
 "use client";
 
+import type { Route } from "next";
+import Link from "next/link";
 import { cloneElement, useEffect, useState, type ReactElement } from "react";
 import { createPortal } from "react-dom";
 
@@ -107,24 +109,24 @@ export function MobileMenu({
                   className="flex flex-1 flex-col overflow-y-auto px-2 py-4"
                 >
                   {links.map((link) => (
-                    <a
+                    <Link
                       key={link.href}
-                      href={link.href}
+                      href={link.href as Route}
                       onClick={() => setOpen(false)}
                       className="text-coffee hover:bg-meadow/25 rounded-xl px-4 py-3.5 text-[17px] font-medium no-underline"
                     >
                       {link.label}
-                    </a>
+                    </Link>
                   ))}
                 </nav>
                 <div className="border-coffee/10 border-t px-6 pt-5 pb-7">
-                  <a
-                    href="#usluge"
+                  <Link
+                    href="/#usluge"
                     onClick={() => setOpen(false)}
                     className="bg-forest text-canvas flex items-center justify-center gap-2.5 rounded-full px-6 py-[15px] text-[15px] font-semibold no-underline"
                   >
                     Zakaži termin
-                  </a>
+                  </Link>
                   {authSlot
                     ? cloneElement(authSlot, {
                         onNavigate: () => setOpen(false),

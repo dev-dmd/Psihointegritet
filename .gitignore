@@ -22,6 +22,9 @@ backend/.venv/
 backend/htmlcov/
 backend/.coverage
 
+# Design handoff — 14 MB reference prototype, lives locally only
+frontend/design-handoff/
+
 # Generated API contract artifacts
 backend/openapi.json
 
@@ -31,4 +34,7 @@ Thumbs.db
 .idea/
 .vscode/
 .claude/
-documentations/
+
+# Dokumentacija — .md se verzioniše; binarni izvornici (DOCX/PDF) ostaju van gita
+documentations/*.docx
+documentations/*.pdf

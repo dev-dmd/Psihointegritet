@@ -36,19 +36,6 @@ export interface ReasonCard {
   href: string;
 }
 
-export interface TherapistProfile {
-  id: string;
-  /** Fallback monogram shown when a portrait is unavailable. */
-  initials: string;
-  imageSrc?: string;
-  name: string;
-  title: string;
-  badge: string;
-  quote: string;
-  formats: string;
-  areas: string[];
-}
-
 export interface ServiceStat {
   label: string;
   value: string;
@@ -100,13 +87,18 @@ export interface FaqItem {
   answer: string;
 }
 
+/**
+ * Absolute hrefs, not bare anchors: the header and footer now render on every
+ * public page (see app/(public)/layout.tsx), so „#usluge" alone would be dead
+ * everywhere except the homepage.
+ */
 export const navLinks: NavLink[] = [
-  { label: "Pronađi podršku", href: "#podrska" },
-  { label: "Terapeuti", href: "#terapeuti" },
-  { label: "Usluge", href: "#usluge" },
-  { label: "Radionice", href: "#radionice" },
-  { label: "Znanje i resursi", href: "#resursi" },
-  { label: "O nama", href: "#onama" },
+  { label: "Pronađi podršku", href: "/#podrska" },
+  { label: "Terapeuti", href: "/tim" },
+  { label: "Usluge", href: "/#usluge" },
+  { label: "Radionice", href: "/#radionice" },
+  { label: "Znanje i resursi", href: "/#resursi" },
+  { label: "O nama", href: "/#onama" },
 ];
 
 export const companies: CompaniesContent = {
@@ -123,11 +115,12 @@ export const clientLink: ClientLink = {
   href: "/zakazivanje",
 };
 
+/** Service names are fixed by T1 („Bračno savetovanje") and T2 („Psihoterapijsko savetovanje"). */
 export const footerServiceLinks: NavLink[] = [
-  { label: "Individualna psihoterapija", href: "#usluge" },
-  { label: "Partnersko savjetovanje", href: "#usluge" },
-  { label: "Psihološko savjetovanje", href: "#usluge" },
-  { label: "Radionice", href: "#radionice" },
+  { label: "Individualna psihoterapija", href: "/#usluge" },
+  { label: "Bračno savetovanje", href: "/#usluge" },
+  { label: "Psihoterapijsko savetovanje", href: "/#usluge" },
+  { label: "Radionice", href: "/#radionice" },
 ];
 
 export const trustItems: TrustItem[] = [
@@ -175,56 +168,6 @@ export const reasons: ReasonCard[] = [
     title: "Podrška adolescentima",
     description: "Siguran prostor za mlade u periodu odrastanja i promjena.",
     href: "#terapeuti",
-  },
-];
-
-export const therapists: TherapistProfile[] = [
-  {
-    id: "as",
-    initials: "AS",
-    imageSrc: "/therapists/as-terapeut.png",
-    name: "A. S.",
-    title: "Socijalni radnik i geštalt psihoterapeutkinja pod supervizijom",
-    badge: "Individualni i partnerski rad",
-    quote:
-      "Promjena počinje kada sebi dozvolimo da zastanemo i iskreno pogledamo svoje odnose.",
-    formats: "Individualni rad · Partnerski rad · Online i uživo",
-    areas: [
-      "Partnerski odnosi",
-      "Roditeljstvo",
-      "Burnout",
-      "Transgeneracijski obrasci",
-      "Lični rast",
-    ],
-  },
-  {
-    id: "ms",
-    initials: "MS",
-    imageSrc: "/therapists/ms-terapeut.png",
-    name: "M. S.",
-    title: "Pedagog i geštalt psihoterapeutkinja pod supervizijom",
-    badge: "Adolescenti i odrasli",
-    quote:
-      "Podržavam mlade i odrasle da rastu kroz odnos, razumijevanje i svjesnost.",
-    formats: "Individualni rad · Adolescenti i odrasli · Online i uživo",
-    areas: ["Lični razvoj", "Emocionalne teškoće", "Međuljudski odnosi"],
-  },
-  {
-    id: "mj",
-    initials: "MJ",
-    imageSrc: "/therapists/mj-terapeut.png",
-    name: "M. J.",
-    title: "Psiholog i geštalt psihoterapeut pod supervizijom",
-    badge: "Individualni rad i parovi",
-    quote:
-      "Pomažem ljudima da razumiju svoje emocije i grade odnose u kojima ima mjesta za njih.",
-    formats: "Individualni rad · Rad sa parovima · Online i uživo",
-    areas: [
-      "Emocionalna regulacija",
-      "Partnerski odnosi",
-      "Stres",
-      "Lični razvoj",
-    ],
   },
 ];
 

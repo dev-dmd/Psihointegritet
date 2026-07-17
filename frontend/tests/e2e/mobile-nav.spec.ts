@@ -15,7 +15,13 @@ test("mobile menu opens, navigates and closes", async ({ page }) => {
   await drawer.getByRole("link", { name: "Terapeuti" }).click();
 
   await expect(drawer).not.toBeVisible();
-  await expect(page).toHaveURL(/#terapeuti$/);
+  await expect(page).toHaveURL(/\/tim$/);
+  await expect(
+    page.getByRole("heading", {
+      level: 1,
+      name: "Ljudi s kojima ćete raditi.",
+    }),
+  ).toBeVisible();
 });
 
 test("mobile menu opens from the sticky header after scrolling", async ({

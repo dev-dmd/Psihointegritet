@@ -1,6 +1,9 @@
+import type { Route } from "next";
+import Link from "next/link";
+
 import { footerServiceLinks, navLinks } from "@/content/homepage";
 
-const footerNavLinks = navLinks.filter((link) => link.href !== "#onama");
+const footerNavLinks = navLinks.filter((link) => link.href !== "/#onama");
 
 export function SiteFooter() {
   return (
@@ -38,13 +41,13 @@ export function SiteFooter() {
             </div>
             <div className="flex flex-col gap-3">
               {footerNavLinks.map((link) => (
-                <a
+                <Link
                   key={link.href}
-                  href={link.href}
+                  href={link.href as Route}
                   className="text-canvas/75 hover:text-meadow text-[15px] no-underline transition-colors duration-200"
                 >
                   {link.label}
-                </a>
+                </Link>
               ))}
             </div>
           </div>
@@ -54,13 +57,13 @@ export function SiteFooter() {
             </div>
             <div className="flex flex-col gap-3">
               {footerServiceLinks.map((link) => (
-                <a
+                <Link
                   key={link.label}
-                  href={link.href}
+                  href={link.href as Route}
                   className="text-canvas/75 hover:text-meadow text-[15px] no-underline transition-colors duration-200"
                 >
                   {link.label}
-                </a>
+                </Link>
               ))}
             </div>
           </div>

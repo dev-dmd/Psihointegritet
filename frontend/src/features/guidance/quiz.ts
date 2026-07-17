@@ -1,4 +1,4 @@
-import type { TherapistProfile } from "@/content/homepage";
+import type { Therapist } from "@/types/therapist";
 
 /**
  * Deterministic guided-selection quiz from the design handoff. Answers live
@@ -55,47 +55,50 @@ export type QuizAnswers = (string | null)[];
 
 export const SHOW_SERVICES_ANSWER = "Usluge i programe";
 
-const allTherapistIds = ["as", "ms", "mj"];
+const ANJA = "anja-stamenkovic";
+const MARIJA = "marija-stamenkovic";
+const MARJAN = "marjan-jankovic";
 
-const topicToTherapistIds: Record<string, string[]> = {
-  "Stres i iscrpljenost": ["as", "mj"],
-  "Odnosi i komunikacija": ["mj", "as"],
-  "Anksioznost ili emocionalne teškoće": ["ms", "mj"],
-  "Samopouzdanje i granice": ["ms", "as"],
-  Roditeljstvo: ["as", "ms"],
-  "Lični razvoj": ["mj", "ms"],
+const allTherapistSlugs = [ANJA, MARIJA, MARJAN];
+
+/** Targeting reviewed against each therapist's actual areas of work (CTO, 2026-07-17). */
+const topicToTherapistSlugs: Record<string, string[]> = {
+  "Stres i iscrpljenost": [MARJAN, ANJA],
+  "Odnosi i komunikacija": [ANJA, MARJAN],
+  "Anksioznost ili emocionalne teškoće": [ANJA, MARIJA],
+  "Samopouzdanje i granice": [MARIJA, MARJAN],
+  Roditeljstvo: [ANJA, MARIJA],
+  "Lični razvoj": [ANJA, MARJAN],
 };
 
 export function wantsServices(answers: QuizAnswers): boolean {
   return answers[4] === SHOW_SERVICES_ANSWER;
 }
 
-export function recommendTherapistIds(answers: QuizAnswers): string[] {
+export function recommendTherapistSlugs(answers: QuizAnswers): string[] {
   const who = answers[0] ?? null;
   const topic = answers[1] ?? null;
 
   if (answers[4] === "Sve dostupne terapeute") {
-    return allTherapistIds;
+    return allTherapistSlugs;
   }
   if (who === "Za adolescenta") {
-    return ["ms"];
+    return [MARIJA];
   }
   if (who === "Za partnerski odnos") {
-    return ["as", "mj"];
+    return [ANJA, MARJAN];
   }
   if (who === "Kao roditelj") {
-    return ["as", "ms"];
+    return [ANJA, MARIJA];
   }
-  return topicToTherapistIds[topic ?? ""] ?? allTherapistIds;
+  return topicToTherapistSlugs[topic ?? ""] ?? allTherapistSlugs;
 }
 
 export function recommendTherapists(
   answers: QuizAnswers,
-  all: TherapistProfile[],
-): TherapistProfile[] {
-  return recommendTherapistIds(answers)
-    .map((id) => all.find((therapist) => therapist.id === id))
-    .filter(
-      (therapist): therapist is TherapistProfile => therapist !== undefined,
-    );
+  all: Therapist[],
+): Therapist[] {
+  return recommendTherapistSlugs(answers)
+    .map((slug) => all.find((therapist) => therapist.slug === slug))
+    .filter((therapist): therapist is Therapist => therapist !== undefined);
 }
