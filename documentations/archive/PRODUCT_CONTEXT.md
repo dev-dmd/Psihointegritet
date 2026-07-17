@@ -1,3 +1,16 @@
+> ## ⛔ SUPERSEDED — 2026-07-17
+>
+> **Status:** istorijski kontekst. **Nije izvor odluka.**
+> Obavezujuća su četiri dokumenta: `CLAUDE_CODE_MASTER_PLAN_v1_0.md`, `Psihointegritet_Razvojni_Proposal_v1_1.docx`, `IZMENE_POSTOJECEG_PROJEKTA_v1_0.md`, `ARCHITECTURAL_RULES_REVISED.md`.
+>
+> **Zamenjuje ga:** Proposal v1.1 §3 („Šta je potvrđeno“) i `CLAUDE_CODE_MASTER_PLAN_v1_0.md` §1 (T1–T15)
+>
+> **Zašto je arhiviran:** Zastareo i aktivno obmanjuje: §6 i §17 koriste „Partnersko savetovanje“ i „Psihološko savetovanje“ (krši T1 i T2), sadrži stara zvanja („pod supervizijom“), §13 meša Release 1 i Release 2, a §1 propisuje **svoj konkurentni redosled autoriteta** koji ne poznaje master plan.
+>
+> **Šta i dalje vredi pročitati:** §17 (seed mapa tema) i 10 oblasti podrške su i dalje jedini pisani izvor za rutu `/oblasti-podrske` u R1.1. Čitati kao **nacrt**, uz obaveznu potvrdu od Anje pre objave i uz T1/T2 imena — nikad terminologiju iz ovog dokumenta.
+
+---
+
 # Psihointegritet — Product Context
 
 **Status:** Living product document  

@@ -1,3 +1,17 @@
+> ## ⛔ SUPERSEDED — v0.1, arhivirano 2026-07-17
+>
+> **Status:** istorijski kontekst. **Nikada ne uzimati odluke iz ovog dokumenta** (master plan §0).
+>
+> **Zamenjuje ga:** `technical-documentation-architecture-v0.3.md` (aktivna arhitektura).
+>
+> **Zašto je arhiviran:** opisuje potpuno drugačiju arhitekturu — Next.js bez zasebnog backend-a,
+> Drizzle ORM i Auth.js. Projekat danas koristi **FastAPI modularni monolit + SQLAlchemy 2 + Alembic + Clerk**.
+> Ako agent pomeša ova dva dokumenta, dobija se pogrešan stack.
+>
+> **Šta i dalje vredi pročitati:** rezonovanje o booking modelu i privatnosti — ideje su prenete u v0.3.
+
+---
+
 # Psihointegritet Digitalni centar
 
 ## MVP tehnička dokumentacija i arhitektura — v0.1

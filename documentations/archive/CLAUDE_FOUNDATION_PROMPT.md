@@ -1,3 +1,16 @@
+> ## ⛔ SUPERSEDED — 2026-07-17
+>
+> **Status:** istorijski kontekst. **Nije izvor odluka.**
+> Obavezujuća su četiri dokumenta: `CLAUDE_CODE_MASTER_PLAN_v1_0.md`, `Psihointegritet_Razvojni_Proposal_v1_1.docx`, `IZMENE_POSTOJECEG_PROJEKTA_v1_0.md`, `ARCHITECTURAL_RULES_REVISED.md`.
+>
+> **Zamenjuje ga:** `TODO.md` (R0.3 checklist) i `ARCHITECTURAL_RULES_REVISED.md`
+>
+> **Zašto je arhiviran:** Njegov „Read these files“ spisak pokazuje na tri imena koja ne postoje (`ARCHITECTURAL_RULES.md`, `technical-documentation-architecture.md`, `product-scope.md`). Master plan §4 R0.3 ga koristi kao backend checklist — te stavke su prenete u `TODO.md` §4.
+>
+> **Šta i dalje vredi pročitati:** Opisuje šta je temelj trebalo da isporuči — korisno pri reviziji backend-a.
+
+---
+
 # Claude Code Task — Foundation Only
 
 Read these files before changing code:

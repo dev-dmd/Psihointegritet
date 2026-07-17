@@ -1,3 +1,6 @@
+import type { Route } from "next";
+import Link from "next/link";
+
 import { cn } from "@/helpers/cn";
 
 const sizeClasses = {
@@ -31,16 +34,13 @@ export function AnimatedCtaLink({
   className,
 }: AnimatedCtaLinkProps) {
   const s = sizeClasses[size];
-
-  return (
-    <a
-      href={href}
-      className={cn(
-        "group bg-forest hover:bg-forest-lift text-canvas relative inline-flex items-center overflow-hidden rounded-full font-semibold whitespace-nowrap no-underline transition-colors duration-[250ms]",
-        s.root,
-        className,
-      )}
-    >
+  const linkClassName = cn(
+    "group bg-forest hover:bg-forest-lift text-canvas relative inline-flex items-center overflow-hidden rounded-full font-semibold whitespace-nowrap no-underline transition-colors duration-[250ms]",
+    s.root,
+    className,
+  );
+  const content = (
+    <>
       <span
         aria-hidden
         className="pointer-events-none absolute top-0 bottom-0 left-0 w-[55%] -translate-x-[150%] bg-[linear-gradient(100deg,transparent_15%,rgba(250,248,243,0.13)_50%,transparent_85%)] transition-transform duration-[600ms] group-hover:translate-x-[300%]"
@@ -67,6 +67,22 @@ export function AnimatedCtaLink({
         </svg>
       </span>
       <span className="relative">{label}</span>
-    </a>
+    </>
+  );
+
+  // Same-page anchors stay <a>; routes navigate client-side via next/link.
+  // Content-driven hrefs are non-literal strings — documented `as Route` cast.
+  if (href.startsWith("#")) {
+    return (
+      <a href={href} className={linkClassName}>
+        {content}
+      </a>
+    );
+  }
+
+  return (
+    <Link href={href as Route} className={linkClassName}>
+      {content}
+    </Link>
   );
 }

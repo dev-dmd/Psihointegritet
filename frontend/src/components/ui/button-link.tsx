@@ -1,4 +1,6 @@
 import { cva, type VariantProps } from "class-variance-authority";
+import type { Route } from "next";
+import Link from "next/link";
 import type { ReactNode } from "react";
 
 import { cn } from "@/helpers/cn";
@@ -34,7 +36,7 @@ const buttonLinkVariants = cva(
 );
 
 interface ButtonLinkProps extends VariantProps<typeof buttonLinkVariants> {
-  /** In-page anchors and routes; rendered as a plain anchor element. */
+  /** Same-page anchors render as <a>; routes navigate client-side via next/link. */
   href: string;
   children: ReactNode;
   className?: string;
@@ -49,13 +51,20 @@ export function ButtonLink({
   className,
   ariaLabel,
 }: ButtonLinkProps) {
+  const linkClassName = cn(buttonLinkVariants({ variant, size }), className);
+
+  if (href.startsWith("#")) {
+    return (
+      <a href={href} aria-label={ariaLabel} className={linkClassName}>
+        {children}
+      </a>
+    );
+  }
+
+  // Content-driven hrefs are non-literal strings — documented `as Route` cast.
   return (
-    <a
-      href={href}
-      aria-label={ariaLabel}
-      className={cn(buttonLinkVariants({ variant, size }), className)}
-    >
+    <Link href={href as Route} aria-label={ariaLabel} className={linkClassName}>
       {children}
-    </a>
+    </Link>
   );
 }

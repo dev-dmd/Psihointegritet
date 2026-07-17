@@ -1,10 +1,11 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
 import { MonogramAvatar } from "@/components/ui/monogram-avatar";
-import { therapists } from "@/content/homepage";
+import { therapists } from "@/content/therapists";
 import { cn } from "@/helpers/cn";
 
 import {
@@ -152,22 +153,23 @@ export function GuidanceDrawer({ onClose }: GuidanceDrawerProps) {
             </h3>
             <p className="text-coffee/70 mb-[30px] text-[15px] leading-[1.65]">
               {showServices
-                ? "Na osnovu vaših odgovora, pogledajte usluge i programe — a terapeuti su vam uvijek na raspolaganju za preporuku."
+                ? "Na osnovu vaših odgovora, pogledajte usluge i programe — a terapeuti su vam uvek na raspolaganju za preporuku."
                 : "Na osnovu vaših odgovora, ovi terapeuti najbliže odgovaraju onome što tražite. Prvi razgovor nije obaveza da nastavite."}
             </p>
 
             {!showServices ? (
               <div className="mb-8 flex flex-col gap-3">
                 {matched.map((therapist) => (
-                  <a
-                    key={therapist.id}
-                    href="#terapeuti"
+                  <Link
+                    key={therapist.slug}
+                    href={`/tim/${therapist.slug}`}
                     onClick={onClose}
                     className="bg-surface border-coffee/8 hover:shadow-row-hover flex items-center gap-4 rounded-[18px] border px-5 py-[18px] no-underline transition-shadow duration-200"
                   >
                     <MonogramAvatar
                       initials={therapist.initials}
                       name={therapist.name}
+                      imageSrc={therapist.image}
                       size="sm"
                     />
                     <span className="flex-1">
@@ -181,25 +183,25 @@ export function GuidanceDrawer({ onClose }: GuidanceDrawerProps) {
                     <span aria-hidden className="text-forest text-[15px]">
                       →
                     </span>
-                  </a>
+                  </Link>
                 ))}
               </div>
             ) : (
               <div className="mb-8 flex flex-col gap-3">
-                <a
-                  href="#usluge"
+                <Link
+                  href="/#usluge"
                   onClick={onClose}
                   className="bg-surface border-coffee/8 hover:shadow-row-hover flex items-center justify-between gap-4 rounded-[18px] border px-[22px] py-5 no-underline transition-shadow duration-200"
                 >
                   <span className="text-forest font-serif text-xl">
-                    Usluge i cjenovnik
+                    Usluge i cenovnik
                   </span>
                   <span aria-hidden className="text-forest">
                     →
                   </span>
-                </a>
-                <a
-                  href="#radionice"
+                </Link>
+                <Link
+                  href="/#radionice"
                   onClick={onClose}
                   className="bg-surface border-coffee/8 hover:shadow-row-hover flex items-center justify-between gap-4 rounded-[18px] border px-[22px] py-5 no-underline transition-shadow duration-200"
                 >
@@ -209,7 +211,7 @@ export function GuidanceDrawer({ onClose }: GuidanceDrawerProps) {
                   <span aria-hidden className="text-forest">
                     →
                   </span>
-                </a>
+                </Link>
               </div>
             )}
 
@@ -232,13 +234,13 @@ export function GuidanceDrawer({ onClose }: GuidanceDrawerProps) {
           ) : (
             <span />
           )}
-          <a
-            href="#terapeuti"
+          <Link
+            href="/tim"
             onClick={onClose}
             className="text-coffee/60 hover:text-forest text-sm font-medium underline underline-offset-[3px] transition-colors duration-200"
           >
             Zatvori i pregledaj terapeute
-          </a>
+          </Link>
         </div>
       </div>
     </>,

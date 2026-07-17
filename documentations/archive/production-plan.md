@@ -1,3 +1,16 @@
+> ## ⛔ SUPERSEDED — 2026-07-17
+>
+> **Status:** istorijski kontekst. **Nije izvor odluka.**
+> Obavezujuća su četiri dokumenta: `CLAUDE_CODE_MASTER_PLAN_v1_0.md`, `Psihointegritet_Razvojni_Proposal_v1_1.docx`, `IZMENE_POSTOJECEG_PROJEKTA_v1_0.md`, `ARCHITECTURAL_RULES_REVISED.md`.
+>
+> **Zamenjuje ga:** `CLAUDE_CODE_MASTER_PLAN_v1_0.md` §3 (release mapa R0–R7) i Proposal v1.1 §2 (faze 1–9)
+>
+> **Zašto je arhiviran:** `IZMENE_POSTOJECEG_PROJEKTA_v1_0.md` §6 ga proglašava preoptimističnim i prevaziđenim. Mapa M0–M6 je bila treća konkurentna mapa puta uz R0–R7 i Faze 1–9.
+>
+> **Šta i dalje vredi pročitati:** M0 je jedino mesto gde su `roles/access matrix`, `data-classification`, `content inventory` i `wireframe` nabrojani kao artefakti — IZMENE §2.4 ih planira po fazama, ne unapred.
+
+---
+
 Milestone 0 — Product foundation
 
 Trajanje: 3–5 radnih dana.

@@ -1,5 +1,20 @@
 # Psihointegritet Digitalni centar
 
+> ## ⚠️ STATUS — aktivan, ali podređen master planu
+>
+> **Autoritet #4** u redosledu iz `CLAUDE_CODE_MASTER_PLAN_v1_0.md` §0.
+> Ovo je jedini dokument sa modelom podataka (§6), granicama modula (§4.2), ADR listom (§16)
+> i redosledom implementacije (§15) — zato ostaje aktivan.
+>
+> **Gde se sudara sa master planom, master plan pobeđuje.** Dva poznata sudara:
+>
+> | Sudar | Ovaj dokument | Master plan (važi) |
+> |---|---|---|
+> | Status termina | §7 — 8 statusa, uklj. `reschedule_requested` | §6.1 — **11 statusa**: `held, requested, alternative_proposed, confirmed, change_requested, cancelled_by_client, cancelled_by_therapist, completed, no_show, declined, expired` (izvor: Engines §7.3) |
+> | Guidance perzistencija | §6 — predviđa tabele `guidance_sessions` i `guidance_answers` | **T13 i §11 zabranjuju** čuvanje odgovora u Release 1. Te tabele se **ne prave** |
+>
+> Model podataka u §6 je **superset** — tabela se dodaje tek kad njena funkcionalnost uđe u obim (master plan §3).
+
 ## Tehnička dokumentacija i arhitektura — v0.3
 
 **Status:** implementation baseline  

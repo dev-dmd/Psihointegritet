@@ -20,9 +20,14 @@ test("guided selection quiz recommends therapists", async ({ page }) => {
     .click();
 
   await expect(drawer).toContainText("Predlažemo da upoznate");
-  // Couples answer recommends A. S. and M. J. (deterministic rules).
-  await expect(drawer.getByRole("link", { name: /A\. S\./ })).toBeVisible();
-  await expect(drawer.getByRole("link", { name: /M\. J\./ })).toBeVisible();
+  // Couples answer recommends Anja and Marjan (deterministic rules).
+  const anja = drawer.getByRole("link", { name: /Anja Stamenković/ });
+  await expect(anja).toBeVisible();
+  await expect(
+    drawer.getByRole("link", { name: /Marjan Janković/ }),
+  ).toBeVisible();
+  // Recommendations link to the real profile route, not a homepage anchor.
+  await expect(anja).toHaveAttribute("href", "/tim/anja-stamenkovic");
   await expect(drawer).toContainText("Vaši odgovori se ne čuvaju");
 
   await drawer.getByRole("button", { name: "Zatvori" }).click();
@@ -56,7 +61,7 @@ test("quiz supports going back and the services outcome", async ({ page }) => {
 
   await expect(drawer).toContainText("Usluge i programi za vas");
   await expect(
-    drawer.getByRole("link", { name: /Usluge i cjenovnik/ }),
+    drawer.getByRole("link", { name: /Usluge i cenovnik/ }),
   ).toBeVisible();
   await expect(
     drawer.getByRole("link", { name: /Radionice i programi/ }),

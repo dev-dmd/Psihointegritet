@@ -1,10 +1,10 @@
 import { ArrowLink } from "@/components/ui/arrow-link";
 import { Chip } from "@/components/ui/chip";
 import { MonogramAvatar } from "@/components/ui/monogram-avatar";
-import type { TherapistProfile } from "@/content/homepage";
+import type { Therapist } from "@/types/therapist";
 
 interface TherapistCardProps {
-  therapist: TherapistProfile;
+  therapist: Therapist;
 }
 
 export function TherapistCard({ therapist }: TherapistCardProps) {
@@ -14,7 +14,7 @@ export function TherapistCard({ therapist }: TherapistCardProps) {
         <MonogramAvatar
           initials={therapist.initials}
           name={therapist.name}
-          imageSrc={therapist.imageSrc}
+          imageSrc={therapist.image}
         />
         <Chip variant="label">{therapist.badge}</Chip>
       </div>
@@ -50,7 +50,7 @@ export function TherapistCard({ therapist }: TherapistCardProps) {
         </div>
       </div>
       <div className="mt-auto pt-2">
-        <ArrowLink href="#usluge" circled>
+        <ArrowLink href={`/tim/${therapist.slug}`} circled>
           Upoznaj terapeuta
         </ArrowLink>
       </div>

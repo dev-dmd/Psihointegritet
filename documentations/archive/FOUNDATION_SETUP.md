@@ -1,3 +1,16 @@
+> ## ⛔ SUPERSEDED — 2026-07-17
+>
+> **Status:** istorijski kontekst. **Nije izvor odluka.**
+> Obavezujuća su četiri dokumenta: `CLAUDE_CODE_MASTER_PLAN_v1_0.md`, `Psihointegritet_Razvojni_Proposal_v1_1.docx`, `IZMENE_POSTOJECEG_PROJEKTA_v1_0.md`, `ARCHITECTURAL_RULES_REVISED.md`.
+>
+> **Zamenjuje ga:** sam kod (`frontend/package.json`, `backend/pyproject.toml`) i `ARCHITECTURAL_RULES_REVISED.md`
+>
+> **Zašto je arhiviran:** Temelj je izgrađen — pinovane verzije se sada čitaju iz koda, koji je istina. §3 traži kopiranje `product-scope.md` i `content-and-user-flow.md` koji nikad nisu postojali. §7.1 navodi port 8000, a `.env.example` 8001 (compose mapira `8001:8000` — nije pravi sudar, ali zbunjuje).
+>
+> **Šta i dalje vredi pročitati:** §12 (redosled uvoza dizajn-handoff-a) i dalje opisuje kako je homepage nastao.
+
+---
+
 # Psihointegritet — Foundation Setup
 
 **Version:** 1.0  

@@ -1,71 +1,108 @@
 import { describe, expect, it } from "vitest";
 
-import { therapists } from "@/content/homepage";
+import { therapists } from "@/content/therapists";
 
 import {
-  recommendTherapistIds,
+  recommendTherapistSlugs,
   recommendTherapists,
   wantsServices,
 } from "./quiz";
 
-describe("recommendTherapistIds", () => {
-  it("recommends only MS for adolescents", () => {
+const ANJA = "anja-stamenkovic";
+const MARIJA = "marija-stamenkovic";
+const MARJAN = "marjan-jankovic";
+
+describe("recommendTherapistSlugs", () => {
+  it("recommends only Marija for adolescents", () => {
     expect(
-      recommendTherapistIds(["Za adolescenta", null, null, null, null]),
-    ).toEqual(["ms"]);
+      recommendTherapistSlugs(["Za adolescenta", null, null, null, null]),
+    ).toEqual([MARIJA]);
   });
 
-  it("recommends AS and MJ for couples", () => {
+  it("recommends Anja and Marjan for couples", () => {
     expect(
-      recommendTherapistIds(["Za partnerski odnos", null, null, null, null]),
-    ).toEqual(["as", "mj"]);
+      recommendTherapistSlugs(["Za partnerski odnos", null, null, null, null]),
+    ).toEqual([ANJA, MARJAN]);
   });
 
-  it("recommends AS and MS for parents", () => {
+  it("recommends Anja and Marija for parents", () => {
     expect(
-      recommendTherapistIds(["Kao roditelj", null, null, null, null]),
-    ).toEqual(["as", "ms"]);
+      recommendTherapistSlugs(["Kao roditelj", null, null, null, null]),
+    ).toEqual([ANJA, MARIJA]);
   });
 
   it("maps the topic when support is for oneself", () => {
     expect(
-      recommendTherapistIds([
+      recommendTherapistSlugs([
         "Za sebe",
         "Samopouzdanje i granice",
         null,
         null,
         null,
       ]),
-    ).toEqual(["ms", "as"]);
+    ).toEqual([MARIJA, MARJAN]);
   });
 
   it("returns everyone when the user asks for all therapists", () => {
     expect(
-      recommendTherapistIds([
+      recommendTherapistSlugs([
         "Za adolescenta",
         null,
         null,
         null,
         "Sve dostupne terapeute",
       ]),
-    ).toEqual(["as", "ms", "mj"]);
+    ).toEqual([ANJA, MARIJA, MARJAN]);
   });
 
   it("falls back to everyone for an unknown topic", () => {
     expect(
-      recommendTherapistIds(["Za sebe", "Nisam siguran/na", null, null, null]),
-    ).toEqual(["as", "ms", "mj"]);
+      recommendTherapistSlugs([
+        "Za sebe",
+        "Nisam siguran/na",
+        null,
+        null,
+        null,
+      ]),
+    ).toEqual([ANJA, MARIJA, MARJAN]);
+  });
+
+  it("only ever recommends slugs that exist in the therapist data", () => {
+    const known = new Set(therapists.map((therapist) => therapist.slug));
+    const everySlug = [
+      ...recommendTherapistSlugs(["Za adolescenta", null, null, null, null]),
+      ...recommendTherapistSlugs([
+        "Za partnerski odnos",
+        null,
+        null,
+        null,
+        null,
+      ]),
+      ...recommendTherapistSlugs(["Kao roditelj", null, null, null, null]),
+      ...recommendTherapistSlugs(["Za sebe", "Roditeljstvo", null, null, null]),
+      ...recommendTherapistSlugs(["Za sebe", "Lični razvoj", null, null, null]),
+      ...recommendTherapistSlugs([
+        "Za sebe",
+        "Stres i iscrpljenost",
+        null,
+        null,
+        null,
+      ]),
+    ];
+    for (const slug of everySlug) {
+      expect(known).toContain(slug);
+    }
   });
 });
 
 describe("recommendTherapists", () => {
-  it("resolves ids to full profiles in recommendation order", () => {
+  it("resolves slugs to full profiles in recommendation order", () => {
     const result = recommendTherapists(
       ["Za partnerski odnos", null, null, null, null],
       therapists,
     );
-    expect(result.map((t) => t.id)).toEqual(["as", "mj"]);
-    expect(result[0]?.name).toBe("A. S.");
+    expect(result.map((therapist) => therapist.slug)).toEqual([ANJA, MARJAN]);
+    expect(result[0]?.name).toBe("Anja Stamenković");
   });
 });
 
