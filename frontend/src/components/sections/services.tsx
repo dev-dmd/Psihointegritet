@@ -17,7 +17,7 @@ export function Services() {
           <SectionHeading
             eyebrow="Usluge"
             title="Podrška prilagođena vašoj situaciji"
-            description="Svaka usluga jasno definiše šta uključuje, kome odgovara i koji je sljedeći korak."
+            description="Svaka usluga jasno definiše šta uključuje, kome odgovara i koji je sledeći korak."
             className="mb-14"
           />
           <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">

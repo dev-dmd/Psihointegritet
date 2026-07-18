@@ -32,6 +32,7 @@
 |---|---|
 | `technical-documentation-architecture-v0.3.md` | Autoritet #4. Jedini izvor modela podataka (§6), granica modula (§4.2), ADR liste (§16). **Gde se sudara sa master planom, master plan pobeđuje** — 2 poznata sudara u §10 ovde |
 | `PSIHOINTEGRITET_PRODUCT_ENGINES_ARCHITECTURE_v1_0.md` | Autoritet #6, **vodič a ne propis**. Master plan ga citira normativno iz M2.3 (§7.3) i M2.7 (§18) |
+| `PSIHOINTEGRITET_INTAKE_MATCHING_ENGINE_v0.1.md` | Spec za Intake & Matching demo (24 sekcije). Formalizuje R1.2 v1 u v0.1: feature flag `intake_matching_preview` (samo staging, mock adapteri, bez pravih upisa), timski panel, claim/reassignment, booking/notification integracione tačke. **Demo, ne produkcija** — vidi §5A ovde |
 
 ### Arhiva — `archive/`, ne uzimati odluke odatle
 
@@ -144,16 +145,16 @@ Svaki ima SUPERSEDED zaglavlje sa razlogom i zamenom. Arhivirano 2026-07-17: `PR
 | Ruta | Sadržaj | Status | Napomena |
 |---|---|---|---|
 | `/` | Homepage, 11 sekcija + `GuidanceLauncher` | ✅ | `(public)/page.tsx`; RSC |
-| — | Navigacija vezana na prave rute | ⬜ | Sad su sve anchor linkovi (`#usluge`, `#terapeuti`…) |
+| — | Navigacija vezana na prave rute | 🟡 | **2026-07-18:** „Terapeuti"→`/tim`, „Usluge"→`/usluge`, „Znanje i resursi"→`/znanje`, footer „Usluge" kolona→`/usluge`. Ostaju anchor dok rute ne postoje: „Pronađi podršku"→`/#podrska`, „Radionice"→`/#radionice` (S6), „O nama"→`/#onama` (O-02) |
 | — | Footer: pravni linkovi + brzi linkovi + postojeći logo | ⬜ | **Struktura odblokirana (D-007):** privatnost · uslovi · kolačići · pravila zakazivanja; brzi: tim · radionice · rad sa kompanijama |
 | `/pronadji-podrsku` | Vođeni izbor (kviz kao puna strana) | ⬜ | Vidi R1.2 |
 | `/oblasti-podrske` | Pregled tema — 10 oblasti | ⬜ | Izvor tema: `archive/PRODUCT_CONTEXT.md` §17 kao **nacrt**, uz potvrdu Anje |
 | `/oblasti-podrske/[slug]` | Objašnjenje, povezani terapeuti/usluge, CTA | ⬜ | — |
 | `/tim` | Zajednički pristup, vrednosti, kartice | ✅ | Zigzag po dizajnu; jedini izvor `content/therapists.ts` |
 | `/tim/[slug]` | 3 profila | 🟡 | **Napravljeno** — `anja-stamenkovic`, `marija-stamenkovic`, `marjan-jankovic`, sve tri SSG. Prave fotografije ✅. **Objava blokirana S1** — zvanja su generička (`draft`) |
-| `/usluge` | 3 usluge + trajanje/cena/format + „okvirne cene" | ⬜ | Cene T7; napomena o okvirnosti obavezna |
+| `/usluge` | 3 usluge + trajanje/cena/format + „okvirne cene" | ✅ | **2026-07-18** — `content/services.ts` (kanonski T7 katalog), `services-page.tsx`, PageHero. Obavezna napomena o okvirnim cenama prisutna. + „Ostale oblasti podrške" + CTA na kviz. ⚠️ homepage `Services` sekcija i dalje duplira cene (oba iz T7, dokumentovano u `services.ts`) |
 | `/radionice` | Informativno + „Prijavite interesovanje" | 🚫 S6 | **Bez datuma i bez prijave** dok S6 ne stigne |
-| `/znanje` | 3 najave članaka kao „u pripremi" | ⬜ | **Bez lažnih članaka** |
+| `/znanje` | 3 najave članaka kao „u pripremi" | ✅ | **2026-07-18** — `knowledge-page.tsx`, PageHero. 3 kartice sa „U PRIPREMI" oznakom, **bez „Pročitaj" linkova** (nema lažnih objavljenih članaka). Pravi članci = R3 Content Engine |
 | `/rad-sa-kompanijama` | B2B strana + forma | 🟡 | **Stranica napravljena** (D-013); ponuda, 3 koraka, CTA → `/#kontakt`. Forma čeka R1.3. Rešen D2 (hero 404) |
 | `/o-nama` | Misija, način rada, lokacije, prva seansa | 🟡 | Ime rešeno (D-006); **tekst o lokacijama i adrese otvoreni** (O-02) |
 | `/zakazi` | Forma zahteva za termin | ⬜ | Prefill `?terapeut=slug`. 🐞 `hero.tsx:70` linkuje na `/zakazivanje` → **404**, a spec kaže `/zakazi` |
@@ -235,6 +236,31 @@ Svaki ima SUPERSEDED zaglavlje sa razlogom i zamenom. Arhivirano 2026-07-17: `PR
 **Prihvatanje R1** (MP §5, 5 kriterijuma · Proposal §6): sve rute na mobilnom i desktopu, axe bez kritičnih · e2e zeleni (home→profil→`/zakazi`; home→kviz→preporuka→`/zakazi`; B2B forma) · obe forme validiraju, upisuju u PostgreSQL, obaveštavaju tim, potvrđuju korisniku i **preživljavaju pad Resend-a** · svaka površina za zahtev kaže da to nije potvrda · 0 nepotvrđenih zvanja, 0 stock portreta, 0 zabranjenih termina (T1–T4) · staging izolovan · **pisano prihvatanje Anje**.
 
 **Izričito van R1** (MP §5 · Proposal §6): nalozi i paneli · automatski slotovi · Google Calendar · plaćanje · CMS · zaštićeni resursi · chat/video · prijave na radionice.
+
+---
+
+## 5A. MVP Demo paket — za sastanak sa Anjom i timom
+
+> **Gde piše:** `PSIHOINTEGRITET_INTAKE_MATCHING_ENGINE_v0.1.md` · odluke D-021…D-024 · zahtev CTO 2026-07-18
+> **Šta je:** hardcoded, throwaway demo iza feature flag-a `intake_matching_preview` (spec §3) — samo staging/preview, mock adapteri, bez pravih upisa u produkcionu bazu. Cilj: Anja i tim na sastanku vide **ceo MVP tok** (sajt → sadržaj → matching → zakazivanje → anketa → izbor terapeuta → panel „Preuzmi") pre nego što se gradi pravi backend.
+> ⚠️ **Odstupanje od master plana §3** (pomera R4 B2B i R6 anketu unapred kao demo). Dozvoljeno jer je throwaway frontend iza flag-a, ne scaffolding pravih modula — zabeleženo u D-021. Pravi moduli ostaju R2/R4/R6.
+
+**Redosled (D-021):** Anketa → test → B2B konfigurator → demo booking-flow → *(zatim R2: role/paneli)*
+
+| ID | Zadatak | Gde piše | Status | Napomena |
+|---|---|---|---|---|
+| **D-A1** | **Research Drawer** — zaseban reusable drawer, odvojen od Matching-a (spec §17) | spec §17 · D-022 | ✅ | **2026-07-18** `features/research/*`; isti UI/UX kao guidance drawer, `surveyId`; `?survey=online-experience` auto-otvara (`research-context.tsx`, Suspense) |
+| D-A2 | Floating „?" preusmeriti na anketu (tooltip „Podelite mišljenje") | D-022 | ✅ | Guidance više nema floating dugme (matching iz „Zakaži termin"/hero/sekcije); „?" (`research-launcher.tsx`) otvara anketu, tooltip na hover |
+| D-A3 | Pitanja ankete (online vs uživo, poverenje u platformu, da li su koristili, šta ih koči) + opcioni tekst | D-022 | ✅ | `content/survey.ts` — 4 pitanja + opcioni komentar; anonimno, bez zdravstvenih podataka |
+| D-A4 | „Pošalji" → **mejl na `info@psihointegritet.com`** (D-016) | D-022 · D-024 | ✅ | `app/api/survey/route.ts` — Next Route Handler → Resend (bez baze; 503 ako nema ključa, ne pada). „Možda kasnije" zatvara/resetuje; nazad radi. 5 e2e (uklj. axe) zeleni |
+| **D-B1** | **B2B konfigurator** „Program podrške zaposlenima" | spec (B2B deo) · D-023 | ✅ | **2026-07-18** `features/company/*` + `content/company.ts`. 6 koraka (potrebe multi-select + uslovni „termina mesečno" za 12mo) → preporuka → kontakt. Ulazi: `/rad-sa-kompanijama` CTA + matching b2b „Konfigurišite program" (CompanyProvider obmotava sve) |
+| D-B2 | Hardcoded preporuka paketa + okvirne cene pre kontakt forme | D-023 | ✅ | `recommendCompanyPlan()` + 9 unit testova; 7 paketa; >30 zaposlenih → custom bez auto-cene. **Cene radne, Anja potvrđuje** (S-lista) |
+| D-B3 | „Pošalji upit" → mejl Anji/timu + auto-odgovor kompaniji | D-023 · D-024 | ✅ | `app/api/company-inquiry/route.ts` — Resend: strukturisan mejl na `info@` (replyTo kompanija) + auto-odgovor kompaniji. Bez zdravstvenih podataka. 4 e2e (uklj. axe) |
+| **D-C1** | **Demo booking-flow** — nastavak Matching rezultata: izbor termina → kontakt → saglasnost → „zahtev poslat" | spec §14, §18 · D-021 | ⬜ | Mock slotovi, ništa se ne rezerviše |
+| D-C2 | **Demo timski panel** — novi zahtevi, „Preuzmi", preference, matching pregled | spec §12, §13 · D-021 | ⬜ | **Bez auth-a, mock, in-memory** — pravi panel je R2 (M2.4). Pokazuje koncept „klijent postaje onog ko preuzme" (još nepotvrđeno) |
+| D-D1 | Feature flag `intake_matching_preview` (staging on, prod off) | spec §3 | ⬜ | Ako postoji Feature Engine — koristiti njega; inače env uslov |
+
+**Šta demo NE radi** (spec §3): ne šalje prave booking rezervacije · ne piše u produkcionu bazu · ne loguje odgovore · ne veže demo na stvarne naloge. *(Anketa i B2B upit **jesu** izuzetak — oni šalju pravi mejl na `info@`, jer to Anja traži kao stvarno prikupljanje podataka; sam matching/booking ostaje mock.)*
 
 ---
 
@@ -360,20 +386,20 @@ Svaki ima SUPERSEDED zaglavlje sa razlogom i zamenom. Arhivirano 2026-07-17: `PR
 
 ## 11. Sledeći korak
 
-**R0 kao zaseban plan i PR** — `chore/docs-and-terminology-alignment` (IZMENE §8):
+**Trenutno stanje (2026-07-18):** R0 uglavnom urađen; R1 rute — `/`, `/tim`, `/tim/[slug]`, `/rad-sa-kompanijama`, `/usluge`, `/znanje` gotove; Matching Engine v1 radi (hardcoded); `PageHero` obrazac ustanovljen.
 
-1. ✅ **R0.1.h–i** — `PRODUCT_DECISIONS.md`, `OPEN_DECISIONS.md`
-2. **R0.1.j** — root `CLAUDE.md`
-3. **R0.2** — sweep u jednom prolazu: T1/T2 + ekavica + kviz ključ + testovi. **Ovo ide pre novih ruta** — inače se novi sadržaj piše ijekavicom pa prepisuje
-4. **D16** — obrisati 3 stock portreta, prebaciti na monogram inicijala
-5. **R0.3.g–h** — `versions/.gitkeep` (D1) i `openapi.json` u git (D5)
-6. **D2/D3** — dva 404 linka iz `hero.tsx`
-7. Gates (MP §12) → completion report (rules §24) → potpis CTO
+**Dogovoreni redosled (D-021):**
 
-**Zatim R1.1** — `/tim` i `/tim/[slug]` su prve rute na redu (slug odblokiran D-006). Prave se sa generičkim zvanjima (`draft`) i monogramom; **objava čeka S1 + S13**.
+1. **MVP Demo paket (§5A)** — za Anjin sastanak, iza feature flag-a:
+   - **Anketa** (Research Drawer, D-A1…D-A4) → mejl na `info@` preko Next Route Handler + Resend
+   - **testiranje**
+   - **B2B konfigurator** (D-B1…D-B3) → mejl Anji
+   - **demo booking-flow + demo panel** (D-C1, D-C2) — mock, bez auth-a
+2. **Zatim R2** — organizacione role/uloge (M2.1), pravi paneli admin/terapeut/klijent (M2.4), pravi Booking Engine (M2.3). Čeka R1 prihvaćen + SoW.
+3. **Kasnije redom:** Znanje/resursi (R3) · Radionice/programi/B2B pravi (R4) · Online rad (R5) · Diagnostic/Analitika/Marketing engine — anketa „pravo" ovde (R6) · Multi-tenant (R7) · Affiliate (R8) · AI Layer (R9).
 
-**Paralelno, ne čeka kod:** poslati Anji rezime iz `OPEN_DECISIONS.md`. **Launch blokiraju S1 (zvanja), S13 (fotografije), S5 (pravni + krizni disclaimer) i kontakt podaci iz S10.**
+**Preostale nezablokirane R1 rute** (kad se vratimo na launch): `/oblasti-podrske` (+`[slug]`), `/pronadji-podrsku`. Blokirane čekaju tim/Anju: `/radionice` (S6), `/kontakt` (S10), pravne (S5), `/o-nama` lokacije (O-02), objava zvanja (S1).
 
-**Posle prihvatanja R1:** SoW za Fazu 2 (2A obavezno; 2B i M2.8 opciono) → R2.
+**Paralelno, ne čeka kod:** poslati Anji rezime iz `OPEN_DECISIONS.md`. **Launch blokiraju S1, S13✅, S5, S10.**
 
-> **Booking flow (napomena CTO, 2026-07-17):** flow se projektuje sa naše strane pre nego što se traži od klijenta — da se izbegnu zastareli zahtevi. Artefakt je `BOOKING_POLICY` (IZMENE §2.4), a ne kod: T6 već zaključava request-first, S7 daje pravila otkazivanja. **Dokument da, implementacija tek u M2.3** (Faza 2, čeka SoW).
+> **Booking flow (napomena CTO):** pravi flow se projektuje sa naše strane pre nego što se traži od klijenta. Demo (§5A) je taj artefakt — pokazuje flow i podatke Anji. Prava implementacija je M2.3 (R2, čeka SoW).

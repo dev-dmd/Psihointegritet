@@ -4,6 +4,7 @@ import { Reveal } from "@/components/motion/reveal";
 import { PageHero } from "@/components/shared/page-hero";
 import { Chip } from "@/components/ui/chip";
 import { Eyebrow } from "@/components/ui/eyebrow";
+import { CompanyCta } from "@/features/company/company-cta";
 
 const offerings = [
   {
@@ -41,12 +42,13 @@ export function CompaniesPage() {
           <h1 className="text-coffee mb-[18px] font-serif text-[clamp(30px,8.5vw,40px)] leading-[1.06] font-normal tracking-[-0.015em] text-pretty md:text-[52px]">
             Rad sa kompanijama
           </h1>
-          <p className="text-coffee/72 text-[16.5px] leading-[1.65]">
+          <p className="text-coffee/72 mb-8 text-[16.5px] leading-[1.65]">
             Radionice, edukacije i psihološka podrška za timove i zaposlene —
             osmišljene tako da podrže mentalno zdravlje u radnom okruženju, sa
             istim principima poverljivosti i stručnosti kao i naš rad sa
             klijentima.
           </p>
+          <CompanyCta variant="coffee">Konfigurišite program</CompanyCta>
         </div>
       </PageHero>
 

@@ -125,10 +125,9 @@ test("Rad sa kompanijama ends the quiz and offers the B2B page", async ({
 
   await drawer.getByRole("button", { name: "Rad sa kompanijama" }).click();
 
-  await expect(drawer).toContainText("Podrška za timove i zaposlene");
-  await drawer
-    .getByRole("link", { name: /Pogledaj rad sa kompanijama/ })
-    .click();
+  // B2B branch: the „Program podrške zaposlenima" configurator + a page link.
+  await expect(drawer).toContainText("Program podrške zaposlenima");
+  await drawer.getByRole("link", { name: "Saznajte više" }).click();
   await expect(page).toHaveURL(/\/rad-sa-kompanijama$/);
 });
 

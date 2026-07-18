@@ -6,6 +6,7 @@ import { createPortal } from "react-dom";
 
 import { MonogramAvatar } from "@/components/ui/monogram-avatar";
 import { therapists } from "@/content/therapists";
+import { useCompany } from "@/features/company/company-context";
 import { cn } from "@/helpers/cn";
 
 import type { GuidanceEntry } from "./guidance-context";
@@ -524,25 +525,39 @@ function TeamResult({ onClose }: { onClose: () => void }) {
 }
 
 function B2bResult({ onClose }: { onClose: () => void }) {
+  const { openCompany } = useCompany();
   return (
     <>
       <div className="text-sage mb-3.5 text-[12.5px] font-semibold tracking-[0.16em] uppercase">
         Rad sa kompanijama
       </div>
       <h3 className="text-forest mb-3 font-serif text-[26px] leading-[1.15] font-normal text-pretty">
-        Podrška za timove i zaposlene
+        Program podrške zaposlenima
       </h3>
       <p className="text-coffee/70 mb-6 text-[15px] leading-[1.65]">
-        Radionice, edukacije i psihološka podrška prilagođene organizacijama.
-        Pogledajte kako izgleda saradnja i javite nam se za ponudu.
+        Kreirajte okvirni model podrške prema veličini tima i potrebama
+        zaposlenih. Popunjavanje traje oko dva minuta i ne traži zdravstvene
+        podatke.
       </p>
-      <Link
-        href="/rad-sa-kompanijama"
-        onClick={onClose}
-        className="bg-forest text-canvas hover:bg-forest-hover inline-flex items-center gap-2.5 rounded-full px-[26px] py-3.5 text-[15px] font-semibold no-underline transition-colors"
-      >
-        Pogledaj rad sa kompanijama <span aria-hidden>→</span>
-      </Link>
+      <div className="flex flex-wrap items-center gap-3">
+        <button
+          type="button"
+          onClick={() => {
+            onClose();
+            openCompany();
+          }}
+          className="bg-forest text-canvas hover:bg-forest-hover inline-flex cursor-pointer items-center gap-2.5 rounded-full border-0 px-[26px] py-3.5 text-[15px] font-semibold transition-colors"
+        >
+          Konfigurišite program <span aria-hidden>→</span>
+        </button>
+        <Link
+          href="/rad-sa-kompanijama"
+          onClick={onClose}
+          className="text-coffee/60 hover:text-forest text-sm font-medium underline underline-offset-[3px] transition-colors"
+        >
+          Saznajte više
+        </Link>
+      </div>
     </>
   );
 }

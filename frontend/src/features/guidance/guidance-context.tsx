@@ -10,7 +10,6 @@ import {
 import type { ReactNode } from "react";
 
 import { GuidanceDrawer } from "./guidance-drawer";
-import { GuidanceLauncher } from "./guidance-launcher";
 
 /** Where the drawer starts: the two-way chooser, or straight into the quiz. */
 export type GuidanceEntry = "chooser" | "quiz";
@@ -54,7 +53,9 @@ export function GuidanceProvider({ children }: { children: ReactNode }) {
   return (
     <GuidanceContext.Provider value={value}>
       {children}
-      <GuidanceLauncher open={entry !== null} onOpen={openQuiz} />
+      {/* No floating launcher — matching opens from „Zakaži termin", the hero
+          and the „Vođeni izbor" section. The floating „?" now opens the
+          research survey (see ResearchProvider). */}
       {entry !== null ? <GuidanceDrawer entry={entry} onClose={close} /> : null}
     </GuidanceContext.Provider>
   );

@@ -1,20 +1,28 @@
 import { SiteFooter } from "@/components/sections/site-footer";
 import { SiteHeader } from "@/components/sections/site-header";
+import { CompanyProvider } from "@/features/company/company-context";
 import { GuidanceProvider } from "@/features/guidance/guidance-context";
+import { ResearchProvider } from "@/features/research/research-context";
 
 /**
- * Chrome shared by every public page: header, footer and the guided-selection
- * drawer. Scoped to the (public) group so the marketing chrome never leaks into
- * (auth), (client) or (staff).
+ * Chrome shared by every public page: header, footer, the guided-selection
+ * drawer (opened from CTAs), the research survey (the floating „?") and the B2B
+ * configurator. CompanyProvider wraps the others so the matching drawer's B2B
+ * branch can open the configurator directly. Scoped to the (public) group so
+ * the marketing chrome never leaks into (auth), (client) or (staff).
  */
 export default function PublicLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <GuidanceProvider>
-      <SiteHeader />
-      <main>{children}</main>
-      <SiteFooter />
-    </GuidanceProvider>
+    <CompanyProvider>
+      <GuidanceProvider>
+        <ResearchProvider>
+          <SiteHeader />
+          <main>{children}</main>
+          <SiteFooter />
+        </ResearchProvider>
+      </GuidanceProvider>
+    </CompanyProvider>
   );
 }

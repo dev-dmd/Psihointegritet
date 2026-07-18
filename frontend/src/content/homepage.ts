@@ -97,9 +97,9 @@ export interface FaqItem {
 export const navLinks: NavLink[] = [
   { label: "Pronađi podršku", href: "/#podrska" },
   { label: "Terapeuti", href: "/tim" },
-  { label: "Usluge", href: "/#usluge" },
+  { label: "Usluge", href: "/usluge" },
   { label: "Radionice", href: "/#radionice" },
-  { label: "Znanje i resursi", href: "/#resursi" },
+  { label: "Znanje i resursi", href: "/znanje" },
   { label: "O nama", href: "/#onama" },
 ];
 
@@ -119,9 +119,9 @@ export const clientLink: ClientLink = {
 
 /** Service names are fixed by T1 („Bračno savetovanje") and T2 („Psihoterapijsko savetovanje"). */
 export const footerServiceLinks: NavLink[] = [
-  { label: "Individualna psihoterapija", href: "/#usluge" },
-  { label: "Bračno savetovanje", href: "/#usluge" },
-  { label: "Psihoterapijsko savetovanje", href: "/#usluge" },
+  { label: "Individualna psihoterapija", href: "/usluge" },
+  { label: "Bračno savetovanje", href: "/usluge" },
+  { label: "Psihoterapijsko savetovanje", href: "/usluge" },
   { label: "Radionice", href: "/#radionice" },
 ];
 
