@@ -11,8 +11,8 @@ export function Resources() {
         <Reveal>
           <SectionHeading
             eyebrow="Znanje i resursi"
-            title="Razumijevanje može biti prvi korak."
-            description="Ne morate odmah imati sve odgovore niti biti spremni za psihoterapiju. Stručni tekstovi i vodiči mogu vam pomoći da bolje razumijete ono kroz šta prolazite, prepoznate svoje potrebe i odlučite koji naredni korak vam najviše odgovara."
+            title="Razumevanje može biti prvi korak."
+            description="Ne morate odmah imati sve odgovore niti biti spremni za psihoterapiju. Stručni tekstovi i vodiči mogu vam pomoći da bolje razumete ono kroz šta prolazite, prepoznate svoje potrebe i odlučite koji naredni korak vam najviše odgovara."
             className="mb-14 max-w-[680px]"
           />
           <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
@@ -30,7 +30,7 @@ export function Resources() {
             </div>
             <div className="text-coffee/45 mt-2.5 max-w-[560px] text-[12.5px]">
               Sadržaji imaju edukativnu svrhu i ne predstavljaju dijagnozu niti
-              zamjenu za individualni razgovor sa stručnom osobom.
+              zamenu za individualni razgovor sa stručnom osobom.
             </div>
           </div>
         </Reveal>

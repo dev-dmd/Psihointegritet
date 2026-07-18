@@ -17,7 +17,7 @@ export function FirstSession() {
                 Prvi razgovor nije obaveza da nastavite terapiju.
               </h2>
               <p className="text-canvas/75 mb-[34px] max-w-[480px] text-[16.5px] leading-[1.7]">
-                To je prilika da procijenite da li vam terapeut i način rada
+                To je prilika da procenite da li vam terapeut i način rada
                 odgovaraju — u svom tempu, bez pritiska.
               </p>
               <ButtonLink href="#podrska" variant="warm">

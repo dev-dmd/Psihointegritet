@@ -27,7 +27,7 @@ export const metadata: Metadata = {
     template: "%s | Psihointegritet",
   },
   description:
-    "Psihointegritet povezuje psihoterapiju, savjetovanje, edukativne sadržaje, radionice i programe ličnog razvoja — online i uživo.",
+    "Psihointegritet povezuje psihoterapiju, savetovanje, edukativne sadržaje, radionice i programe ličnog razvoja — online i uživo.",
 };
 
 export default function RootLayout({

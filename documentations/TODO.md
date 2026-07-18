@@ -96,7 +96,7 @@ Svaki ima SUPERSEDED zaglavlje sa razlogom i zamenom. Arhivirano 2026-07-17: `PR
 |---|---|---|---|---|
 | R0.2.a | `footerServiceLinks`: „Partnersko savjetovanje" → **„Bračno savetovanje"** | MP §4 R0.2 · MP §1 T1 | ⬜ | `src/content/homepage.ts:128` |
 | R0.2.b | „Psihološko savjetovanje" → **„Psihoterapijsko savetovanje"** | MP §4 R0.2 · MP §1 T2 | ⬜ | `homepage.ts:129` i `:255` (midServices) |
-| R0.2.c | Ekavica u celom `src/`, **osim Anjinog ličnog sadržaja** | MP §1 T9 (D-017, 2026-07-18) | 🟡 | `content/therapists.ts` **gotovo** — Anjin `quote`/`bio`/`cardExcerpt` su namerno ijekavica (D-017), ostatak fajla ekavica. **Preostaje:** `homepage.ts` (18+ linija) i komponente `hero.tsx`, `site-footer.tsx`, `workshop.tsx`, `faq.tsx`, `resources.tsx`, `support-paths.tsx` — obrisati i komentar „Ijekavica is intentional" (`homepage.ts:3`, zastareo) |
+| R0.2.c | Ekavica u celom `src/`, **osim Anjinog ličnog sadržaja** | MP §1 T9 (D-017, 2026-07-18) | ✅ | Kompletirano 2026-07-18. `homepage.ts` (uklj. zastareo komentar „Ijekavica is intentional") i 7 komponenti (`hero.tsx`, `site-footer.tsx`, `workshop.tsx`, `faq.tsx`, `resources.tsx`, `support-paths.tsx`, `first-session.tsx`, `layout.tsx` meta opis) na ekavici. `content/therapists.ts`: Anjin `quote`/`bio`/`cardExcerpt` namerno ijekavica (D-017), ostatak fajla ekavica. Grep preko celog `src/` potvrđuje 0 preostalih ijekavskih reči van Anjinog sadržaja |
 | R0.2.d | Ukloniti „pod supervizijom" iz zvanja | MP §4 R0.2 · MP §1 T3 | 🚫 S1 | `homepage.ts:187`, `:205`, `:217` — sva tri terapeuta |
 | R0.2.e | Kviz: „Za partnerski odnos" | MP §4 R0.2 | ⬜ | **Nosivo, ne kozmetika:** ključ rečnika u `quiz.ts:83`, tvrdnja u `quiz.test.ts:20,64` i `tests/e2e/guidance.spec.ts:14`. Logika + testovi menjaju se zajedno |
 | R0.2.f | 3 duge biografije kao `draft` sadržaj | MP §4 R0.2 · IZMENE §3 | 🚫 S1 | — |
@@ -139,6 +139,7 @@ Svaki ima SUPERSEDED zaglavlje sa razlogom i zamenom. Arhivirano 2026-07-17: `PR
 
 > **Gde piše:** MP §5 R1.1 · Proposal §6 M1.3 · v0.3 §15 („Design integration")
 > Pravila: profil = monogram inicijala (**nikad stock portret pod pravim imenom**), samo potvrđeno zvanje, formati, grad, CTA → `/zakazi?terapeut=slug`. Teme se čitaju kao životne situacije, ne dijagnoze. Neaktivne oblasti = „U pripremi" + forma interesovanja, **nikad dugme za zakazivanje**.
+> **UI pravilo (D-019, 2026-07-18):** svaka javna stranica otvara se sa `components/shared/page-hero.tsx` — zaobljen blok (`rounded-3xl md:rounded-[32px]`), `bg-surface` po default-u, bez posebne sekcije koja se preklapa negativnom marginom. Već primenjeno na `/tim`, `/tim/[slug]`, `/rad-sa-kompanijama` — **preostale rute iz tabele ispod (`/usluge`, `/o-nama`, `/kontakt`, pravne stranice…) treba da koriste isti obrazac kad se prave.**
 
 | Ruta | Sadržaj | Status | Napomena |
 |---|---|---|---|
@@ -320,7 +321,7 @@ Svaki ima SUPERSEDED zaglavlje sa razlogom i zamenom. Arhivirano 2026-07-17: `PR
 |---|---|---|---|
 | ~~D16~~ | ~~Tri stock portreta pod `imageSrc` terapeuta~~ | — | ✅ **REŠENO 2026-07-17** — obrisani, zamenjeni pravim fotografijama |
 | D1 | `versions/` prazan **i netrackovan**, a `railway.json:10` na deploy pokreće `alembic upgrade head` → **puca na fresh clone** | `backend/src/psihointegritet/db/migrations/versions/` | 🔴 latentan deploy failure |
-| D17 | **Footer i još 5 komponenti su i dalje ijekavica** i sad se vide na svakoj javnoj stranici: `site-footer.tsx` („savjetovanje… na jednom mjestu", „zamjenu"), `hero.tsx` („razumijevanje", „savjetovanje"), `workshop.tsx`, `faq.tsx`, `resources.tsx`, `support-paths.tsx`. Isto i `homepage.ts` — `midServices` („Partnersko savjetovanje", „Psihološko savjetovanje" — **T1/T2**), `reasons`, `featuredService` | `content/homepage.ts` + 6 komponenti | 🟠 **R0.2 sweep** — **Anjin lični sadržaj (`content/therapists.ts`) je izuzet** (D-017: ona lično piše ijekavicom), sve ostalo ide na ekavicu |
+| ~~D17~~ | ~~Footer i još komponenti su i dalje ijekavica~~ | — | ✅ **REŠENO 2026-07-18** — `homepage.ts` + 7 komponenti (`hero`, `site-footer`, `workshop`, `faq`, `resources`, `support-paths`, `first-session`) prebačeni na ekavicu; usput ispravljen i T1/T2 u `midServices` („Partnersko savjetovanje"→„Bračno savetovanje", „Psihološko savjetovanje"→„Psihoterapijsko savetovanje"). Anjin lični sadržaj u `content/therapists.ts` ostaje ijekavica (D-017) |
 | D18 | Footer prikazuje **nepotvrđen email** `kontakt@psihointegritet.rs` i „Niš · online i uživo" (centar ima i Leskovac) | `site-footer.tsx:22-28` | 🟠 S10/O-06 |
 | ~~D2~~ | ~~404: „Za organizacije" u hero kartici~~ | — | ✅ **REŠENO 2026-07-17** — `/rad-sa-kompanijama` napravljena, hero kartica je sad `Link` |
 | ~~D3~~ | ~~404: „Već ste klijent?"~~ | — | ✅ **REŠENO 2026-07-17** — link postao chooser trigger („Znam kog terapeuta"), ne ruta; taj use case je baš to |

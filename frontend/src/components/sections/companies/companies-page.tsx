@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { Reveal } from "@/components/motion/reveal";
+import { PageHero } from "@/components/shared/page-hero";
 import { Chip } from "@/components/ui/chip";
 import { Eyebrow } from "@/components/ui/eyebrow";
 
@@ -32,22 +33,22 @@ const steps = [
 export function CompaniesPage() {
   return (
     <>
-      <section className="scroll-mt-24 pt-[120px] md:pt-44">
-        <div className="mx-auto max-w-[1536px] px-5 md:px-8">
-          <div className="max-w-[680px]">
-            <Eyebrow className="mb-4">Za organizacije</Eyebrow>
-            <h1 className="text-forest mb-[18px] font-serif text-[clamp(30px,8.5vw,40px)] leading-[1.06] font-normal tracking-[-0.015em] text-pretty md:text-[52px]">
-              Rad sa kompanijama
-            </h1>
-            <p className="text-coffee/72 text-[16.5px] leading-[1.65]">
-              Radionice, edukacije i psihološka podrška za timove i zaposlene —
-              osmišljene tako da podrže mentalno zdravlje u radnom okruženju, sa
-              istim principima poverljivosti i stručnosti kao i naš rad sa
-              klijentima.
-            </p>
-          </div>
+      <PageHero tone="warm">
+        <div className="max-w-[680px]">
+          <Eyebrow tone="coffee" className="mb-4">
+            Za organizacije
+          </Eyebrow>
+          <h1 className="text-coffee mb-[18px] font-serif text-[clamp(30px,8.5vw,40px)] leading-[1.06] font-normal tracking-[-0.015em] text-pretty md:text-[52px]">
+            Rad sa kompanijama
+          </h1>
+          <p className="text-coffee/72 text-[16.5px] leading-[1.65]">
+            Radionice, edukacije i psihološka podrška za timove i zaposlene —
+            osmišljene tako da podrže mentalno zdravlje u radnom okruženju, sa
+            istim principima poverljivosti i stručnosti kao i naš rad sa
+            klijentima.
+          </p>
         </div>
-      </section>
+      </PageHero>
 
       <section className="pt-[72px] md:pt-24">
         <div className="mx-auto max-w-[1536px] px-5 md:px-8">

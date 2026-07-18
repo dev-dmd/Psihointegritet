@@ -38,7 +38,7 @@ export function SupportPaths() {
                 </h3>
                 <p className="text-coffee/72 text-[15.5px] leading-[1.65]">
                   Pregledajte profile, pristupe i oblasti rada — pa izaberite
-                  osobu koja vam uliva povjerenje.
+                  osobu koja vam uliva poverenje.
                 </p>
               </div>
               <div>
