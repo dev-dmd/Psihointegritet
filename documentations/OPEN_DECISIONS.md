@@ -61,12 +61,14 @@ Otvorene odluke. **Doneto ide u `PRODUCT_DECISIONS.md`** i briše se odavde.
 > **Gde piše:** MP §13 S10 · Proposal §4 #3 · **Blokira:** `/kontakt`, Resend, JSON-LD, R1.5
 
 **Rešeno (D-007):** struktura footera, brzi linkovi, **postojeći logo**.
+**Delimično rešeno (D-016, 2026-07-18):** email adrese kreirane — po jedna za svakog od troje u timu, plus `info@psihointegritet.com`; Resend šalje sistemske/verifikacione mejlove sa `noreply@`. **Nijedna još nije upisana u kod ni u `.env.example`.**
 
 **I dalje otvoreno:**
 
 | # | Potrebno | Blokira |
 |---|---|---|
-| 1 | Email adrese (`info@`, `termini@` ili druge) | Resend verifikacija domena + SPF/DKIM/DMARC uz Zoho MX (R1.5.b/c), potvrde iz formi (R1.3.i) |
+| 1a | Da li `termini@` postoji kao posebna adresa za zahteve za termin, ili sve ide na `info@`? | R1.3.i — koja adresa prima obaveštenja o novim zahtevima |
+| 1b | Upisati kreirane adrese u `.env.example` (FE i BE) i povezati u kod | R1.3.i |
 | 2 | Telefon | `/kontakt`, footer |
 | 3 | Linkovi ka društvenim mrežama | Footer |
 | 4 | Adrese lokacija (Niš, Leskovac) | JSON-LD `LocalBusiness` (R1.4.d), `/o-nama` |

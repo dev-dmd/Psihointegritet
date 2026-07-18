@@ -96,7 +96,7 @@ Svaki ima SUPERSEDED zaglavlje sa razlogom i zamenom. Arhivirano 2026-07-17: `PR
 |---|---|---|---|---|
 | R0.2.a | `footerServiceLinks`: „Partnersko savjetovanje" → **„Bračno savetovanje"** | MP §4 R0.2 · MP §1 T1 | ⬜ | `src/content/homepage.ts:128` |
 | R0.2.b | „Psihološko savjetovanje" → **„Psihoterapijsko savetovanje"** | MP §4 R0.2 · MP §1 T2 | ⬜ | `homepage.ts:129` i `:255` (midServices) |
-| R0.2.c | Ekavica u celom `src/` | MP §1 T9 (ispravljeno 2026-07-17) | ⬜ | ~15 fajlova; `homepage.ts` ima 18 ijekavskih linija; obrisati komentar „Ijekavica is intentional" (`homepage.ts:3`) |
+| R0.2.c | Ekavica u celom `src/`, **osim Anjinog ličnog sadržaja** | MP §1 T9 (D-017, 2026-07-18) | 🟡 | `content/therapists.ts` **gotovo** — Anjin `quote`/`bio`/`cardExcerpt` su namerno ijekavica (D-017), ostatak fajla ekavica. **Preostaje:** `homepage.ts` (18+ linija) i komponente `hero.tsx`, `site-footer.tsx`, `workshop.tsx`, `faq.tsx`, `resources.tsx`, `support-paths.tsx` — obrisati i komentar „Ijekavica is intentional" (`homepage.ts:3`, zastareo) |
 | R0.2.d | Ukloniti „pod supervizijom" iz zvanja | MP §4 R0.2 · MP §1 T3 | 🚫 S1 | `homepage.ts:187`, `:205`, `:217` — sva tri terapeuta |
 | R0.2.e | Kviz: „Za partnerski odnos" | MP §4 R0.2 | ⬜ | **Nosivo, ne kozmetika:** ključ rečnika u `quiz.ts:83`, tvrdnja u `quiz.test.ts:20,64` i `tests/e2e/guidance.spec.ts:14`. Logika + testovi menjaju se zajedno |
 | R0.2.f | 3 duge biografije kao `draft` sadržaj | MP §4 R0.2 · IZMENE §3 | 🚫 S1 | — |
@@ -191,11 +191,15 @@ Svaki ima SUPERSEDED zaglavlje sa razlogom i zamenom. Arhivirano 2026-07-17: `PR
 | R1.3.f | `POST /public/inquiries` — `create_public_inquiry` | MP §5 R1.3 | ⬜ |
 | R1.3.g | `POST /public/appointment-requests` — `create_appointment_request` | MP §5 R1.3 | ⬜ |
 | R1.3.h | Honeypot + Upstash rate limit (IP+email) + limit veličine zahteva | MP §5 R1.3 | ⬜ |
-| R1.3.i | Resend: obaveštenje timu + potvrda korisniku | MP §5 R1.3 · Proposal §6 M1.4 | 🚫 S10 |
+| R1.3.i | Resend: obaveštenje timu + potvrda korisniku | MP §5 R1.3 · Proposal §6 M1.4 | 🟡 |
+| R1.3.i.1 | `EmailService` + deljeni email wrapper — isti dizajn za sve mejlove | zahtev CTO 2026-07-18 | ⬜ |
 | R1.3.j | Potvrda **mora** reći „zahtev nije potvrda termina" | MP §5 R1.3 · MP §5 Acceptance 3 · Proposal §6 | ⬜ |
 | R1.3.k | Graciozan pad kad Resend zakaže (retry, log, correlation ID) | MP §5 Acceptance 2 | ⬜ |
 | R1.3.l | Forme: RHF + Zod, inline greške, pending, success | MP §5 R1.3 | ⬜ |
 | R1.3.m | `note` copy: **ne unositi zdravstvene detalje**; nikad logovati sadržaj poruke | MP §5 R1.3 · MP §11 | ⬜ |
+
+> **R1.3.i 🟡** — Delimično odblokirano (D-016). Adrese kreirane (O-06): po jedna za svakog terapeuta + `info@psihointegritet.com`; Resend šalje sistemske/verifikacione mejlove sa `noreply@`. `RESEND_API_KEY` postavljen u `frontend/.env.local` — **nije u `.env.example` ni na jednoj strani, 0 pominjanja u kodu**. ⚠️ Stvarno slanje ide iz **backend-a** (rules §1.1 — business CRUD nije u frontendu); ključ treba replicirati u backend env kad R1.3 počne. Lokacija templejta (react-email FE vs Jinja BE) je već otvoreno pitanje iz MP §6.1 — „decide by ADR".
+> **R1.3.i.1** — Novo (D-016). Jedan wrapper/layout za tim-obaveštenje, korisničku potvrdu i Resend `noreply@` verifikacije, isti dizajn svuda. Čeka odluku FE/BE lokacije (gore) pre nego što se piše kod.
 
 ### R1.4 — SEO, analitika, pristupačnost, performanse
 
@@ -214,14 +218,18 @@ Svaki ima SUPERSEDED zaglavlje sa razlogom i zamenom. Arhivirano 2026-07-17: `PR
 
 | ID | Zadatak | Gde piše | Status |
 |---|---|---|---|
-| R1.5.a | Domen na nalogu Psihointegriteta + DNS + SSL + `www` redirect | MP §5 R1.5 · Proposal §6 M1.5 | ⬜ |
-| R1.5.b | Resend verifikacija domena (SPF/DKIM/DMARC) uz Zoho MX | MP §5 R1.5 | 🚫 S10 |
+| R1.5.a | Domen na nalogu Psihointegriteta + DNS + SSL + `www` redirect | MP §5 R1.5 · Proposal §6 M1.5 | 🟡 |
+| R1.5.b | Resend verifikacija domena (SPF/DKIM/DMARC) uz Zoho MX | MP §5 R1.5 | ✅ |
 | R1.5.c | Adrese `info@`, `termini@` | MP §5 R1.5 | 🚫 S10 |
-| R1.5.d | Odvojeni staging i produkcija; preview nikad ne dira prod podatke | MP §5 R1.5 · MP §14 | ⬜ |
+| R1.5.d | Odvojeni staging i produkcija; preview nikad ne dira prod podatke | MP §5 R1.5 · MP §14 | 🟡 |
 | R1.5.e | Sentry (PII scrubbing) na oba app-a | MP §5 R1.5 | ⬜ |
 | R1.5.f | Uptime check na `/api/v1/health` | MP §5 R1.5 | ⬜ |
 | R1.5.g | Content freeze → **pisana saglasnost Anje** po stranicama | MP §5 R1.5 · MP §5 Acceptance 5 | ⬜ |
 | R1.5.h | Deploy → smoke testovi → launch beleška u `PRODUCT_DECISIONS.md` | MP §5 R1.5 | ⬜ |
+
+> **R1.5.a 🟡** — `psihointegritet.com` kupljen (2026-07-17, D-015). `qa.` (features) i `staging.` poddomeni u pripremi na Vercel-u. SSL/`www` redirect za apex domen — proveriti pri produkcijskom deployu.
+> **R1.5.b ✅** — Verifikovano 2026-07-17 (D-015). Resend API ključ dodat; slanje sa `@psihointegritet.com` adresa radi. Ne čeka više S10.
+> **R1.5.d 🟡** — Odvojeni Railway servisi za qa i staging (D-015) — svaki dobija sopstveni `CORS_ORIGINS`, ne mešati. Backend `CORS_ORIGINS` na svakom servisu mora sadržati tačno svoj frontend domen (`main.py:47-53` čita listu iz env-a).
 
 **Prihvatanje R1** (MP §5, 5 kriterijuma · Proposal §6): sve rute na mobilnom i desktopu, axe bez kritičnih · e2e zeleni (home→profil→`/zakazi`; home→kviz→preporuka→`/zakazi`; B2B forma) · obe forme validiraju, upisuju u PostgreSQL, obaveštavaju tim, potvrđuju korisniku i **preživljavaju pad Resend-a** · svaka površina za zahtev kaže da to nije potvrda · 0 nepotvrđenih zvanja, 0 stock portreta, 0 zabranjenih termina (T1–T4) · staging izolovan · **pisano prihvatanje Anje**.
 
@@ -312,7 +320,7 @@ Svaki ima SUPERSEDED zaglavlje sa razlogom i zamenom. Arhivirano 2026-07-17: `PR
 |---|---|---|---|
 | ~~D16~~ | ~~Tri stock portreta pod `imageSrc` terapeuta~~ | — | ✅ **REŠENO 2026-07-17** — obrisani, zamenjeni pravim fotografijama |
 | D1 | `versions/` prazan **i netrackovan**, a `railway.json:10` na deploy pokreće `alembic upgrade head` → **puca na fresh clone** | `backend/src/psihointegritet/db/migrations/versions/` | 🔴 latentan deploy failure |
-| D17 | **Footer je i dalje ijekavica i sad se vidi na svakoj javnoj stranici**: „savjetovanje… na jednom mjestu", „zamjenu za individualni razgovor". Isto i `midServices` („Partnersko savjetovanje", „Psihološko savjetovanje" — **T1/T2**), `reasons`, `featuredService` („Cijena") | `content/homepage.ts`, `site-footer.tsx` | 🟠 **R0.2 sweep** — ostatak homepage sadržaja |
+| D17 | **Footer i još 5 komponenti su i dalje ijekavica** i sad se vide na svakoj javnoj stranici: `site-footer.tsx` („savjetovanje… na jednom mjestu", „zamjenu"), `hero.tsx` („razumijevanje", „savjetovanje"), `workshop.tsx`, `faq.tsx`, `resources.tsx`, `support-paths.tsx`. Isto i `homepage.ts` — `midServices` („Partnersko savjetovanje", „Psihološko savjetovanje" — **T1/T2**), `reasons`, `featuredService` | `content/homepage.ts` + 6 komponenti | 🟠 **R0.2 sweep** — **Anjin lični sadržaj (`content/therapists.ts`) je izuzet** (D-017: ona lično piše ijekavicom), sve ostalo ide na ekavicu |
 | D18 | Footer prikazuje **nepotvrđen email** `kontakt@psihointegritet.rs` i „Niš · online i uživo" (centar ima i Leskovac) | `site-footer.tsx:22-28` | 🟠 S10/O-06 |
 | ~~D2~~ | ~~404: „Za organizacije" u hero kartici~~ | — | ✅ **REŠENO 2026-07-17** — `/rad-sa-kompanijama` napravljena, hero kartica je sad `Link` |
 | ~~D3~~ | ~~404: „Već ste klijent?"~~ | — | ✅ **REŠENO 2026-07-17** — link postao chooser trigger („Znam kog terapeuta"), ne ruta; taj use case je baš to |
@@ -335,7 +343,7 @@ Svaki ima SUPERSEDED zaglavlje sa razlogom i zamenom. Arhivirano 2026-07-17: `PR
 
 | # | Konflikt | Razrešenje |
 |---|---|---|
-| K1 | **Ekavica vs ijekavica.** MP T9 je tvrdio „ijekavica… the owner's authored style", a **Proposal v1.1 §3 — dokument koji Anja dobija — piše „bračno savetovanje" i „psihoterapijsko savetovanje"** (ekavica). Engines dokument: 27 ekavskih : 4 ijekavska | ✅ **Rešeno 2026-07-17 (CTO):** ekavica. MP T1/T2/T9 ispravljeni prema Proposalu. Sweep koda je R0.2.c. ⚠️ Anju obavestiti — `homepage.ts` je njen tekst |
+| K1 | **Ekavica vs ijekavica.** MP T9 je tvrdio „ijekavica… the owner's authored style", a **Proposal v1.1 §3 — dokument koji Anja dobija — piše „bračno savetovanje" i „psihoterapijsko savetovanje"** (ekavica). Engines dokument: 27 ekavskih : 4 ijekavska | ✅ **Rešeno 2026-07-17 (CTO):** ekavica kao podrazumevani jezik sajta. MP T1/T2/T9 ispravljeni prema Proposalu. Sweep koda je R0.2.c. **Dopunjeno 2026-07-18 (D-017):** Anja Stamenković (iz Prijedora) lično govori/piše isključivo ijekavicom — njen `quote`/`bio`/`cardExcerpt` u `content/therapists.ts` su namerna ijekavica, ne greška, i izuzeti su iz R0.2 sweep-a. Marija i Marjan ostaju isključivo ekavica |
 | K2 | **Status enum termina:** v0.3 §7 ima 8 statusa (`reschedule_requested`); MP §6.1 ima 11 (`change_requested`, `alternative_proposed`, `declined`, `expired`) | ✅ **MP pobeđuje** (noviji, izvor Engines §7.3). v0.3 anotiran zaglavljem |
 | K3 | **Guidance perzistencija:** v0.3 §6 predviđa `guidance_sessions`/`guidance_answers`; T13 i §11 zabranjuju čuvanje odgovora u R1 | ✅ **T13 pobeđuje** — tabele se ne prave. v0.3 anotiran |
 | K4 | **`documentations/` bio gitignorovan** — commit `6452c70` obrisao 4.059 linija iz gita | ✅ **Rešeno:** `.md` se prati, `.docx`/`.pdf` van gita |

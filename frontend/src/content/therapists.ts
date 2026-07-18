@@ -11,10 +11,15 @@ import type { Therapist } from "@/types/therapist";
  *   states all three are certified. Publishing either version needs each
  *   therapist's written confirmation (STOP S1 / OPEN_DECISIONS O-01).
  * - Bios are the therapists' own first-person texts, kept verbatim apart from
- *   two mandated edits: the ijekavica in Anja's text is a transmission artifact
- *   (decision D-001 — she is from Niš and speaks ekavica), and Marjan's opening
- *   sentence had „pod supervizijom" removed per §4 R0.2 („remove/neutralize any
- *   unconfirmed credential strings from staging copy").
+ *   one mandated edit: Marjan's opening sentence had „pod supervizijom"
+ *   removed per §4 R0.2 („remove/neutralize any unconfirmed credential
+ *   strings from staging copy"). Dialect is intentional, not a typo (decision
+ *   D-017, corrects D-001's wrong assumption): Anja is from Prijedor and
+ *   personally speaks/writes ijekavica — her quote, bio and cardExcerpt stay
+ *   ijekavica. Marija and Marjan speak/write exclusively ekavica, matching the
+ *   site-wide default (T9). Fixed service names (T1/T2, e.g. „Bračno
+ *   savetovanje") never change per therapist — they are product terminology,
+ *   not personal speech.
  * - Service names follow T1 („Bračno savetovanje", never „partnersko
  *   savjetovanje" / „partnerska terapija") and T2 („Psihoterapijsko
  *   savetovanje", never „psihološko savjetovanje" — a legal distinction in
@@ -34,7 +39,7 @@ export const therapists: Therapist[] = [
       "Osnivačica Psihointegriteta · Socijalni radnik i geštalt psihoterapeutkinja",
     badge: "Osnivačica",
     quote:
-      "Verujem da svaka osoba nosi kapacitet za promenu, ali da se ona događa tek kada se osetimo dovoljno sigurno da budemo autentični.",
+      "Vjerujem da svaka osoba nosi kapacitet za promjenu, ali da se ona događa tek kada se osjetimo dovoljno sigurno da budemo autentični.",
     formats: "Individualni rad · Rad sa parovima · Online i uživo",
     city: "Niš",
     cityLocative: "Nišu",
@@ -66,13 +71,13 @@ export const therapists: Therapist[] = [
     ],
     image: "/images/therapists/anja.jpeg",
     cardExcerpt:
-      "Kao geštalt psihoterapeut posvećena sam stvaranju prostora u kojem ljudi mogu da zastanu, bolje razumeju sebe i pronađu način da žive u većem skladu sa sobom i drugima.",
+      "Kao geštalt psihoterapeut posvećena sam stvaranju prostora u kojem ljudi mogu da zastanu, bolje razumiju sebe i pronađu način da žive u većem skladu sa sobom i drugima.",
     bio: [
-      "Kao geštalt psihoterapeut posvećena sam stvaranju prostora u kojem ljudi mogu da zastanu, bolje razumeju sebe i pronađu način da žive u većem skladu sa sobom i drugima. Verujem da svaka osoba nosi kapacitet za promenu, ali da se ona događa tek kada se osetimo dovoljno sigurno da budemo autentični.",
-      "U svom radu negujem topao, podržavajući i neposredan pristup, prateći klijenta u njegovom ritmu. Geštalt terapiju doživljavam kao proces razvijanja svesnosti, o tome šta osećamo, kako naše telo reaguje, šta nam je potrebno i na koji način gradimo odnose sa drugima. Kada postanemo svesni svojih obrazaca, otvara se mogućnost da biramo drugačije i živimo slobodnije.",
-      "Posebno me zanimaju teme anksioznosti, stresa, sagorevanja na poslu, životnih kriza, transgeneracijskih i razvojnih trauma, partnerskih odnosa i roditeljstva. Verujem da se dugoročna promena ne postiže davanjem saveta, već kroz iskustvo autentičnog kontakta i zajedničko istraživanje onoga što se dešava u sadašnjem trenutku.",
-      "Pored individualnog rada i rada sa parovima, poslednjih godina razvijam edukativne programe za roditelje i projekte usmerene na očuvanje mentalnog zdravlja zaposlenih, sa posebnim fokusom na prevenciju burnout sindroma. Verujem da je briga o mentalnom zdravlju jednako važna u porodici kao i u radnom okruženju i da prevencija može imati jednaku vrednost kao i sama terapija.",
-      "U terapijskom odnosu nastojim da budem prisutna, autentična i empatična, jer verujem da upravo kvalitetan kontakt predstavlja osnovu svake istinske promene. Moj cilj je da zajedno sa klijentom stvorim prostor u kojem će moći da razvije veću unutrašnju stabilnost, slobodu izbora i poverenje u sopstvene kapacitete.",
+      "Kao geštalt psihoterapeut posvećena sam stvaranju prostora u kojem ljudi mogu da zastanu, bolje razumiju sebe i pronađu način da žive u većem skladu sa sobom i drugima. Vjerujem da svaka osoba nosi kapacitet za promjenu, ali da se ona događa tek kada se osjetimo dovoljno sigurno da budemo autentični.",
+      "U svom radu njegujem topao, podržavajući i neposredan pristup, prateći klijenta u njegovom ritmu. Geštalt terapiju doživljavam kao proces razvijanja svjesnosti, o tome šta osjećamo, kako naše tijelo reaguje, šta nam je potrebno i na koji način gradimo odnose sa drugima. Kada postanemo svjesni svojih obrazaca, otvara se mogućnost da biramo drugačije i živimo slobodnije.",
+      "Posebno me zanimaju teme anksioznosti, stresa, sagorijevanja na poslu, životnih kriza, transgeneracijskih i razvojnih trauma, partnerskih odnosa i roditeljstva. Vjerujem da se dugoročna promjena ne postiže davanjem savjeta, već kroz iskustvo autentičnog kontakta i zajedničko istraživanje onoga što se dešava u sadašnjem trenutku.",
+      "Pored individualnog i partnerskog rada, posljednjih godina razvijam edukativne programe za roditelje i projekte usmjerene na očuvanje mentalnog zdravlja zaposlenih, sa posebnim fokusom na prevenciju burnout sindroma. Vjerujem da je briga o mentalnom zdravlju jednako važna u porodici kao i u radnom okruženju i da prevencija može imati jednaku vrijednost kao i sama terapija.",
+      "U terapijskom odnosu nastojim da budem prisutna, autentična i empatična, jer vjerujem da upravo kvalitetan kontakt predstavlja osnovu svake istinske promjene. Moj cilj je da zajedno sa klijentom stvorim prostor u kojem će moći da razvije veću unutrašnju stabilnost, slobodu izbora i povjerenje u sopstvene kapacitete.",
     ],
   },
   {
