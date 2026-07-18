@@ -4,6 +4,7 @@ import Link from "next/link";
 
 import { Reveal } from "@/components/motion/reveal";
 import { Eyebrow } from "@/components/ui/eyebrow";
+import { BookingRequestForm } from "@/features/booking/booking-request-form";
 import { useGuidance } from "@/features/guidance/guidance-context";
 import type { Therapist } from "@/types/therapist";
 
@@ -37,25 +38,21 @@ export function TherapistContactSection({
               <h2 className="text-coffee mb-[22px] font-serif text-[clamp(28px,7vw,32px)] leading-[1.1] font-normal tracking-[-0.01em] text-pretty md:text-[42px]">
                 Zakažite prvi razgovor sa {therapist.firstNameInstrumental}
               </h2>
-              <p className="text-coffee/80 mb-9 max-w-[480px] text-[16.5px] leading-[1.68]">
+              <p className="text-coffee/80 mb-7 max-w-[480px] text-[16.5px] leading-[1.68]">
                 Prvi razgovor nije obaveza da nastavite terapiju — to je prilika
                 da procenite da li vam pristup i način rada odgovaraju.
               </p>
-              <div className="flex flex-wrap items-center gap-3.5">
-                <Link
-                  href="/#usluge"
-                  className="bg-coffee text-canvas hover:bg-coffee-hover rounded-full px-7 py-[15px] text-[15px] font-semibold transition-colors"
-                >
-                  Zakaži termin
-                </Link>
-                <button
-                  type="button"
-                  onClick={openQuiz}
-                  className="text-coffee cursor-pointer border-0 bg-transparent px-1 py-[13.5px] font-sans text-[15px] font-semibold underline underline-offset-[3px]"
-                >
-                  Nisam siguran/na, pomozite mi da izaberem
-                </button>
-              </div>
+              <BookingRequestForm
+                therapistSlug={therapist.slug}
+                therapistName={therapist.name}
+              />
+              <button
+                type="button"
+                onClick={openQuiz}
+                className="text-coffee/70 hover:text-coffee mt-4 cursor-pointer border-0 bg-transparent p-0 font-sans text-[14px] font-medium underline underline-offset-[3px]"
+              >
+                Nisam siguran/na, pomozite mi da izaberem
+              </button>
             </div>
             <div className="border-coffee/18 flex flex-col gap-[22px] md:border-l md:pl-14">
               <div>

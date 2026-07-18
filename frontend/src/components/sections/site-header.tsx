@@ -37,7 +37,7 @@ export function SiteHeader() {
           </Link>
           <nav
             aria-label="Glavna navigacija"
-            className="col-start-2 hidden items-center gap-[clamp(12px,1.4vw,26px)] justify-self-center rounded-full bg-gray-400/32 px-[clamp(18px,1.8vw,28px)] py-[13px] whitespace-nowrap backdrop-blur-[14px] lg:flex"
+            className="col-start-2 hidden items-center gap-[clamp(12px,1.4vw,26px)] justify-self-center rounded-full bg-gray-300/32 px-[clamp(18px,1.8vw,28px)] py-[13px] whitespace-nowrap backdrop-blur-[14px] lg:flex"
           >
             {navLinks.map((link) => (
               <Link

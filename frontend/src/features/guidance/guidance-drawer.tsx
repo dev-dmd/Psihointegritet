@@ -6,6 +6,7 @@ import { createPortal } from "react-dom";
 
 import { MonogramAvatar } from "@/components/ui/monogram-avatar";
 import { therapists } from "@/content/therapists";
+import { BookingRequestForm } from "@/features/booking/booking-request-form";
 import { useCompany } from "@/features/company/company-context";
 import { cn } from "@/helpers/cn";
 
@@ -509,16 +510,21 @@ function TeamResult({ onClose }: { onClose: () => void }) {
           zahtev ulazi u zajednički red
         </span>
       </div>
-      <p className="text-coffee/70 mt-4 text-[14px] leading-[1.6]">
+      <p className="text-coffee/70 mt-4 mb-5 text-[14px] leading-[1.6]">
         Tim vidi samo minimalan operativni sažetak dok ovlašćeni terapeut ne
         preuzme zahtev.
       </p>
+      <BookingRequestForm
+        therapistSlug={null}
+        therapistName="Psihointegritet tim"
+        tone="surface"
+      />
       <Link
         href="/tim"
         onClick={onClose}
-        className="text-forest hover:text-sage mt-5 inline-flex items-center gap-2 text-[15px] font-semibold underline underline-offset-[3px] transition-colors"
+        className="text-coffee/60 hover:text-forest mt-4 inline-flex items-center gap-2 text-[14px] font-medium underline underline-offset-[3px] transition-colors"
       >
-        Upoznajte tim <span aria-hidden>→</span>
+        Ili pregledajte tim <span aria-hidden>→</span>
       </Link>
     </>
   );

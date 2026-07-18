@@ -50,7 +50,7 @@ export function KnowledgePage() {
                 </article>
               ))}
             </div>
-            <p className="text-coffee/45 mt-8 max-w-[560px] text-[12.5px] leading-[1.6]">
+            <p className="text-coffee/45 my-8 max-w-[560px] text-[12.5px] leading-[1.6]">
               Sadržaji imaju edukativnu svrhu i ne predstavljaju dijagnozu niti
               zamenu za individualni razgovor sa stručnom osobom.
             </p>
