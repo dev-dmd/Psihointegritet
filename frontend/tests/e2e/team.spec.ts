@@ -39,16 +39,14 @@ test("therapist profile renders the full bio, services and booking strip", async
     "temelj svake istinske promene",
   );
 
-  // T1/T2: the couples service is „Bračno savetovanje", counseling is
-  // „Psihoterapijsko savetovanje" — the design handoff had the forbidden names.
+  // T1: the couples service is „Bračno savetovanje" — the design handoff had
+  // the forbidden names.
   await expect(
     page.getByRole("heading", { name: "Bračno savetovanje" }),
   ).toBeVisible();
-  await expect(
-    page.getByRole("heading", { name: "Psihoterapijsko savetovanje" }),
-  ).toBeVisible();
+  await expect(page.locator("body")).toContainText("5.500 RSD");
 
-  // T7: prices must be flagged as indicative.
+  // Prices per Anja's answers, still flagged as indicative.
   await expect(page.locator("body")).toContainText("Cene su okvirne");
 
   // T8: Marjan works from Leskovac — the handoff hard-coded Niš everywhere.
@@ -61,17 +59,21 @@ test("therapist profile renders the full bio, services and booking strip", async
   ).toBeVisible();
 });
 
-test("Roditeljstvo shows no invented duration or price", async ({ page }) => {
-  await page.goto("/tim/anja-stamenkovic");
+test("Savetovanje adolescenata shows no invented duration or price", async ({
+  page,
+}) => {
+  await page.goto("/tim/marija-stamenkovic");
 
-  const parenting = page
+  const adolescents = page
     .locator("#usluge-terapeuta div")
-    .filter({ has: page.getByRole("heading", { name: "Roditeljstvo" }) })
+    .filter({
+      has: page.getByRole("heading", { name: "Savetovanje adolescenata" }),
+    })
     .last();
 
-  await expect(parenting).toContainText("online ili uživo");
-  await expect(parenting).not.toContainText("RSD");
-  await expect(parenting).not.toContainText("minuta");
+  await expect(adolescents).toContainText("online ili uživo");
+  await expect(adolescents).not.toContainText("RSD");
+  await expect(adolescents).not.toContainText("minuta");
 });
 
 test("unknown therapist slug returns 404", async ({ page }) => {

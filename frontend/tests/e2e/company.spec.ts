@@ -1,7 +1,7 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
 
-const drawerName = "Program podrške zaposlenima";
+const drawerName = "Rad sa kompanijama";
 
 async function mockInquiryEndpoint(page: Page) {
   await page.route("**/api/company-inquiry", async (route) => {
@@ -13,46 +13,21 @@ async function mockInquiryEndpoint(page: Page) {
   });
 }
 
-async function runToRecommendation(page: Page) {
-  const drawer = page.getByRole("dialog", { name: drawerName });
-  await drawer.getByRole("button", { name: "Konfigurišite program" }).click();
-  // Step 1 (multi): pick a need, then continue.
-  await drawer
-    .getByRole("button", { name: "Poverljive individualne razgovore" })
-    .click();
-  await drawer.getByRole("button", { name: "Dalje" }).click();
-  // Steps 2–6 (single-select, auto-advance).
-  await drawer.getByRole("button", { name: "3–9 osoba" }).click();
-  await drawer.getByRole("button", { name: "Fleksibilni termini" }).click();
-  await drawer
-    .getByRole("button", { name: "Kompanija plaća sve termine" })
-    .click();
-  await drawer.getByRole("button", { name: "Šest meseci" }).click();
-  await drawer.getByRole("button", { name: "Online", exact: true }).click();
-  return drawer;
-}
-
-test("companies page CTA opens the configurator", async ({ page }) => {
+test("companies page CTA opens the configurator with the new intro", async ({
+  page,
+}) => {
   await page.goto("/rad-sa-kompanijama");
   await page
     .getByRole("button", { name: "Konfigurišite program" })
     .first()
     .click();
-  await expect(page.getByRole("dialog", { name: drawerName })).toBeVisible();
+
+  const drawer = page.getByRole("dialog", { name: drawerName });
+  await expect(drawer).toBeVisible();
+  await expect(drawer).toContainText("Kako možemo pomoći vašoj organizaciji?");
 });
 
-test("matching B2B branch opens the configurator", async ({ page }) => {
-  await page.goto("/");
-  await page
-    .getByRole("button", { name: "Pomozi mi da pronađem podršku" })
-    .click();
-  const matching = page.getByRole("dialog", { name: "Vođeni izbor podrške" });
-  await matching.getByRole("button", { name: "Rad sa kompanijama" }).click();
-  await matching.getByRole("button", { name: "Konfigurišite program" }).click();
-  await expect(page.getByRole("dialog", { name: drawerName })).toBeVisible();
-});
-
-test("full configurator produces a recommendation and submits the inquiry", async ({
+test("workshop request maps to the team workshop, priced on request", async ({
   page,
 }) => {
   await mockInquiryEndpoint(page);
@@ -62,15 +37,28 @@ test("full configurator produces a recommendation and submits the inquiry", asyn
     .first()
     .click();
 
-  const drawer = await runToRecommendation(page);
+  const drawer = page.getByRole("dialog", { name: drawerName });
+  await drawer.getByRole("button", { name: "Konfigurišite program" }).click();
 
-  // Team 3–9 + flexible + standard usage → Team Flex 4 (deterministic).
-  await expect(drawer).toContainText("Team Flex 4");
-  await expect(drawer).toContainText("20.000 RSD");
+  // Q1 — employees (single-select, auto-advance).
+  await drawer.getByRole("button", { name: "20–50" }).click();
+  // Q2 — goals (multi-select + „Dalje").
+  await drawer.getByRole("button", { name: "Radionicu" }).click();
+  await drawer.getByRole("button", { name: "Dalje" }).click();
+  // Q3 — topics (multi-select + „Dalje").
+  await drawer.getByRole("button", { name: "Burnout" }).click();
+  await drawer.getByRole("button", { name: "Stres" }).click();
+  await drawer.getByRole("button", { name: "Dalje" }).click();
+  // Q4 — format.
+  await drawer.getByRole("button", { name: "Online", exact: true }).click();
+
+  await expect(drawer).toContainText("Interaktivna radionica za tim");
+  await expect(drawer).toContainText("Cena po ponudi");
+  // The old demo prices are gone — nothing priced in RSD.
+  await expect(drawer).not.toContainText("RSD");
 
   await drawer.getByRole("button", { name: "Zatražite ponudu" }).click();
 
-  // Contact form — team size is prefilled from the config answer.
   await drawer.getByLabel("Naziv kompanije *").fill("Test doo");
   await drawer.getByLabel("Ime i prezime kontakt osobe *").fill("Ana Anić");
   await drawer.getByLabel("Poslovni email *").fill("ana@test.rs");
@@ -83,6 +71,29 @@ test("full configurator produces a recommendation and submits the inquiry", asyn
     .click();
 
   await expect(drawer).toContainText("Hvala na interesovanju");
+});
+
+test("over 200 employees always leads to the custom program", async ({
+  page,
+}) => {
+  await page.goto("/rad-sa-kompanijama");
+  await page
+    .getByRole("button", { name: "Konfigurišite program" })
+    .first()
+    .click();
+
+  const drawer = page.getByRole("dialog", { name: drawerName });
+  await drawer.getByRole("button", { name: "Konfigurišite program" }).click();
+
+  await drawer.getByRole("button", { name: "Više od 200" }).click();
+  await drawer.getByRole("button", { name: "Predavanje ili vebinar" }).click();
+  await drawer.getByRole("button", { name: "Dalje" }).click();
+  await drawer.getByRole("button", { name: "Liderstvo" }).click();
+  await drawer.getByRole("button", { name: "Dalje" }).click();
+  await drawer.getByRole("button", { name: "Kombinovano" }).click();
+
+  await expect(drawer).toContainText("Program po meri");
+  await expect(drawer).toContainText("Cena po ponudi");
 });
 
 test("configurator has no critical accessibility violations", async ({

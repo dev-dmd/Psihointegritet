@@ -117,11 +117,11 @@ export const clientLink: ClientLink = {
   href: "/zakazivanje",
 };
 
-/** Service names are fixed by T1 („Bračno savetovanje") and T2 („Psihoterapijsko savetovanje"). */
+/** Catalog per Anja's answers (2026-07-18); couples name fixed by T1 („Bračno savetovanje"). */
 export const footerServiceLinks: NavLink[] = [
   { label: "Individualna psihoterapija", href: "/usluge" },
   { label: "Bračno savetovanje", href: "/usluge" },
-  { label: "Psihoterapijsko savetovanje", href: "/usluge" },
+  { label: "Roditeljsko savetovanje", href: "/usluge" },
   { label: "Radionice", href: "/#radionice" },
 ];
 
@@ -180,7 +180,7 @@ export const featuredService: FeaturedService = {
     "Prostor u kojem u svom tempu istražujete ono što vas opterećuje — uz podršku terapeuta i geštalt pristup koji podstiče svesnost, autentičnost i odgovornost za vlastiti život.",
   stats: [
     { label: "Trajanje", value: "60 minuta" },
-    { label: "Cena", value: "3.500 RSD" },
+    { label: "Cena", value: "4.000 RSD" },
     { label: "Format", value: "online ili uživo" },
   ],
   ctaLabel: "Zakaži prvi razgovor",
@@ -193,15 +193,15 @@ export const midServices: MidService[] = [
     description:
       "Zajednički rad na komunikaciji, bliskosti i obrascima koji se ponavljaju u odnosu.",
     duration: "90 minuta",
-    price: "5.000 RSD",
+    price: "5.500 RSD",
     format: "online ili uživo",
   },
   {
-    title: "Psihoterapijsko savetovanje",
+    title: "Roditeljsko savetovanje",
     description:
-      "Fokusirana podrška u konkretnim životnim situacijama i odlukama.",
+      "Savetodavna podrška roditeljima u razumevanju deteta i jačanju odnosa.",
     duration: "60 minuta",
-    price: "3.500 RSD",
+    price: "5.000 RSD",
     format: "online ili uživo",
   },
 ];

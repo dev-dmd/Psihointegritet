@@ -1,0 +1,1297 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;0,6..72,500;1,6..72,300;1,6..72,400&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+  body { margin: 0; background: #FAF8F3; color: #3A2E28; font-family: 'Instrument Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
+  a { color: #2E3B2E; } a:hover { color: #8A9D82; }
+  ::selection { background: #C6D5A8; color: #2E3B2E; }
+  @keyframes ccFadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes ccFade { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes ccDrawer { from { transform: translateX(48px); opacity: 0; } to { transform: none; opacity: 1; } }
+  @keyframes ccSheet { from { transform: translateY(56px); opacity: 0; } to { transform: none; opacity: 1; } }
+  .cc-bottomnav { display: none !important; }
+  .cc-mob { display: none !important; }
+  @media (max-width: 1023px) {
+    .cc-sidebar { display: none !important; }
+    .cc-main { margin-left: 0 !important; }
+    .cc-bottomnav { display: grid !important; }
+    .cc-mob { display: flex !important; }
+    .cc-desk { display: none !important; }
+    .cc-content { padding-bottom: 110px !important; }
+    .cc-grid4 { grid-template-columns: repeat(2, 1fr) !important; }
+    .cc-grid3 { grid-template-columns: repeat(2, 1fr) !important; }
+    .cc-grid2, .cc-split { grid-template-columns: 1fr !important; }
+    .cc-week { display: none !important; }
+    .cc-drawer { left: 0 !important; top: auto !important; bottom: 0 !important; width: auto !important; max-height: 92vh !important; border-radius: 26px 26px 0 0 !important; animation: ccSheet 0.35s cubic-bezier(0.22,1,0.36,1) both !important; }
+    .cc-quick { top: auto !important; right: 0 !important; left: 0 !important; bottom: 0 !important; width: auto !important; border-radius: 26px 26px 0 0 !important; padding-bottom: 28px !important; }
+  }
+  @media (max-width: 767px) {
+    .cc-content { padding: 20px 16px 110px !important; }
+    .cc-topbar { padding: 10px 16px !important; }
+    .cc-grid4, .cc-grid3 { grid-template-columns: 1fr !important; }
+    .cc-h1 { font-size: 27px !important; }
+    .cc-kv { grid-template-columns: 1fr !important; }
+    .cc-req { flex-direction: column !important; align-items: stretch !important; }
+    .cc-reqact { justify-content: stretch !important; }
+    .cc-tabs { overflow-x: auto !important; flex-wrap: nowrap !important; padding-bottom: 4px !important; }
+    .cc-agrow { grid-template-columns: 52px 1fr !important; }
+    .cc-agst { grid-column: 2 !important; justify-self: start !important; margin-top: 8px !important; }
+  }
+</style>
+</helmet>
+<div style="display: flex; min-height: 100vh;">
+
+<!-- ============ SIDEBAR (desktop) ============ -->
+<aside class="cc-sidebar" data-screen-label="Sidebar" style="position: fixed; left: 0; top: 0; bottom: 0; width: 264px; background: #2E3B2E; display: flex; flex-direction: column; z-index: 50; box-sizing: border-box;">
+  <div style="padding: 26px 24px 18px; display: flex; align-items: baseline;">
+    <span style="font-family: 'Newsreader', serif; font-size: 23px; font-weight: 500; letter-spacing: -0.01em; color: #FAF8F3;">Psihointegritet</span>
+    <span style="width: 6px; height: 6px; border-radius: 50%; background: #D1A48C; display: inline-block; margin-left: 4px;"></span>
+  </div>
+  <div style="padding: 0 24px 14px; font-size: 10.5px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: rgba(198,213,168,0.75);">Control Center</div>
+  <nav style="flex: 1; overflow-y: auto; padding: 4px 14px 16px; display: flex; flex-direction: column; gap: 2px;">
+    <button onClick="{{ goPregled }}" style="cursor: pointer; border: none; text-align: left; display: flex; align-items: center; gap: 12px; font-family: 'Instrument Sans', sans-serif; font-size: 14px; font-weight: 600; padding: 11px 12px; border-radius: 12px; transition: background 0.2s ease; background: {{ nPregled.bg }}; color: {{ nPregled.fg }};" style-hover="background: rgba(250,248,243,0.08);"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1.5"></rect><rect x="14" y="3" width="7" height="5" rx="1.5"></rect><rect x="14" y="12" width="7" height="9" rx="1.5"></rect><rect x="3" y="16" width="7" height="5" rx="1.5"></rect></svg>Pregled</button>
+    <button onClick="{{ goTermini }}" style="cursor: pointer; border: none; text-align: left; display: flex; align-items: center; gap: 12px; font-family: 'Instrument Sans', sans-serif; font-size: 14px; font-weight: 600; padding: 11px 12px; border-radius: 12px; transition: background 0.2s ease; background: {{ nTermini.bg }}; color: {{ nTermini.fg }};" style-hover="background: rgba(250,248,243,0.08);"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2"></rect><path d="M16 2v4M8 2v4M3 10h18"></path></svg>Termini<span style="margin-left: auto; font-size: 11px; font-weight: 700; color: #2E3B2E; background: #D1A48C; border-radius: 999px; padding: 2px 8px;">{{ reqCount }}</span></button>
+    <button onClick="{{ goKlijenti }}" style="cursor: pointer; border: none; text-align: left; display: flex; align-items: center; gap: 12px; font-family: 'Instrument Sans', sans-serif; font-size: 14px; font-weight: 600; padding: 11px 12px; border-radius: 12px; transition: background 0.2s ease; background: {{ nKlijenti.bg }}; color: {{ nKlijenti.fg }};" style-hover="background: rgba(250,248,243,0.08);"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"></path></svg>Klijenti</button>
+    <sc-if value="{{ roleVlasnik }}" hint-placeholder-val="{{ true }}">
+    <button onClick="{{ goKompanije }}" style="cursor: pointer; border: none; text-align: left; display: flex; align-items: center; gap: 12px; font-family: 'Instrument Sans', sans-serif; font-size: 14px; font-weight: 600; padding: 11px 12px; border-radius: 12px; transition: background 0.2s ease; background: {{ nKompanije.bg }}; color: {{ nKompanije.fg }};" style-hover="background: rgba(250,248,243,0.08);"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"></path><rect x="5" y="3" width="14" height="18" rx="1.5"></rect><path d="M9 7h2M13 7h2M9 11h2M13 11h2M9 15h2M13 15h2"></path></svg>Kompanije</button>
+    <div style="margin: 18px 12px 8px; font-size: 10px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: rgba(250,248,243,0.38);">Poslovanje</div>
+    <button onClick="{{ goUsluge }}" style="cursor: pointer; border: none; text-align: left; display: flex; align-items: center; gap: 12px; font-family: 'Instrument Sans', sans-serif; font-size: 14px; font-weight: 600; padding: 11px 12px; border-radius: 12px; transition: background 0.2s ease; background: {{ nUsluge.bg }}; color: {{ nUsluge.fg }};" style-hover="background: rgba(250,248,243,0.08);"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.6 13.4 11 3H4v7l9.6 10.4a2 2 0 0 0 2.9 0l4.1-4.2a2 2 0 0 0 0-2.8Z"></path><circle cx="7.5" cy="6.5" r="1"></circle></svg>Usluge i cene</button>
+    <button onClick="{{ goIstrazivanja }}" style="cursor: pointer; border: none; text-align: left; display: flex; align-items: center; gap: 12px; font-family: 'Instrument Sans', sans-serif; font-size: 14px; font-weight: 600; padding: 11px 12px; border-radius: 12px; transition: background 0.2s ease; background: {{ nIstraz.bg }}; color: {{ nIstraz.fg }};" style-hover="background: rgba(250,248,243,0.08);"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"></path><rect x="7" y="12" width="3" height="6" rx="0.5"></rect><rect x="12" y="8" width="3" height="10" rx="0.5"></rect><rect x="17" y="5" width="3" height="13" rx="0.5"></rect></svg>Istraživanja</button>
+    </sc-if>
+    <div style="margin: 18px 12px 8px; font-size: 10px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: rgba(250,248,243,0.38);">Tim</div>
+    <sc-if value="{{ roleVlasnik }}" hint-placeholder-val="{{ true }}">
+    <button onClick="{{ goTerapeuti }}" style="cursor: pointer; border: none; text-align: left; display: flex; align-items: center; gap: 12px; font-family: 'Instrument Sans', sans-serif; font-size: 14px; font-weight: 600; padding: 11px 12px; border-radius: 12px; transition: background 0.2s ease; background: {{ nTerapeuti.bg }}; color: {{ nTerapeuti.fg }};" style-hover="background: rgba(250,248,243,0.08);"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"></circle><path d="M4 21c0-4 3.6-6 8-6s8 2 8 6"></path></svg>Terapeuti</button>
+    </sc-if>
+    <button onClick="{{ goMojProfil }}" style="cursor: pointer; border: none; text-align: left; display: flex; align-items: center; gap: 12px; font-family: 'Instrument Sans', sans-serif; font-size: 14px; font-weight: 600; padding: 11px 12px; border-radius: 12px; transition: background 0.2s ease; background: {{ nMoj.bg }}; color: {{ nMoj.fg }};" style-hover="background: rgba(250,248,243,0.08);"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>Moj profil</button>
+    <sc-if value="{{ roleVlasnik }}" hint-placeholder-val="{{ true }}">
+    <div style="margin: 18px 12px 8px; font-size: 10px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: rgba(250,248,243,0.38);">Podešavanja</div>
+    <button onClick="{{ goUskoro }}" style="cursor: pointer; border: none; background: none; text-align: left; display: flex; align-items: center; gap: 12px; font-family: 'Instrument Sans', sans-serif; font-size: 14px; font-weight: 500; padding: 10px 12px; border-radius: 12px; color: rgba(250,248,243,0.45); transition: background 0.2s ease;" style-hover="background: rgba(250,248,243,0.06);"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12S4 16 4 10a8 8 0 1 1 16 0Z"></path><circle cx="12" cy="10" r="3"></circle></svg>Lokacije i način rada</button>
+    <button onClick="{{ goUskoro }}" style="cursor: pointer; border: none; background: none; text-align: left; display: flex; align-items: center; gap: 12px; font-family: 'Instrument Sans', sans-serif; font-size: 14px; font-weight: 500; padding: 10px 12px; border-radius: 12px; color: rgba(250,248,243,0.45); transition: background 0.2s ease;" style-hover="background: rgba(250,248,243,0.06);"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.7 21a2 2 0 0 1-3.4 0"></path></svg>Obaveštenja</button>
+    <button onClick="{{ goUskoro }}" style="cursor: pointer; border: none; background: none; text-align: left; display: flex; align-items: center; gap: 12px; font-family: 'Instrument Sans', sans-serif; font-size: 14px; font-weight: 500; padding: 10px 12px; border-radius: 12px; color: rgba(250,248,243,0.45); transition: background 0.2s ease;" style-hover="background: rgba(250,248,243,0.06);"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 5h-7M10 5H3M21 12h-9M8 12H3M21 19h-5M12 19H3"></path><circle cx="12" cy="5" r="2"></circle><circle cx="10" cy="12" r="2"></circle><circle cx="14" cy="19" r="2"></circle></svg>Podešavanja centra</button>
+    </sc-if>
+  </nav>
+  <div style="padding: 16px 18px 20px; border-top: 1px solid rgba(250,248,243,0.10); display: flex; flex-direction: column; gap: 14px;">
+    <div style="display: flex; background: rgba(250,248,243,0.08); border-radius: 999px; padding: 3px;">
+      <button onClick="{{ setRoleVlasnik }}" style="cursor: pointer; border: none; flex: 1; font-family: 'Instrument Sans', sans-serif; font-size: 12px; font-weight: 600; padding: 7px 0; border-radius: 999px; transition: all 0.2s ease; background: {{ rv.bg }}; color: {{ rv.fg }};">Vlasnik</button>
+      <button onClick="{{ setRoleTerapeut }}" style="cursor: pointer; border: none; flex: 1; font-family: 'Instrument Sans', sans-serif; font-size: 12px; font-weight: 600; padding: 7px 0; border-radius: 999px; transition: all 0.2s ease; background: {{ rt.bg }}; color: {{ rt.fg }};">Terapeut</button>
+    </div>
+    <div style="display: flex; align-items: center; gap: 11px;">
+      <span style="width: 38px; height: 38px; border-radius: 50%; border: 2px solid rgba(198,213,168,0.55); background-image: url('assets/anja.jpeg'); background-size: cover; background-position: center; flex-shrink: 0;"></span>
+      <div style="flex: 1; min-width: 0;">
+        <div style="font-size: 13.5px; font-weight: 600; color: #FAF8F3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Anja Stamenković</div>
+        <div style="font-size: 11.5px; color: rgba(250,248,243,0.5);">{{ roleLabel }}</div>
+      </div>
+      <button title="Odjavi se" style="cursor: pointer; border: none; background: none; color: rgba(250,248,243,0.45); width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: all 0.2s ease;" style-hover="background: rgba(179,64,46,0.25); color: #FAF8F3;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 3v9"></path><path d="M18.36 6.64a9 9 0 1 1-12.73 0"></path></svg></button>
+    </div>
+  </div>
+</aside>
+
+<!-- ============ MAIN ============ -->
+<div class="cc-main" style="flex: 1; margin-left: 264px; min-width: 0; display: flex; flex-direction: column;">
+  <header class="cc-topbar" style="position: sticky; top: 0; z-index: 40; background: rgba(250,248,243,0.88); backdrop-filter: blur(12px); border-bottom: 1px solid rgba(58,46,40,0.08); padding: 12px 32px; display: flex; align-items: center; gap: 14px;">
+    <span class="cc-mob" style="align-items: baseline;"><span style="font-family: 'Newsreader', serif; font-size: 20px; font-weight: 500; color: #2E3B2E;">Psihointegritet</span><span style="width: 5px; height: 5px; border-radius: 50%; background: #D1A48C; display: inline-block; margin-left: 3px;"></span></span>
+    <span class="cc-desk" style="font-size: 13px; color: rgba(58,46,40,0.55);">{{ danas }}</span>
+    <span style="flex: 1;"></span>
+    <sc-if value="{{ roleVlasnik }}" hint-placeholder-val="{{ true }}">
+      <button onClick="{{ cycleTherapist }}" class="cc-desk" style="cursor: pointer; background: #FFFFFF; border: 1px solid rgba(58,46,40,0.12); color: #3A2E28; font-family: 'Instrument Sans', sans-serif; font-size: 13px; font-weight: 600; padding: 9px 14px; border-radius: 999px; display: inline-flex; align-items: center; gap: 8px; transition: border-color 0.2s ease;" style-hover="border-color: #8A9D82;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#8A9D82" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"></circle><path d="M4 21c0-4 3.6-6 8-6s8 2 8 6"></path></svg>{{ tfLabel }}<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"></path></svg></button>
+    </sc-if>
+    <button onClick="{{ goZahtevi }}" title="Obaveštenja" style="cursor: pointer; position: relative; background: #FFFFFF; border: 1px solid rgba(58,46,40,0.12); color: #3A2E28; width: 40px; height: 40px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; transition: border-color 0.2s ease;" style-hover="border-color: #8A9D82;"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.7 21a2 2 0 0 1-3.4 0"></path></svg><span style="position: absolute; top: 8px; right: 9px; width: 8px; height: 8px; border-radius: 50%; background: #D1A48C; border: 1.5px solid #FFFFFF;"></span></button>
+    <button onClick="{{ openQuick }}" class="cc-desk" style="cursor: pointer; border: none; background: #2E3B2E; color: #FAF8F3; font-family: 'Instrument Sans', sans-serif; font-size: 13.5px; font-weight: 600; padding: 10px 20px; border-radius: 999px; display: inline-flex; align-items: center; gap: 8px; transition: background 0.2s ease;" style-hover="background: #3d4d3d;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg>Brza akcija</button>
+    <span class="cc-mob" style="width: 36px; height: 36px; border-radius: 50%; border: 2px solid rgba(198,213,168,0.6); background-image: url('assets/anja.jpeg'); background-size: cover; background-position: center;"></span>
+  </header>
+
+  <main class="cc-content" style="width: 100%; max-width: 1160px; margin: 0 auto; box-sizing: border-box; padding: 30px 32px 56px;">
+
+  <!-- ============ 01 PREGLED ============ -->
+  <sc-if value="{{ scrPregled }}" hint-placeholder-val="{{ true }}">
+  <section data-screen-label="Pregled" style="animation: ccFadeUp 0.4s ease both;">
+    <div style="margin-bottom: 26px;">
+      <h1 class="cc-h1" style="margin: 0 0 6px; font-family: 'Newsreader', serif; font-weight: 400; font-size: 34px; line-height: 1.1; letter-spacing: -0.01em; color: #2E3B2E;">{{ pozdrav }}, Anja.</h1>
+      <p style="margin: 0; font-size: 14.5px; color: rgba(58,46,40,0.6);">Evo šta danas traži vašu pažnju.</p>
+    </div>
+    <div class="cc-grid4" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 26px;">
+      <sc-for list="{{ prioritet }}" as="p" hint-placeholder-count="4">
+        <button onClick="{{ p.go }}" style="cursor: pointer; text-align: left; background: #FFFFFF; border: 1px solid rgba(58,46,40,0.06); border-radius: 20px; padding: 20px 20px 18px; display: flex; flex-direction: column; gap: 4px; font-family: 'Instrument Sans', sans-serif; transition: transform 0.25s ease, box-shadow 0.25s ease;" style-hover="transform: translateY(-3px); box-shadow: 0 14px 34px rgba(58,46,40,0.10);">
+          <span style="display: flex; align-items: baseline; gap: 8px;"><span style="font-family: 'Newsreader', serif; font-size: 34px; line-height: 1; color: #2E3B2E;">{{ p.n }}</span><span style="width: 8px; height: 8px; border-radius: 50%; background: {{ p.dot }};"></span></span>
+          <span style="font-size: 14px; font-weight: 600; color: #3A2E28; margin-top: 6px;">{{ p.t }}</span>
+          <span style="font-size: 12.5px; color: rgba(58,46,40,0.55); line-height: 1.45;">{{ p.d }}</span>
+          <span style="margin-top: 10px; font-size: 13px; font-weight: 600; color: #2E3B2E; display: inline-flex; align-items: center; gap: 6px;">{{ p.cta }} <span style="color: #8A9D82;">→</span></span>
+        </button>
+      </sc-for>
+    </div>
+    <div class="cc-split" style="display: grid; grid-template-columns: 7fr 5fr; gap: 14px; align-items: start;">
+      <div style="background: #FFFFFF; border: 1px solid rgba(58,46,40,0.06); border-radius: 22px; padding: 24px 24px 14px;">
+        <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 14px;">
+          <h2 style="margin: 0; font-family: 'Newsreader', serif; font-weight: 400; font-size: 22px; color: #2E3B2E;">Današnji raspored</h2>
+          <button onClick="{{ goTermini }}" style="cursor: pointer; border: none; background: none; font-family: 'Instrument Sans', sans-serif; font-size: 13px; font-weight: 600; color: #2E3B2E; padding: 0; border-bottom: 1.5px solid rgba(58,46,40,0.25);" style-hover="color: #8A9D82;">Svi termini →</button>
+        </div>
+        <sc-for list="{{ agenda }}" as="a" hint-placeholder-count="5">
+          <sc-if value="{{ a.real }}" hint-placeholder-val="{{ true }}">
+            <button onClick="{{ a.open }}" class="cc-agrow" style="cursor: pointer; width: 100%; text-align: left; border: none; background: none; display: grid; grid-template-columns: 64px 1fr auto; align-items: center; gap: 14px; padding: 13px 10px; border-radius: 14px; border-top: 1px solid rgba(58,46,40,0.06); font-family: 'Instrument Sans', sans-serif; transition: background 0.2s ease;" style-hover="background: rgba(198,213,168,0.14);">
+              <span style="font-family: 'Newsreader', serif; font-size: 17px; color: #2E3B2E;">{{ a.time }}</span>
+              <span style="min-width: 0;">
+                <span style="display: block; font-size: 14.5px; font-weight: 600; color: #3A2E28;">{{ a.client }}</span>
+                <span style="display: block; font-size: 12.5px; color: rgba(58,46,40,0.55); margin-top: 2px;">{{ a.svc }} · {{ a.fmt }} · {{ a.ter }}</span>
+              </span>
+              <span class="cc-agst" style="display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; padding: 5px 11px; border-radius: 999px; white-space: nowrap; background: {{ a.stBg }}; color: {{ a.stFg }};"><span style="width: 6px; height: 6px; border-radius: 50%; background: {{ a.stFg }};"></span>{{ a.stLabel }}</span>
+            </button>
+          </sc-if>
+          <sc-if value="{{ a.slobodno }}" hint-placeholder-val="{{ false }}">
+            <div class="cc-agrow" style="display: grid; grid-template-columns: 64px 1fr auto; align-items: center; gap: 14px; padding: 13px 10px; border-top: 1px solid rgba(58,46,40,0.06);">
+              <span style="font-family: 'Newsreader', serif; font-size: 17px; color: rgba(58,46,40,0.4);">{{ a.time }}</span>
+              <span style="font-size: 13.5px; color: rgba(58,46,40,0.45); font-style: italic;">Slobodan termin</span>
+              <button onClick="{{ openQuick }}" style="cursor: pointer; background: none; border: 1.5px dashed rgba(58,46,40,0.25); color: rgba(58,46,40,0.6); font-family: 'Instrument Sans', sans-serif; font-size: 12.5px; font-weight: 600; padding: 6px 14px; border-radius: 999px; transition: all 0.2s ease;" style-hover="border-color: #8A9D82; color: #2E3B2E;">+ Zakaži</button>
+            </div>
+          </sc-if>
+        </sc-for>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 14px;">
+        <div style="background: #2E3B2E; border-radius: 22px; padding: 24px;">
+          <div style="display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 16px;">
+            <h2 style="margin: 0; font-family: 'Newsreader', serif; font-weight: 400; font-size: 20px; color: #FAF8F3;">Ova nedelja</h2>
+            <span style="font-size: 12px; color: rgba(198,213,168,0.9); font-weight: 600;">Popunjenost 67%</span>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 11px;">
+            <sc-for list="{{ nedeljaBar }}" as="w" hint-placeholder-count="5">
+              <div style="display: grid; grid-template-columns: 34px 1fr 34px; align-items: center; gap: 12px;">
+                <span style="font-size: 12px; font-weight: 600; color: rgba(250,248,243,0.65);">{{ w.d }}</span>
+                <span style="height: 8px; border-radius: 999px; background: rgba(250,248,243,0.14); overflow: hidden; display: block;"><span style="display: block; height: 100%; border-radius: 999px; background: #C6D5A8; width: {{ w.pct }};"></span></span>
+                <span style="font-size: 12px; color: rgba(250,248,243,0.6); text-align: right;">{{ w.label }}</span>
+              </div>
+            </sc-for>
+          </div>
+          <button onClick="{{ goNedelja }}" class="cc-week" style="cursor: pointer; margin-top: 18px; border: none; background: rgba(250,248,243,0.1); color: #FAF8F3; font-family: 'Instrument Sans', sans-serif; font-size: 13px; font-weight: 600; padding: 10px 18px; border-radius: 999px; transition: background 0.2s ease;" style-hover="background: rgba(250,248,243,0.18);">Otvori nedeljni kalendar</button>
+        </div>
+        <sc-if value="{{ roleVlasnik }}" hint-placeholder-val="{{ true }}">
+        <button onClick="{{ goIstrazivanja }}" style="cursor: pointer; text-align: left; background: rgba(209,164,140,0.16); border: 1px solid rgba(209,164,140,0.45); border-radius: 22px; padding: 22px 24px; font-family: 'Instrument Sans', sans-serif; transition: background 0.25s ease;" style-hover="background: rgba(209,164,140,0.28);">
+          <div style="font-size: 11px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: rgba(58,46,40,0.55); margin-bottom: 8px;">Istraživanja</div>
+          <div style="font-family: 'Newsreader', serif; font-size: 20px; color: #3A2E28; margin-bottom: 4px;">+18 novih odgovora ove nedelje</div>
+          <div style="font-size: 13px; color: rgba(58,46,40,0.65);">„Šta vas sprečava da zakažete prvi razgovor?" · completion 72%</div>
+        </button>
+        </sc-if>
+      </div>
+    </div>
+  </section>
+  </sc-if>
+
+  <!-- ============ 02 TERMINI ============ -->
+  <sc-if value="{{ scrTermini }}" hint-placeholder-val="{{ false }}">
+  <section data-screen-label="Termini" style="animation: ccFadeUp 0.4s ease both;">
+    <div style="display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; margin-bottom: 20px; flex-wrap: wrap;">
+      <div>
+        <h1 class="cc-h1" style="margin: 0 0 6px; font-family: 'Newsreader', serif; font-weight: 400; font-size: 34px; line-height: 1.1; color: #2E3B2E;">Termini</h1>
+        <p style="margin: 0; font-size: 14.5px; color: rgba(58,46,40,0.6);">Booking kontrola — jedan status sistem kroz celu platformu.</p>
+      </div>
+      <button onClick="{{ openQuick }}" class="cc-desk" style="cursor: pointer; background: none; border: 1.5px solid rgba(58,46,40,0.22); color: #3A2E28; font-family: 'Instrument Sans', sans-serif; font-size: 13.5px; font-weight: 600; padding: 10px 20px; border-radius: 999px; transition: all 0.2s ease;" style-hover="border-color: #8A9D82; background: rgba(198,213,168,0.15);">+ Novi termin</button>
+    </div>
+    <div class="cc-tabs" style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 18px;">
+      <button onClick="{{ setTTDanas }}" style="cursor: pointer; white-space: nowrap; font-family: 'Instrument Sans', sans-serif; font-size: 13px; font-weight: 600; padding: 9px 17px; border-radius: 999px; transition: all 0.2s ease; border: 1px solid {{ tDanas.bd }}; background: {{ tDanas.bg }}; color: {{ tDanas.fg }};">Danas</button>
+      <button onClick="{{ setTTNedelja }}" class="cc-week" style="cursor: pointer; white-space: nowrap; font-family: 'Instrument Sans', sans-serif; font-size: 13px; font-weight: 600; padding: 9px 17px; border-radius: 999px; transition: all 0.2s ease; border: 1px solid {{ tNedelja.bd }}; background: {{ tNedelja.bg }}; color: {{ tNedelja.fg }};">Nedelja</button>
+      <button onClick="{{ setTTLista }}" style="cursor: pointer; white-space: nowrap; font-family: 'Instrument Sans', sans-serif; font-size: 13px; font-weight: 600; padding: 9px 17px; border-radius: 999px; transition: all 0.2s ease; border: 1px solid {{ tLista.bd }}; background: {{ tLista.bg }}; color: {{ tLista.fg }};">Predstojeći</button>
+      <button onClick="{{ setTTZahtevi }}" style="cursor: pointer; white-space: nowrap; display: inline-flex; align-items: center; gap: 7px; font-family: 'Instrument Sans', sans-serif; font-size: 13px; font-weight: 600; padding: 9px 17px; border-radius: 999px; transition: all 0.2s ease; border: 1px solid {{ tZahtevi.bd }}; background: {{ tZahtevi.bg }}; color: {{ tZahtevi.fg }};">Zahtevi<span style="font-size: 11px; font-weight: 700; color: #2E3B2E; background: #D1A48C; border-radius: 999px; padding: 1px 7px;">{{ reqCount }}</span></button>
+      <button onClick="{{ setTTCekanje }}" style="cursor: pointer; white-space: nowrap; font-family: 'Instrument Sans', sans-serif; font-size: 13px; font-weight: 600; padding: 9px 17px; border-radius: 999px; transition: all 0.2s ease; border: 1px solid {{ tCekanje.bd }}; background: {{ tCekanje.bg }}; color: {{ tCekanje.fg }};">Lista čekanja</button>
+    </div>
+
+    <sc-if value="{{ ttDanas }}" hint-placeholder-val="{{ true }}">
+      <div style="background: #FFFFFF; border: 1px solid rgba(58,46,40,0.06); border-radius: 22px; padding: 10px 24px 14px;">
+        <sc-for list="{{ agenda }}" as="a" hint-placeholder-count="5">
+          <sc-if value="{{ a.real }}" hint-placeholder-val="{{ true }}">
+            <button onClick="{{ a.open }}" class="cc-agrow" style="cursor: pointer; width: 100%; text-align: left; border: none; background: none; display: grid; grid-template-columns: 64px 1fr auto; align-items: center; gap: 14px; padding: 14px 10px; border-radius: 14px; border-top: 1px solid rgba(58,46,40,0.06); font-family: 'Instrument Sans', sans-serif; transition: background 0.2s ease;" style-hover="background: rgba(198,213,168,0.14);">
+              <span style="font-family: 'Newsreader', serif; font-size: 17px; color: #2E3B2E;">{{ a.time }}</span>
+              <span style="min-width: 0;">
+                <span style="display: block; font-size: 14.5px; font-weight: 600; color: #3A2E28;">{{ a.client }}</span>
+                <span style="display: block; font-size: 12.5px; color: rgba(58,46,40,0.55); margin-top: 2px;">{{ a.svc }} · {{ a.fmt }} · {{ a.ter }}</span>
+              </span>
+              <span class="cc-agst" style="display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; padding: 5px 11px; border-radius: 999px; white-space: nowrap; background: {{ a.stBg }}; color: {{ a.stFg }};"><span style="width: 6px; height: 6px; border-radius: 50%; background: {{ a.stFg }};"></span>{{ a.stLabel }}</span>
+            </button>
+          </sc-if>
+          <sc-if value="{{ a.slobodno }}" hint-placeholder-val="{{ false }}">
+            <div class="cc-agrow" style="display: grid; grid-template-columns: 64px 1fr auto; align-items: center; gap: 14px; padding: 14px 10px; border-top: 1px solid rgba(58,46,40,0.06);">
+              <span style="font-family: 'Newsreader', serif; font-size: 17px; color: rgba(58,46,40,0.4);">{{ a.time }}</span>
+              <span style="font-size: 13.5px; color: rgba(58,46,40,0.45); font-style: italic;">Slobodan termin</span>
+              <button onClick="{{ openQuick }}" style="cursor: pointer; background: none; border: 1.5px dashed rgba(58,46,40,0.25); color: rgba(58,46,40,0.6); font-family: 'Instrument Sans', sans-serif; font-size: 12.5px; font-weight: 600; padding: 6px 14px; border-radius: 999px; transition: all 0.2s ease;" style-hover="border-color: #8A9D82; color: #2E3B2E;">+ Zakaži</button>
+            </div>
+          </sc-if>
+        </sc-for>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ ttNedelja }}" hint-placeholder-val="{{ false }}">
+      <div class="cc-week" style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px;">
+        <sc-for list="{{ week }}" as="d" hint-placeholder-count="5">
+          <div style="background: #FFFFFF; border: 1px solid rgba(58,46,40,0.06); border-radius: 18px; padding: 16px 14px; min-height: 220px;">
+            <div style="display: flex; align-items: baseline; gap: 7px; margin-bottom: 12px; padding-bottom: 10px; border-bottom: 1px solid rgba(58,46,40,0.08);">
+              <span style="font-family: 'Newsreader', serif; font-size: 18px; color: #2E3B2E;">{{ d.d }}</span>
+              <span style="font-size: 11.5px; color: rgba(58,46,40,0.5);">{{ d.n }}</span>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 8px;">
+              <sc-for list="{{ d.items }}" as="i" hint-placeholder-count="3">
+                <div style="border-radius: 12px; padding: 9px 11px; background: {{ i.stBg }};">
+                  <div style="display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 700; color: {{ i.stFg }};"><span style="width: 5px; height: 5px; border-radius: 50%; background: {{ i.stFg }};"></span>{{ i.t }}</div>
+                  <div style="font-size: 12.5px; font-weight: 600; color: #3A2E28; margin-top: 3px;">{{ i.c }}</div>
+                  <div style="font-size: 10.5px; color: {{ i.stFg }}; margin-top: 2px;">{{ i.stLabel }}</div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+      <p class="cc-week" style="margin: 12px 4px 0; font-size: 12.5px; color: rgba(58,46,40,0.5); font-style: italic;">Nedeljni kalendar je desktop prikaz — na mobilnom se koristi dnevna agenda.</p>
+    </sc-if>
+
+    <sc-if value="{{ ttLista }}" hint-placeholder-val="{{ false }}">
+      <div style="display: flex; flex-direction: column; gap: 16px;">
+        <sc-for list="{{ upcoming }}" as="g" hint-placeholder-count="3">
+          <div style="background: #FFFFFF; border: 1px solid rgba(58,46,40,0.06); border-radius: 22px; padding: 18px 24px 14px;">
+            <div style="font-size: 11.5px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: #8A9D82; margin-bottom: 4px;">{{ g.day }}</div>
+            <sc-for list="{{ g.items }}" as="a" hint-placeholder-count="3">
+              <button onClick="{{ a.open }}" class="cc-agrow" style="cursor: pointer; width: 100%; text-align: left; border: none; background: none; display: grid; grid-template-columns: 64px 1fr auto; align-items: center; gap: 14px; padding: 13px 10px; border-radius: 14px; border-top: 1px solid rgba(58,46,40,0.06); font-family: 'Instrument Sans', sans-serif; transition: background 0.2s ease;" style-hover="background: rgba(198,213,168,0.14);">
+                <span style="font-family: 'Newsreader', serif; font-size: 17px; color: #2E3B2E;">{{ a.time }}</span>
+                <span style="min-width: 0;">
+                  <span style="display: block; font-size: 14.5px; font-weight: 600; color: #3A2E28;">{{ a.client }}</span>
+                  <span style="display: block; font-size: 12.5px; color: rgba(58,46,40,0.55); margin-top: 2px;">{{ a.svc }} · {{ a.fmt }} · {{ a.ter }}</span>
+                </span>
+                <span class="cc-agst" style="display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; padding: 5px 11px; border-radius: 999px; white-space: nowrap; background: {{ a.stBg }}; color: {{ a.stFg }};"><span style="width: 6px; height: 6px; border-radius: 50%; background: {{ a.stFg }};"></span>{{ a.stLabel }}</span>
+              </button>
+            </sc-for>
+          </div>
+        </sc-for>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ ttZahtevi }}" hint-placeholder-val="{{ false }}">
+      <div style="display: flex; flex-direction: column; gap: 12px;">
+        <sc-for list="{{ requests }}" as="r" hint-placeholder-count="3">
+          <div class="cc-req" style="background: #FFFFFF; border: 1px solid rgba(58,46,40,0.06); border-radius: 20px; padding: 20px 22px; display: flex; align-items: center; gap: 18px;">
+            <span style="width: 46px; height: 46px; border-radius: 50%; background: rgba(209,164,140,0.28); color: #96562F; font-size: 14px; font-weight: 600; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; letter-spacing: 0.03em;">{{ r.init }}</span>
+            <div style="flex: 1; min-width: 0;">
+              <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                <span style="font-size: 15px; font-weight: 600; color: #3A2E28;">{{ r.client }}</span>
+                <span style="display: inline-flex; align-items: center; gap: 6px; font-size: 11.5px; font-weight: 600; padding: 4px 10px; border-radius: 999px; background: {{ r.stBg }}; color: {{ r.stFg }};"><span style="width: 5px; height: 5px; border-radius: 50%; background: {{ r.stFg }};"></span>{{ r.stLabel }}</span>
+              </div>
+              <div style="font-size: 13px; color: rgba(58,46,40,0.6); margin-top: 4px;">{{ r.svc }} · {{ r.fmt }} · {{ r.ter }}</div>
+              <div style="font-size: 12.5px; color: rgba(58,46,40,0.55); margin-top: 2px;">Traženi termin: <span style="font-weight: 600; color: #3A2E28;">{{ r.pref }}</span> · {{ r.src }} · <span style="color: #96562F; font-weight: 600;">{{ r.ago }}</span></div>
+              <div style="font-size: 12.5px; font-style: italic; color: rgba(58,46,40,0.55); margin-top: 6px;">Intake: {{ r.intake }}</div>
+            </div>
+            <sc-if value="{{ r.pending }}" hint-placeholder-val="{{ true }}">
+              <div class="cc-reqact" style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: flex-end;">
+                <button onClick="{{ r.confirm }}" style="cursor: pointer; border: none; background: #2E3B2E; color: #FAF8F3; font-family: 'Instrument Sans', sans-serif; font-size: 13px; font-weight: 600; padding: 10px 18px; border-radius: 999px; transition: background 0.2s ease; min-height: 44px;" style-hover="background: #3d4d3d;">Potvrdi</button>
+                <button onClick="{{ r.propose }}" style="cursor: pointer; background: none; border: 1.5px solid rgba(58,46,40,0.22); color: #3A2E28; font-family: 'Instrument Sans', sans-serif; font-size: 13px; font-weight: 600; padding: 9px 16px; border-radius: 999px; transition: all 0.2s ease; min-height: 44px;" style-hover="border-color: #8A9D82; background: rgba(198,213,168,0.15);">Predloži izmenu</button>
+                <button onClick="{{ r.decline }}" style="cursor: pointer; background: none; border: none; color: #B3402E; font-family: 'Instrument Sans', sans-serif; font-size: 13px; font-weight: 700; padding: 9px 12px; border-radius: 999px; transition: background 0.2s ease; min-height: 44px;" style-hover="background: rgba(179,64,46,0.1);">Odbij</button>
+              </div>
+            </sc-if>
+          </div>
+        </sc-for>
+        <p style="margin: 4px 6px 0; font-size: 12.5px; color: rgba(58,46,40,0.5); font-style: italic;">Zahtev stariji od 24h automatski ističe i klijent dobija predlog novih termina.</p>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ ttCekanje }}" hint-placeholder-val="{{ false }}">
+      <div style="background: #FFFFFF; border: 1px solid rgba(58,46,40,0.06); border-radius: 22px; padding: 10px 24px 14px;">
+        <sc-for list="{{ waitlist }}" as="w" hint-placeholder-count="2">
+          <div class="cc-agrow" style="display: grid; grid-template-columns: 64px 1fr auto; align-items: center; gap: 14px; padding: 15px 10px; border-top: 1px solid rgba(58,46,40,0.06);">
+            <span style="width: 42px; height: 42px; border-radius: 50%; background: rgba(198,213,168,0.35); color: #2E3B2E; font-size: 13px; font-weight: 600; display: inline-flex; align-items: center; justify-content: center;">{{ w.init }}</span>
+            <span>
+              <span style="display: block; font-size: 14.5px; font-weight: 600; color: #3A2E28;">{{ w.client }}</span>
+              <span style="display: block; font-size: 12.5px; color: rgba(58,46,40,0.55); margin-top: 2px;">Želi: {{ w.period }} · {{ w.fmt }} · {{ w.ter }}</span>
+            </span>
+            <button onClick="{{ openQuick }}" style="cursor: pointer; background: none; border: 1.5px solid rgba(58,46,40,0.22); color: #3A2E28; font-family: 'Instrument Sans', sans-serif; font-size: 12.5px; font-weight: 600; padding: 8px 16px; border-radius: 999px; transition: all 0.2s ease; min-height: 44px;" style-hover="border-color: #8A9D82; background: rgba(198,213,168,0.15);">Ponudi termin</button>
+          </div>
+        </sc-for>
+        <p style="margin: 12px 10px 8px; font-size: 12.5px; color: rgba(58,46,40,0.5); font-style: italic;">Kada se oslobodi slot, klijenti sa liste dobijaju automatsku ponudu redom prijave.</p>
+      </div>
+    </sc-if>
+  </section>
+  </sc-if>
+  <!-- ============ 03 KLIJENTI ============ -->
+  <sc-if value="{{ scrKlijenti }}" hint-placeholder-val="{{ false }}">
+  <section data-screen-label="Klijenti" style="animation: ccFadeUp 0.4s ease both;">
+    <div style="margin-bottom: 20px;">
+      <h1 class="cc-h1" style="margin: 0 0 6px; font-family: 'Newsreader', serif; font-weight: 400; font-size: 34px; line-height: 1.1; color: #2E3B2E;">Klijenti</h1>
+      <p style="margin: 0; font-size: 14.5px; color: rgba(58,46,40,0.6);">Aktivni rad, dodele i Intake zahtevi bez terapeuta.</p>
+    </div>
+    <div class="cc-tabs" style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 14px;">
+      <button onClick="{{ setKTSvi }}" style="cursor: pointer; white-space: nowrap; font-family: 'Instrument Sans', sans-serif; font-size: 13px; font-weight: 600; padding: 9px 17px; border-radius: 999px; transition: all 0.2s ease; border: 1px solid {{ kSvi.bd }}; background: {{ kSvi.bg }}; color: {{ kSvi.fg }};">Svi klijenti</button>
+      <button onClick="{{ setKTNedodeljeni }}" style="cursor: pointer; white-space: nowrap; display: inline-flex; align-items: center; gap: 7px; font-family: 'Instrument Sans', sans-serif; font-size: 13px; font-weight: 600; padding: 9px 17px; border-radius: 999px; transition: all 0.2s ease; border: 1px solid {{ kNedodeljeni.bd }}; background: {{ kNedodeljeni.bg }}; color: {{ kNedodeljeni.fg }};">Nedodeljeni<span style="font-size: 11px; font-weight: 700; color: #2E3B2E; background: #D1A48C; border-radius: 999px; padding: 1px 7px;">{{ unasCount }}</span></button>
+    </div>
+
+    <sc-if value="{{ ktSvi }}" hint-placeholder-val="{{ false }}">
+      <div class="cc-tabs" style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 18px;">
+        <span style="font-size: 11.5px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: rgba(58,46,40,0.45); margin-right: 2px;">Filteri</span>
+        <span style="white-space: nowrap; font-size: 12.5px; font-weight: 600; color: rgba(58,46,40,0.65); background: rgba(198,213,168,0.25); border: 1px solid rgba(138,157,130,0.3); padding: 7px 14px; border-radius: 999px;">Terapeut · Svi</span>
+        <span style="white-space: nowrap; font-size: 12.5px; font-weight: 600; color: rgba(58,46,40,0.65); background: rgba(198,213,168,0.25); border: 1px solid rgba(138,157,130,0.3); padding: 7px 14px; border-radius: 999px;">Aktivni</span>
+        <span style="white-space: nowrap; font-size: 12.5px; font-weight: 600; color: rgba(58,46,40,0.55); background: #FFFFFF; border: 1px solid rgba(58,46,40,0.12); padding: 7px 14px; border-radius: 999px;">Online / uživo</span>
+        <span style="white-space: nowrap; font-size: 12.5px; font-weight: 600; color: rgba(58,46,40,0.55); background: #FFFFFF; border: 1px solid rgba(58,46,40,0.12); padding: 7px 14px; border-radius: 999px;">Ima budući termin</span>
+        <span style="white-space: nowrap; font-size: 12.5px; font-weight: 600; color: rgba(58,46,40,0.55); background: #FFFFFF; border: 1px solid rgba(58,46,40,0.12); padding: 7px 14px; border-radius: 999px;">Kompanijski program</span>
+      </div>
+      <div class="cc-grid3" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px;">
+        <sc-for list="{{ clients }}" as="c" hint-placeholder-count="6">
+          <button onClick="{{ c.open }}" style="cursor: pointer; text-align: left; background: #FFFFFF; border: 1px solid rgba(58,46,40,0.06); border-radius: 20px; padding: 20px; display: flex; flex-direction: column; gap: 12px; font-family: 'Instrument Sans', sans-serif; transition: transform 0.25s ease, box-shadow 0.25s ease;" style-hover="transform: translateY(-3px); box-shadow: 0 14px 34px rgba(58,46,40,0.10);">
+            <span style="display: flex; align-items: center; gap: 12px;">
+              <span style="width: 44px; height: 44px; border-radius: 50%; background: rgba(198,213,168,0.4); color: #2E3B2E; font-size: 13.5px; font-weight: 600; display: inline-flex; align-items: center; justify-content: center; letter-spacing: 0.03em; flex-shrink: 0;">{{ c.init }}</span>
+              <span style="min-width: 0;">
+                <span style="display: block; font-size: 15.5px; font-weight: 600; color: #3A2E28;">{{ c.name }}</span>
+                <span style="display: block; font-size: 12.5px; color: rgba(58,46,40,0.55); margin-top: 1px;">{{ c.ter }}</span>
+              </span>
+            </span>
+            <span style="border-top: 1px solid rgba(58,46,40,0.07); padding-top: 11px;">
+              <span style="display: block; font-size: 11px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(58,46,40,0.45);">Sledeći termin</span>
+              <span style="display: block; font-size: 13.5px; font-weight: 600; color: #2E3B2E; margin-top: 2px;">{{ c.next }}</span>
+              <span style="display: block; font-size: 12.5px; color: rgba(58,46,40,0.55); margin-top: 2px;">{{ c.fmt }} · {{ c.svc }}</span>
+            </span>
+            <span style="display: inline-flex; align-items: center; gap: 6px; align-self: flex-start; font-size: 11.5px; font-weight: 600; padding: 5px 11px; border-radius: 999px; background: {{ c.stBg }}; color: {{ c.stFg }};"><span style="width: 5px; height: 5px; border-radius: 50%; background: {{ c.stFg }};"></span>{{ c.stLabel }}</span>
+          </button>
+        </sc-for>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ ktNedodeljeni }}" hint-placeholder-val="{{ false }}">
+      <div style="display: flex; flex-direction: column; gap: 12px;">
+        <div style="background: rgba(198,213,168,0.22); border: 1px solid rgba(138,157,130,0.3); border-radius: 16px; padding: 13px 18px; font-size: 13px; color: #3A2E28;">Deo Intake &amp; Matching engine-a — zahtevi kojima sistem nije automatski dodelio terapeuta. Kada terapeut preuzme klijenta, ostalima je vidljivo samo ko ga je preuzeo.</div>
+        <sc-for list="{{ unassigned }}" as="u" hint-placeholder-count="2">
+          <div class="cc-req" style="background: #FFFFFF; border: 1px solid rgba(58,46,40,0.06); border-radius: 20px; padding: 20px 22px; display: flex; align-items: flex-start; gap: 18px;">
+            <span style="width: 46px; height: 46px; border-radius: 50%; background: rgba(209,164,140,0.28); color: #96562F; font-size: 13px; font-weight: 600; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;">{{ u.init }}</span>
+            <div style="flex: 1; min-width: 0;">
+              <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                <span style="font-size: 15px; font-weight: 600; color: #3A2E28;">Zahtev · {{ u.init }}</span>
+                <span style="display: inline-flex; align-items: center; gap: 6px; font-size: 11.5px; font-weight: 600; padding: 4px 10px; border-radius: 999px; background: {{ u.stBg }}; color: {{ u.stFg }};"><span style="width: 5px; height: 5px; border-radius: 50%; background: {{ u.stFg }};"></span>{{ u.stLabel }}</span>
+                <span style="font-size: 12px; color: rgba(58,46,40,0.5);">{{ u.date }} · {{ u.ago }}</span>
+              </div>
+              <div style="font-size: 13px; color: rgba(58,46,40,0.6); margin-top: 5px;">{{ u.fmt }} · starosna grupa {{ u.age }} · preporučeni: <span style="font-weight: 600; color: #3A2E28;">{{ u.reco }}</span></div>
+              <div style="display: flex; flex-wrap: wrap; gap: 6px; margin-top: 9px;">
+                <sc-for list="{{ u.areas }}" as="ar" hint-placeholder-count="2">
+                  <span style="font-size: 12px; font-weight: 500; color: #3A2E28; background: rgba(198,213,168,0.22); border: 1px solid rgba(138,157,130,0.25); padding: 4px 11px; border-radius: 999px;">{{ ar }}</span>
+                </sc-for>
+              </div>
+              <div style="font-size: 12.5px; font-style: italic; color: rgba(58,46,40,0.55); margin-top: 8px;">Razlog: {{ u.reason }}</div>
+            </div>
+            <sc-if value="{{ u.pending }}" hint-placeholder-val="{{ true }}">
+              <div class="cc-reqact" style="display: flex; flex-direction: column; gap: 8px; align-items: stretch; min-width: 176px;">
+                <button onClick="{{ u.claim }}" style="cursor: pointer; border: none; background: #2E3B2E; color: #FAF8F3; font-family: 'Instrument Sans', sans-serif; font-size: 13px; font-weight: 600; padding: 10px 18px; border-radius: 999px; transition: background 0.2s ease; min-height: 44px;" style-hover="background: #3d4d3d;">Preuzmi klijenta</button>
+                <button onClick="{{ u.claim }}" style="cursor: pointer; background: none; border: 1.5px solid rgba(58,46,40,0.22); color: #3A2E28; font-family: 'Instrument Sans', sans-serif; font-size: 13px; font-weight: 600; padding: 9px 16px; border-radius: 999px; transition: all 0.2s ease; min-height: 44px;" style-hover="border-color: #8A9D82; background: rgba(198,213,168,0.15);">Dodeli terapeutu</button>
+                <button style="cursor: pointer; background: none; border: none; color: rgba(58,46,40,0.6); font-family: 'Instrument Sans', sans-serif; font-size: 12.5px; font-weight: 600; padding: 8px; border-radius: 999px; transition: background 0.2s ease;" style-hover="background: rgba(58,46,40,0.06);">Pošalji link za zakazivanje</button>
+              </div>
+            </sc-if>
+          </div>
+        </sc-for>
+      </div>
+    </sc-if>
+  </section>
+  </sc-if>
+
+  <!-- ============ 04 PROFIL KLIJENTA ============ -->
+  <sc-if value="{{ scrKlijent }}" hint-placeholder-val="{{ false }}">
+  <section data-screen-label="Profil klijenta" style="animation: ccFadeUp 0.4s ease both;">
+    <button onClick="{{ backKlijenti }}" style="cursor: pointer; border: none; background: none; display: inline-flex; align-items: center; gap: 8px; font-family: 'Instrument Sans', sans-serif; font-size: 13.5px; font-weight: 600; color: rgba(58,46,40,0.6); padding: 4px 0; margin-bottom: 14px;" style-hover="color: #2E3B2E;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"></path><path d="M11 6l-6 6 6 6"></path></svg>Klijenti</button>
+    <div style="background: #FFFFFF; border: 1px solid rgba(58,46,40,0.06); border-radius: 22px; padding: 26px 28px; margin-bottom: 16px; display: flex; align-items: center; gap: 18px; flex-wrap: wrap;">
+      <span style="width: 64px; height: 64px; border-radius: 50%; background: rgba(198,213,168,0.4); color: #2E3B2E; font-family: 'Newsreader', serif; font-size: 23px; display: inline-flex; align-items: center; justify-content: center;">{{ cp.init }}</span>
+      <div style="flex: 1; min-width: 220px;">
+        <h1 class="cc-h1" style="margin: 0 0 6px; font-family: 'Newsreader', serif; font-weight: 400; font-size: 30px; line-height: 1.1; color: #2E3B2E;">{{ cp.name }}</h1>
+        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+          <span style="display: inline-flex; align-items: center; gap: 6px; font-size: 11.5px; font-weight: 600; padding: 5px 11px; border-radius: 999px; background: {{ cp.stBg }}; color: {{ cp.stFg }};"><span style="width: 5px; height: 5px; border-radius: 50%; background: {{ cp.stFg }};"></span>{{ cp.stLabel }}</span>
+          <span style="font-size: 13px; color: rgba(58,46,40,0.6);">{{ cp.fmt }} · {{ cp.svc }}</span>
+        </div>
+      </div>
+      <div style="display: flex; gap: 26px; flex-wrap: wrap;">
+        <span><span style="display: block; font-size: 11px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(58,46,40,0.45);">Terapeut</span><span style="display: block; font-size: 14px; font-weight: 600; color: #3A2E28; margin-top: 3px;">{{ cp.ter }}</span></span>
+        <span><span style="display: block; font-size: 11px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(58,46,40,0.45);">Sledeći termin</span><span style="display: block; font-size: 14px; font-weight: 600; color: #3A2E28; margin-top: 3px;">{{ cp.next }}</span></span>
+        <span><span style="display: block; font-size: 11px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(58,46,40,0.45);">Održano / otkazano</span><span style="display: block; font-size: 14px; font-weight: 600; color: #3A2E28; margin-top: 3px;">{{ cp.odrzano }} / {{ cp.otkazano }}</span></span>
+      </div>
+    </div>
+    <div class="cc-tabs" style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 18px;">
+      <button onClick="{{ setCPregled }}" style="cursor: pointer; white-space: nowrap; font-family: 'Instrument Sans', sans-serif; font-size: 13px; font-weight: 600; padding: 9px 17px; border-radius: 999px; transition: all 0.2s ease; border: 1px solid {{ cPregled.bd }}; background: {{ cPregled.bg }}; color: {{ cPregled.fg }};">Pregled</button>
+      <button onClick="{{ setCTermini }}" style="cursor: pointer; white-space: nowrap; font-family: 'Instrument Sans', sans-serif; font-size: 13px; font-weight: 600; padding: 9px 17px; border-radius: 999px; transition: all 0.2s ease; border: 1px solid {{ cTermini.bd }}; background: {{ cTermini.bg }}; color: {{ cTermini.fg }};">Termini</button>
+      <button onClick="{{ setCPaketi }}" style="cursor: pointer; white-space: nowrap; font-family: 'Instrument Sans', sans-serif; font-size: 13px; font-weight: 600; padding: 9px 17px; border-radius: 999px; transition: all 0.2s ease; border: 1px solid {{ cPaketi.bd }}; background: {{ cPaketi.bg }}; color: {{ cPaketi.fg }};">Usluge i paketi</button>
+      <button onClick="{{ setCIntake }}" style="cursor: pointer; white-space: nowrap; font-family: 'Instrument Sans', sans-serif; font-size: 13px; font-weight: 600; padding: 9px 17px; border-radius: 999px; transition: all 0.2s ease; border: 1px solid {{ cIntake.bd }}; background: {{ cIntake.bg }}; color: {{ cIntake.fg }};">Intake sažetak</button>
+      <button onClick="{{ setCSagl }}" style="cursor: pointer; white-space: nowrap; font-family: 'Instrument Sans', sans-serif; font-size: 13px; font-weight: 600; padding: 9px 17px; border-radius: 999px; transition: all 0.2s ease; border: 1px solid {{ cSagl.bd }}; background: {{ cSagl.bg }}; color: {{ cSagl.fg }};">Saglasnosti</button>
+    </div>
+
+    <sc-if value="{{ cptPregled }}" hint-placeholder-val="{{ false }}">
+      <div class="cc-grid2" style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+        <div style="background: #FFFFFF; border: 1px solid rgba(58,46,40,0.06); border-radius: 20px; padding: 22px 24px;">
+          <div style="font-size: 11.5px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: #8A9D82; margin-bottom: 14px;">Kontakt</div>
+          <div class="cc-kv" style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+            <span><span style="display: block; font-size: 11px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(58,46,40,0.45);">Email</span><span style="display: block; font-size: 14px; font-weight: 600; color: #3A2E28; margin-top: 3px;">{{ cp.email }}</span></span>
+            <span><span style="display: block; font-size: 11px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(58,46,40,0.45);">Telefon</span><span style="display: block; font-size: 14px; font-weight: 600; color: #3A2E28; margin-top: 3px;">{{ cp.phone }}</span></span>
+            <span><span style="display: block; font-size: 11px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(58,46,40,0.45);">Način rada</span><span style="display: block; font-size: 14px; font-weight: 600; color: #3A2E28; margin-top: 3px;">{{ cp.fmt }}</span></span>
+            <span><span style="display: block; font-size: 11px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(58,46,40,0.45);">Izvor registracije</span><span style="display: block; font-size: 14px; font-weight: 600; color: #3A2E28; margin-top: 3px;">{{ cp.izvor }}</span></span>
+          </div>
+        </div>
+        <div style="background: #FFFFFF; border: 1px solid rgba(58,46,40,0.06); border-radius: 20px; padding: 22px 24px;">
+          <div style="font-size: 11.5px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: #8A9D82; margin-bottom: 14px;">Rad</div>
+          <div class="cc-kv" style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+            <span><span style="display: block; font-size: 11px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(58,46,40,0.45);">Dodeljeni terapeut</span><span style="display: block; font-size: 14px; font-weight: 600; color: #3A2E28; margin-top: 3px;">{{ cp.ter }}</span></span>
+            <span><span style="display: block; font-size: 11px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(58,46,40,0.45);">Poslednji termin</span><span style="display: block; font-size: 14px; font-weight: 600; color: #3A2E28; margin-top: 3px;">{{ cp.last }}</span></span>
+            <span><span style="display: block; font-size: 11px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(58,46,40,0.45);">Održano termina</span><span style="display: block; font-family: 'Newsreader', serif; font-size: 21px; color: #2E3B2E; margin-top: 2px;">{{ cp.odrzano }}</span></span>
+            <span><span style="display: block; font-size: 11px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(58,46,40,0.45);">Otkazano / nedolazak</span><span style="display: block; font-family: 'Newsreader', serif; font-size: 21px; color: #2E3B2E; margin-top: 2px;">{{ cp.otkazano }} / {{ cp.nedolazak }}</span></span>
+          </div>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ cptTermini }}" hint-placeholder-val="{{ false }}">
+      <div style="background: #FFFFFF; border: 1px solid rgba(58,46,40,0.06); border-radius: 22px; padding: 10px 24px 14px;">
+        <sc-for list="{{ cp.termini }}" as="t" hint-placeholder-count="4">
+          <div class="cc-agrow" style="display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 14px; padding: 14px 10px; border-top: 1px solid rgba(58,46,40,0.06);">
+            <span>
+              <span style="display: block; font-size: 14.5px; font-weight: 600; color: #3A2E28;">{{ t.time }}</span>
+              <span style="display: block; font-size: 12.5px; color: rgba(58,46,40,0.55); margin-top: 2px;">{{ t.svc }} · {{ t.fmt }}</span>
+            </span>
+            <span style="display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; padding: 5px 11px; border-radius: 999px; white-space: nowrap; background: {{ t.stBg }}; color: {{ t.stFg }};"><span style="width: 6px; height: 6px; border-radius: 50%; background: {{ t.stFg }};"></span>{{ t.stLabel }}</span>
+          </div>
+        </sc-for>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ cptPaketi }}" hint-placeholder-val="{{ false }}">
+      <div class="cc-grid2" style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+        <div style="background: #2E3B2E; border-radius: 22px; padding: 26px;">
+          <div style="font-size: 11.5px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: rgba(198,213,168,0.85); margin-bottom: 10px;">Aktivni paket</div>
+          <div style="font-family: 'Newsreader', serif; font-size: 23px; line-height: 1.15; color: #FAF8F3; margin-bottom: 18px;">{{ cp.paket.name }}</div>
+          <div style="display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 8px;">
+            <span style="font-size: 13px; color: rgba(250,248,243,0.7);">Iskorišćeno {{ cp.paket.used }} od {{ cp.paket.total }}</span>
+            <span style="font-size: 13px; font-weight: 600; color: #C6D5A8;">Ističe {{ cp.paket.expires }}</span>
+          </div>
+          <span style="display: block; height: 9px; border-radius: 999px; background: rgba(250,248,243,0.15); overflow: hidden;"><span style="display: block; height: 100%; border-radius: 999px; background: #C6D5A8; width: {{ cp.paketPct }};"></span></span>
+        </div>
+        <div style="background: #FFFFFF; border: 1px solid rgba(58,46,40,0.06); border-radius: 22px; padding: 26px;">
+          <div style="font-size: 11.5px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: #8A9D82; margin-bottom: 14px;">Usluga i naplata</div>
+          <div style="display: flex; flex-direction: column; gap: 13px;">
+            <span><span style="display: block; font-size: 11px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(58,46,40,0.45);">Aktivna usluga</span><span style="display: block; font-size: 14px; font-weight: 600; color: #3A2E28; margin-top: 3px;">{{ cp.svc }}</span></span>
+            <span><span style="display: block; font-size: 11px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(58,46,40,0.45);">Preostali krediti</span><span style="display: block; font-family: 'Newsreader', serif; font-size: 21px; color: #2E3B2E; margin-top: 2px;">2 termina</span></span>
+            <span><span style="display: block; font-size: 11px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(58,46,40,0.45);">Kompanijski voucher</span><span style="display: block; font-size: 14px; font-weight: 600; color: rgba(58,46,40,0.55); margin-top: 3px;">Nema</span></span>
+          </div>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ cptIntake }}" hint-placeholder-val="{{ false }}">
+      <div style="display: flex; flex-direction: column; gap: 14px;">
+        <div class="cc-grid4" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px;">
+          <div style="background: #FFFFFF; border: 1px solid rgba(58,46,40,0.06); border-radius: 18px; padding: 18px 20px;"><span style="display: block; font-size: 11px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(58,46,40,0.45);">Podrška za</span><span style="display: block; font-size: 15px; font-weight: 600; color: #3A2E28; margin-top: 5px;">{{ cp.intake.za }}</span></div>
+          <div style="background: #FFFFFF; border: 1px solid rgba(58,46,40,0.06); border-radius: 18px; padding: 18px 20px;"><span style="display: block; font-size: 11px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(58,46,40,0.45);">Željeni način</span><span style="display: block; font-size: 15px; font-weight: 600; color: #3A2E28; margin-top: 5px;">{{ cp.intake.fmt }}</span></div>
+          <div style="background: #FFFFFF; border: 1px solid rgba(58,46,40,0.06); border-radius: 18px; padding: 18px 20px; grid-column: span 2;"><span style="display: block; font-size: 11px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(58,46,40,0.45);">Preferencije</span><span style="display: block; font-size: 15px; font-weight: 600; color: #3A2E28; margin-top: 5px;">{{ cp.intake.pref }}</span></div>
+        </div>
+        <div style="background: #FFFFFF; border: 1px solid rgba(58,46,40,0.06); border-radius: 20px; padding: 22px 24px;">
+          <span style="display: block; font-size: 11px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(58,46,40,0.45); margin-bottom: 10px;">Oblasti podrške</span>
+          <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+            <sc-for list="{{ cp.intake.oblasti }}" as="o" hint-placeholder-count="3">
+              <span style="font-size: 13px; font-weight: 500; color: #3A2E28; background: rgba(198,213,168,0.22); border: 1px solid rgba(138,157,130,0.25); padding: 6px 13px; border-radius: 999px;">{{ o }}</span>
+            </sc-for>
+          </div>
+        </div>
+        <div style="background: rgba(198,213,168,0.22); border: 1px solid rgba(138,157,130,0.3); border-radius: 20px; padding: 22px 24px;">
+          <span style="display: block; font-size: 11px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: #5E6F4A; margin-bottom: 10px;">Sopstvenim rečima</span>
+          <p style="margin: 0 0 12px; font-family: 'Newsreader', serif; font-style: italic; font-size: 18px; line-height: 1.5; color: #3A2E28;">„{{ cp.intake.words }}“</p>
+          <p style="margin: 0; font-size: 13px; color: rgba(58,46,40,0.65);"><span style="font-weight: 600;">Preporuka sistema:</span> {{ cp.intake.reason }}</p>
+        </div>
+        <p style="margin: 0 4px; font-size: 12.5px; font-style: italic; color: rgba(58,46,40,0.5);">Intake je pomoć pri usmeravanju — ne prikazuje se kao dijagnoza niti stručna procena.</p>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ cptSagl }}" hint-placeholder-val="{{ false }}">
+      <div style="background: #FFFFFF; border: 1px solid rgba(58,46,40,0.06); border-radius: 22px; padding: 10px 24px 18px;">
+        <sc-for list="{{ cp.sagl }}" as="sg" hint-placeholder-count="3">
+          <div style="display: flex; align-items: center; gap: 14px; padding: 15px 6px; border-top: 1px solid rgba(58,46,40,0.06);">
+            <span style="width: 30px; height: 30px; border-radius: 50%; background: rgba(198,213,168,0.4); color: #3D6B3D; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12.5l5 5L20 6.5"></path></svg></span>
+            <span style="flex: 1; font-size: 14.5px; font-weight: 600; color: #3A2E28;">{{ sg.t }}</span>
+            <span style="font-size: 12.5px; color: rgba(58,46,40,0.55);">{{ sg.d }}</span>
+          </div>
+        </sc-for>
+        <p style="margin: 14px 6px 6px; font-size: 12.5px; font-style: italic; color: rgba(58,46,40,0.5);">Bez anamneze, kliničkih beleški i dijagnostičke dokumentacije — van obima ove verzije.</p>
+      </div>
+    </sc-if>
+  </section>
+  </sc-if>
+  <!-- ============ 05 KOMPANIJE ============ -->
+  <sc-if value="{{ scrKompanije }}" hint-placeholder-val="{{ false }}">
+  <section data-screen-label="Kompanije" style="animation: ccFadeUp 0.4s ease both;">
+    <div style="display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; margin-bottom: 20px; flex-wrap: wrap;">
+      <div>
+        <h1 class="cc-h1" style="margin: 0 0 6px; font-family: 'Newsreader', serif; font-weight: 400; font-size: 34px; line-height: 1.1; color: #2E3B2E;">Kompanije</h1>
+        <p style="margin: 0; font-size: 14.5px; color: rgba(58,46,40,0.6);">Programi podrške za timove — saradnje, fondovi i kapacitet.</p>
+      </div>
+      <button onClick="{{ openQuick }}" class="cc-desk" style="cursor: pointer; background: none; border: 1.5px solid rgba(58,46,40,0.22); color: #3A2E28; font-family: 'Instrument Sans', sans-serif; font-size: 13.5px; font-weight: 600; padding: 10px 20px; border-radius: 999px; transition: all 0.2s ease;" style-hover="border-color: #8A9D82; background: rgba(198,213,168,0.15);">+ Nova kompanija</button>
+    </div>
+    <div class="cc-tabs" style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 18px;">
+      <span style="white-space: nowrap; display: inline-flex; align-items: center; gap: 7px; font-size: 12.5px; font-weight: 600; color: #96562F; background: rgba(209,164,140,0.22); padding: 7px 14px; border-radius: 999px;">Novi upit · 1</span>
+      <span style="white-space: nowrap; display: inline-flex; align-items: center; gap: 7px; font-size: 12.5px; font-weight: 600; color: #8A6A3B; background: rgba(209,164,140,0.15); padding: 7px 14px; border-radius: 999px;">Ponuda poslata · 1</span>
+      <span style="white-space: nowrap; display: inline-flex; align-items: center; gap: 7px; font-size: 12.5px; font-weight: 600; color: #5E6F4A; background: rgba(198,213,168,0.3); padding: 7px 14px; border-radius: 999px;">Pilot · 1</span>
+      <span style="white-space: nowrap; display: inline-flex; align-items: center; gap: 7px; font-size: 12.5px; font-weight: 600; color: #3D6B3D; background: rgba(198,213,168,0.45); padding: 7px 14px; border-radius: 999px;">Aktivna · 1</span>
+      <span style="white-space: nowrap; display: inline-flex; align-items: center; gap: 7px; font-size: 12.5px; font-weight: 600; color: rgba(58,46,40,0.5); background: rgba(58,46,40,0.06); padding: 7px 14px; border-radius: 999px;">Pauzirana · 0</span>
+    </div>
+    <div class="cc-grid2" style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+      <sc-for list="{{ companies }}" as="k" hint-placeholder-count="4">
+        <button onClick="{{ k.open }}" style="cursor: pointer; text-align: left; background: #FFFFFF; border: 1px solid rgba(58,46,40,0.06); border-radius: 20px; padding: 22px 24px; display: flex; flex-direction: column; gap: 13px; font-family: 'Instrument Sans', sans-serif; transition: transform 0.25s ease, box-shadow 0.25s ease;" style-hover="transform: translateY(-3px); box-shadow: 0 14px 34px rgba(58,46,40,0.10);">
+          <span style="display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;">
+            <span style="font-family: 'Newsreader', serif; font-size: 22px; color: #2E3B2E;">{{ k.name }}</span>
+            <span style="display: inline-flex; align-items: center; gap: 6px; font-size: 11.5px; font-weight: 600; padding: 5px 11px; border-radius: 999px; white-space: nowrap; background: {{ k.stBg }}; color: {{ k.stFg }};"><span style="width: 5px; height: 5px; border-radius: 50%; background: {{ k.stFg }};"></span>{{ k.stLabel }}</span>
+          </span>
+          <span style="font-size: 13px; color: rgba(58,46,40,0.6);">{{ k.contact }}</span>
+          <span style="display: flex; gap: 22px; flex-wrap: wrap; border-top: 1px solid rgba(58,46,40,0.07); padding-top: 12px;">
+            <span><span style="display: block; font-size: 11px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(58,46,40,0.45);">Model</span><span style="display: block; font-size: 13.5px; font-weight: 600; color: #3A2E28; margin-top: 2px;">{{ k.model }}</span></span>
+            <span><span style="display: block; font-size: 11px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(58,46,40,0.45);">Krediti</span><span style="display: block; font-size: 13.5px; font-weight: 600; color: #3A2E28; margin-top: 2px;">{{ k.kredit }}</span></span>
+            <span><span style="display: block; font-size: 11px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(58,46,40,0.45);">Ugovor ističe</span><span style="display: block; font-size: 13.5px; font-weight: 600; color: #3A2E28; margin-top: 2px;">{{ k.expires }}</span></span>
+          </span>
+          <sc-if value="{{ k.hasFund }}" hint-placeholder-val="{{ true }}">
+            <span style="display: block; height: 8px; border-radius: 999px; background: rgba(58,46,40,0.07); overflow: hidden;"><span style="display: block; height: 100%; border-radius: 999px; background: #D1A48C; width: {{ k.pctW }};"></span></span>
+          </sc-if>
+        </button>
+      </sc-for>
+    </div>
+  </section>
+  </sc-if>
+
+  <!-- ============ 06 PROFIL KOMPANIJE ============ -->
+  <sc-if value="{{ scrKompanija }}" hint-placeholder-val="{{ false }}">
+  <section data-screen-label="Profil kompanije" style="animation: ccFadeUp 0.4s ease both;">
+    <button onClick="{{ backKompanije }}" style="cursor: pointer; border: none; background: none; display: inline-flex; align-items: center; gap: 8px; font-family: 'Instrument Sans', sans-serif; font-size: 13.5px; font-weight: 600; color: rgba(58,46,40,0.6); padding: 4px 0; margin-bottom: 14px;" style-hover="color: #2E3B2E;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"></path><path d="M11 6l-6 6 6 6"></path></svg>Kompanije</button>
+    <div style="background: #FFFFFF; border: 1px solid rgba(58,46,40,0.06); border-radius: 22px; padding: 26px 28px; margin-bottom: 16px; display: flex; align-items: center; gap: 18px; flex-wrap: wrap;">
+      <span style="width: 60px; height: 60px; border-radius: 18px; background: rgba(209,164,140,0.25); color: #96562F; display: inline-flex; align-items: center; justify-content: center;"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"></path><rect x="5" y="3" width="14" height="18" rx="1.5"></rect><path d="M9 7h2M13 7h2M9 11h2M13 11h2M9 15h2M13 15h2"></path></svg></span>
+      <div style="flex: 1; min-width: 220px;">
+        <h1 class="cc-h1" style="margin: 0 0 6px; font-family: 'Newsreader', serif; font-weight: 400; font-size: 30px; line-height: 1.1; color: #2E3B2E;">{{ ko.name }}</h1>
+        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+          <span style="display: inline-flex; align-items: center; gap: 6px; font-size: 11.5px; font-weight: 600; padding: 5px 11px; border-radius: 999px; background: {{ ko.stBg }}; color: {{ ko.stFg }};"><span style="width: 5px; height: 5px; border-radius: 50%; background: {{ ko.stFg }};"></span>{{ ko.stLabel }}</span>
+          <span style="font-size: 13px; color: rgba(58,46,40,0.6);">{{ ko.contact }}</span>
+        </div>
+      </div>
+      <div style="display: flex; gap: 26px; flex-wrap: wrap;">
+        <span><span style="display: block; font-size: 11px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(58,46,40,0.45);">Zaposlenih</span><span style="display: block; font-family: 'Newsreader', serif; font-size: 21px; color: #2E3B2E; margin-top: 2px;">{{ ko.emp }}</span></span>
+        <span><span style="display: block; font-size: 11px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(58,46,40,0.45);">Lokacija</span><span style="display: block; font-size: 14px; font-weight: 600; color: #3A2E28; margin-top: 3px;">{{ ko.loc }}</span></span>
+        <span><span style="display: block; font-size: 11px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(58,46,40,0.45);">Format</span><span style="display: block; font-size: 14px; font-weight: 600; color: #3A2E28; margin-top: 3px;">{{ ko.fmtx }}</span></span>
+      </div>
+    </div>
+    <div class="cc-tabs" style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 18px;">
+      <button onClick="{{ setKOPregled }}" style="cursor: pointer; white-space: nowrap; font-family: 'Instrument Sans', sans-serif; font-size: 13px; font-weight: 600; padding: 9px 17px; border-radius: 999px; transition: all 0.2s ease; border: 1px solid {{ koPregledS.bd }}; background: {{ koPregledS.bg }}; color: {{ koPregledS.fg }};">Pregled</button>
+      <button onClick="{{ setKOProgram }}" style="cursor: pointer; white-space: nowrap; font-family: 'Instrument Sans', sans-serif; font-size: 13px; font-weight: 600; padding: 9px 17px; border-radius: 999px; transition: all 0.2s ease; border: 1px solid {{ koProgramS.bd }}; background: {{ koProgramS.bg }}; color: {{ koProgramS.fg }};">Program</button>
+      <button onClick="{{ setKOKapacitet }}" style="cursor: pointer; white-space: nowrap; font-family: 'Instrument Sans', sans-serif; font-size: 13px; font-weight: 600; padding: 9px 17px; border-radius: 999px; transition: all 0.2s ease; border: 1px solid {{ koKapacitetS.bd }}; background: {{ koKapacitetS.bg }}; color: {{ koKapacitetS.fg }};">Kapacitet i termini</button>
+      <span style="white-space: nowrap; font-size: 13px; font-weight: 600; color: rgba(58,46,40,0.4); background: rgba(58,46,40,0.05); padding: 9px 17px; border-radius: 999px;">Pozivnice · uskoro</span>
+      <span style="white-space: nowrap; font-size: 13px; font-weight: 600; color: rgba(58,46,40,0.4); background: rgba(58,46,40,0.05); padding: 9px 17px; border-radius: 999px;">Izveštavanje · uskoro</span>
+    </div>
+
+    <sc-if value="{{ kotPregled }}" hint-placeholder-val="{{ false }}">
+      <div class="cc-grid2" style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+        <div style="background: #FFFFFF; border: 1px solid rgba(58,46,40,0.06); border-radius: 20px; padding: 22px 24px;">
+          <div style="font-size: 11.5px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: #8A9D82; margin-bottom: 14px;">Podaci o saradnji</div>
+          <div class="cc-kv" style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+            <span><span style="display: block; font-size: 11px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(58,46,40,0.45);">Kontakt osoba</span><span style="display: block; font-size: 14px; font-weight: 600; color: #3A2E28; margin-top: 3px;">{{ ko.contact }}</span></span>
+            <span><span style="display: block; font-size: 11px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(58,46,40,0.45);">Model saradnje</span><span style="display: block; font-size: 14px; font-weight: 600; color: #3A2E28; margin-top: 3px;">{{ ko.model }}</span></span>
+            <span><span style="display: block; font-size: 11px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(58,46,40,0.45);">Trajanje saradnje</span><span style="display: block; font-size: 14px; font-weight: 600; color: #3A2E28; margin-top: 3px;">Do {{ ko.expires }}</span></span>
+            <span><span style="display: block; font-size: 11px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(58,46,40,0.45);">Online / uživo</span><span style="display: block; font-size: 14px; font-weight: 600; color: #3A2E28; margin-top: 3px;">{{ ko.fmtx }}</span></span>
+          </div>
+        </div>
+        <div style="background: rgba(198,213,168,0.22); border: 1px solid rgba(138,157,130,0.3); border-radius: 20px; padding: 22px 24px;">
+          <div style="font-size: 11.5px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: #5E6F4A; margin-bottom: 10px;">Ciljevi programa</div>
+          <p style="margin: 0; font-family: 'Newsreader', serif; font-size: 19px; line-height: 1.4; color: #3A2E28;">{{ ko.cilj }}</p>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ kotProgram }}" hint-placeholder-val="{{ false }}">
+      <div class="cc-grid2" style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+        <div style="background: #2E3B2E; border-radius: 22px; padding: 26px;">
+          <div style="font-size: 11.5px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: rgba(198,213,168,0.85); margin-bottom: 10px;">Model programa</div>
+          <div style="font-family: 'Newsreader', serif; font-size: 25px; color: #FAF8F3; margin-bottom: 8px;">{{ ko.model }}</div>
+          <p style="margin: 0; font-size: 14px; line-height: 1.6; color: rgba(250,248,243,0.72);">Fond termina koji zaposleni koriste anonimno preko pozivnica. Neiskorišćeni termini se prenose u naredni mesec.</p>
+        </div>
+        <div style="background: #FFFFFF; border: 1px solid rgba(58,46,40,0.06); border-radius: 22px; padding: 26px;">
+          <div style="font-size: 11.5px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: #8A9D82; margin-bottom: 14px;">Uslovi</div>
+          <div class="cc-kv" style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+            <span><span style="display: block; font-size: 11px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(58,46,40,0.45);">Termina mesečno</span><span style="display: block; font-family: 'Newsreader', serif; font-size: 21px; color: #2E3B2E; margin-top: 2px;">10</span></span>
+            <span><span style="display: block; font-size: 11px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(58,46,40,0.45);">Period saradnje</span><span style="display: block; font-size: 14px; font-weight: 600; color: #3A2E28; margin-top: 3px;">Jul — dec 2026.</span></span>
+            <span><span style="display: block; font-size: 11px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(58,46,40,0.45);">Dodatne radionice</span><span style="display: block; font-size: 14px; font-weight: 600; color: #3A2E28; margin-top: 3px;">2 × „Prevencija burnouta“</span></span>
+            <span><span style="display: block; font-size: 11px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(58,46,40,0.45);">Cena i status</span><span style="display: block; font-size: 14px; font-weight: 600; color: #3A2E28; margin-top: 3px;">4.200 RSD / termin · ugovoreno</span></span>
+          </div>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ kotKapacitet }}" hint-placeholder-val="{{ false }}">
+      <div style="display: flex; flex-direction: column; gap: 14px;">
+        <div class="cc-grid4" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px;">
+          <div style="background: #FFFFFF; border: 1px solid rgba(58,46,40,0.06); border-radius: 18px; padding: 18px 20px;"><span style="display: block; font-family: 'Newsreader', serif; font-size: 30px; color: #2E3B2E;">{{ ko.bought }}</span><span style="display: block; font-size: 12.5px; font-weight: 600; color: rgba(58,46,40,0.6); margin-top: 4px;">Ukupno kupljeno</span></div>
+          <div style="background: #FFFFFF; border: 1px solid rgba(58,46,40,0.06); border-radius: 18px; padding: 18px 20px;"><span style="display: block; font-family: 'Newsreader', serif; font-size: 30px; color: #2E3B2E;">{{ ko.used }}</span><span style="display: block; font-size: 12.5px; font-weight: 600; color: rgba(58,46,40,0.6); margin-top: 4px;">Iskorišćeno</span></div>
+          <div style="background: #FFFFFF; border: 1px solid rgba(58,46,40,0.06); border-radius: 18px; padding: 18px 20px;"><span style="display: block; font-family: 'Newsreader', serif; font-size: 30px; color: #2E3B2E;">{{ ko.res }}</span><span style="display: block; font-size: 12.5px; font-weight: 600; color: rgba(58,46,40,0.6); margin-top: 4px;">Rezervisano</span></div>
+          <div style="background: #FFFFFF; border: 1px solid rgba(58,46,40,0.06); border-radius: 18px; padding: 18px 20px;"><span style="display: block; font-family: 'Newsreader', serif; font-size: 30px; color: #2E3B2E;">{{ ko.left }}</span><span style="display: block; font-size: 12.5px; font-weight: 600; color: rgba(58,46,40,0.6); margin-top: 4px;">Preostalo <span style="color: rgba(58,46,40,0.45); font-weight: 500;">(+{{ ko.carry }} preneto)</span></span></div>
+        </div>
+        <div style="background: #FFFFFF; border: 1px solid rgba(58,46,40,0.06); border-radius: 20px; padding: 22px 24px;">
+          <div style="display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 10px;">
+            <span style="font-size: 13.5px; font-weight: 600; color: #3A2E28;">Korišćenje fonda</span>
+            <span style="font-size: 13px; font-weight: 600; color: #96562F;">{{ ko.pct }}%</span>
+          </div>
+          <span style="display: block; height: 10px; border-radius: 999px; background: rgba(58,46,40,0.07); overflow: hidden;"><span style="display: block; height: 100%; border-radius: 999px; background: #D1A48C; width: {{ ko.pctW }};"></span></span>
+        </div>
+        <div style="background: rgba(209,164,140,0.16); border: 1px solid rgba(209,164,140,0.45); border-radius: 20px; padding: 20px 24px; display: flex; gap: 14px; align-items: flex-start;">
+          <span style="color: #96562F; flex-shrink: 0; margin-top: 2px;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"></rect><path d="M8 11V7a4 4 0 0 1 8 0v4"></path></svg></span>
+          <p style="margin: 0; font-size: 13.5px; line-height: 1.6; color: #3A2E28;"><span style="font-weight: 700;">Privatnost zaposlenih:</span> kompanija nikada ne vidi ko koristi termine, teme razgovora ni Intake rezultate — samo zbirno korišćenje fonda. Kod malih timova ni zbirna analitika se ne prikazuje ako može otkriti identitet.</p>
+        </div>
+      </div>
+    </sc-if>
+  </section>
+  </sc-if>
+
+  <!-- ============ 07 TERAPEUTI ============ -->
+  <sc-if value="{{ scrTerapeuti }}" hint-placeholder-val="{{ false }}">
+  <section data-screen-label="Terapeuti" style="animation: ccFadeUp 0.4s ease both;">
+    <div style="margin-bottom: 20px;">
+      <h1 class="cc-h1" style="margin: 0 0 6px; font-family: 'Newsreader', serif; font-weight: 400; font-size: 34px; line-height: 1.1; color: #2E3B2E;">Terapeuti</h1>
+      <p style="margin: 0; font-size: 14.5px; color: rgba(58,46,40,0.6);">Tim centra — javni profili, opterećenje i matching podešavanja.</p>
+    </div>
+    <div class="cc-grid3" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px;">
+      <sc-for list="{{ therapists }}" as="t" hint-placeholder-count="3">
+        <button onClick="{{ t.open }}" style="cursor: pointer; text-align: left; background: #FFFFFF; border: 1px solid rgba(58,46,40,0.06); border-radius: 22px; padding: 26px 24px; display: flex; flex-direction: column; gap: 14px; font-family: 'Instrument Sans', sans-serif; transition: transform 0.25s ease, box-shadow 0.25s ease;" style-hover="transform: translateY(-3px); box-shadow: 0 16px 40px rgba(58,46,40,0.10);">
+          <span style="display: flex; align-items: flex-start; justify-content: space-between; gap: 10px;">
+            <span style="width: 62px; height: 62px; border-radius: 50%; border: 3px solid rgba(198,213,168,0.6); background-size: cover; background-position: center; background-color: rgba(198,213,168,0.3); background-image: {{ t.img }};"></span>
+            <span style="font-size: 11px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: #8A9D82; background: rgba(198,213,168,0.28); padding: 6px 12px; border-radius: 999px;">{{ t.badge }}</span>
+          </span>
+          <span>
+            <span style="display: block; font-family: 'Newsreader', serif; font-size: 23px; color: #2E3B2E;">{{ t.name }}</span>
+            <span style="display: block; font-size: 12.5px; font-weight: 600; color: rgba(58,46,40,0.55); margin-top: 4px; line-height: 1.45;">{{ t.zvanje }}</span>
+          </span>
+          <span style="display: flex; gap: 20px; border-top: 1px solid rgba(58,46,40,0.07); padding-top: 12px;">
+            <span><span style="display: block; font-size: 11px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(58,46,40,0.45);">Klijenti</span><span style="display: block; font-family: 'Newsreader', serif; font-size: 21px; color: #2E3B2E; margin-top: 2px;">{{ t.klStr }}</span></span>
+            <span style="flex: 1;"><span style="display: block; font-size: 11px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(58,46,40,0.45); margin-bottom: 8px;">Popunjenost · {{ t.pop }}%</span><span style="display: block; height: 8px; border-radius: 999px; background: rgba(58,46,40,0.07); overflow: hidden;"><span style="display: block; height: 100%; border-radius: 999px; background: #8A9D82; width: {{ t.popW }};"></span></span></span>
+          </span>
+          <span style="display: inline-flex; align-items: center; gap: 6px; align-self: flex-start; font-size: 11.5px; font-weight: 600; padding: 5px 11px; border-radius: 999px; background: {{ t.primaBg }}; color: {{ t.primaFg }};"><span style="width: 5px; height: 5px; border-radius: 50%; background: {{ t.primaFg }};"></span>{{ t.primaLabel }}</span>
+        </button>
+      </sc-for>
+    </div>
+  </section>
+  </sc-if>
+
+  <!-- ============ 08 PROFIL TERAPEUTA ============ -->
+  <sc-if value="{{ scrTerapeut }}" hint-placeholder-val="{{ false }}">
+  <section data-screen-label="Profil terapeuta" style="animation: ccFadeUp 0.4s ease both;">
+    <sc-if value="{{ roleVlasnik }}" hint-placeholder-val="{{ true }}">
+      <button onClick="{{ backTerapeuti }}" style="cursor: pointer; border: none; background: none; display: inline-flex; align-items: center; gap: 8px; font-family: 'Instrument Sans', sans-serif; font-size: 13.5px; font-weight: 600; color: rgba(58,46,40,0.6); padding: 4px 0; margin-bottom: 14px;" style-hover="color: #2E3B2E;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"></path><path d="M11 6l-6 6 6 6"></path></svg>Terapeuti</button>
+    </sc-if>
+    <div style="background: #FFFFFF; border: 1px solid rgba(58,46,40,0.06); border-radius: 22px; padding: 26px 28px; margin-bottom: 16px; display: flex; align-items: center; gap: 20px; flex-wrap: wrap;">
+      <span style="width: 76px; height: 76px; border-radius: 50%; border: 3px solid rgba(198,213,168,0.6); background-size: cover; background-position: center; background-color: rgba(198,213,168,0.3); background-image: {{ tp.img }};"></span>
+      <div style="flex: 1; min-width: 220px;">
+        <h1 class="cc-h1" style="margin: 0 0 5px; font-family: 'Newsreader', serif; font-weight: 400; font-size: 30px; line-height: 1.1; color: #2E3B2E;">{{ tp.name }}</h1>
+        <div style="font-size: 13.5px; color: rgba(58,46,40,0.6); margin-bottom: 9px;">{{ tp.zvanje }}</div>
+        <span style="display: inline-flex; align-items: center; gap: 6px; font-size: 11.5px; font-weight: 600; padding: 5px 11px; border-radius: 999px; background: {{ tp.primaBg }}; color: {{ tp.primaFg }};"><span style="width: 5px; height: 5px; border-radius: 50%; background: {{ tp.primaFg }};"></span>{{ tp.primaLabel }}</span>
+      </div>
+      <div style="display: flex; gap: 26px;">
+        <span><span style="display: block; font-size: 11px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(58,46,40,0.45);">Klijenti</span><span style="display: block; font-family: 'Newsreader', serif; font-size: 24px; color: #2E3B2E; margin-top: 2px;">{{ tp.kl }}</span></span>
+        <span><span style="display: block; font-size: 11px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(58,46,40,0.45);">Popunjenost</span><span style="display: block; font-family: 'Newsreader', serif; font-size: 24px; color: #2E3B2E; margin-top: 2px;">{{ tp.pop }}%</span></span>
+      </div>
+    </div>
+    <div class="cc-tabs" style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 18px;">
+      <button onClick="{{ setTPJavni }}" style="cursor: pointer; white-space: nowrap; font-family: 'Instrument Sans', sans-serif; font-size: 13px; font-weight: 600; padding: 9px 17px; border-radius: 999px; transition: all 0.2s ease; border: 1px solid {{ tJavni.bd }}; background: {{ tJavni.bg }}; color: {{ tJavni.fg }};">Javni profil</button>
+      <button onClick="{{ setTPMatch }}" style="cursor: pointer; white-space: nowrap; display: inline-flex; align-items: center; gap: 7px; font-family: 'Instrument Sans', sans-serif; font-size: 13px; font-weight: 600; padding: 9px 17px; border-radius: 999px; transition: all 0.2s ease; border: 1px solid {{ tMatch.bd }}; background: {{ tMatch.bg }}; color: {{ tMatch.fg }};"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"></rect><path d="M8 11V7a4 4 0 0 1 8 0v4"></path></svg>Matching preferencije</button>
+      <button onClick="{{ setTPDost }}" style="cursor: pointer; white-space: nowrap; font-family: 'Instrument Sans', sans-serif; font-size: 13px; font-weight: 600; padding: 9px 17px; border-radius: 999px; transition: all 0.2s ease; border: 1px solid {{ tDost.bd }}; background: {{ tDost.bg }}; color: {{ tDost.fg }};">Dostupnost</button>
+    </div>
+
+    <sc-if value="{{ tptJavni }}" hint-placeholder-val="{{ false }}">
+      <div class="cc-grid2" style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+        <div style="background: #FFFFFF; border: 1px solid rgba(58,46,40,0.06); border-radius: 20px; padding: 24px 26px;">
+          <div style="font-size: 11.5px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: #8A9D82; margin-bottom: 12px;">Biografija — javno</div>
+          <p style="margin: 0 0 18px; font-family: 'Newsreader', serif; font-style: italic; font-size: 18px; line-height: 1.5; color: rgba(58,46,40,0.85);">„{{ tp.quote }}“</p>
+          <div class="cc-kv" style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+            <span><span style="display: block; font-size: 11px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(58,46,40,0.45);">Grad i format</span><span style="display: block; font-size: 14px; font-weight: 600; color: #3A2E28; margin-top: 3px;">{{ tp.grad }}</span></span>
+            <span><span style="display: block; font-size: 11px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(58,46,40,0.45);">Jezici</span><span style="display: block; font-size: 14px; font-weight: 600; color: #3A2E28; margin-top: 3px;">{{ tp.jezici }}</span></span>
+          </div>
+        </div>
+        <div style="background: #FFFFFF; border: 1px solid rgba(58,46,40,0.06); border-radius: 20px; padding: 24px 26px;">
+          <div style="font-size: 11.5px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: #8A9D82; margin-bottom: 12px;">Oblasti rada — javno</div>
+          <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px;">
+            <sc-for list="{{ tp.areas }}" as="a" hint-placeholder-count="5">
+              <span style="font-size: 13px; font-weight: 500; color: #3A2E28; background: rgba(198,213,168,0.22); border: 1px solid rgba(138,157,130,0.25); padding: 6px 13px; border-radius: 999px;">{{ a }}</span>
+            </sc-for>
+          </div>
+          <div style="font-size: 11.5px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: #8A9D82; margin-bottom: 10px;">Usluge</div>
+          <div style="font-size: 14px; line-height: 1.7; color: rgba(58,46,40,0.75);">Individualna psihoterapija · 60 min · 3.500 RSD<br>Psihološko savjetovanje · 60 min · 3.500 RSD<br>Partnersko savjetovanje · 90 min · 5.000 RSD</div>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ tptMatch }}" hint-placeholder-val="{{ false }}">
+      <div style="display: flex; flex-direction: column; gap: 14px;">
+        <div style="background: rgba(209,164,140,0.16); border: 1px solid rgba(209,164,140,0.45); border-radius: 16px; padding: 13px 18px; display: flex; align-items: center; gap: 10px; font-size: 13px; color: #3A2E28;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#96562F" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"></rect><path d="M8 11V7a4 4 0 0 1 8 0v4"></path></svg><span><span style="font-weight: 700;">Interno.</span> Ove preferencije čita samo Matching engine — ne prikazuju se u javnoj biografiji.</span></div>
+        <div class="cc-grid2" style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+          <div style="background: #FFFFFF; border: 1px solid rgba(58,46,40,0.06); border-radius: 20px; padding: 22px 24px;">
+            <div style="font-size: 11.5px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: #8A9D82; margin-bottom: 14px;">Koga prima</div>
+            <div class="cc-kv" style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+              <span><span style="display: block; font-size: 11px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(58,46,40,0.45);">Starosne grupe</span><span style="display: block; font-size: 14px; font-weight: 600; color: #3A2E28; margin-top: 3px;">Odrasli 18–65</span></span>
+              <span><span style="display: block; font-size: 11px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(58,46,40,0.45);">Max novih mesečno</span><span style="display: block; font-family: 'Newsreader', serif; font-size: 21px; color: #2E3B2E; margin-top: 2px;">3</span></span>
+              <span><span style="display: block; font-size: 11px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(58,46,40,0.45);">Prioritet pri preporuci</span><span style="display: block; font-size: 14px; font-weight: 600; color: #3A2E28; margin-top: 3px;">Visok</span></span>
+              <span><span style="display: block; font-size: 11px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(58,46,40,0.45);">Gradovi</span><span style="display: block; font-size: 14px; font-weight: 600; color: #3A2E28; margin-top: 3px;">Niš · online</span></span>
+            </div>
+            <div style="border-top: 1px solid rgba(58,46,40,0.08); margin-top: 16px; padding-top: 14px;">
+              <span style="display: block; font-size: 11px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(58,46,40,0.45); margin-bottom: 9px;">Trenutno ne prima</span>
+              <div style="display: flex; flex-wrap: wrap; gap: 7px;">
+                <span style="font-size: 12.5px; font-weight: 500; color: #96562F; background: rgba(209,164,140,0.2); border: 1px solid rgba(209,164,140,0.45); padding: 5px 12px; border-radius: 999px;">Zavisnosti</span>
+                <span style="font-size: 12.5px; font-weight: 500; color: #96562F; background: rgba(209,164,140,0.2); border: 1px solid rgba(209,164,140,0.45); padding: 5px 12px; border-radius: 999px;">Deca do 14 godina</span>
+              </div>
+            </div>
+          </div>
+          <div style="background: #FFFFFF; border: 1px solid rgba(58,46,40,0.06); border-radius: 20px; padding: 22px 24px;">
+            <div style="font-size: 11.5px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: #8A9D82; margin-bottom: 14px;">Dostupnost za formate</div>
+            <div style="display: flex; flex-direction: column;">
+              <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 0; border-bottom: 1px solid rgba(58,46,40,0.07);"><span style="font-size: 14px; font-weight: 600; color: #3A2E28;">Prima nove klijente</span><span style="width: 40px; height: 23px; border-radius: 999px; background: #8A9D82; position: relative; flex-shrink: 0;"><span style="position: absolute; top: 2.5px; right: 3px; width: 18px; height: 18px; border-radius: 50%; background: #FAF8F3;"></span></span></div>
+              <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 0; border-bottom: 1px solid rgba(58,46,40,0.07);"><span style="font-size: 14px; font-weight: 600; color: #3A2E28;">Kompanijski programi</span><span style="width: 40px; height: 23px; border-radius: 999px; background: #8A9D82; position: relative; flex-shrink: 0;"><span style="position: absolute; top: 2.5px; right: 3px; width: 18px; height: 18px; border-radius: 50%; background: #FAF8F3;"></span></span></div>
+              <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 0; border-bottom: 1px solid rgba(58,46,40,0.07);"><span style="font-size: 14px; font-weight: 600; color: #3A2E28;">Radionice</span><span style="width: 40px; height: 23px; border-radius: 999px; background: rgba(58,46,40,0.18); position: relative; flex-shrink: 0;"><span style="position: absolute; top: 2.5px; left: 3px; width: 18px; height: 18px; border-radius: 50%; background: #FAF8F3;"></span></span></div>
+              <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 0;"><span style="font-size: 14px; font-weight: 600; color: #3A2E28;">Online / uživo</span><span style="font-size: 13.5px; font-weight: 600; color: rgba(58,46,40,0.6);">Oba formata</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ tptDost }}" hint-placeholder-val="{{ false }}">
+      <div style="display: flex; flex-direction: column; gap: 14px;">
+        <div style="background: rgba(198,213,168,0.22); border: 1px solid rgba(138,157,130,0.3); border-radius: 16px; padding: 13px 18px; font-size: 13px; color: #3A2E28;"><span style="font-weight: 700;">Četiri odvojena sloja:</span> radno vreme → slotovi → izuzeci → rezervisani kapacitet. Booking engine ih čita zasebno — raspoloživost nije isto što i termin.</div>
+        <div class="cc-grid2" style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+          <div style="background: #FFFFFF; border: 1px solid rgba(58,46,40,0.06); border-radius: 20px; padding: 22px 24px;">
+            <div style="font-size: 11.5px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: #8A9D82; margin-bottom: 12px;">1 · Radno vreme</div>
+            <div style="font-size: 14px; line-height: 2; color: rgba(58,46,40,0.8);">Ponedeljak i sreda · <span style="font-weight: 600; color: #2E3B2E;">14:00 — 20:00</span><br>Utorak i četvrtak · <span style="font-weight: 600; color: #2E3B2E;">10:00 — 16:00</span><br>Petak · <span style="font-weight: 600; color: #2E3B2E;">10:00 — 14:00</span></div>
+          </div>
+          <div style="background: #FFFFFF; border: 1px solid rgba(58,46,40,0.06); border-radius: 20px; padding: 22px 24px;">
+            <div style="font-size: 11.5px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: #8A9D82; margin-bottom: 12px;">2 · Raspoloživi slotovi</div>
+            <p style="margin: 0 0 12px; font-size: 14px; line-height: 1.6; color: rgba(58,46,40,0.75);">Generišu se iz radnog vremena: 60 min + 15 min pauze. Klijent u javnom bookingu vidi samo ovo.</p>
+            <span style="display: inline-flex; font-size: 12.5px; font-weight: 600; color: #2E3B2E; background: rgba(198,213,168,0.3); padding: 6px 13px; border-radius: 999px;">18 slotova ove nedelje</span>
+          </div>
+          <div style="background: #FFFFFF; border: 1px solid rgba(58,46,40,0.06); border-radius: 20px; padding: 22px 24px;">
+            <div style="font-size: 11.5px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: #8A9D82; margin-bottom: 12px;">3 · Izuzeci</div>
+            <div style="display: flex; flex-direction: column; gap: 10px;">
+              <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px;"><span style="font-size: 14px; font-weight: 600; color: #3A2E28;">Godišnji odmor</span><span style="font-size: 13px; color: rgba(58,46,40,0.6);">3 — 14. avgust</span></div>
+              <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px;"><span style="font-size: 14px; font-weight: 600; color: #3A2E28;">Konferencija · Beograd</span><span style="font-size: 13px; color: rgba(58,46,40,0.6);">25. jul</span></div>
+            </div>
+            <button onClick="{{ openQuick }}" style="cursor: pointer; margin-top: 14px; background: none; border: 1.5px dashed rgba(58,46,40,0.25); color: rgba(58,46,40,0.6); font-family: 'Instrument Sans', sans-serif; font-size: 12.5px; font-weight: 600; padding: 8px 16px; border-radius: 999px; transition: all 0.2s ease;" style-hover="border-color: #8A9D82; color: #2E3B2E;">+ Blokiraj vreme</button>
+          </div>
+          <div style="background: #FFFFFF; border: 1px solid rgba(58,46,40,0.06); border-radius: 20px; padding: 22px 24px;">
+            <div style="font-size: 11.5px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: #8A9D82; margin-bottom: 12px;">4 · Rezervisani kapacitet</div>
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 8px;"><span style="font-size: 14px; font-weight: 600; color: #3A2E28;">TechNiš d.o.o.</span><span style="font-size: 13px; color: rgba(58,46,40,0.6);">Četvrtak · 16:00 — 18:00</span></div>
+            <p style="margin: 0; font-size: 13px; line-height: 1.55; color: rgba(58,46,40,0.6);">Nedostupno javnom bookingu — koristi se samo kroz kompanijski program.</p>
+          </div>
+        </div>
+      </div>
+    </sc-if>
+  </section>
+  </sc-if>
+  <!-- ============ 09 USLUGE I CENE ============ -->
+  <sc-if value="{{ scrUsluge }}" hint-placeholder-val="{{ false }}">
+  <section data-screen-label="Usluge i cene" style="animation: ccFadeUp 0.4s ease both;">
+    <div style="display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; margin-bottom: 20px; flex-wrap: wrap;">
+      <div>
+        <h1 class="cc-h1" style="margin: 0 0 6px; font-family: 'Newsreader', serif; font-weight: 400; font-size: 34px; line-height: 1.1; color: #2E3B2E;">Usluge i cene</h1>
+        <p style="margin: 0; font-size: 14.5px; color: rgba(58,46,40,0.6);">Centralni katalog iz kojeg Booking i Matching engine čitaju podatke.</p>
+      </div>
+      <button onClick="{{ openQuick }}" class="cc-desk" style="cursor: pointer; background: none; border: 1.5px solid rgba(58,46,40,0.22); color: #3A2E28; font-family: 'Instrument Sans', sans-serif; font-size: 13.5px; font-weight: 600; padding: 10px 20px; border-radius: 999px; transition: all 0.2s ease;" style-hover="border-color: #8A9D82; background: rgba(198,213,168,0.15);">+ Nova usluga</button>
+    </div>
+    <div class="cc-grid2" style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+      <sc-for list="{{ services }}" as="u" hint-placeholder-count="4">
+        <article style="background: #FFFFFF; border: 1px solid rgba(58,46,40,0.06); border-radius: 20px; padding: 24px 26px; display: flex; flex-direction: column; gap: 14px;">
+          <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;">
+            <div>
+              <div style="font-family: 'Newsreader', serif; font-size: 22px; line-height: 1.15; color: #2E3B2E;">{{ u.name }}</div>
+              <div style="font-family: ui-monospace, Menlo, monospace; font-size: 11.5px; color: rgba(58,46,40,0.45); margin-top: 4px; letter-spacing: 0.04em;">{{ u.code }}</div>
+            </div>
+            <span style="display: inline-flex; align-items: center; gap: 6px; font-size: 11.5px; font-weight: 600; padding: 5px 11px; border-radius: 999px; white-space: nowrap; background: {{ u.stBg }}; color: {{ u.stFg }};"><span style="width: 5px; height: 5px; border-radius: 50%; background: {{ u.stFg }};"></span>{{ u.stLabel }}</span>
+          </div>
+          <div style="display: flex; gap: 22px; flex-wrap: wrap; border-top: 1px solid rgba(58,46,40,0.07); padding-top: 13px;">
+            <span><span style="display: block; font-size: 11px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(58,46,40,0.45);">Trajanje</span><span style="display: block; font-family: 'Newsreader', serif; font-size: 18px; color: #2E3B2E; margin-top: 2px;">{{ u.dur }}</span></span>
+            <span><span style="display: block; font-size: 11px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(58,46,40,0.45);">Cena</span><span style="display: block; font-family: 'Newsreader', serif; font-size: 18px; color: #2E3B2E; margin-top: 2px;">{{ u.price }}</span></span>
+            <span><span style="display: block; font-size: 11px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(58,46,40,0.45);">Format</span><span style="display: block; font-size: 14px; font-weight: 600; color: #3A2E28; margin-top: 4px;">{{ u.fmt }}</span></span>
+            <span><span style="display: block; font-size: 11px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(58,46,40,0.45);">Terapeuti</span><span style="display: block; font-size: 14px; font-weight: 600; color: #3A2E28; margin-top: 4px;">{{ u.ters }}</span></span>
+          </div>
+          <div>
+            <span style="display: block; font-size: 11px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(58,46,40,0.45); margin-bottom: 8px;">Varijante cena</span>
+            <div style="display: flex; flex-wrap: wrap; gap: 7px;">
+              <sc-for list="{{ u.variants }}" as="v" hint-placeholder-count="3">
+                <span style="font-size: 12.5px; font-weight: 500; color: #3A2E28; background: rgba(198,213,168,0.22); border: 1px solid rgba(138,157,130,0.25); padding: 5px 12px; border-radius: 999px;">{{ v }}</span>
+              </sc-for>
+            </div>
+          </div>
+          <div style="display: flex; gap: 18px; flex-wrap: wrap; font-size: 12.5px; color: rgba(58,46,40,0.6); border-top: 1px solid rgba(58,46,40,0.07); padding-top: 12px;">
+            <span>Ručna potvrda: <span style="font-weight: 600; color: #3A2E28;">{{ u.manual }}</span></span>
+            <span>Booking buffer: <span style="font-weight: 600; color: #3A2E28;">{{ u.buffer }}</span></span>
+            <span>Otkazivanje do: <span style="font-weight: 600; color: #3A2E28;">{{ u.cancel }}</span></span>
+          </div>
+        </article>
+      </sc-for>
+    </div>
+  </section>
+  </sc-if>
+
+  <!-- ============ 10 ISTRAŽIVANJA ============ -->
+  <sc-if value="{{ scrIstrazivanja }}" hint-placeholder-val="{{ false }}">
+  <section data-screen-label="Istraživanja" style="animation: ccFadeUp 0.4s ease both;">
+    <div style="margin-bottom: 20px;">
+      <h1 class="cc-h1" style="margin: 0 0 6px; font-family: 'Newsreader', serif; font-weight: 400; font-size: 34px; line-height: 1.1; color: #2E3B2E;">Istraživanja</h1>
+      <p style="margin: 0; font-size: 14.5px; color: rgba(58,46,40,0.6);">Research Drawer — odvojeno od klijenata i Intake rezultata.</p>
+    </div>
+    <div class="cc-tabs" style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 18px;">
+      <span style="white-space: nowrap; font-size: 12.5px; font-weight: 600; color: rgba(58,46,40,0.65); background: rgba(198,213,168,0.25); border: 1px solid rgba(138,157,130,0.3); padding: 7px 14px; border-radius: 999px;">Period · Jul 2026</span>
+      <span style="white-space: nowrap; font-size: 12.5px; font-weight: 600; color: rgba(58,46,40,0.55); background: #FFFFFF; border: 1px solid rgba(58,46,40,0.12); padding: 7px 14px; border-radius: 999px;">Stranica · Sve</span>
+      <span style="white-space: nowrap; font-size: 12.5px; font-weight: 600; color: rgba(58,46,40,0.55); background: #FFFFFF; border: 1px solid rgba(58,46,40,0.12); padding: 7px 14px; border-radius: 999px;">Uređaj · Svi</span>
+      <span style="white-space: nowrap; font-size: 12.5px; font-weight: 600; color: rgba(58,46,40,0.55); background: #FFFFFF; border: 1px solid rgba(58,46,40,0.12); padding: 7px 14px; border-radius: 999px;">Završeni odgovori</span>
+    </div>
+    <div class="cc-grid4" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 16px;">
+      <sc-for list="{{ resStats }}" as="r" hint-placeholder-count="4">
+        <div style="background: #FFFFFF; border: 1px solid rgba(58,46,40,0.06); border-radius: 18px; padding: 18px 20px;">
+          <span style="display: block; font-family: 'Newsreader', serif; font-size: 30px; color: #2E3B2E;">{{ r.n }}</span>
+          <span style="display: block; font-size: 12.5px; font-weight: 600; color: rgba(58,46,40,0.6); margin-top: 4px;">{{ r.t }}</span>
+        </div>
+      </sc-for>
+    </div>
+    <div style="background: #FFFFFF; border: 1px solid rgba(58,46,40,0.06); border-radius: 22px; padding: 26px 28px; margin-bottom: 14px;">
+      <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; flex-wrap: wrap; margin-bottom: 22px;">
+        <div>
+          <div style="font-family: 'Newsreader', serif; font-size: 23px; line-height: 1.2; color: #2E3B2E; margin-bottom: 6px;">{{ survey.name }}</div>
+          <div style="font-size: 13px; color: rgba(58,46,40,0.6);">{{ survey.period }} · {{ survey.nStr }} završenih odgovora · ciljna grupa: posetioci sajta</div>
+        </div>
+        <span style="display: inline-flex; align-items: center; gap: 6px; font-size: 11.5px; font-weight: 600; padding: 5px 11px; border-radius: 999px; background: {{ survey.stBg }}; color: {{ survey.stFg }};"><span style="width: 5px; height: 5px; border-radius: 50%; background: {{ survey.stFg }};"></span>{{ survey.stLabel }}</span>
+      </div>
+      <div class="cc-grid2" style="display: grid; grid-template-columns: 1fr 1fr; gap: 26px;">
+        <sc-for list="{{ surveyQ }}" as="q" hint-placeholder-count="2">
+          <div>
+            <div style="font-size: 13.5px; font-weight: 700; color: #3A2E28; margin-bottom: 14px;">{{ q.q }}</div>
+            <div style="display: flex; flex-direction: column; gap: 12px;">
+              <sc-for list="{{ q.bars }}" as="b" hint-placeholder-count="4">
+                <div>
+                  <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin-bottom: 6px;">
+                    <span style="font-size: 13px; color: rgba(58,46,40,0.75);">{{ b.label }}</span>
+                    <span style="font-size: 13px; font-weight: 700; color: #2E3B2E;">{{ b.n }}%</span>
+                  </div>
+                  <span style="display: block; height: 8px; border-radius: 999px; background: rgba(58,46,40,0.07); overflow: hidden;"><span style="display: block; height: 100%; border-radius: 999px; background: #8A9D82; width: {{ b.pct }};"></span></span>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+      <div style="border-top: 1px solid rgba(58,46,40,0.08); margin-top: 24px; padding-top: 18px;">
+        <div style="font-size: 11.5px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: #8A9D82; margin-bottom: 12px;">Otvoreni odgovori</div>
+        <div class="cc-grid2" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+          <sc-for list="{{ surveyOpen }}" as="o" hint-placeholder-count="2">
+            <p style="margin: 0; font-family: 'Newsreader', serif; font-style: italic; font-size: 16px; line-height: 1.5; color: rgba(58,46,40,0.8); background: rgba(198,213,168,0.16); border-radius: 14px; padding: 14px 18px;">„{{ o }}“</p>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+    <p style="margin: 0 4px; font-size: 12.5px; font-style: italic; color: rgba(58,46,40,0.5);">Odgovori su anonimni i ne povezuju se sa profilom klijenta bez izričite saglasnosti. Eksport podataka — u pripremi.</p>
+  </section>
+  </sc-if>
+
+  <!-- ============ 11 U PRIPREMI ============ -->
+  <sc-if value="{{ scrUskoro }}" hint-placeholder-val="{{ false }}">
+  <section data-screen-label="U pripremi" style="animation: ccFadeUp 0.4s ease both;">
+    <div style="margin-bottom: 20px;">
+      <h1 class="cc-h1" style="margin: 0 0 6px; font-family: 'Newsreader', serif; font-weight: 400; font-size: 34px; line-height: 1.1; color: #2E3B2E;">U pripremi</h1>
+      <p style="margin: 0; font-size: 14.5px; color: rgba(58,46,40,0.6); max-width: 560px;">Moduli planirani master planom. Dodaju se u postojeću navigaciju bez reorganizacije — sekcije „Rast i sadržaj" i „Izveštaji".</p>
+    </div>
+    <div class="cc-grid3" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px;">
+      <sc-for list="{{ uskoro }}" as="u" hint-placeholder-count="6">
+        <div style="background: rgba(255,255,255,0.6); border: 1.5px dashed rgba(58,46,40,0.18); border-radius: 20px; padding: 22px 24px;">
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 8px;">
+            <span style="font-family: 'Newsreader', serif; font-size: 20px; color: rgba(46,59,46,0.75);">{{ u.t }}</span>
+            <span style="font-size: 10.5px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #8A6A3B; background: rgba(209,164,140,0.22); padding: 4px 10px; border-radius: 999px; white-space: nowrap;">Uskoro</span>
+          </div>
+          <p style="margin: 0; font-size: 13px; color: rgba(58,46,40,0.55);">{{ u.d }}</p>
+        </div>
+      </sc-for>
+    </div>
+  </section>
+  </sc-if>
+
+  </main>
+</div>
+
+<!-- ============ BOTTOM NAV (mobile) ============ -->
+<nav class="cc-bottomnav" data-screen-label="Mobilna navigacija" style="position: fixed; left: 0; right: 0; bottom: 0; z-index: 70; background: #FFFFFF; border-top: 1px solid rgba(58,46,40,0.08); grid-template-columns: repeat(5, 1fr); align-items: end; padding: 8px 6px calc(10px + env(safe-area-inset-bottom));">
+  <button onClick="{{ goPregled }}" style="cursor: pointer; border: none; background: none; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 4px 0; font-family: 'Instrument Sans', sans-serif; min-height: 48px; justify-content: flex-end;"><span style="width: 42px; height: 26px; border-radius: 999px; display: flex; align-items: center; justify-content: center; background: {{ bPregled.tile }}; color: {{ bPregled.fg }};"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1.5"></rect><rect x="14" y="3" width="7" height="5" rx="1.5"></rect><rect x="14" y="12" width="7" height="9" rx="1.5"></rect><rect x="3" y="16" width="7" height="5" rx="1.5"></rect></svg></span><span style="font-size: 10.5px; font-weight: 600; color: {{ bPregled.fg }};">Pregled</span></button>
+  <button onClick="{{ goTermini }}" style="cursor: pointer; border: none; background: none; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 4px 0; font-family: 'Instrument Sans', sans-serif; min-height: 48px; justify-content: flex-end;"><span style="position: relative; width: 42px; height: 26px; border-radius: 999px; display: flex; align-items: center; justify-content: center; background: {{ bTermini.tile }}; color: {{ bTermini.fg }};"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2"></rect><path d="M16 2v4M8 2v4M3 10h18"></path></svg><span style="position: absolute; top: -2px; right: 4px; width: 8px; height: 8px; border-radius: 50%; background: #D1A48C; border: 1.5px solid #FFFFFF;"></span></span><span style="font-size: 10.5px; font-weight: 600; color: {{ bTermini.fg }};">Termini</span></button>
+  <button onClick="{{ openQuick }}" aria-label="Brza akcija" style="cursor: pointer; border: none; background: none; display: flex; align-items: center; justify-content: center; padding: 0;"><span style="width: 54px; height: 54px; border-radius: 50%; background: #2E3B2E; color: #FAF8F3; display: flex; align-items: center; justify-content: center; box-shadow: 0 10px 24px rgba(46,59,46,0.35); transform: translateY(-14px);"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg></span></button>
+  <button onClick="{{ goKlijenti }}" style="cursor: pointer; border: none; background: none; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 4px 0; font-family: 'Instrument Sans', sans-serif; min-height: 48px; justify-content: flex-end;"><span style="width: 42px; height: 26px; border-radius: 999px; display: flex; align-items: center; justify-content: center; background: {{ bKlijenti.tile }}; color: {{ bKlijenti.fg }};"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"></path></svg></span><span style="font-size: 10.5px; font-weight: 600; color: {{ bKlijenti.fg }};">Klijenti</span></button>
+  <button onClick="{{ openVise }}" style="cursor: pointer; border: none; background: none; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 4px 0; font-family: 'Instrument Sans', sans-serif; min-height: 48px; justify-content: flex-end;"><span style="width: 42px; height: 26px; border-radius: 999px; display: flex; align-items: center; justify-content: center; background: {{ bVise.tile }}; color: {{ bVise.fg }};"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="5" cy="12" r="1.4"></circle><circle cx="12" cy="12" r="1.4"></circle><circle cx="19" cy="12" r="1.4"></circle></svg></span><span style="font-size: 10.5px; font-weight: 600; color: {{ bVise.fg }};">Više</span></button>
+</nav>
+
+<!-- ============ BRZA AKCIJA ============ -->
+<sc-if value="{{ quick }}" hint-placeholder-val="{{ false }}">
+  <div onClick="{{ closeQuick }}" style="position: fixed; inset: 0; z-index: 80; background: rgba(58,46,40,0.45); animation: ccFade 0.25s ease both;"></div>
+  <div class="cc-quick" role="dialog" aria-label="Brza akcija" style="position: fixed; top: 74px; right: 32px; z-index: 81; width: 320px; background: #FAF8F3; border: 1px solid rgba(58,46,40,0.08); border-radius: 22px; box-shadow: 0 24px 64px rgba(58,46,40,0.22); padding: 18px 14px 14px; animation: ccSheet 0.3s cubic-bezier(0.22,1,0.36,1) both;">
+    <div style="width: 40px; height: 4px; border-radius: 999px; background: rgba(58,46,40,0.15); margin: 0 auto 10px; display: none;" class="cc-mob"></div>
+    <div style="display: flex; align-items: center; justify-content: space-between; padding: 0 10px 10px;">
+      <span style="font-family: 'Newsreader', serif; font-size: 19px; color: #2E3B2E;">Brza akcija</span>
+      <button onClick="{{ closeQuick }}" aria-label="Zatvori" style="cursor: pointer; border: none; background: none; width: 34px; height: 34px; border-radius: 50%; color: rgba(58,46,40,0.55); display: flex; align-items: center; justify-content: center;" style-hover="background: rgba(58,46,40,0.07);"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"></path></svg></button>
+    </div>
+    <sc-for list="{{ quickActions }}" as="q" hint-placeholder-count="5">
+      <button onClick="{{ closeQuick }}" style="cursor: pointer; width: 100%; border: none; background: none; display: flex; align-items: center; gap: 13px; padding: 12px 10px; border-radius: 14px; font-family: 'Instrument Sans', sans-serif; text-align: left; transition: background 0.2s ease; min-height: 48px;" style-hover="background: rgba(198,213,168,0.2);">
+        <span style="width: 38px; height: 38px; border-radius: 12px; background: rgba(198,213,168,0.35); color: #2E3B2E; display: flex; align-items: center; justify-content: center; font-family: 'Newsreader', serif; font-size: 17px;">{{ q.ik }}</span>
+        <span style="flex: 1;"><span style="display: block; font-size: 14.5px; font-weight: 600; color: #3A2E28;">{{ q.t }}</span><span style="display: block; font-size: 12px; color: rgba(58,46,40,0.5); margin-top: 1px;">{{ q.d }}</span></span>
+        <span style="color: rgba(58,46,40,0.35);">→</span>
+      </button>
+    </sc-for>
+  </div>
+</sc-if>
+
+<!-- ============ VIŠE (mobile sheet) ============ -->
+<sc-if value="{{ vise }}" hint-placeholder-val="{{ false }}">
+  <div onClick="{{ closeVise }}" style="position: fixed; inset: 0; z-index: 80; background: rgba(58,46,40,0.45); animation: ccFade 0.25s ease both;"></div>
+  <div role="dialog" aria-label="Više" style="position: fixed; left: 0; right: 0; bottom: 0; z-index: 81; background: #FAF8F3; border-radius: 26px 26px 0 0; box-shadow: 0 -18px 48px rgba(58,46,40,0.2); padding: 12px 14px calc(24px + env(safe-area-inset-bottom)); animation: ccSheet 0.32s cubic-bezier(0.22,1,0.36,1) both;">
+    <div style="width: 40px; height: 4px; border-radius: 999px; background: rgba(58,46,40,0.15); margin: 0 auto 14px;"></div>
+    <div style="display: flex; background: rgba(58,46,40,0.06); border-radius: 999px; padding: 3px; margin: 0 10px 12px;">
+      <button onClick="{{ setRoleVlasnik }}" style="cursor: pointer; border: none; flex: 1; font-family: 'Instrument Sans', sans-serif; font-size: 12.5px; font-weight: 600; padding: 8px 0; border-radius: 999px; transition: all 0.2s ease; background: {{ rvM.bg }}; color: {{ rvM.fg }};">Vlasnik</button>
+      <button onClick="{{ setRoleTerapeut }}" style="cursor: pointer; border: none; flex: 1; font-family: 'Instrument Sans', sans-serif; font-size: 12.5px; font-weight: 600; padding: 8px 0; border-radius: 999px; transition: all 0.2s ease; background: {{ rtM.bg }}; color: {{ rtM.fg }};">Terapeut</button>
+    </div>
+    <sc-if value="{{ roleVlasnik }}" hint-placeholder-val="{{ true }}">
+      <button onClick="{{ goKompanije }}" style="cursor: pointer; width: 100%; border: none; background: none; display: flex; align-items: center; gap: 13px; padding: 13px 12px; border-radius: 14px; font-family: 'Instrument Sans', sans-serif; font-size: 15px; font-weight: 600; color: #3A2E28; text-align: left; min-height: 48px;" style-hover="background: rgba(198,213,168,0.2);"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#8A9D82" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"></path><rect x="5" y="3" width="14" height="18" rx="1.5"></rect><path d="M9 7h2M13 7h2M9 11h2M13 11h2M9 15h2M13 15h2"></path></svg>Kompanije</button>
+      <button onClick="{{ goUsluge }}" style="cursor: pointer; width: 100%; border: none; background: none; display: flex; align-items: center; gap: 13px; padding: 13px 12px; border-radius: 14px; font-family: 'Instrument Sans', sans-serif; font-size: 15px; font-weight: 600; color: #3A2E28; text-align: left; min-height: 48px;" style-hover="background: rgba(198,213,168,0.2);"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#8A9D82" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.6 13.4 11 3H4v7l9.6 10.4a2 2 0 0 0 2.9 0l4.1-4.2a2 2 0 0 0 0-2.8Z"></path><circle cx="7.5" cy="6.5" r="1"></circle></svg>Usluge i cene</button>
+      <button onClick="{{ goIstrazivanja }}" style="cursor: pointer; width: 100%; border: none; background: none; display: flex; align-items: center; gap: 13px; padding: 13px 12px; border-radius: 14px; font-family: 'Instrument Sans', sans-serif; font-size: 15px; font-weight: 600; color: #3A2E28; text-align: left; min-height: 48px;" style-hover="background: rgba(198,213,168,0.2);"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#8A9D82" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"></path><rect x="7" y="12" width="3" height="6" rx="0.5"></rect><rect x="12" y="8" width="3" height="10" rx="0.5"></rect><rect x="17" y="5" width="3" height="13" rx="0.5"></rect></svg>Istraživanja</button>
+      <button onClick="{{ goTerapeuti }}" style="cursor: pointer; width: 100%; border: none; background: none; display: flex; align-items: center; gap: 13px; padding: 13px 12px; border-radius: 14px; font-family: 'Instrument Sans', sans-serif; font-size: 15px; font-weight: 600; color: #3A2E28; text-align: left; min-height: 48px;" style-hover="background: rgba(198,213,168,0.2);"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#8A9D82" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"></circle><path d="M4 21c0-4 3.6-6 8-6s8 2 8 6"></path></svg>Terapeuti</button>
+    </sc-if>
+    <button onClick="{{ goMojProfil }}" style="cursor: pointer; width: 100%; border: none; background: none; display: flex; align-items: center; gap: 13px; padding: 13px 12px; border-radius: 14px; font-family: 'Instrument Sans', sans-serif; font-size: 15px; font-weight: 600; color: #3A2E28; text-align: left; min-height: 48px;" style-hover="background: rgba(198,213,168,0.2);"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#8A9D82" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>Moj profil</button>
+    <button onClick="{{ goUskoro }}" style="cursor: pointer; width: 100%; border: none; background: none; display: flex; align-items: center; gap: 13px; padding: 13px 12px; border-radius: 14px; font-family: 'Instrument Sans', sans-serif; font-size: 15px; font-weight: 600; color: rgba(58,46,40,0.5); text-align: left; min-height: 48px;" style-hover="background: rgba(198,213,168,0.2);"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 5h-7M10 5H3M21 12h-9M8 12H3M21 19h-5M12 19H3"></path><circle cx="12" cy="5" r="2"></circle><circle cx="10" cy="12" r="2"></circle><circle cx="14" cy="19" r="2"></circle></svg>Podešavanja<span style="margin-left: auto; font-size: 10.5px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #8A6A3B; background: rgba(209,164,140,0.22); padding: 4px 10px; border-radius: 999px;">Uskoro</span></button>
+  </div>
+</sc-if>
+
+<!-- ============ DRAWER: DETALJ TERMINA ============ -->
+<sc-if value="{{ drawerOpen }}" hint-placeholder-val="{{ false }}">
+  <div onClick="{{ closeAppt }}" style="position: fixed; inset: 0; z-index: 90; background: rgba(58,46,40,0.5); animation: ccFade 0.25s ease both;"></div>
+  <div class="cc-drawer" role="dialog" aria-label="Detalj termina" style="position: fixed; top: 0; right: 0; bottom: 0; z-index: 91; width: 430px; background: #FAF8F3; box-shadow: -24px 0 64px rgba(58,46,40,0.25); overflow-y: auto; animation: ccDrawer 0.35s cubic-bezier(0.22,1,0.36,1) both; box-sizing: border-box; padding: 24px 26px 30px;">
+    <div style="width: 40px; height: 4px; border-radius: 999px; background: rgba(58,46,40,0.15); margin: 0 auto 14px; display: none;" class="cc-mob"></div>
+    <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; margin-bottom: 18px;">
+      <div>
+        <div style="font-size: 11px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: #8A9D82; margin-bottom: 8px;">Termin</div>
+        <h2 style="margin: 0 0 10px; font-family: 'Newsreader', serif; font-weight: 400; font-size: 25px; line-height: 1.12; color: #2E3B2E;">{{ appt.svc }}</h2>
+        <span style="display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; padding: 5px 12px; border-radius: 999px; background: {{ appt.stBg }}; color: {{ appt.stFg }};"><span style="width: 6px; height: 6px; border-radius: 50%; background: {{ appt.stFg }};"></span>{{ appt.stLabel }}</span>
+      </div>
+      <button onClick="{{ closeAppt }}" aria-label="Zatvori" style="cursor: pointer; border: 1px solid rgba(58,46,40,0.12); background: #FFFFFF; width: 38px; height: 38px; border-radius: 50%; color: #3A2E28; display: flex; align-items: center; justify-content: center; flex-shrink: 0;" style-hover="border-color: #8A9D82;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"></path></svg></button>
+    </div>
+    <div style="background: #FFFFFF; border: 1px solid rgba(58,46,40,0.06); border-radius: 18px; padding: 6px 18px; margin-bottom: 14px;">
+      <div style="display: flex; align-items: center; gap: 12px; padding: 13px 0; border-bottom: 1px solid rgba(58,46,40,0.07);">
+        <span style="width: 40px; height: 40px; border-radius: 50%; background: rgba(198,213,168,0.4); color: #2E3B2E; font-size: 13px; font-weight: 600; display: inline-flex; align-items: center; justify-content: center; letter-spacing: 0.03em;">{{ appt.init }}</span>
+        <span style="flex: 1;"><span style="display: block; font-size: 11px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(58,46,40,0.45);">Klijent</span><span style="display: block; font-size: 15px; font-weight: 600; color: #3A2E28; margin-top: 2px;">{{ appt.client }}</span></span>
+        <button onClick="{{ openClientFromAppt }}" style="cursor: pointer; border: none; background: none; font-family: 'Instrument Sans', sans-serif; font-size: 12.5px; font-weight: 600; color: #2E3B2E; border-bottom: 1.5px solid rgba(58,46,40,0.25); padding: 0;" style-hover="color: #8A9D82;">Profil →</button>
+      </div>
+      <div style="display: flex; align-items: center; gap: 12px; padding: 13px 0; border-bottom: 1px solid rgba(58,46,40,0.07);">
+        <span style="width: 40px; display: flex; justify-content: center; color: #8A9D82;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path></svg></span>
+        <span><span style="display: block; font-size: 11px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(58,46,40,0.45);">Vreme i trajanje</span><span style="display: block; font-size: 14.5px; font-weight: 600; color: #3A2E28; margin-top: 2px;">Danas · {{ appt.time }} — {{ appt.end }} · 60 min</span></span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 12px; padding: 13px 0; border-bottom: 1px solid rgba(58,46,40,0.07);">
+        <span style="width: 40px; display: flex; justify-content: center; color: #8A9D82;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="14" height="14" rx="2"></rect><path d="m22 7-6 5 6 5V7Z"></path></svg></span>
+        <span><span style="display: block; font-size: 11px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(58,46,40,0.45);">Format</span><span style="display: block; font-size: 14.5px; font-weight: 600; color: #3A2E28; margin-top: 2px;">{{ appt.fmt }}</span></span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 12px; padding: 13px 0; border-bottom: 1px solid rgba(58,46,40,0.07);">
+        <span style="width: 40px; display: flex; justify-content: center; color: #8A9D82;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"></circle><path d="M4 21c0-4 3.6-6 8-6s8 2 8 6"></path></svg></span>
+        <span><span style="display: block; font-size: 11px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(58,46,40,0.45);">Terapeut</span><span style="display: block; font-size: 14.5px; font-weight: 600; color: #3A2E28; margin-top: 2px;">{{ appt.ter }}</span></span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 12px; padding: 13px 0;">
+        <span style="width: 40px; display: flex; justify-content: center; color: #8A9D82;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"></path><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"></path></svg></span>
+        <span><span style="display: block; font-size: 11px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(58,46,40,0.45);">Izvor zakazivanja</span><span style="display: block; font-size: 14.5px; font-weight: 600; color: #3A2E28; margin-top: 2px;">{{ appt.src }}</span></span>
+      </div>
+    </div>
+    <sc-if value="{{ appt.intake }}" hint-placeholder-val="{{ false }}">
+      <div style="background: rgba(198,213,168,0.22); border: 1px solid rgba(138,157,130,0.3); border-radius: 18px; padding: 18px 20px; margin-bottom: 18px;">
+        <div style="font-size: 11px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: #5E6F4A; margin-bottom: 8px;">Intake sažetak</div>
+        <p style="margin: 0 0 8px; font-size: 14px; line-height: 1.55; color: #3A2E28;">{{ appt.intake }}</p>
+        <p style="margin: 0; font-size: 12px; font-style: italic; color: rgba(58,46,40,0.55);">Pomoć pri usmeravanju — nije dijagnoza ni stručna procena.</p>
+      </div>
+    </sc-if>
+    <div style="display: flex; flex-direction: column; gap: 10px;">
+      <sc-if value="{{ appt.pending }}" hint-placeholder-val="{{ false }}">
+        <button onClick="{{ aConfirm }}" style="cursor: pointer; border: none; background: #2E3B2E; color: #FAF8F3; font-family: 'Instrument Sans', sans-serif; font-size: 14.5px; font-weight: 600; padding: 14px; border-radius: 999px; transition: background 0.2s ease; min-height: 48px;" style-hover="background: #3d4d3d;">Potvrdi termin</button>
+      </sc-if>
+      <sc-if value="{{ appt.confirmed }}" hint-placeholder-val="{{ false }}">
+        <button onClick="{{ aDone }}" style="cursor: pointer; border: none; background: #2E3B2E; color: #FAF8F3; font-family: 'Instrument Sans', sans-serif; font-size: 14.5px; font-weight: 600; padding: 14px; border-radius: 999px; transition: background 0.2s ease; min-height: 48px;" style-hover="background: #3d4d3d;">Označi da je održan</button>
+      </sc-if>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+        <button onClick="{{ aPropose }}" style="cursor: pointer; background: none; border: 1.5px solid rgba(58,46,40,0.22); color: #3A2E28; font-family: 'Instrument Sans', sans-serif; font-size: 13.5px; font-weight: 600; padding: 12px 10px; border-radius: 999px; transition: all 0.2s ease; min-height: 48px;" style-hover="border-color: #8A9D82; background: rgba(198,213,168,0.15);">Predloži drugi termin</button>
+        <button onClick="{{ aTransfer }}" style="cursor: pointer; background: none; border: 1.5px solid rgba(58,46,40,0.22); color: #3A2E28; font-family: 'Instrument Sans', sans-serif; font-size: 13.5px; font-weight: 600; padding: 12px 10px; border-radius: 999px; transition: all 0.2s ease; min-height: 48px;" style-hover="border-color: #8A9D82; background: rgba(198,213,168,0.15);">Prebaci terapeutu</button>
+      </div>
+      <div style="border-top: 1px solid rgba(58,46,40,0.1); margin: 8px 0 2px;"></div>
+      <button onClick="{{ aCancel }}" style="cursor: pointer; background: none; border: none; color: #B3402E; font-family: 'Instrument Sans', sans-serif; font-size: 13.5px; font-weight: 700; padding: 10px; border-radius: 999px; transition: background 0.2s ease; min-height: 44px;" style-hover="background: rgba(179,64,46,0.1);">Otkaži termin</button>
+    </div>
+  </div>
+</sc-if>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;startScreen&quot;: {&quot;editor&quot;: &quot;enum&quot;, &quot;default&quot;: &quot;pregled&quot;, &quot;options&quot;: [&quot;pregled&quot;, &quot;termini&quot;, &quot;klijenti&quot;, &quot;kompanije&quot;, &quot;usluge&quot;, &quot;istrazivanja&quot;, &quot;terapeuti&quot;], &quot;tsType&quot;: &quot;string&quot;, &quot;section&quot;: &quot;Demo&quot;}, &quot;role&quot;: {&quot;editor&quot;: &quot;enum&quot;, &quot;default&quot;: &quot;vlasnik&quot;, &quot;options&quot;: [&quot;vlasnik&quot;, &quot;terapeut&quot;], &quot;tsType&quot;: &quot;string&quot;, &quot;section&quot;: &quot;Demo&quot;}}">
+class Component extends DCLogic {
+  static ST = {
+    potvrdjen: ['Potvrđen', '#3D6B3D', 'rgba(198,213,168,0.45)'],
+    ceka: ['Čeka potvrdu', '#96562F', 'rgba(209,164,140,0.30)'],
+    zahtev: ['Zahtev primljen', '#96562F', 'rgba(209,164,140,0.30)'],
+    predlog: ['Predložena izmena', '#5E6F4A', 'rgba(198,213,168,0.30)'],
+    zavrsen: ['Završen', 'rgba(58,46,40,0.62)', 'rgba(58,46,40,0.07)'],
+    odrzan: ['Održan', '#3D6B3D', 'rgba(198,213,168,0.35)'],
+    otkazanK: ['Otkazao klijent', '#B3402E', 'rgba(179,64,46,0.12)'],
+    otkazanT: ['Otkazao terapeut', '#B3402E', 'rgba(179,64,46,0.12)'],
+    odbijen: ['Odbijen', '#B3402E', 'rgba(179,64,46,0.10)'],
+    rezervisano: ['Kompanijski termin', '#2E3B2E', 'rgba(46,59,46,0.10)'],
+    aktivan: ['Aktivan klijent', '#3D6B3D', 'rgba(198,213,168,0.45)'],
+    neaktivan: ['Neaktivan', 'rgba(58,46,40,0.62)', 'rgba(58,46,40,0.07)'],
+    nedodeljen: ['Nedodeljen', '#96562F', 'rgba(209,164,140,0.30)'],
+    preuzet: ['Preuzet', '#3D6B3D', 'rgba(198,213,168,0.35)'],
+    koNovi: ['Novi upit', '#96562F', 'rgba(209,164,140,0.30)'],
+    koPonuda: ['Ponuda poslata', '#8A6A3B', 'rgba(209,164,140,0.22)'],
+    koPilot: ['Pilot program', '#5E6F4A', 'rgba(198,213,168,0.35)'],
+    koAktivna: ['Aktivna', '#3D6B3D', 'rgba(198,213,168,0.45)'],
+    usAktivna: ['Aktivna', '#3D6B3D', 'rgba(198,213,168,0.45)'],
+    usPriprema: ['U pripremi', '#8A6A3B', 'rgba(209,164,140,0.22)'],
+    usNacrt: ['Nacrt', 'rgba(58,46,40,0.6)', 'rgba(58,46,40,0.07)'],
+  };
+  AG = [
+    { time: '09:00', end: '10:00', client: 'Ana Marković', init: 'AM', svc: 'Individualna psihoterapija', fmt: 'Online', ter: 'Anja S.', src: 'Javni booking', st: 'potvrdjen', intake: 'Anksioznost i iscrpljenost na poslu · u terapiji od marta.' },
+    { time: '11:00', slobodno: true },
+    { time: '13:30', end: '14:30', client: 'Marko Petrović', init: 'MP', svc: 'Psihološko savjetovanje', fmt: 'Uživo · Niš', ter: 'Anja S.', src: 'Javni booking', st: 'ceka', intake: 'Prvi dolazak · stres i odluka o promeni posla.' },
+    { time: '16:00', end: '17:00', client: 'Rezervisan kapacitet', init: 'TN', svc: 'Kompanijski program — TechNiš', fmt: 'Online', ter: 'Marjan J.', src: 'Kompanijski program', st: 'rezervisano' },
+    { time: '17:30', end: '18:30', client: 'Jelena Ilić', init: 'JI', svc: 'Partnersko savjetovanje', fmt: 'Online', ter: 'Marjan J.', src: 'Vođeni izbor', st: 'potvrdjen', intake: 'Partnerska komunikacija · dolaze zajedno.' },
+  ];
+  WEEK = [
+    { d: 'Pon', n: '20. jul', items: [{ t: '09:00', c: 'Ana M.', st: 'potvrdjen' }, { t: '13:00', c: 'Petar S.', st: 'potvrdjen' }, { t: '17:00', c: 'Milica P.', st: 'potvrdjen' }] },
+    { d: 'Uto', n: '21. jul', items: [{ t: '10:00', c: 'Nikola Đ.', st: 'ceka' }, { t: '12:00', c: 'Jelena I.', st: 'potvrdjen' }, { t: '16:00', c: 'TechNiš', st: 'rezervisano' }] },
+    { d: 'Sre', n: '22. jul', items: [{ t: '09:00', c: 'Tamara K.', st: 'predlog' }, { t: '14:00', c: 'Ana M.', st: 'potvrdjen' }] },
+    { d: 'Čet', n: '23. jul', items: [{ t: '11:00', c: 'Stefan Ž.', st: 'ceka' }, { t: '16:00', c: 'TechNiš', st: 'rezervisano' }, { t: '18:00', c: 'Jelena I.', st: 'potvrdjen' }] },
+    { d: 'Pet', n: '24. jul', items: [{ t: '10:00', c: 'Milica P.', st: 'potvrdjen' }, { t: '17:00', c: 'Ana M.', st: 'potvrdjen' }] },
+  ];
+  UPC = [
+    { day: 'Ponedeljak, 20. jul', items: [
+      { time: '09:00', end: '10:00', client: 'Ana Marković', init: 'AM', svc: 'Individualna psihoterapija', fmt: 'Online', ter: 'Anja S.', src: 'Javni booking', st: 'potvrdjen' },
+      { time: '13:00', end: '14:00', client: 'Petar Stanković', init: 'PS', svc: 'Individualna psihoterapija', fmt: 'Online', ter: 'Marjan J.', src: 'Javni booking', st: 'potvrdjen' },
+      { time: '17:00', end: '18:00', client: 'Milica Pavlović', init: 'MP', svc: 'Individualna psihoterapija', fmt: 'Online', ter: 'Anja S.', src: 'Kompanijski program', st: 'potvrdjen' } ] },
+    { day: 'Utorak, 21. jul', items: [
+      { time: '10:00', end: '11:00', client: 'Nikola Đorđević', init: 'NĐ', svc: 'Individualna psihoterapija', fmt: 'Online', ter: 'Anja S.', src: 'Javni booking', st: 'ceka', intake: 'Anksioznost i stres na poslu · prvi put u terapiji.' },
+      { time: '16:00', end: '17:00', client: 'Rezervisan kapacitet', init: 'TN', svc: 'Kompanijski program — TechNiš', fmt: 'Online', ter: 'Marjan J.', src: 'Kompanijski program', st: 'rezervisano' } ] },
+    { day: 'Sreda, 22. jul', items: [
+      { time: '09:00', end: '10:00', client: 'Tamara Kostić', init: 'TK', svc: 'Savjetovanje adolescenata', fmt: 'Uživo · Niš', ter: 'Marija S.', src: 'Vođeni izbor', st: 'predlog', intake: 'Podrška za ćerku (16) · trema u školi.' },
+      { time: '14:00', end: '15:00', client: 'Ana Marković', init: 'AM', svc: 'Individualna psihoterapija', fmt: 'Online', ter: 'Anja S.', src: 'Javni booking', st: 'potvrdjen' } ] },
+  ];
+  WAIT = [
+    { client: 'Ivana Ristić', init: 'IR', period: 'Radnim danima posle 17h', fmt: 'Online', ter: 'Anja S.' },
+    { client: 'Miloš Antić', init: 'MA', period: 'Vikendom prepodne', fmt: 'Uživo · Niš', ter: 'Bilo koji terapeut' },
+  ];
+  CL = [
+    { id: 'c1', name: 'Ana Marković', init: 'AM', ter: 'Anja Stamenković', next: 'Čet, 24. jul · 17:00', svc: 'Individualna psihoterapija', fmt: 'Online', st: 'aktivan' },
+    { id: 'c2', name: 'Marko Petrović', init: 'MP', ter: 'Anja Stamenković', next: 'Danas · 13:30', svc: 'Psihološko savjetovanje', fmt: 'Uživo', st: 'aktivan' },
+    { id: 'c3', name: 'Jelena Ilić', init: 'JI', ter: 'Marjan Janković', next: 'Danas · 17:30', svc: 'Partnersko savjetovanje', fmt: 'Online', st: 'aktivan' },
+    { id: 'c4', name: 'Tamara Kostić', init: 'TK', ter: 'Marija Stamenković', next: 'Nema budući termin', svc: 'Savjetovanje adolescenata', fmt: 'Uživo', st: 'aktivan' },
+    { id: 'c5', name: 'Petar Stanković', init: 'PS', ter: 'Marjan Janković', next: 'Nema budući termin', svc: 'Individualna psihoterapija', fmt: 'Online', st: 'neaktivan' },
+    { id: 'c6', name: 'Milica Pavlović', init: 'MP', ter: 'Anja Stamenković', next: 'Pon, 28. jul · 09:00', svc: 'Individualna psihoterapija · TechNiš', fmt: 'Online', st: 'aktivan' },
+  ];
+  CPB = {
+    email: 'ana.markovic@gmail.com', phone: '+381 64 123 4567', last: 'Čet, 10. jul · održan', odrzano: 12, otkazano: 1, nedolazak: 0,
+    termini: [
+      { time: 'Čet, 24. jul · 17:00', svc: 'Individualna psihoterapija', fmt: 'Online', st: 'potvrdjen' },
+      { time: 'Čet, 10. jul · 17:00', svc: 'Individualna psihoterapija', fmt: 'Online', st: 'odrzan' },
+      { time: 'Čet, 26. jun · 17:00', svc: 'Individualna psihoterapija', fmt: 'Online', st: 'odrzan' },
+      { time: 'Čet, 12. jun · 17:00', svc: 'Individualna psihoterapija', fmt: 'Online', st: 'otkazanK' },
+    ],
+    paket: { name: 'Paket 5 × individualna psihoterapija', used: 3, total: 5, expires: '30. sep 2026.' },
+    intake: { za: 'Sebe', fmt: 'Online', oblasti: ['Anksioznost', 'Burnout', 'Rad na emocijama'], pref: 'Terapeutkinja · termini posle 17h', words: 'Poslednjih mjeseci se budim umorna, teško se koncentrišem i sve češće odlažem obaveze.', reason: 'Najveće poklapanje oblasti rada i dostupnosti — preporučena Anja Stamenković.' },
+    sagl: [
+      { t: 'Saglasnost za kontakt', d: 'Prihvaćena · 12. maj 2026.' },
+      { t: 'Politika privatnosti · v1.2', d: 'Prihvaćena · 12. maj 2026.' },
+      { t: 'Email obaveštenja o terminima', d: 'Uključena · 12. maj 2026.' },
+    ],
+    izvor: 'Javni sajt — vođeni upitnik',
+  };
+  KO = [
+    { id: 'k1', name: 'TechNiš d.o.o.', st: 'koAktivna', contact: 'Milena Stojanović · HR menadžerka', model: 'Fleksibilni fond', bought: 20, used: 12, res: 3, carry: 2, expires: '31. dec 2026.', emp: 85, fmtx: 'Online + uživo', loc: 'Niš', cilj: 'Prevencija burnouta i podrška timovima u pikovima projekata.' },
+    { id: 'k2', name: 'Agrolek', st: 'koPilot', contact: 'Dragan Simić · direktor', model: 'Rezervisani kapacitet', bought: 8, used: 3, res: 2, carry: 0, expires: '30. sep 2026.', emp: 32, fmtx: 'Uživo', loc: 'Leskovac', cilj: 'Pilot: individualna podrška za smenske timove.' },
+    { id: 'k3', name: 'Balkan Soft', st: 'koPonuda', contact: 'Ivana Nikolić · office menadžerka', model: 'Hibridni model', bought: 0, used: 0, res: 0, carry: 0, expires: '—', emp: 54, fmtx: 'Online', loc: 'Niš', cilj: 'Radionice + fond termina za zaposlene.' },
+    { id: 'k4', name: 'Hotel Ambasador', st: 'koNovi', contact: 'Upit preko sajta · juče', model: 'Još nije definisan', bought: 0, used: 0, res: 0, carry: 0, expires: '—', emp: 40, fmtx: '—', loc: 'Niš', cilj: 'Upit: podrška za uslužni tim tokom sezone.' },
+  ];
+  US = [
+    { name: 'Individualna psihoterapija', code: 'IND-60', st: 'usAktivna', dur: '60 min', price: '3.500 RSD', fmt: 'Online i uživo', ters: 'Anja · Marija · Marjan', variants: ['Standardna · 3.500', 'Studenti · 2.800', 'Kompanijska · 4.200', 'Paket 5× · 16.000'], manual: 'Ne', buffer: '12h', cancel: '24h' },
+    { name: 'Partnersko savjetovanje', code: 'PAR-90', st: 'usAktivna', dur: '90 min', price: '5.000 RSD', fmt: 'Online i uživo', ters: 'Anja · Marjan', variants: ['Standardna · 5.000', 'Paket 5× · 23.000'], manual: 'Ne', buffer: '12h', cancel: '24h' },
+    { name: 'Savjetovanje adolescenata', code: 'ADO-60', st: 'usAktivna', dur: '60 min', price: '3.200 RSD', fmt: 'Uživo · Niš', ters: 'Marija', variants: ['Standardna · 3.200', 'Kompanijska · 3.800'], manual: 'Da · min. 14 god.', buffer: '24h', cancel: '24h' },
+    { name: 'Radionica — Prevencija burnouta', code: 'RAD-B1', st: 'usPriprema', dur: '120 min', price: 'Na upit', fmt: 'Uživo · kompanije', ters: 'Anja', variants: ['Kompanijska · na upit'], manual: 'Da', buffer: '72h', cancel: '7 dana' },
+  ];
+  RES = {
+    stats: [['Otvoreni draweri', '412'], ['Započeti odgovori', '168'], ['Završeni odgovori', '121'], ['Completion rate', '72%']],
+    survey: {
+      name: 'Šta vas sprečava da zakažete prvi razgovor?', st: 'usAktivna', period: '1 — 19. jul 2026.', n: 121,
+      questions: [
+        { q: '1 · Najveća prepreka za dolazak', bars: [['Nesigurnost šta da očekujem', 34], ['Cena', 28], ['Nedostatak vremena', 22], ['Neprijatnost / stigma', 16]] },
+        { q: '2 · Preferirani format rada', bars: [['Online', 58], ['Uživo', 30], ['Svejedno mi je', 12]] },
+      ],
+      open: ['Nisam sigurna da li je moj problem „dovoljno ozbiljan" za terapiju.', 'Voleo bih kratak besplatan poziv pre prve seanse.'],
+    },
+  };
+  TH = [
+    { id: 'anja', name: 'Anja Stamenković', zvanje: 'Socijalni radnik i geštalt psihoterapeutkinja pod supervizijom', img: "url('assets/anja.jpeg')", badge: 'Osnivačica', kl: 14, pop: 82, prima: true, quote: 'Vjerujem da svaka osoba nosi kapacitet za promjenu, ali da se ona događa tek kada se osjetimo dovoljno sigurno da budemo autentični.', areas: ['Anksioznost i depresija', 'Burnout', 'Partnerski odnosi', 'Roditeljstvo', 'Lični razvoj'], grad: 'Niš · online', jezici: 'Srpski · engleski' },
+    { id: 'marija', name: 'Marija Stamenković', zvanje: 'Pedagog i geštalt psihoterapeutkinja pod supervizijom', img: "url('assets/marija.jpeg')", badge: 'Adolescenti i odrasli', kl: 11, pop: 64, prima: true, quote: 'Verujem da svaka osoba u sebi nosi kapacitet za promenu i rast, a da je uloga terapeuta da stvori siguran odnos u kojem taj potencijal može da se razvije.', areas: ['Adolescenti', 'Samopouzdanje', 'Emocionalne teškoće', 'Razvoj identiteta'], grad: 'Niš · online', jezici: 'Srpski' },
+    { id: 'marjan', name: 'Marjan Janković', zvanje: 'Psiholog i geštalt psihoterapeut pod supervizijom', img: "url('assets/marjan.jpeg')", badge: 'Individualni rad i parovi', kl: 12, pop: 71, prima: false, quote: 'Verujem da se najdublje promene dešavaju onda kada se osoba oseti viđenom, prihvaćenom i dovoljno sigurnom da istraži sebe bez straha od osude.', areas: ['Partnerski odnosi', 'Emocionalna regulacija', 'Stres', 'Samopoštovanje'], grad: 'Niš · online', jezici: 'Srpski · engleski' },
+  ];
+  state = {
+    screen: null, role: null, tt: 'danas', kt: 'svi', cpt: 'pregled', kot: 'pregled', tpt: 'javni',
+    appt: null, quick: false, vise: false, tf: 0, client: null, company: null, therapist: null,
+    requests: [
+      { id: 1, client: 'Nikola Đorđević', init: 'NĐ', svc: 'Individualna psihoterapija', pref: 'Uto, 21. jul · 10:00', fmt: 'Online', ter: 'Anja S.', ago: 'pre 4 sata', src: 'Javni booking', intake: 'Anksioznost i stres na poslu · prvi put u terapiji.', st: 'ceka' },
+      { id: 2, client: 'Tamara Kostić', init: 'TK', svc: 'Savjetovanje adolescenata', pref: 'Sre, 22. jul · 17:00', fmt: 'Uživo · Niš', ter: 'Marija S.', ago: 'pre 2 sata', src: 'Vođeni izbor', intake: 'Podrška za ćerku (16) · trema u školi.', st: 'ceka' },
+      { id: 3, client: 'Stefan Živković', init: 'SŽ', svc: 'Partnerska terapija', pref: 'Pet, 24. jul · 19:00', fmt: 'Online', ter: 'Marjan J.', ago: 'pre 45 minuta', src: 'Preporuka', intake: 'Partnerski odnosi · komunikacija.', st: 'ceka' },
+    ],
+    unassigned: [
+      { id: 'u1', init: 'S. J.', date: '18. jul', ago: 'pre 1 dan', fmt: 'Online', age: '25–34', areas: ['Anksioznost', 'Burnout'], reco: 'Anja S. ili Marjan J.', reason: 'Dva terapeuta imaju podjednako poklapanje oblasti.', st: 'nedodeljen' },
+      { id: 'u2', init: 'D. M.', date: '19. jul', ago: 'pre 3 sata', fmt: 'Uživo · Niš', age: '35–44', areas: ['Partnerski odnosi'], reco: 'Marjan J.', reason: 'Traženi termin je van radnog vremena terapeuta.', st: 'nedodeljen' },
+    ],
+  };
+  st(k) { const s = Component.ST[k] || Component.ST.zavrsen; return { stKey: k, stLabel: s[0], stFg: s[1], stBg: s[2] }; }
+  scr() { return this.state.screen ?? this.props.startScreen ?? 'pregled'; }
+  role() { return this.state.role ?? this.props.role ?? 'vlasnik'; }
+  go(s, extra) { this.setState(Object.assign({ screen: s, vise: false, quick: false }, extra || {})); window.scrollTo(0, 0); }
+  navS(id) {
+    const map = { klijent: 'klijenti', kompanija: 'kompanije', terapeut: 'terapeuti' };
+    const cur = map[this.scr()] || this.scr();
+    return cur === id ? { bg: 'rgba(250,248,243,0.12)', fg: '#FAF8F3' } : { bg: 'transparent', fg: 'rgba(250,248,243,0.62)' };
+  }
+  bnS(id) {
+    const map = { klijent: 'klijenti', kompanija: 'kompanije', terapeut: 'terapeuti' };
+    const cur = map[this.scr()] || this.scr();
+    return cur === id ? { fg: '#2E3B2E', tile: 'rgba(198,213,168,0.55)' } : { fg: 'rgba(58,46,40,0.5)', tile: 'transparent' };
+  }
+  pill(on) { return on ? { bg: '#2E3B2E', fg: '#FAF8F3', bd: '#2E3B2E' } : { bg: '#FFFFFF', fg: 'rgba(58,46,40,0.72)', bd: 'rgba(58,46,40,0.14)' }; }
+  seg(on) { return on ? { bg: '#C6D5A8', fg: '#2E3B2E' } : { bg: 'transparent', fg: 'rgba(250,248,243,0.6)' }; }
+  segM(on) { return on ? { bg: '#2E3B2E', fg: '#FAF8F3' } : { bg: 'transparent', fg: 'rgba(58,46,40,0.6)' }; }
+  mapAppt(a) {
+    if (a.slobodno) return { ...a, real: false, slobodno: true };
+    return { ...a, ...this.st(a.st), real: true, slobodno: false, open: () => this.setState({ appt: a }) };
+  }
+  patchAppt(patch) {
+    this.setState(s => {
+      const next = { ...s.appt, ...patch };
+      const hit = this.AG.find(x => x.time === s.appt.time && x.client === s.appt.client);
+      if (hit) Object.assign(hit, patch);
+      this.UPC.forEach(g => g.items.forEach(x => { if (x.time === s.appt.time && x.client === s.appt.client && x.svc === s.appt.svc) Object.assign(x, patch); }));
+      return { appt: next };
+    });
+  }
+  renderVals() {
+    const s = this.state, scr = this.scr(), role = this.role();
+    const now = new Date();
+    let danas = new Intl.DateTimeFormat('sr-Latn-RS', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }).format(now);
+    danas = danas.charAt(0).toUpperCase() + danas.slice(1);
+    const h = now.getHours();
+    const pozdrav = h < 12 ? 'Dobro jutro' : h < 18 ? 'Dobar dan' : 'Dobro veče';
+    const TFS = ['Svi terapeuti', 'Anja S.', 'Marija S.', 'Marjan J.'];
+    const tfLabel = TFS[s.tf];
+    const agendaSrc = s.tf === 0 ? this.AG : this.AG.filter(a => a.slobodno || a.ter === TFS[s.tf]);
+    const reqCount = s.requests.filter(r => r.st === 'ceka').length;
+    const unasCount = s.unassigned.filter(u => u.st === 'nedodeljen').length;
+    const appt = s.appt ? { ...s.appt, ...this.st(s.appt.st), pending: s.appt.st === 'ceka' || s.appt.st === 'zahtev' || s.appt.st === 'predlog', confirmed: s.appt.st === 'potvrdjen' || s.appt.st === 'rezervisano' } : null;
+    const client = { ...(s.client || this.CL[0]) };
+    const cp = { ...this.CPB, ...client, ...this.st(client.st) };
+    cp.termini = this.CPB.termini.map(t => ({ ...t, ...this.st(t.st) }));
+    cp.paketPct = Math.round(this.CPB.paket.used / this.CPB.paket.total * 100) + '%';
+    const comp = { ...(s.company || this.KO[0]) };
+    const ko = { ...comp, ...this.st(comp.st) };
+    ko.pct = comp.bought ? Math.round(comp.used / comp.bought * 100) : 0;
+    ko.pctW = ko.pct + '%';
+    ko.left = Math.max(0, comp.bought - comp.used - comp.res);
+    const ter = { ...(s.therapist || this.TH[0]) };
+    const tp = { ...ter, popW: ter.pop + '%', primaLabel: ter.prima ? 'Prima nove klijente' : 'Trenutno ne prima nove', primaFg: ter.prima ? '#3D6B3D' : '#96562F', primaBg: ter.prima ? 'rgba(198,213,168,0.45)' : 'rgba(209,164,140,0.30)' };
+    const V = {
+      danas, pozdrav, tfLabel, reqCount: String(reqCount), unasCount: String(unasCount),
+      roleVlasnik: role === 'vlasnik', roleTerapeut: role === 'terapeut',
+      roleLabel: role === 'vlasnik' ? 'Vlasnica centra' : 'Terapeutkinja',
+      rv: this.seg(role === 'vlasnik'), rt: this.seg(role === 'terapeut'),
+      rvM: this.segM(role === 'vlasnik'), rtM: this.segM(role === 'terapeut'),
+      scrPregled: scr === 'pregled', scrTermini: scr === 'termini', scrKlijenti: scr === 'klijenti', scrKlijent: scr === 'klijent',
+      scrKompanije: scr === 'kompanije', scrKompanija: scr === 'kompanija', scrUsluge: scr === 'usluge',
+      scrIstrazivanja: scr === 'istrazivanja', scrTerapeuti: scr === 'terapeuti', scrTerapeut: scr === 'terapeut', scrUskoro: scr === 'uskoro',
+      nPregled: this.navS('pregled'), nTermini: this.navS('termini'), nKlijenti: this.navS('klijenti'), nKompanije: this.navS('kompanije'),
+      nUsluge: this.navS('usluge'), nIstraz: this.navS('istrazivanja'), nTerapeuti: this.navS('terapeuti'), nMoj: this.navS('terapeut'),
+      bPregled: this.bnS('pregled'), bTermini: this.bnS('termini'), bKlijenti: this.bnS('klijenti'), bVise: this.bnS('_'),
+      goPregled: () => this.go('pregled'), goTermini: () => this.go('termini'),
+      goKlijenti: () => this.go('klijenti', { kt: 'svi' }), goKompanije: () => this.go('kompanije'),
+      goUsluge: () => this.go('usluge'), goIstrazivanja: () => this.go('istrazivanja'),
+      goTerapeuti: () => this.go('terapeuti'), goMojProfil: () => this.go('terapeut', { therapist: this.TH[0], tpt: 'javni' }),
+      goUskoro: () => this.go('uskoro'), goZahtevi: () => this.go('termini', { tt: 'zahtevi' }),
+      goNedodeljeni: () => this.go('klijenti', { kt: 'nedodeljeni' }), goNedelja: () => this.go('termini', { tt: 'nedelja' }),
+      openQuick: () => this.setState({ quick: true, vise: false }), closeQuick: () => this.setState({ quick: false }),
+      openVise: () => this.setState({ vise: true, quick: false }), closeVise: () => this.setState({ vise: false }),
+      setRoleVlasnik: () => this.setState({ role: 'vlasnik' }), setRoleTerapeut: () => this.setState({ role: 'terapeut', screen: 'pregled' }),
+      cycleTherapist: () => this.setState({ tf: (s.tf + 1) % 4 }),
+      quick: s.quick, vise: s.vise,
+      drawerOpen: !!appt, appt: appt || {},
+      closeAppt: () => this.setState({ appt: null }),
+      openClientFromAppt: () => { this.setState({ appt: null }); this.go('klijent', { client: this.CL.find(c => c.name === (appt && appt.client)) || this.CL[0], cpt: 'pregled' }); },
+      aConfirm: () => this.patchAppt({ st: 'potvrdjen' }),
+      aDone: () => this.patchAppt({ st: 'odrzan' }),
+      aPropose: () => this.patchAppt({ st: 'predlog' }),
+      aTransfer: () => this.patchAppt({ ter: 'Marija S.' }),
+      aCancel: () => this.patchAppt({ st: 'otkazanT' }),
+      prioritet: [
+        { n: String(reqCount), t: 'Zahteva čeka potvrdu', d: 'Najstariji je poslat pre 4 sata.', cta: 'Pregledaj zahteve', dot: '#D1A48C', go: () => this.go('termini', { tt: 'zahtevi' }) },
+        { n: String(unasCount), t: 'Nedodeljena klijenta', d: 'Intake bez automatske preporuke.', cta: 'Otvori listu', dot: '#D1A48C', go: () => this.go('klijenti', { kt: 'nedodeljeni' }) },
+        { n: '1', t: 'Novi upit kompanije', d: 'Hotel Ambasador — stigao juče.', cta: 'Otvori kompanije', dot: '#C6D5A8', go: () => this.go('kompanije') },
+        { n: '1', t: 'Otkazan termin', d: 'Jelena I. — sreda u 10:00.', cta: 'Vidi termine', dot: 'rgba(179,64,46,0.55)', go: () => this.go('termini') },
+      ],
+      agenda: agendaSrc.map(a => this.mapAppt(a)),
+      nedeljaBar: [['Pon', 3, 6], ['Uto', 4, 6], ['Sre', 2, 6], ['Čet', 5, 6], ['Pet', 2, 6]].map(w => ({ d: w[0], pct: Math.round(w[1] / w[2] * 100) + '%', label: w[1] + '/' + w[2] })),
+      quickActions: [
+        { ik: '+', t: 'Novi termin', d: 'Zakaži u ime klijenta' },
+        { ik: 'K', t: 'Novi klijent', d: 'Ručno dodavanje klijenta' },
+        { ik: 'F', t: 'Nova kompanija', d: 'Upis kompanijskog upita' },
+        { ik: 'U', t: 'Nova usluga', d: 'Dodaj u katalog usluga' },
+        { ik: '✕', t: 'Blokiraj vreme', d: 'Odmor, obaveza ili pauza' },
+      ],
+      ttDanas: s.tt === 'danas', ttNedelja: s.tt === 'nedelja', ttLista: s.tt === 'lista', ttZahtevi: s.tt === 'zahtevi', ttCekanje: s.tt === 'cekanje',
+      tDanas: this.pill(s.tt === 'danas'), tNedelja: this.pill(s.tt === 'nedelja'), tLista: this.pill(s.tt === 'lista'), tZahtevi: this.pill(s.tt === 'zahtevi'), tCekanje: this.pill(s.tt === 'cekanje'),
+      setTTDanas: () => this.setState({ tt: 'danas' }), setTTNedelja: () => this.setState({ tt: 'nedelja' }), setTTLista: () => this.setState({ tt: 'lista' }), setTTZahtevi: () => this.setState({ tt: 'zahtevi' }), setTTCekanje: () => this.setState({ tt: 'cekanje' }),
+      week: this.WEEK.map(d => ({ ...d, items: d.items.map(i => ({ ...i, ...this.st(i.st) })) })),
+      upcoming: this.UPC.map(g => ({ day: g.day, items: g.items.map(i => this.mapAppt(i)) })),
+      requests: s.requests.map(r => ({
+        ...r, ...this.st(r.st), pending: r.st === 'ceka',
+        confirm: () => this.setState(x => ({ requests: x.requests.map(q => q.id === r.id ? { ...q, st: 'potvrdjen' } : q) })),
+        propose: () => this.setState(x => ({ requests: x.requests.map(q => q.id === r.id ? { ...q, st: 'predlog' } : q) })),
+        decline: () => this.setState(x => ({ requests: x.requests.map(q => q.id === r.id ? { ...q, st: 'odbijen' } : q) })),
+      })),
+      waitlist: this.WAIT,
+      ktSvi: s.kt === 'svi', ktNedodeljeni: s.kt === 'nedodeljeni',
+      kSvi: this.pill(s.kt === 'svi'), kNedodeljeni: this.pill(s.kt === 'nedodeljeni'),
+      setKTSvi: () => this.setState({ kt: 'svi' }), setKTNedodeljeni: () => this.setState({ kt: 'nedodeljeni' }),
+      clients: this.CL.map(c => ({ ...c, ...this.st(c.st), open: () => this.go('klijent', { client: c, cpt: 'pregled' }) })),
+      unassigned: s.unassigned.map(u => ({
+        ...u, ...this.st(u.st), pending: u.st === 'nedodeljen',
+        claim: () => this.setState(x => ({ unassigned: x.unassigned.map(q => q.id === u.id ? { ...q, st: 'preuzet', reason: 'Preuzela Anja Stamenković — ostalima vidljivo samo ovo.' } : q) })),
+      })),
+      cp,
+      cptPregled: s.cpt === 'pregled', cptTermini: s.cpt === 'termini', cptPaketi: s.cpt === 'paketi', cptIntake: s.cpt === 'intake', cptSagl: s.cpt === 'sagl',
+      cPregled: this.pill(s.cpt === 'pregled'), cTermini: this.pill(s.cpt === 'termini'), cPaketi: this.pill(s.cpt === 'paketi'), cIntake: this.pill(s.cpt === 'intake'), cSagl: this.pill(s.cpt === 'sagl'),
+      setCPregled: () => this.setState({ cpt: 'pregled' }), setCTermini: () => this.setState({ cpt: 'termini' }), setCPaketi: () => this.setState({ cpt: 'paketi' }), setCIntake: () => this.setState({ cpt: 'intake' }), setCSagl: () => this.setState({ cpt: 'sagl' }),
+      companies: this.KO.map(k => {
+        const pct = k.bought ? Math.round(k.used / k.bought * 100) : 0;
+        return { ...k, ...this.st(k.st), pctW: pct + '%', kredit: k.bought ? k.used + ' / ' + k.bought + ' termina' : 'Bez fonda', hasFund: !!k.bought, open: () => this.go('kompanija', { company: k, kot: 'pregled' }) };
+      }),
+      ko,
+      kotPregled: s.kot === 'pregled', kotProgram: s.kot === 'program', kotKapacitet: s.kot === 'kapacitet',
+      koPregledS: this.pill(s.kot === 'pregled'), koProgramS: this.pill(s.kot === 'program'), koKapacitetS: this.pill(s.kot === 'kapacitet'),
+      setKOPregled: () => this.setState({ kot: 'pregled' }), setKOProgram: () => this.setState({ kot: 'program' }), setKOKapacitet: () => this.setState({ kot: 'kapacitet' }),
+      services: this.US.map(u => ({ ...u, ...this.st(u.st) })),
+      resStats: this.RES.stats.map(x => ({ t: x[0], n: x[1] })),
+      survey: { ...this.RES.survey, ...this.st(this.RES.survey.st), nStr: String(this.RES.survey.n) },
+      surveyQ: this.RES.survey.questions.map(q => ({ q: q.q, bars: q.bars.map(b => ({ label: b[0], pct: b[1] + '%', n: b[1] })) })),
+      surveyOpen: this.RES.survey.open,
+      therapists: this.TH.map(t => ({ ...t, popW: t.pop + '%', klStr: String(t.kl), primaLabel: t.prima ? 'Prima nove klijente' : 'Ne prima nove', primaFg: t.prima ? '#3D6B3D' : '#96562F', primaBg: t.prima ? 'rgba(198,213,168,0.45)' : 'rgba(209,164,140,0.30)', open: () => this.go('terapeut', { therapist: t, tpt: 'javni' }) })),
+      tp,
+      tptJavni: s.tpt === 'javni', tptMatch: s.tpt === 'match', tptDost: s.tpt === 'dost',
+      tJavni: this.pill(s.tpt === 'javni'), tMatch: this.pill(s.tpt === 'match'), tDost: this.pill(s.tpt === 'dost'),
+      setTPJavni: () => this.setState({ tpt: 'javni' }), setTPMatch: () => this.setState({ tpt: 'match' }), setTPDost: () => this.setState({ tpt: 'dost' }),
+      backKlijenti: () => this.go('klijenti'), backKompanije: () => this.go('kompanije'), backTerapeuti: () => this.go('terapeuti'),
+      uskoro: [
+        { t: 'Marketing Engine', d: 'Kampanje i praćenje kanala' }, { t: 'Email kampanje', d: 'Newsletteri i automatizacije' },
+        { t: 'Blog i biblioteka', d: 'Znanje i resursi' }, { t: 'Radionice i programi', d: 'Grupni formati' },
+        { t: 'Loyalty', d: 'Paketi i pogodnosti' }, { t: 'Poslovna analitika', d: 'Izveštaji i finansije' },
+      ],
+    };
+    return V;
+  }
+}
+</script>
+</body>
+</html>

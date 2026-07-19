@@ -1,305 +1,202 @@
 /**
- * B2B configurator — „Program podrške zaposlenima" (demo).
+ * B2B configurator — „Kako možemo pomoći vašoj organizaciji?" (demo).
  *
- * Hardcoded, throwaway demo (spec §5A / decisions D-021, D-023). Shows a
- * company a recommended package + indicative price, then collects a structured
- * inquiry that is emailed to the team. No backend, no company codes, no
- * credits, no Booking Engine — those are the real R4 module.
+ * Questions and result mapping per Anja's answers
+ * (documentations/odgovor-za-matching-anketa.pdf, 2026-07-18). Anja did NOT
+ * provide B2B prices, so every model is „Cena po ponudi" — no guaranteed
+ * capacities, no annual lease promises until the business model is confirmed.
+ * The earlier demo packages (Team Flex etc.) are retired.
  *
- * Prices are WORKING demo figures (base 5.000 RSD/session). Anja confirms the
- * base price, tax treatment, cancellation rules and workshop pricing before any
- * of this goes live (S-list). Employee health data is never collected.
+ * Still a frontend demo: no backend, no persistence, no employee health data.
  */
 
-/** Keys into CompanyAnswers, so the drawer knows where each step's answer goes. */
-export type CompanyStepKey =
-  | "needs"
-  | "teamSize"
-  | "scheduleModel"
-  | "funding"
-  | "period"
-  | "monthlySessions"
-  | "delivery";
+export const COMPANY_INTRO = {
+  title: "Kako možemo pomoći vašoj organizaciji?",
+  description:
+    "Kroz nekoliko kratkih pitanja predložićemo model saradnje koji odgovara veličini vašeg tima i temama koje su vam važne.",
+  offer: [
+    "radionice",
+    "predavanja i vebinari",
+    "individualno savetovanje zaposlenih",
+    "podrška menadžerima",
+    "burnout programi",
+    "team building radionice",
+  ],
+  cta: "Konfigurišite program",
+} as const;
+
+// --- Question option constants -------------------------------------------
+
+export const COMPANY_SIZES = {
+  upTo20: "Do 20",
+  s20_50: "20–50",
+  s50_200: "50–200",
+  over200: "Više od 200",
+} as const;
+
+export const COMPANY_GOALS = {
+  lecture: "Predavanje ili vebinar",
+  workshop: "Radionicu",
+  longTerm: "Dugoročnu saradnju",
+  individualSupport: "Individualnu podršku zaposlenima",
+  needsAssessment: "Procenu potreba",
+} as const;
+
+export const COMPANY_TOPICS = {
+  burnout: "Burnout",
+  stress: "Stres",
+  communication: "Komunikacija",
+  leadership: "Liderstvo",
+  mentalHealth: "Mentalno zdravlje",
+  psychSafety: "Psihološka sigurnost",
+} as const;
+
+export const COMPANY_FORMATS = {
+  online: "Online",
+  inPerson: "Uživo",
+  combined: "Kombinovano",
+  unsure: "Nismo sigurni",
+} as const;
+
+export type CompanyStepKey = "employees" | "goals" | "topics" | "format";
 
 export interface CompanyStep {
   key: CompanyStepKey;
   question: string;
-  options: string[];
-  /** Multi-select steps let the user pick several answers. */
+  options: readonly string[];
   multi?: boolean;
 }
 
-// --- Option constants (shared by questions, recommendation and email) ---
-
-export const NEEDS = {
-  confidential: "Poverljive individualne razgovore",
-  stress: "Podršku u upravljanju stresom",
-  burnout: "Prevenciju iscrpljenosti i sagorevanja",
-  parents: "Podršku roditeljima",
-  managers: "Podršku menadžerima i rukovodiocima",
-  teamComms: "Bolju komunikaciju i odnose u timu",
-  workshops: "Radionice i edukativne programe",
-  orgChange: "Podršku tokom organizacionih promena",
-  recommend: "Potrebna nam je preporuka",
-  other: "Nešto drugo",
-} as const;
-
-export const TEAM_SIZES = {
-  s1_2: "1–2 osobe",
-  s3_9: "3–9 osoba",
-  s10_30: "10–30 osoba",
-  s31_100: "31–100 osoba",
-  s100plus: "Više od 100 osoba",
-  unknown: "Još ne znamo",
-} as const;
-
-export const SCHEDULE_MODELS = {
-  flexible: "Fleksibilni termini",
-  reserved: "Rezervisani kapacitet",
-  hybrid: "Hibridni model",
-  workshops: "Radionice i edukacije",
-  unsure: "Nismo sigurni",
-} as const;
-
-export const FUNDING = {
-  all: "Kompanija plaća sve termine",
-  perEmployee: "Kompanija obezbeđuje ograničen broj termina po zaposlenom",
-  initial: "Kompanija finansira početne termine, a zaposleni može da nastavi",
-  sharedPool: "Kompanija kupuje zajednički fond termina",
-  recommend: "Potrebna nam je preporuka",
-} as const;
-
-export const PERIODS = {
-  oneOff: "Jednokratna podrška",
-  pilot: "Tromesečni pilot",
-  sixMonths: "Šest meseci",
-  twelveMonths: "Dvanaest meseci",
-  ongoing: "Kontinuirana saradnja",
-  undecided: "Još nismo odlučili",
-} as const;
-
-export const MONTHLY_SESSIONS = {
-  s4: "4 termina",
-  s8: "8 termina",
-  s12: "12 termina",
-  s20: "20 termina",
-  estimate: "Potrebna nam je procena",
-} as const;
-
-export const DELIVERY = {
-  online: "Online",
-  nis: "Uživo u Nišu",
-  leskovac: "Uživo u Leskovcu",
-  combined: "Kombinovano",
-  onSite: "U prostorijama kompanije",
-  recommend: "Potrebna nam je preporuka",
-} as const;
-
-// --- Step definitions ---
-
 export const companySteps: CompanyStep[] = [
   {
-    key: "needs",
-    question: "Šta želite da omogućite zaposlenima?",
-    options: Object.values(NEEDS),
+    key: "employees",
+    question: "Koliko zaposlenih imate?",
+    options: Object.values(COMPANY_SIZES),
+  },
+  {
+    key: "goals",
+    question: "Šta želite da organizujete?",
+    options: Object.values(COMPANY_GOALS),
     multi: true,
   },
   {
-    key: "teamSize",
-    question: "Koliko ljudi treba da ima pristup?",
-    options: Object.values(TEAM_SIZES),
+    key: "topics",
+    question: "Koje teme vas najviše zanimaju?",
+    options: Object.values(COMPANY_TOPICS),
+    multi: true,
   },
   {
-    key: "scheduleModel",
-    question: "Kako želite da se program koristi?",
-    options: Object.values(SCHEDULE_MODELS),
-  },
-  {
-    key: "funding",
-    question: "Kako se finansira podrška?",
-    options: Object.values(FUNDING),
-  },
-  {
-    key: "period",
-    question: "Period saradnje",
-    options: Object.values(PERIODS),
-  },
-  {
-    key: "delivery",
-    question: "Način realizacije",
-    options: Object.values(DELIVERY),
+    key: "format",
+    question: "Koji format vam odgovara?",
+    options: Object.values(COMPANY_FORMATS),
   },
 ];
 
-/** Extra question shown only when the period is „Dvanaest meseci". */
-export const monthlySessionsStep: CompanyStep = {
-  key: "monthlySessions",
-  question: "Koliko termina želite da rezervišete svakog meseca?",
-  options: Object.values(MONTHLY_SESSIONS),
-};
-
-/** Ordered active steps, inserting the monthly-sessions step only for 12 months. */
-export function activeCompanySteps(period: string | null): CompanyStep[] {
-  const base = companySteps.slice(0, 5); // needs … period
-  const tail = companySteps.slice(5); // delivery
-  return period === PERIODS.twelveMonths
-    ? [...base, monthlySessionsStep, ...tail]
-    : [...base, ...tail];
+export interface CompanyAnswers {
+  employees: string | null;
+  goals: string[];
+  topics: string[];
+  format: string | null;
 }
 
-// --- Packages ---
+export const emptyCompanyAnswers: CompanyAnswers = {
+  employees: null,
+  goals: [],
+  topics: [],
+  format: null,
+};
 
-export interface CompanyPlan {
+// --- Models (all „Cena po ponudi" — no confirmed B2B prices) --------------
+
+export const COMPANY_PRICE_ON_REQUEST = "Cena po ponudi";
+
+export interface CompanyModel {
   slug: string;
   name: string;
-  audience: string;
-  model: string;
-  price: string;
-  /** What the company gets — shown on the recommendation screen. */
-  includes: string[];
-  /** True when no fixed price is computed (large team / custom). */
-  quoteOnly: boolean;
+  description: string;
+  /** Requires a consultative call before any concrete offer. */
+  contactRequired: boolean;
 }
 
-export const companyPlans: Record<string, CompanyPlan> = {
-  "individual-voucher": {
-    slug: "individual-voucher",
-    name: "Individualni voucher",
-    audience: "1–2 osobe",
-    model: "Plaćanje pojedinačnih termina",
-    price: "5.000 RSD po terminu",
-    includes: [
-      "Poverljivi individualni termini",
-      "Zaposleni bira termin kada mu podrška zatreba",
-      "Kompanija ne vidi sadržaj razgovora",
-    ],
-    quoteOnly: false,
+export const companyModels: Record<string, CompanyModel> = {
+  "lecture-custom": {
+    slug: "lecture-custom",
+    name: "Predavanje ili vebinar po meri",
+    description:
+      "Stručno predavanje ili vebinar prilagođen vašem timu — tema, trajanje i termin po dogovoru.",
+    contactRequired: false,
   },
-  "team-flex-4": {
-    slug: "team-flex-4",
-    name: "Team Flex 4",
-    audience: "3–9 zaposlenih",
-    model: "4 fleksibilna termina mesečno",
-    price: "20.000 RSD mesečno",
-    includes: [
-      "Zajednički fond od 4 termina mesečno",
-      "Zaposleni koriste termine po potrebi",
-      "Zbirni pregled iskorišćenosti bez ličnih podataka",
-    ],
-    quoteOnly: false,
+  "team-workshop": {
+    slug: "team-workshop",
+    name: "Interaktivna radionica za tim",
+    description:
+      "Iskustvena radionica prilagođena vašem timu, sa praktičnim vežbama i prostorom za razgovor.",
+    contactRequired: false,
   },
-  "team-flex-8": {
-    slug: "team-flex-8",
-    name: "Team Flex 8",
-    audience: "3–9 zaposlenih",
-    model: "8 fleksibilnih termina mesečno",
-    price: "38.000 RSD mesečno",
-    includes: [
-      "Zajednički fond od 8 termina mesečno",
-      "Veći kapacitet za timove sa više potreba",
-      "Zbirni pregled iskorišćenosti bez ličnih podataka",
-    ],
-    quoteOnly: false,
+  "employee-support-program": {
+    slug: "employee-support-program",
+    name: "Program podrške zaposlenima",
+    description:
+      "Dugoročna saradnja koja kombinuje poverljivo individualno savetovanje zaposlenih sa edukativnim aktivnostima za tim.",
+    contactRequired: false,
   },
-  "company-flex-10": {
-    slug: "company-flex-10",
-    name: "Company Flex 10",
-    audience: "10+ zaposlenih",
-    model: "10 fleksibilnih termina mesečno",
-    price: "47.500 RSD mesečno",
-    includes: [
-      "Zajednički fond od 10 termina mesečno",
-      "Podrška za veće timove",
-      "Zbirni pregled iskorišćenosti bez ličnih podataka",
-    ],
-    quoteOnly: false,
+  "flexible-fund": {
+    slug: "flexible-fund",
+    name: "Fleksibilni fond individualnih termina",
+    description:
+      "Zaposleni poverljivo koriste individualne razgovore kada im podrška zatreba — bez uvida kompanije u sadržaj.",
+    contactRequired: false,
   },
-  "company-partner": {
-    slug: "company-partner",
-    name: "Company Partner",
-    audience: "10+ zaposlenih",
-    model: "Veći fond termina, radionice i podrška menadžmentu",
-    price: "Cena po ponudi",
-    includes: [
-      "Kombinacija individualnih termina i radionica",
-      "Konsultacije za rukovodioce",
-      "Prilagođen obim prema potrebama tima",
-    ],
-    quoteOnly: true,
+  "needs-assessment": {
+    slug: "needs-assessment",
+    name: "Uvodna procena potreba organizacije",
+    description:
+      "Kratka procena potreba tima kao osnova za predlog daljih koraka i odgovarajućeg oblika podrške.",
+    contactRequired: false,
   },
-  "reserved-capacity": {
-    slug: "reserved-capacity",
-    name: "Reserved Capacity",
-    audience: "Sve veličine tima",
-    model: "Godišnje rezervisani termini",
-    price: "Prema izabranom kapacitetu",
-    includes: [
-      "Ugovoreni broj termina rezervisan samo za vašu kompaniju",
-      "Neiskorišćen termin prenosi se najduže u naredni mesec",
-      "Predvidiv mesečni kapacitet",
-    ],
-    quoteOnly: true,
-  },
-  "company-custom": {
-    slug: "company-custom",
-    name: "Prilagođen program",
-    audience: "Veći timovi i posebne potrebe",
-    model: "Program se definiše prema vašim ciljevima",
-    price: "Cena po ponudi",
-    includes: [
-      "Okvirni program je pripremljen",
-      "Konačan kapacitet i cenu definišemo nakon kratkog konsultativnog razgovora",
-    ],
-    quoteOnly: true,
+  "custom-program": {
+    slug: "custom-program",
+    name: "Program po meri",
+    description:
+      "Za veće organizacije i kombinovane potrebe program definišemo zajedno, nakon kratkog konsultativnog razgovora.",
+    contactRequired: true,
   },
 };
 
-// --- Recommendation ---
-
-export interface CompanyAnswers {
-  needs: string[];
-  teamSize: string | null;
-  scheduleModel: string | null;
-  funding: string | null;
-  period: string | null;
-  monthlySessions: string | null;
-  delivery: string | null;
-}
-
 /**
- * Deterministic, explainable package recommendation (spec §6). Faithful to the
- * spec's `recommendCompanyPlan`: workshops-first, then team size and schedule
- * model. Teams over 30 are never auto-priced — they get the custom program.
+ * Deterministic model recommendation per Anja's mapping:
+ * - >200 zaposlenih ili više različitih zahteva → Program po meri (obavezan
+ *   kontakt);
+ * - dugoročna saradnja + individualna podrška → Program podrške zaposlenima;
+ * - procena potreba → Uvodna procena potreba organizacije;
+ * - individualna podrška → Fleksibilni fond individualnih termina;
+ * - radionica → Interaktivna radionica za tim;
+ * - predavanje/vebinar → Predavanje ili vebinar po meri.
+ * Topics personalise the description; they never change the model or price.
  */
-export function recommendCompanyPlan(answers: CompanyAnswers): CompanyPlan {
-  const { needs, teamSize, scheduleModel } = answers;
+export function recommendCompanyModel(answers: CompanyAnswers): CompanyModel {
+  const { employees, goals } = answers;
 
+  if (employees === COMPANY_SIZES.over200 || goals.length >= 3) {
+    return companyModels["custom-program"]!;
+  }
   if (
-    scheduleModel === SCHEDULE_MODELS.workshops ||
-    needs.includes(NEEDS.workshops)
+    goals.includes(COMPANY_GOALS.longTerm) &&
+    goals.includes(COMPANY_GOALS.individualSupport)
   ) {
-    return companyPlans["company-custom"]!;
+    return companyModels["employee-support-program"]!;
   }
-  if (teamSize === TEAM_SIZES.s1_2) {
-    return companyPlans["individual-voucher"]!;
+  if (goals.includes(COMPANY_GOALS.needsAssessment)) {
+    return companyModels["needs-assessment"]!;
   }
-  if (scheduleModel === SCHEDULE_MODELS.reserved) {
-    return companyPlans["reserved-capacity"]!;
+  if (goals.includes(COMPANY_GOALS.individualSupport)) {
+    return companyModels["flexible-fund"]!;
   }
-  if (scheduleModel === SCHEDULE_MODELS.hybrid) {
-    return companyPlans["company-partner"]!;
+  if (goals.includes(COMPANY_GOALS.workshop)) {
+    return companyModels["team-workshop"]!;
   }
-  if (teamSize === TEAM_SIZES.s3_9) {
-    // Higher expected usage → the larger flexible pool.
-    const higher =
-      answers.monthlySessions === MONTHLY_SESSIONS.s8 ||
-      answers.monthlySessions === MONTHLY_SESSIONS.s12 ||
-      answers.monthlySessions === MONTHLY_SESSIONS.s20;
-    return companyPlans[higher ? "team-flex-8" : "team-flex-4"]!;
+  if (goals.includes(COMPANY_GOALS.lecture)) {
+    return companyModels["lecture-custom"]!;
   }
-  if (teamSize === TEAM_SIZES.s10_30) {
-    return companyPlans["company-flex-10"]!;
-  }
-  // 31–100, 100+, unknown → custom (no auto price for large teams).
-  return companyPlans["company-custom"]!;
+  return companyModels["custom-program"]!;
 }

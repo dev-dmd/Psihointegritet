@@ -6,28 +6,25 @@ import { z } from "zod";
 /**
  * Demo B2B inquiry — Next Route Handler, no backend, no persistence. Emails a
  * structured inquiry to the team and sends the company an auto-reply, via
- * Resend (decisions D-023, D-024). No employee health data is collected. Moves
- * to the notifications backend in R4 per ARCHITECTURAL_RULES §1.1.
+ * Resend (decisions D-023, D-024). Payload follows the reworked configurator
+ * (employees / goals / topics / format — Anja's answers, 2026-07-18); every
+ * model is „Cena po ponudi". No employee health data is collected. Moves to
+ * the notifications backend in R4 per ARCHITECTURAL_RULES §1.1.
  */
 
 const payloadSchema = z.object({
-  plan: z.object({ name: z.string().max(120), price: z.string().max(120) }),
+  model: z.object({ name: z.string().max(120), price: z.string().max(120) }),
   answers: z.object({
-    needs: z.array(z.string().max(200)).max(20),
-    teamSize: z.string().max(120).nullable(),
-    scheduleModel: z.string().max(120).nullable(),
-    funding: z.string().max(200).nullable(),
-    period: z.string().max(120).nullable(),
-    monthlySessions: z.string().max(120).nullable(),
-    delivery: z.string().max(120).nullable(),
+    employees: z.string().max(120).nullable(),
+    goals: z.array(z.string().max(200)).max(10),
+    topics: z.array(z.string().max(200)).max(10),
+    format: z.string().max(120).nullable(),
   }),
   contact: z.object({
     companyName: z.string().min(1).max(200),
     contactName: z.string().min(1).max(200),
     email: z.email().max(200),
-    teamSize: z.string().min(1).max(120),
     phone: z.string().max(60).optional(),
-    deadline: z.string().max(200).optional(),
     message: z.string().max(2000).optional(),
   }),
 });
@@ -64,7 +61,7 @@ export async function POST(request: Request): Promise<Response> {
   if (!parsed.success) {
     return Response.json({ error: "Neispravni podaci." }, { status: 422 });
   }
-  const { plan, answers, contact } = parsed.data;
+  const { model, answers, contact } = parsed.data;
 
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey) {
@@ -75,27 +72,22 @@ export async function POST(request: Request): Promise<Response> {
   }
 
   const teamHtml = `<div style="font-family:sans-serif;color:#3A2E28;">
-    <h2 style="color:#2E3B2E;">Novi upit za program podrške zaposlenima</h2>
+    <h2 style="color:#2E3B2E;">Novi upit — rad sa kompanijama</h2>
     <table style="border-collapse:collapse;">
       ${row("Kompanija", contact.companyName)}
       ${row("Kontakt osoba", contact.contactName)}
       ${row("Email", contact.email)}
       ${row("Telefon", contact.phone)}
-      ${row("Veličina tima", contact.teamSize)}
-      ${row("Rok", contact.deadline)}
     </table>
-    <h3 style="color:#2E3B2E;margin-top:18px;">Konfiguracija</h3>
+    <h3 style="color:#2E3B2E;margin-top:18px;">Odgovori iz konfiguratora</h3>
     <table style="border-collapse:collapse;">
-      ${row("Ciljevi", answers.needs.join(", "))}
-      ${row("Veličina (izbor)", answers.teamSize)}
-      ${row("Način korišćenja", answers.scheduleModel)}
-      ${row("Finansiranje", answers.funding)}
-      ${row("Period", answers.period)}
-      ${row("Termina mesečno", answers.monthlySessions)}
-      ${row("Realizacija", answers.delivery)}
+      ${row("Broj zaposlenih", answers.employees)}
+      ${row("Oblici saradnje", answers.goals.join(", "))}
+      ${row("Teme", answers.topics.join(", "))}
+      ${row("Format", answers.format)}
     </table>
-    <h3 style="color:#2E3B2E;margin-top:18px;">Preporučeni demo paket</h3>
-    <p><strong>${esc(plan.name)}</strong> — ${esc(plan.price)}</p>
+    <h3 style="color:#2E3B2E;margin-top:18px;">Preporučeni program</h3>
+    <p><strong>${esc(model.name)}</strong> — ${esc(model.price)}</p>
     ${
       contact.message
         ? `<p style="margin-top:12px;"><strong>Poruka:</strong><br>${esc(
@@ -108,10 +100,10 @@ export async function POST(request: Request): Promise<Response> {
 
   const replyHtml = `<div style="font-family:sans-serif;color:#3A2E28;">
     <p>Poštovani/a ${esc(contact.contactName)},</p>
-    <p>Hvala na interesovanju za program podrške zaposlenima. Primili smo vaš upit
-    i okvirne zahteve (preporučeni paket: <strong>${esc(plan.name)}</strong>).</p>
-    <p>Član tima Psihointegriteta će vas kontaktirati radi potvrde potreba,
-    kapaciteta i pripreme konačne ponude.</p>
+    <p>Hvala na interesovanju za saradnju sa Psihointegritetom. Primili smo vaš
+    upit (preporučeni program: <strong>${esc(model.name)}</strong>).</p>
+    <p>Član tima će vas kontaktirati radi potvrde potreba i pripreme konačne
+    ponude.</p>
     <p style="color:#8A9D82;">Psihointegritet — digitalni centar za mentalno zdravlje</p>
   </div>`;
 
@@ -121,7 +113,7 @@ export async function POST(request: Request): Promise<Response> {
     from: FROM,
     to: TEAM_INBOX,
     replyTo: contact.email,
-    subject: `[Kompanije] Novi upit — ${contact.companyName} — ${plan.name}`,
+    subject: `[Kompanije] Novi upit — ${contact.companyName} — ${model.name}`,
     html: teamHtml,
   });
   if (teamSend.error) {
@@ -132,7 +124,7 @@ export async function POST(request: Request): Promise<Response> {
   await resend.emails.send({
     from: FROM,
     to: contact.email,
-    subject: "Vaš upit za program podrške zaposlenima",
+    subject: "Vaš upit za saradnju sa Psihointegritetom",
     html: replyHtml,
   });
 

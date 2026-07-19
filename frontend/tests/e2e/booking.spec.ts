@@ -1,13 +1,16 @@
 import { expect, test, type Page } from "@playwright/test";
 
-async function mockBooking(page: Page) {
-  await page.route("**/api/booking-request", (route) =>
-    route.fulfill({
+async function mockBooking(page: Page, sink?: { body?: unknown }) {
+  await page.route("**/api/booking-request", (route) => {
+    if (sink) {
+      sink.body = route.request().postDataJSON();
+    }
+    return route.fulfill({
       status: 200,
       contentType: "application/json",
       body: JSON.stringify({ ok: true }),
-    }),
-  );
+    });
+  });
 }
 
 test("profile booking form sends a request and is clearly not a confirmation", async ({
@@ -47,26 +50,34 @@ test("submit stays disabled until name and a valid email are entered", async ({
   await expect(submit).toBeEnabled();
 });
 
-test("unassigned team result offers a request form to the whole team", async ({
+test("team-review request carries the intake summary without internal scores", async ({
   page,
 }) => {
-  await mockBooking(page);
+  const sink: { body?: unknown } = {};
+  await mockBooking(page, sink);
   await page.goto("/");
   await page
     .getByRole("button", { name: "Pomozi mi da pronađem podršku" })
     .click();
   const drawer = page.getByRole("dialog", { name: "Vođeni izbor podrške" });
 
-  await drawer.getByRole("button", { name: "Za mene — odrasla osoba" }).click();
-  await drawer.getByRole("button", { name: "26–45" }).click();
   await drawer
-    .getByRole("button", {
-      name: "Oporavak nakon nasilja ili kriznog iskustva",
-    })
+    .getByRole("button", { name: "Ne znam tačno, želim razgovor" })
+    .click();
+  await drawer
+    .getByRole("button", { name: "Nisam siguran/na", exact: true })
+    .click();
+  await drawer.getByRole("button", { name: "Ne", exact: true }).click();
+  await drawer
+    .getByRole("button", { name: "Nisam siguran/na", exact: true })
     .click();
   await drawer.getByRole("button", { name: "Online", exact: true }).click();
+
   await drawer
-    .getByRole("button", { name: "Najbolje stručno uklapanje" })
+    .getByLabel(/Želite li nešto da dodate svojim rečima/)
+    .fill("Radije bih razgovor pre odluke.");
+  await drawer
+    .getByRole("button", { name: "Želim da tim pregleda moj zahtev" })
     .click();
 
   await expect(drawer).toContainText("Nedodeljen zahtev");
@@ -75,4 +86,20 @@ test("unassigned team result offers a request form to the whole team", async ({
   await drawer.getByRole("button", { name: "Zakaži termin" }).click();
 
   await expect(drawer).toContainText("Zahtev je poslat");
+
+  // The request carries the plain-language summary…
+  const body = sink.body as {
+    therapistSlug: string | null;
+    summary?: {
+      answers: { question: string; answer: string }[];
+      recommendedService?: string;
+      extraText?: string;
+    };
+  };
+  expect(body.therapistSlug).toBeNull();
+  expect(body.summary?.recommendedService).toBe("Individualna psihoterapija");
+  expect(body.summary?.extraText).toBe("Radije bih razgovor pre odluke.");
+  expect(body.summary?.answers.length).toBeGreaterThanOrEqual(5);
+  // …and never the internal score breakdown.
+  expect(JSON.stringify(sink.body)).not.toContain("scoreBreakdown");
 });

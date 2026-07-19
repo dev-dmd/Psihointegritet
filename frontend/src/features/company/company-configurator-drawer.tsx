@@ -4,10 +4,13 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
 import {
-  NEEDS,
-  activeCompanySteps,
-  recommendCompanyPlan,
+  COMPANY_INTRO,
+  COMPANY_PRICE_ON_REQUEST,
+  companySteps,
+  emptyCompanyAnswers,
+  recommendCompanyModel,
   type CompanyAnswers,
+  type CompanyStepKey,
 } from "@/content/company";
 import { cn } from "@/helpers/cn";
 
@@ -17,30 +20,16 @@ interface Contact {
   companyName: string;
   contactName: string;
   email: string;
-  teamSize: string;
   phone: string;
-  deadline: string;
   message: string;
   consent: boolean;
 }
-
-const emptyAnswers: CompanyAnswers = {
-  needs: [],
-  teamSize: null,
-  scheduleModel: null,
-  funding: null,
-  period: null,
-  monthlySessions: null,
-  delivery: null,
-};
 
 const emptyContact: Contact = {
   companyName: "",
   contactName: "",
   email: "",
-  teamSize: "",
   phone: "",
-  deadline: "",
   message: "",
   consent: false,
 };
@@ -50,21 +39,23 @@ interface CompanyConfiguratorDrawerProps {
 }
 
 /**
- * B2B configurator drawer („Program podrške zaposlenima"). Multi-step config →
- * hardcoded package recommendation → contact form → email to the team. Demo
- * only: no persistence, no company codes, no Booking Engine (spec §5A).
+ * B2B configurator drawer — „Kako možemo pomoći vašoj organizaciji?".
+ * Four questions (employees / goals / topics / format) → deterministic model
+ * from recommendCompanyModel → contact form → email to the team. Demo only:
+ * no persistence, no prices (everything is „Cena po ponudi"), no employee
+ * health data.
  */
 export function CompanyConfiguratorDrawer({
   onClose,
 }: CompanyConfiguratorDrawerProps) {
   const [screen, setScreen] = useState<Screen>("intro");
   const [stepIndex, setStepIndex] = useState(0);
-  const [answers, setAnswers] = useState<CompanyAnswers>(emptyAnswers);
-  const [otherText, setOtherText] = useState("");
+  const [answers, setAnswers] = useState<CompanyAnswers>(emptyCompanyAnswers);
   const [contact, setContact] = useState<Contact>(emptyContact);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const advanceTimer = useRef<number | null>(null);
+  const headingRef = useRef<HTMLHeadingElement | null>(null);
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -83,16 +74,17 @@ export function CompanyConfiguratorDrawer({
     };
   }, [onClose]);
 
-  const steps = useMemo(
-    () => activeCompanySteps(answers.period),
-    [answers.period],
-  );
-  const safeIndex = Math.min(stepIndex, steps.length - 1);
-  const currentStep = steps[safeIndex];
-  const plan = useMemo(() => recommendCompanyPlan(answers), [answers]);
+  const safeIndex = Math.min(stepIndex, companySteps.length - 1);
+  const currentStep = companySteps[safeIndex];
+  const model = useMemo(() => recommendCompanyModel(answers), [answers]);
+
+  // Keyboard users land on the new question instead of a stale option.
+  useEffect(() => {
+    headingRef.current?.focus();
+  }, [screen, safeIndex]);
 
   const advance = () => {
-    if (safeIndex >= steps.length - 1) {
+    if (safeIndex >= companySteps.length - 1) {
       setScreen("recommendation");
     } else {
       advanceTimer.current = window.setTimeout(
@@ -102,19 +94,19 @@ export function CompanyConfiguratorDrawer({
     }
   };
 
-  const selectSingle = (key: string, option: string) => {
+  const selectSingle = (key: CompanyStepKey, option: string) => {
     setAnswers((prev) => ({ ...prev, [key]: option }));
     advance();
   };
 
-  const toggleNeed = (option: string) => {
+  const toggleMulti = (key: "goals" | "topics", option: string) => {
     setAnswers((prev) => {
-      const has = prev.needs.includes(option);
+      const list = prev[key];
       return {
         ...prev,
-        needs: has
-          ? prev.needs.filter((item) => item !== option)
-          : [...prev.needs, option],
+        [key]: list.includes(option)
+          ? list.filter((item) => item !== option)
+          : [...list, option],
       };
     });
   };
@@ -126,7 +118,7 @@ export function CompanyConfiguratorDrawer({
     }
     if (screen === "recommendation") {
       setScreen("questions");
-      setStepIndex(steps.length - 1);
+      setStepIndex(companySteps.length - 1);
       return;
     }
     if (safeIndex > 0) {
@@ -136,41 +128,38 @@ export function CompanyConfiguratorDrawer({
     }
   };
 
+  const multiValue = (key: CompanyStepKey): string[] =>
+    key === "goals" ? answers.goals : key === "topics" ? answers.topics : [];
+
+  const multiCanAdvance =
+    !currentStep?.multi || multiValue(currentStep.key).length > 0;
+
   const contactValid =
     contact.companyName.trim() &&
     contact.contactName.trim() &&
     /.+@.+\..+/.test(contact.email) &&
-    contact.teamSize.trim() &&
     contact.consent;
 
   const submit = async () => {
     setSending(true);
     setError(null);
     try {
-      const needsText = answers.needs.includes(NEEDS.other)
-        ? [...answers.needs, `Nešto drugo: ${otherText.trim() || "—"}`]
-        : answers.needs;
       const response = await fetch("/api/company-inquiry", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          plan: { name: plan.name, price: plan.price },
+          model: { name: model.name, price: COMPANY_PRICE_ON_REQUEST },
           answers: {
-            needs: needsText,
-            teamSize: answers.teamSize,
-            scheduleModel: answers.scheduleModel,
-            funding: answers.funding,
-            period: answers.period,
-            monthlySessions: answers.monthlySessions,
-            delivery: answers.delivery,
+            employees: answers.employees,
+            goals: answers.goals,
+            topics: answers.topics,
+            format: answers.format,
           },
           contact: {
             companyName: contact.companyName.trim(),
             contactName: contact.contactName.trim(),
             email: contact.email.trim(),
-            teamSize: contact.teamSize.trim(),
             phone: contact.phone.trim() || undefined,
-            deadline: contact.deadline.trim() || undefined,
             message: contact.message.trim() || undefined,
           },
         }),
@@ -196,7 +185,7 @@ export function CompanyConfiguratorDrawer({
         : screen === "recommendation"
           ? "Naš predlog"
           : screen === "questions"
-            ? `Korak ${safeIndex + 1} od ${steps.length}`
+            ? `Korak ${safeIndex + 1} od ${companySteps.length}`
             : "Rad sa kompanijama";
 
   const canGoBack = screen !== "intro" && screen !== "done";
@@ -211,7 +200,7 @@ export function CompanyConfiguratorDrawer({
       <div
         role="dialog"
         aria-modal="true"
-        aria-label="Program podrške zaposlenima"
+        aria-label="Rad sa kompanijama"
         className="bg-canvas shadow-drawer animate-drawer-in fixed top-0 right-0 bottom-0 z-[81] flex w-[min(560px,100vw)] flex-col"
       >
         <div className="border-coffee/10 flex items-center justify-between gap-6 border-b px-6 pt-7 pb-[22px] md:px-10">
@@ -230,33 +219,49 @@ export function CompanyConfiguratorDrawer({
 
         {screen === "intro" ? (
           <div className="flex-1 overflow-y-auto px-6 py-9 md:px-10 md:py-11">
-            <h3 className="text-forest mb-3 font-serif text-[28px] leading-[1.12] font-normal text-pretty md:text-[32px]">
-              Program podrške zaposlenima
+            <h3
+              ref={headingRef}
+              tabIndex={-1}
+              className="text-forest mb-3 font-serif text-[28px] leading-[1.12] font-normal text-pretty outline-none md:text-[32px]"
+            >
+              {COMPANY_INTRO.title}
             </h3>
-            <p className="text-coffee/70 mb-8 text-[15px] leading-[1.65]">
-              Kreirajte okvirni model podrške prema veličini tima, potrebama
-              zaposlenih i načinu korišćenja termina. Popunjavanje traje oko dva
-              minuta i ne zahteva unošenje zdravstvenih podataka zaposlenih.
+            <p className="text-coffee/70 mb-5 text-[15px] leading-[1.65]">
+              {COMPANY_INTRO.description}
             </p>
+            <ul className="mb-8 flex flex-wrap gap-2">
+              {COMPANY_INTRO.offer.map((item) => (
+                <li
+                  key={item}
+                  className="bg-meadow/28 text-coffee rounded-full px-3.5 py-1.5 text-[13px] font-medium"
+                >
+                  {item}
+                </li>
+              ))}
+            </ul>
             <button
               type="button"
               onClick={() => setScreen("questions")}
               className="bg-forest text-canvas hover:bg-forest-hover cursor-pointer rounded-full border-0 px-7 py-[15px] text-[15px] font-semibold transition-colors"
             >
-              Konfigurišite program
+              {COMPANY_INTRO.cta}
             </button>
           </div>
         ) : null}
 
         {screen === "questions" && currentStep ? (
           <div className="flex-1 overflow-y-auto px-6 py-9 md:px-10 md:py-11">
-            <h3 className="text-forest mb-[26px] font-serif text-[24px] leading-[1.14] font-normal tracking-[-0.01em] text-pretty md:text-[30px]">
+            <h3
+              ref={headingRef}
+              tabIndex={-1}
+              className="text-forest mb-[26px] font-serif text-[24px] leading-[1.14] font-normal tracking-[-0.01em] text-pretty outline-none md:text-[30px]"
+            >
               {currentStep.question}
             </h3>
             <div className="flex flex-col gap-2.5">
               {currentStep.options.map((option) => {
                 const selected = currentStep.multi
-                  ? answers.needs.includes(option)
+                  ? multiValue(currentStep.key).includes(option)
                   : answers[currentStep.key] === option;
                 return (
                   <button
@@ -264,7 +269,10 @@ export function CompanyConfiguratorDrawer({
                     type="button"
                     onClick={() =>
                       currentStep.multi
-                        ? toggleNeed(option)
+                        ? toggleMulti(
+                            currentStep.key as "goals" | "topics",
+                            option,
+                          )
                         : selectSingle(currentStep.key, option)
                     }
                     className={cn(
@@ -283,21 +291,11 @@ export function CompanyConfiguratorDrawer({
               })}
             </div>
 
-            {currentStep.multi && answers.needs.includes(NEEDS.other) ? (
-              <textarea
-                value={otherText}
-                onChange={(event) => setOtherText(event.target.value)}
-                rows={2}
-                placeholder="Opišite ukratko šta vam je potrebno."
-                className="border-coffee/15 bg-surface text-coffee focus:border-sage mt-3 w-full resize-none rounded-2xl border px-4 py-3 text-[15px] leading-[1.5] outline-none"
-              />
-            ) : null}
-
             {currentStep.multi ? (
               <button
                 type="button"
                 onClick={advance}
-                disabled={answers.needs.length === 0}
+                disabled={!multiCanAdvance}
                 className="bg-forest text-canvas hover:bg-forest-hover mt-6 cursor-pointer rounded-full border-0 px-7 py-[14px] text-[15px] font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-50"
               >
                 Dalje
@@ -311,56 +309,51 @@ export function CompanyConfiguratorDrawer({
             <div className="text-sage mb-3 text-[12.5px] font-semibold tracking-[0.16em] uppercase">
               Na osnovu vaših odgovora preporučujemo
             </div>
-            <h3 className="text-forest mb-1 font-serif text-[30px] leading-[1.1] font-normal text-pretty">
-              {plan.name}
+            <h3
+              ref={headingRef}
+              tabIndex={-1}
+              className="text-forest mb-3 font-serif text-[30px] leading-[1.1] font-normal text-pretty outline-none"
+            >
+              {model.name}
             </h3>
-            <div className="text-coffee/60 mb-5 text-[14px]">
-              {plan.audience}
-            </div>
-            <div className="bg-meadow/20 mb-5 flex flex-wrap gap-2 rounded-2xl px-5 py-4">
-              <span className="text-coffee text-[13px] font-medium">
-                {plan.model}
-              </span>
-            </div>
-            <div className="mb-5">
-              <div className="text-sage mb-1.5 text-[11.5px] font-semibold tracking-[0.14em] uppercase">
-                Okvirna cena
-              </div>
-              <div className="text-forest font-serif text-[24px]">
-                {plan.price}
-              </div>
+            <p className="text-coffee/70 mb-5 text-[15px] leading-[1.6]">
+              {model.description}
+            </p>
+            <div className="bg-meadow/20 mb-5 flex flex-col gap-2 rounded-2xl px-5 py-4">
+              {answers.employees ? (
+                <div className="text-coffee text-[13.5px]">
+                  <span className="font-semibold">Veličina tima:</span>{" "}
+                  {answers.employees} zaposlenih
+                </div>
+              ) : null}
+              {answers.topics.length > 0 ? (
+                <div className="text-coffee text-[13.5px]">
+                  <span className="font-semibold">Teme:</span>{" "}
+                  {answers.topics.join(", ")}
+                </div>
+              ) : null}
+              {answers.format ? (
+                <div className="text-coffee text-[13.5px]">
+                  <span className="font-semibold">Format:</span>{" "}
+                  {answers.format}
+                </div>
+              ) : null}
             </div>
             <div className="mb-6">
-              <div className="text-sage mb-2 text-[11.5px] font-semibold tracking-[0.14em] uppercase">
-                Šta kompanija dobija
+              <div className="text-sage mb-1.5 text-[11.5px] font-semibold tracking-[0.14em] uppercase">
+                Cena
               </div>
-              <ul className="flex flex-col gap-2">
-                {plan.includes.map((item) => (
-                  <li
-                    key={item}
-                    className="text-coffee/75 flex gap-2.5 text-[14.5px] leading-[1.5]"
-                  >
-                    <span aria-hidden className="text-sage">
-                      •
-                    </span>
-                    {item}
-                  </li>
-                ))}
-              </ul>
+              <div className="text-forest font-serif text-[24px]">
+                {COMPANY_PRICE_ON_REQUEST}
+              </div>
             </div>
             <p className="text-coffee/55 mb-6 text-[12.5px] leading-[1.55]">
-              Cene su radne i služe za okvirnu procenu. Konačnu ponudu, pravila
-              otkazivanja i uslove definišemo u razgovoru.
+              Konačnu ponudu, obim i uslove saradnje definišemo u razgovoru,
+              prema potrebama vaše organizacije.
             </p>
             <button
               type="button"
-              onClick={() => {
-                setContact((prev) => ({
-                  ...prev,
-                  teamSize: prev.teamSize || answers.teamSize || "",
-                }));
-                setScreen("contact");
-              }}
+              onClick={() => setScreen("contact")}
               className="bg-forest text-canvas hover:bg-forest-hover cursor-pointer rounded-full border-0 px-7 py-[15px] text-[15px] font-semibold transition-colors"
             >
               Zatražite ponudu
@@ -370,7 +363,11 @@ export function CompanyConfiguratorDrawer({
 
         {screen === "contact" ? (
           <div className="flex-1 overflow-y-auto px-6 py-9 md:px-10 md:py-11">
-            <h3 className="text-forest mb-5 font-serif text-[26px] leading-[1.12] font-normal text-pretty">
+            <h3
+              ref={headingRef}
+              tabIndex={-1}
+              className="text-forest mb-5 font-serif text-[26px] leading-[1.12] font-normal text-pretty outline-none"
+            >
               Kontakt za ponudu
             </h3>
             <div className="flex flex-col gap-3.5">
@@ -391,19 +388,9 @@ export function CompanyConfiguratorDrawer({
                 onChange={(v) => setContact((c) => ({ ...c, email: v }))}
               />
               <Field
-                label="Broj zaposlenih ili veličina tima *"
-                value={contact.teamSize}
-                onChange={(v) => setContact((c) => ({ ...c, teamSize: v }))}
-              />
-              <Field
                 label="Telefon"
                 value={contact.phone}
                 onChange={(v) => setContact((c) => ({ ...c, phone: v }))}
-              />
-              <Field
-                label="Rok za početak programa"
-                value={contact.deadline}
-                onChange={(v) => setContact((c) => ({ ...c, deadline: v }))}
               />
               <label className="text-coffee/70 text-[13px] font-medium">
                 Dodatna poruka
@@ -447,13 +434,17 @@ export function CompanyConfiguratorDrawer({
 
         {screen === "done" ? (
           <div className="flex-1 overflow-y-auto px-6 py-9 md:px-10 md:py-11">
-            <h3 className="text-forest mb-3 font-serif text-[28px] leading-[1.12] font-normal text-pretty">
+            <h3
+              ref={headingRef}
+              tabIndex={-1}
+              className="text-forest mb-3 font-serif text-[28px] leading-[1.12] font-normal text-pretty outline-none"
+            >
               Hvala na interesovanju
             </h3>
             <p className="text-coffee/70 text-[15px] leading-[1.65]">
               Primili smo vaš upit i okvirne zahteve. Član tima Psihointegriteta
-              će vas kontaktirati radi potvrde potreba, kapaciteta i pripreme
-              konačne ponude.
+              će vas kontaktirati radi potvrde potreba i pripreme konačne
+              ponude.
             </p>
             <button
               type="button"

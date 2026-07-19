@@ -1,129 +1,144 @@
 import { describe, expect, it } from "vitest";
 
 import {
-  MONTHLY_SESSIONS,
-  NEEDS,
-  SCHEDULE_MODELS,
-  TEAM_SIZES,
-  companyPlans,
-  recommendCompanyPlan,
+  COMPANY_GOALS,
+  COMPANY_PRICE_ON_REQUEST,
+  COMPANY_SIZES,
+  companyModels,
+  companySteps,
+  recommendCompanyModel,
   type CompanyAnswers,
 } from "./company";
 
 function answers(partial: Partial<CompanyAnswers>): CompanyAnswers {
   return {
-    needs: [],
-    teamSize: null,
-    scheduleModel: null,
-    funding: null,
-    period: null,
-    monthlySessions: null,
-    delivery: null,
+    employees: null,
+    goals: [],
+    topics: [],
+    format: null,
     ...partial,
   };
 }
 
-describe("recommendCompanyPlan", () => {
-  it("recommends the custom program when workshops are the focus", () => {
-    expect(
-      recommendCompanyPlan(
-        answers({ needs: [NEEDS.workshops], teamSize: TEAM_SIZES.s3_9 }),
-      ).slug,
-    ).toBe("company-custom");
-    expect(
-      recommendCompanyPlan(
-        answers({
-          scheduleModel: SCHEDULE_MODELS.workshops,
-          teamSize: TEAM_SIZES.s10_30,
-        }),
-      ).slug,
-    ).toBe("company-custom");
+describe("recommendCompanyModel", () => {
+  // Mandatory case 12: company 20–50 + workshop -> team workshop, price on request.
+  it("maps a 20-50 company asking for a workshop to the team workshop", () => {
+    const model = recommendCompanyModel(
+      answers({
+        employees: COMPANY_SIZES.s20_50,
+        goals: [COMPANY_GOALS.workshop],
+      }),
+    );
+    expect(model.name).toBe("Interaktivna radionica za tim");
+    expect(COMPANY_PRICE_ON_REQUEST).toBe("Cena po ponudi");
   });
 
-  it("recommends the individual voucher for 1–2 people", () => {
-    expect(
-      recommendCompanyPlan(answers({ teamSize: TEAM_SIZES.s1_2 })).slug,
-    ).toBe("individual-voucher");
+  // Mandatory case 13: >200 employees -> custom program with mandatory contact.
+  it("routes companies over 200 employees to the custom program with contact", () => {
+    const model = recommendCompanyModel(
+      answers({
+        employees: COMPANY_SIZES.over200,
+        goals: [COMPANY_GOALS.lecture],
+      }),
+    );
+    expect(model.name).toBe("Program po meri");
+    expect(model.contactRequired).toBe(true);
   });
 
-  it("recommends reserved capacity when that model is chosen", () => {
-    expect(
-      recommendCompanyPlan(
-        answers({
-          teamSize: TEAM_SIZES.s10_30,
-          scheduleModel: SCHEDULE_MODELS.reserved,
-        }),
-      ).slug,
-    ).toBe("reserved-capacity");
+  it("routes three or more distinct goals to the custom program", () => {
+    const model = recommendCompanyModel(
+      answers({
+        employees: COMPANY_SIZES.upTo20,
+        goals: [
+          COMPANY_GOALS.lecture,
+          COMPANY_GOALS.workshop,
+          COMPANY_GOALS.needsAssessment,
+        ],
+      }),
+    );
+    expect(model.name).toBe("Program po meri");
+    expect(model.contactRequired).toBe(true);
   });
 
-  it("recommends company partner for the hybrid model", () => {
-    expect(
-      recommendCompanyPlan(
-        answers({
-          teamSize: TEAM_SIZES.s10_30,
-          scheduleModel: SCHEDULE_MODELS.hybrid,
-        }),
-      ).slug,
-    ).toBe("company-partner");
+  it("maps long-term plus individual support to the employee support program", () => {
+    const model = recommendCompanyModel(
+      answers({
+        employees: COMPANY_SIZES.s50_200,
+        goals: [COMPANY_GOALS.longTerm, COMPANY_GOALS.individualSupport],
+      }),
+    );
+    expect(model.name).toBe("Program podrške zaposlenima");
   });
 
-  it("recommends Team Flex 4 for a small team with standard usage", () => {
-    expect(
-      recommendCompanyPlan(
-        answers({
-          teamSize: TEAM_SIZES.s3_9,
-          scheduleModel: SCHEDULE_MODELS.flexible,
-        }),
-      ).slug,
-    ).toBe("team-flex-4");
+  it("maps a needs assessment to the introductory assessment", () => {
+    const model = recommendCompanyModel(
+      answers({
+        employees: COMPANY_SIZES.upTo20,
+        goals: [COMPANY_GOALS.needsAssessment],
+      }),
+    );
+    expect(model.name).toBe("Uvodna procena potreba organizacije");
   });
 
-  it("upgrades a small team to Team Flex 8 when monthly usage is higher", () => {
-    expect(
-      recommendCompanyPlan(
-        answers({
-          teamSize: TEAM_SIZES.s3_9,
-          scheduleModel: SCHEDULE_MODELS.flexible,
-          monthlySessions: MONTHLY_SESSIONS.s8,
-        }),
-      ).slug,
-    ).toBe("team-flex-8");
+  it("maps individual support alone to the flexible fund", () => {
+    const model = recommendCompanyModel(
+      answers({
+        employees: COMPANY_SIZES.s20_50,
+        goals: [COMPANY_GOALS.individualSupport],
+      }),
+    );
+    expect(model.name).toBe("Fleksibilni fond individualnih termina");
   });
 
-  it("recommends Company Flex 10 for 10–30 people", () => {
-    expect(
-      recommendCompanyPlan(
-        answers({
-          teamSize: TEAM_SIZES.s10_30,
-          scheduleModel: SCHEDULE_MODELS.flexible,
-        }),
-      ).slug,
-    ).toBe("company-flex-10");
+  it("maps a lecture alone to the custom lecture or webinar", () => {
+    const model = recommendCompanyModel(
+      answers({
+        employees: COMPANY_SIZES.upTo20,
+        goals: [COMPANY_GOALS.lecture],
+      }),
+    );
+    expect(model.name).toBe("Predavanje ili vebinar po meri");
   });
 
-  it("never auto-prices teams over 30 — routes them to the custom program", () => {
-    for (const size of [
-      TEAM_SIZES.s31_100,
-      TEAM_SIZES.s100plus,
-      TEAM_SIZES.unknown,
-    ]) {
-      const plan = recommendCompanyPlan(
-        answers({ teamSize: size, scheduleModel: SCHEDULE_MODELS.flexible }),
-      );
-      expect(plan.slug).toBe("company-custom");
-      expect(plan.quoteOnly).toBe(true);
+  it("falls back to the custom program when no goal is selected", () => {
+    const model = recommendCompanyModel(
+      answers({ employees: COMPANY_SIZES.upTo20 }),
+    );
+    expect(model.name).toBe("Program po meri");
+  });
+
+  it("ignores topics when picking the model", () => {
+    const base = answers({
+      employees: COMPANY_SIZES.s20_50,
+      goals: [COMPANY_GOALS.workshop],
+    });
+    const withTopics = { ...base, topics: ["Burnout", "Stres"] };
+    expect(recommendCompanyModel(withTopics).slug).toBe(
+      recommendCompanyModel(base).slug,
+    );
+  });
+
+  it("only returns models that exist in the catalog", () => {
+    const known = new Set(Object.keys(companyModels));
+    const combos: CompanyAnswers[] = [
+      answers({}),
+      answers({ employees: COMPANY_SIZES.over200 }),
+      answers({ goals: Object.values(COMPANY_GOALS).slice(0, 2) }),
+      answers({ goals: [COMPANY_GOALS.workshop] }),
+    ];
+    for (const combo of combos) {
+      expect(known).toContain(recommendCompanyModel(combo).slug);
     }
   });
 
-  it("only returns plans that exist in the catalog", () => {
-    const known = new Set(Object.keys(companyPlans));
-    const plan = recommendCompanyPlan(
-      answers({
-        teamSize: TEAM_SIZES.s3_9,
-        scheduleModel: SCHEDULE_MODELS.flexible,
-      }),
-    );
-    expect(known).toContain(plan.slug);
+  it("keeps the four-step question flow in the agreed order", () => {
+    expect(companySteps.map((step) => step.key)).toEqual([
+      "employees",
+      "goals",
+      "topics",
+      "format",
+    ]);
+    expect(companySteps[1]?.multi).toBe(true);
+    expect(companySteps[2]?.multi).toBe(true);
   });
 });

@@ -26,8 +26,32 @@ const THERAPIST_EMAILS: Record<string, string> = {
     process.env.THERAPIST_EMAIL_MARJAN ?? "marjan.jankovic@psihointegritet.com",
 };
 
-/** Indicative individual-session price (T7) — always presented as „okvirna". */
-const PRICE_NOTE = "Individualni termin (60 min): okvirno 3.500 RSD.";
+/** Indicative individual-session price (Anja's answers, 2026-07-18). */
+const PRICE_NOTE = "Individualni termin (60 min): okvirno 4.000 RSD.";
+
+/**
+ * Optional intake summary from the guided questionnaire. Plain-language
+ * answers only — internal scores never reach any email (client or team).
+ */
+const summarySchema = z.object({
+  answers: z
+    .array(
+      z.object({
+        question: z.string().max(300),
+        answer: z.string().max(600),
+      }),
+    )
+    .max(12),
+  extraText: z.string().max(2000).optional(),
+  recommendedService: z.string().max(120).optional(),
+  recommendedTherapist: z.string().max(120).optional(),
+  alternativeTherapist: z.string().max(120).optional(),
+  reasons: z.array(z.string().max(300)).max(3).optional(),
+  format: z.string().max(120).optional(),
+  location: z.string().max(120).optional(),
+  priorTherapy: z.string().max(120).optional(),
+  needsManualReview: z.boolean().optional(),
+});
 
 const payloadSchema = z.object({
   // Null slug = unassigned request → goes to the whole team.
@@ -37,6 +61,7 @@ const payloadSchema = z.object({
   therapistName: z.string().min(1).max(120),
   name: z.string().min(1).max(160),
   email: z.email().max(200),
+  summary: summarySchema.optional(),
 });
 
 const FROM =
@@ -62,7 +87,7 @@ export async function POST(request: Request): Promise<Response> {
   if (!parsed.success) {
     return Response.json({ error: "Neispravni podaci." }, { status: 422 });
   }
-  const { therapistSlug, therapistName, name, email } = parsed.data;
+  const { therapistSlug, therapistName, name, email, summary } = parsed.data;
 
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey) {
@@ -84,6 +109,48 @@ export async function POST(request: Request): Promise<Response> {
 
   const resend = new Resend(apiKey);
 
+  let summaryHtml = "";
+  if (summary) {
+    const rows = summary.answers
+      .map(
+        (item) =>
+          `<tr><td style="padding:4px 12px 4px 0;color:#4E5F4C;vertical-align:top;">${esc(
+            item.question,
+          )}</td><td style="padding:4px 0;font-weight:600;">${esc(
+            item.answer,
+          )}</td></tr>`,
+      )
+      .join("");
+    const meta = [
+      summary.recommendedService
+        ? `<p><strong>Preporučena usluga:</strong> ${esc(summary.recommendedService)}</p>`
+        : "",
+      summary.recommendedTherapist
+        ? `<p><strong>Preporučeni terapeut:</strong> ${esc(summary.recommendedTherapist)}${
+            summary.alternativeTherapist
+              ? ` (alternativa: ${esc(summary.alternativeTherapist)})`
+              : ""
+          }</p>`
+        : "",
+      summary.reasons && summary.reasons.length > 0
+        ? `<p><strong>Razlozi preporuke:</strong> ${summary.reasons
+            .map(esc)
+            .join(" ")}</p>`
+        : "",
+      summary.extraText
+        ? `<p><strong>Dodatno, svojim rečima:</strong><br>${esc(
+            summary.extraText,
+          ).replace(/\n/g, "<br>")}</p>`
+        : "",
+      summary.needsManualReview
+        ? `<p style="color:#B4552D;"><strong>Potreban ručni pregled:</strong> klijent je izabrao „Drugo" kao razlog javljanja.</p>`
+        : "",
+    ].join("");
+    summaryHtml = `<h3 style="color:#2E3B2E;margin-top:18px;">Sažetak upitnika</h3>
+    <table style="border-collapse:collapse;">${rows}</table>
+    ${meta}`;
+  }
+
   const teamHtml = `<div style="font-family:sans-serif;color:#3A2E28;">
     <h2 style="color:#2E3B2E;">Novi zahtev za termin</h2>
     <p><strong>Za:</strong> ${esc(forWhom)}</p>
@@ -92,6 +159,7 @@ export async function POST(request: Request): Promise<Response> {
       <tr><td style="padding:4px 12px 4px 0;color:#4E5F4C;">Email</td><td style="padding:4px 0;font-weight:600;">${esc(email)}</td></tr>
       <tr><td style="padding:4px 12px 4px 0;color:#4E5F4C;">Termin</td><td style="padding:4px 0;">dogovara se nakon zahteva (demo — bez izbora slota)</td></tr>
     </table>
+    ${summaryHtml}
     <p style="margin-top:16px;">${PRICE_NOTE}</p>
     <p style="margin-top:16px;color:#8A9D82;font-size:12px;">Demo zahtev. Nije potvrđen termin — javite se klijentu radi dogovora.</p>
   </div>`;

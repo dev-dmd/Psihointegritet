@@ -1,7 +1,15 @@
 import AxeBuilder from "@axe-core/playwright";
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 
 const drawerName = "Vođeni izbor podrške";
+
+async function openQuestionnaire(page: Page) {
+  await page.goto("/");
+  await page
+    .getByRole("button", { name: "Pomozi mi da pronađem podršku" })
+    .click();
+  return page.getByRole("dialog", { name: drawerName });
+}
 
 test("header Zakazi termin opens the chooser, then a known therapist goes to a profile", async ({
   page,
@@ -14,12 +22,31 @@ test("header Zakazi termin opens the chooser, then a known therapist goes to a p
   await expect(drawer).toBeVisible();
   await expect(drawer).toContainText("Kako želite da pronađete termin?");
 
-  // Returning clients skip the quiz entirely.
+  // Returning clients skip the questionnaire entirely.
   await drawer.getByRole("link", { name: /Marija Stamenković/ }).click();
   await expect(page).toHaveURL(/\/tim\/marija-stamenkovic$/);
 });
 
-test("hero button opens the quiz directly (no chooser)", async ({ page }) => {
+test("chooser quiz option opens the questions directly, without an intro step", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await page.getByRole("button", { name: "Zakaži termin" }).first().click();
+
+  const drawer = page.getByRole("dialog", { name: drawerName });
+  await drawer
+    .getByRole("button", { name: "Pomozite mi da pronađem terapeuta" })
+    .click();
+
+  await expect(drawer).toContainText("Pitanje 1 od 5");
+  // Chooser entry keeps a way back from question 1.
+  await drawer.getByRole("button", { name: "← Nazad" }).click();
+  await expect(drawer).toContainText("Kako želite da pronađete termin?");
+});
+
+test("hero button opens the questions immediately, with the non-diagnostic note", async ({
+  page,
+}) => {
   await page.goto("/");
 
   await page
@@ -28,120 +55,154 @@ test("hero button opens the quiz directly (no chooser)", async ({ page }) => {
 
   const drawer = page.getByRole("dialog", { name: drawerName });
   await expect(drawer).toBeVisible();
+  // No intro screen, no chooser — question 1 straight away.
   await expect(drawer).toContainText("Pitanje 1 od 5");
   await expect(drawer).not.toContainText("Kako želite da pronađete termin?");
-  // The safety notice is present on the questions.
+  // The non-diagnostic note and the safety notice sit above the first question.
+  await expect(drawer).toContainText("Upitnik nije dijagnostički alat");
   await expect(drawer).toContainText(
     "ne postavlja dijagnozu i nije hitna služba",
   );
 });
 
-test("full quiz produces an explainable match that links to the profile", async ({
+test("burnout produces Anja as a single primary with plain-language reasons", async ({
   page,
 }) => {
-  await page.goto("/");
-  await page
-    .getByRole("button", { name: "Pomozi mi da pronađem podršku" })
-    .click();
-  const drawer = page.getByRole("dialog", { name: drawerName });
+  const drawer = await openQuestionnaire(page);
 
-  await drawer.getByRole("button", { name: "Za mene — odrasla osoba" }).click();
-  await drawer.getByRole("button", { name: "26–45" }).click();
-  await drawer.getByRole("button", { name: "Roditeljstvo" }).click();
-  await drawer.getByRole("button", { name: "Online", exact: true }).click();
+  await drawer.getByRole("button", { name: "Burnout" }).click();
+  await drawer.getByRole("button", { name: "Sam/a" }).click();
+  await drawer.getByRole("button", { name: "Ne", exact: true }).click();
   await drawer
-    .getByRole("button", { name: "Najbolje stručno uklapanje" })
+    .getByRole("button", { name: "Naučiti kako da se nosim sa emocijama" })
     .click();
+  await drawer.getByRole("button", { name: "Online", exact: true }).click();
 
   await expect(drawer).toContainText("Predlog na osnovu vaših odgovora");
-  // Reasons are sentences, never a numeric score.
   await expect(drawer).toContainText(
-    "oblast rada odgovara izabranim potrebama",
+    "Preporučena usluga: Individualna psihoterapija",
   );
+  await expect(drawer).toContainText("Anja Stamenković");
+  // Reasons are sentences, never a numeric score.
+  await expect(drawer).toContainText("Radi sa temama burnouta i stresa.");
   await expect(drawer).not.toContainText("%");
+  await expect(drawer).not.toContainText("poena");
 
-  const primary = drawer.getByRole("link", { name: /Stamenković/ }).first();
-  await expect(primary).toBeVisible();
-  await primary.click();
-  await expect(page).toHaveURL(/\/tim\/(anja|marija)-stamenkovic$/);
+  // One clear leader → one primary, the runner-up is behind a reveal.
+  await expect(
+    drawer.getByRole("button", { name: "Pogledajte i drugu preporuku" }),
+  ).toBeVisible();
+
+  await drawer.getByRole("link", { name: "Pogledajte profil" }).click();
+  await expect(page).toHaveURL(/\/tim\/anja-stamenkovic$/);
 });
 
-test("adolescent routes to Marija with the parent/guardian note", async ({
+test("adolescent + parent routes to Marija with the child-age step and minor note", async ({
   page,
 }) => {
-  await page.goto("/");
-  await page
-    .getByRole("button", { name: "Pomozi mi da pronađem podršku" })
-    .click();
-  const drawer = page.getByRole("dialog", { name: drawerName });
+  const drawer = await openQuestionnaire(page);
 
-  await drawer.getByRole("button", { name: "Za adolescenta" }).click();
-  await drawer.getByRole("button", { name: "16–17" }).click();
-  await drawer.getByRole("button", { name: "Izazovi adolescencije" }).click();
-  await drawer.getByRole("button", { name: "Online", exact: true }).click();
+  await drawer.getByRole("button", { name: "Odnos sa adolescentom" }).click();
+  await drawer.getByRole("button", { name: "Roditelj i dete" }).click();
+
+  // Conditional step appears only for „Roditelj i dete".
+  await expect(drawer).toContainText("Kojoj uzrasnoj grupi pripada dete?");
+  await expect(drawer).toContainText("Pitanje 3 od 6");
+  await drawer.getByRole("button", { name: "13–17 godina" }).click();
+
+  await drawer.getByRole("button", { name: "Ne", exact: true }).click();
   await drawer
-    .getByRole("button", { name: "Najbolje stručno uklapanje" })
+    .getByRole("button", { name: "Poboljšati odnos sa detetom" })
     .click();
+  await drawer.getByRole("button", { name: "Online", exact: true }).click();
 
-  await expect(
-    drawer.getByRole("link", { name: /Marija Stamenković/ }),
-  ).toBeVisible();
+  await expect(drawer).toContainText(
+    "Preporučena usluga: Roditeljsko savetovanje",
+  );
+  await expect(drawer).toContainText("Marija Stamenković");
   await expect(drawer).toContainText("uz roditelja ili staratelja");
 });
 
-test("crisis recovery hands off to the team, never auto-assigned", async ({
-  page,
-}) => {
-  await page.goto("/");
-  await page
-    .getByRole("button", { name: "Pomozi mi da pronađem podršku" })
-    .click();
-  const drawer = page.getByRole("dialog", { name: drawerName });
+test("a depression tie shows two therapists side by side", async ({ page }) => {
+  const drawer = await openQuestionnaire(page);
 
-  await drawer.getByRole("button", { name: "Za mene — odrasla osoba" }).click();
-  await drawer.getByRole("button", { name: "26–45" }).click();
+  await drawer.getByRole("button", { name: "Depresivno raspoloženje" }).click();
+  await drawer.getByRole("button", { name: "Sam/a" }).click();
+  await drawer.getByRole("button", { name: "Ne", exact: true }).click();
   await drawer
-    .getByRole("button", {
-      name: "Oporavak nakon nasilja ili kriznog iskustva",
-    })
+    .getByRole("button", { name: "Nisam siguran/na", exact: true })
     .click();
   await drawer.getByRole("button", { name: "Online", exact: true }).click();
+
+  await expect(drawer).toContainText(
+    "Oba terapeuta rade sa izabranim oblastima",
+  );
+  await expect(drawer).toContainText("Marija Stamenković");
+  await expect(drawer).toContainText("Marjan Janković");
+});
+
+test("Drugo asks for optional context and never ends without a recommendation", async ({
+  page,
+}) => {
+  const drawer = await openQuestionnaire(page);
+
+  await drawer.getByRole("button", { name: "Drugo", exact: true }).click();
+  // No auto-advance: the optional free-text field + explicit „Dalje".
+  await expect(drawer).toContainText(
+    "ukratko opišite šta vam je trenutno važno",
+  );
   await drawer
-    .getByRole("button", { name: "Najbolje stručno uklapanje" })
+    .getByLabel(/ukratko opišite šta vam je trenutno važno/)
+    .fill("Teško mi je da spavam.");
+  await drawer.getByRole("button", { name: "Dalje" }).click();
+
+  await drawer.getByRole("button", { name: "Sam/a" }).click();
+  await drawer.getByRole("button", { name: "Ne", exact: true }).click();
+  await drawer
+    .getByRole("button", { name: "Nisam siguran/na", exact: true })
+    .click();
+  await drawer.getByRole("button", { name: "Online", exact: true }).click();
+
+  // Never "no therapist found" — a recommendation plus the manual-review note.
+  await expect(drawer).toContainText("Predlog na osnovu vaših odgovora");
+  await expect(drawer).toContainText("tim će dodatno pregledati vaš zahtev");
+});
+
+test("the team-review path offers an unassigned request form", async ({
+  page,
+}) => {
+  const drawer = await openQuestionnaire(page);
+
+  await drawer
+    .getByRole("button", { name: "Ne znam tačno, želim razgovor" })
+    .click();
+  await drawer
+    .getByRole("button", { name: "Nisam siguran/na", exact: true })
+    .click();
+  await drawer.getByRole("button", { name: "Ne", exact: true }).click();
+  await drawer
+    .getByRole("button", { name: "Nisam siguran/na", exact: true })
+    .click();
+  await drawer.getByRole("button", { name: "Online", exact: true }).click();
+
+  await drawer
+    .getByRole("button", { name: "Želim da tim pregleda moj zahtev" })
     .click();
 
   await expect(drawer).toContainText("Tim potvrđuje najbolje uklapanje");
   await expect(drawer).toContainText("Nedodeljen zahtev");
+  await expect(drawer.getByLabel("Ime i prezime")).toBeVisible();
 });
 
-test("Rad sa kompanijama ends the quiz and offers the B2B page", async ({
-  page,
-}) => {
-  await page.goto("/");
-  await page
-    .getByRole("button", { name: "Pomozi mi da pronađem podršku" })
-    .click();
-  const drawer = page.getByRole("dialog", { name: drawerName });
+test("back navigation works through the questionnaire", async ({ page }) => {
+  const drawer = await openQuestionnaire(page);
 
-  await drawer.getByRole("button", { name: "Rad sa kompanijama" }).click();
-
-  // B2B branch: the „Program podrške zaposlenima" configurator + a page link.
-  await expect(drawer).toContainText("Program podrške zaposlenima");
-  await drawer.getByRole("link", { name: "Saznajte više" }).click();
-  await expect(page).toHaveURL(/\/rad-sa-kompanijama$/);
-});
-
-test("back navigation works through the quiz", async ({ page }) => {
-  await page.goto("/");
-  await page
-    .getByRole("button", { name: "Pomozi mi da pronađem podršku" })
-    .click();
-  const drawer = page.getByRole("dialog", { name: drawerName });
-
-  await drawer.getByRole("button", { name: "Za mene — odrasla osoba" }).click();
+  await drawer.getByRole("button", { name: "Burnout" }).click();
   await expect(drawer).toContainText("Pitanje 2 od 5");
   await drawer.getByRole("button", { name: "← Nazad" }).click();
   await expect(drawer).toContainText("Pitanje 1 od 5");
+  // Direct entry (hero) has nothing before question 1 — no back button.
+  await expect(drawer.getByRole("button", { name: "← Nazad" })).toHaveCount(0);
 });
 
 test("drawer has no critical accessibility violations", async ({ page }) => {

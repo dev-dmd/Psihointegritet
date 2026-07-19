@@ -2,12 +2,31 @@
 
 import { useState } from "react";
 
+/**
+ * Structured intake summary attached to a request coming from the guided
+ * questionnaire. Plain-language answers only — never internal scores.
+ */
+export interface BookingSummary {
+  answers: { question: string; answer: string }[];
+  extraText?: string;
+  recommendedService?: string;
+  recommendedTherapist?: string;
+  alternativeTherapist?: string;
+  reasons?: string[];
+  format?: string;
+  location?: string;
+  priorTherapy?: string;
+  needsManualReview?: boolean;
+}
+
 interface BookingRequestFormProps {
   /** Therapist slug, or null for an unassigned request → the whole team. */
   therapistSlug: string | null;
   therapistName: string;
   /** Surface tone: "light" on a colored strip, "surface" on plain background. */
   tone?: "light" | "surface";
+  /** Intake summary from the guided questionnaire, emailed with the request. */
+  summary?: BookingSummary;
 }
 
 /**
@@ -20,6 +39,7 @@ export function BookingRequestForm({
   therapistSlug,
   therapistName,
   tone = "light",
+  summary,
 }: BookingRequestFormProps) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -46,6 +66,7 @@ export function BookingRequestForm({
           therapistName,
           name: name.trim(),
           email: email.trim(),
+          ...(summary ? { summary } : {}),
         }),
       });
       if (!response.ok) {

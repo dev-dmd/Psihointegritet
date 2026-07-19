@@ -1,244 +1,259 @@
 import { describe, expect, it } from "vitest";
 
-import { therapists } from "@/content/therapists";
-
 import {
-  AREAS,
-  AUDIENCE,
-  FORMATS,
-  PRIORITIES,
-  recommendMatch,
-  type MatchingAnswers,
+  CHILD_AGE_GROUPS,
+  GOALS,
+  LOCATIONS,
+  PARTICIPANTS,
+  PRIOR_THERAPY,
+  REASONS,
+  RECOMMENDED_SERVICES,
+  WORK_FORMATS,
+  activeIntakeSteps,
+  emptyIntakeAnswers,
+  evaluateIntake,
+  type IntakeAnswers,
 } from "./matching";
 
-/** Convenience builder: [audience, ageGroup, area, format, priority]. */
-function answers(
-  audience: string | null,
-  ageGroup: string | null,
-  area: string | null,
-  format: string | null,
-  priority: string | null,
-): MatchingAnswers {
-  return [audience, ageGroup, area, format, priority];
+const ANJA = "anja-stamenkovic";
+const MARIJA = "marija-stamenkovic";
+const MARJAN = "marjan-jankovic";
+
+function answers(partial: Partial<IntakeAnswers>): IntakeAnswers {
+  return { ...emptyIntakeAnswers, ...partial };
 }
 
-const ADULT = "26–45";
+function topSlugs(result: ReturnType<typeof evaluateIntake>): string[] {
+  return result.recommendedTherapists.map((match) => match.therapist.slug);
+}
 
-describe("recommendMatch — branches", () => {
-  it("routes 'Rad sa kompanijama' straight to B2B, skipping matching", () => {
-    const result = recommendMatch(
-      answers(AUDIENCE.b2b, null, null, null, null),
+describe("evaluateIntake — mandatory cases", () => {
+  it("1. partner relationship + partner i ja → Anja/Marjan and Bračno savetovanje", () => {
+    const result = evaluateIntake(
+      answers({
+        reason: REASONS.partnerRelationship,
+        participants: PARTICIPANTS.partner,
+        format: WORK_FORMATS.online,
+      }),
     );
-    expect(result.kind).toBe("b2b");
+    expect(topSlugs(result).slice(0, 2).sort()).toEqual([ANJA, MARJAN].sort());
+    expect(result.recommendedService).toBe(RECOMMENDED_SERVICES.couples);
+    // Equal scores → both shown.
+    expect(result.showBoth).toBe(true);
   });
 
-  it("never auto-assigns crisis/violence recovery — hands it to the team", () => {
-    const result = recommendMatch(
-      answers(
-        AUDIENCE.self,
-        ADULT,
-        AREAS.crisisRecovery,
-        FORMATS.online,
-        PRIORITIES.bestFit,
-      ),
+  it("2. odnos sa adolescentom → Marija is the first result", () => {
+    const result = evaluateIntake(
+      answers({
+        reason: REASONS.adolescent,
+        participants: PARTICIPANTS.parentChild,
+        format: WORK_FORMATS.online,
+      }),
     );
-    expect(result.kind).toBe("team");
+    expect(result.primaryRecommendation?.therapist.slug).toBe(MARIJA);
+    // 6+6+3 = 15 vs Anja 2 → clear primary.
+    expect(result.showBoth).toBe(false);
   });
 
-  it("routes to the team when the user asks for team confirmation", () => {
-    const result = recommendMatch(
-      answers(
-        AUDIENCE.self,
-        ADULT,
-        AREAS.stress,
-        FORMATS.online,
-        PRIORITIES.teamConfirms,
-      ),
+  it("3. burnout → Anja is the first result", () => {
+    const result = evaluateIntake(
+      answers({ reason: REASONS.burnout, participants: PARTICIPANTS.alone }),
     );
-    expect(result.kind).toBe("team");
+    expect(result.primaryRecommendation?.therapist.slug).toBe(ANJA);
+    expect(result.showBoth).toBe(false);
   });
 
-  it("routes to the team when hard filters leave nobody (adolescent + uživo Niš)", () => {
-    const result = recommendMatch(
-      answers(
-        AUDIENCE.adolescent,
-        "13–15",
-        AREAS.adolescence,
-        FORMATS.nis,
-        PRIORITIES.bestFit,
-      ),
+  it("4. zavisnost → Anja is the first result", () => {
+    const result = evaluateIntake(
+      answers({ reason: REASONS.addiction, participants: PARTICIPANTS.alone }),
     );
-    expect(result.kind).toBe("team");
-  });
-});
-
-describe("recommendMatch — hard filters", () => {
-  it("sends minors to Marija only, with the parent/guardian note", () => {
-    const result = recommendMatch(
-      answers(
-        AUDIENCE.adolescent,
-        "16–17",
-        AREAS.adolescence,
-        FORMATS.online,
-        PRIORITIES.bestFit,
-      ),
-    );
-    expect(result.kind).toBe("match");
-    if (result.kind !== "match") return;
-    expect(result.primary.therapist.slug).toBe("marija-stamenkovic");
-    expect(result.alternatives).toHaveLength(0);
-    expect(result.minorNote).toBe(true);
+    expect(result.primaryRecommendation?.therapist.slug).toBe(ANJA);
+    expect(result.showBoth).toBe(false);
   });
 
-  it("excludes Marija from couples (only Anja and Marjan work with couples)", () => {
-    const result = recommendMatch(
-      answers(
-        AUDIENCE.couple,
-        ADULT,
-        AREAS.relationships,
-        FORMATS.online,
-        PRIORITIES.moreOptions,
-      ),
+  it("5. depresivno raspoloženje → Marija and Marjan lead", () => {
+    const result = evaluateIntake(
+      answers({ reason: REASONS.depression, participants: PARTICIPANTS.alone }),
     );
-    expect(result.kind).toBe("match");
-    if (result.kind !== "match") return;
-    const slugs = [
-      result.primary.therapist.slug,
-      ...result.alternatives.map((match) => match.therapist.slug),
-    ];
-    expect(slugs).not.toContain("marija-stamenkovic");
-    expect(slugs).toContain("anja-stamenkovic");
-    expect(slugs).toContain("marjan-jankovic");
+    expect(topSlugs(result).slice(0, 2).sort()).toEqual(
+      [MARIJA, MARJAN].sort(),
+    );
+    expect(result.showBoth).toBe(true);
   });
 
-  it("keeps only Anja for uživo — Niš", () => {
-    const result = recommendMatch(
-      answers(
-        AUDIENCE.self,
-        ADULT,
-        AREAS.stress,
-        FORMATS.nis,
-        PRIORITIES.moreOptions,
-      ),
+  it("6. gubitak ili žalovanje → Anja and Marjan lead", () => {
+    const result = evaluateIntake(
+      answers({ reason: REASONS.grief, participants: PARTICIPANTS.alone }),
     );
-    expect(result.kind).toBe("match");
-    if (result.kind !== "match") return;
-    expect(result.primary.therapist.slug).toBe("anja-stamenkovic");
-    expect(result.alternatives).toHaveLength(0);
+    expect(topSlugs(result).slice(0, 2).sort()).toEqual([ANJA, MARJAN].sort());
+    expect(result.showBoth).toBe(true);
   });
 
-  it("keeps only Leskovac therapists for uživo — Leskovac", () => {
-    const result = recommendMatch(
-      answers(
-        AUDIENCE.self,
-        ADULT,
-        AREAS.growth,
-        FORMATS.leskovac,
-        PRIORITIES.moreOptions,
-      ),
+  it("7. uživo + Niš → never recommends a therapist without in-person work in Niš", () => {
+    const result = evaluateIntake(
+      answers({
+        reason: REASONS.depression, // would otherwise favour Marija/Marjan
+        format: WORK_FORMATS.inPerson,
+        location: LOCATIONS.nis,
+      }),
     );
-    expect(result.kind).toBe("match");
-    if (result.kind !== "match") return;
-    const slugs = [
-      result.primary.therapist.slug,
-      ...result.alternatives.map((match) => match.therapist.slug),
-    ];
-    expect(slugs).not.toContain("anja-stamenkovic");
-    expect(slugs.every((slug) => slug !== "anja-stamenkovic")).toBe(true);
+    expect(topSlugs(result)).toEqual([ANJA]);
+    expect(result.primaryRecommendation?.therapist.slug).toBe(ANJA);
   });
 
-  it("restricts a parent request to therapists who work with parents", () => {
-    const result = recommendMatch(
-      answers(
-        AUDIENCE.parent,
-        ADULT,
-        AREAS.parenting,
-        FORMATS.online,
-        PRIORITIES.moreOptions,
-      ),
+  it("8. uživo + Leskovac → recommends Marija or Marjan by topic", () => {
+    const adolescent = evaluateIntake(
+      answers({
+        reason: REASONS.adolescent,
+        format: WORK_FORMATS.inPerson,
+        location: LOCATIONS.leskovac,
+      }),
     );
-    expect(result.kind).toBe("match");
-    if (result.kind !== "match") return;
-    const slugs = [
-      result.primary.therapist.slug,
-      ...result.alternatives.map((match) => match.therapist.slug),
-    ];
-    expect(slugs).not.toContain("marjan-jankovic");
+    expect(adolescent.primaryRecommendation?.therapist.slug).toBe(MARIJA);
+
+    const situation = evaluateIntake(
+      answers({
+        reason: REASONS.trauma,
+        goal: GOALS.concreteSituation,
+        format: WORK_FORMATS.inPerson,
+        location: LOCATIONS.leskovac,
+      }),
+    );
+    expect(situation.primaryRecommendation?.therapist.slug).toBe(MARJAN);
+    expect(topSlugs(situation)).not.toContain(ANJA);
+  });
+
+  it("9. prior-therapy answer never changes the score", () => {
+    const base = answers({
+      reason: REASONS.anxiety,
+      participants: PARTICIPANTS.alone,
+      goal: GOALS.stress,
+    });
+    const withYes = evaluateIntake({
+      ...base,
+      priorTherapy: PRIOR_THERAPY.yes,
+    });
+    const withNo = evaluateIntake({ ...base, priorTherapy: PRIOR_THERAPY.no });
+    expect(withYes.scoreBreakdown).toEqual(withNo.scoreBreakdown);
+  });
+
+  it("10. a tie shows two therapists", () => {
+    const result = evaluateIntake(
+      answers({ reason: REASONS.anxiety, participants: PARTICIPANTS.alone }),
+    );
+    expect(result.showBoth).toBe(true);
+    expect(result.alternativeRecommendation).not.toBeNull();
+  });
+
+  it("11. Drugo or an unclear result never shows an empty recommendation", () => {
+    const other = evaluateIntake(
+      answers({ reason: REASONS.other, participants: PARTICIPANTS.unsure }),
+    );
+    expect(other.primaryRecommendation).not.toBeNull();
+    expect(other.needsManualReview).toBe(true);
+
+    const unclear = evaluateIntake(answers({}));
+    expect(unclear.primaryRecommendation).not.toBeNull();
   });
 });
 
-describe("recommendMatch — ranking and reasons", () => {
-  it("ranks the area-matching therapist first", () => {
-    const result = recommendMatch(
-      answers(
-        AUDIENCE.self,
-        ADULT,
-        AREAS.parenting,
-        FORMATS.online,
-        PRIORITIES.bestFit,
-      ),
+describe("evaluateIntake — supporting behaviour", () => {
+  it("recommends roditeljsko savetovanje for parent-and-child work", () => {
+    const result = evaluateIntake(
+      answers({
+        reason: REASONS.parenting,
+        participants: PARTICIPANTS.parentChild,
+      }),
     );
-    expect(result.kind).toBe("match");
-    if (result.kind !== "match") return;
-    // Anja and Marija list parenting; Marjan does not — a parenting-matcher leads.
-    expect(["anja-stamenkovic", "marija-stamenkovic"]).toContain(
-      result.primary.therapist.slug,
-    );
-    expect(result.primary.reasons).toContain(
-      "oblast rada odgovara izabranim potrebama",
-    );
+    expect(result.recommendedService).toBe(RECOMMENDED_SERVICES.parenting);
   });
 
-  it("gives every shown therapist at least one reason and no numeric score", () => {
-    const result = recommendMatch(
-      answers(
-        AUDIENCE.self,
-        ADULT,
-        AREAS.stress,
-        FORMATS.online,
-        PRIORITIES.moreOptions,
-      ),
+  it("falls back to online (never empty) for Druga lokacija", () => {
+    const result = evaluateIntake(
+      answers({
+        reason: REASONS.anxiety,
+        format: WORK_FORMATS.inPerson,
+        location: LOCATIONS.other,
+      }),
     );
-    expect(result.kind).toBe("match");
-    if (result.kind !== "match") return;
-    for (const match of [result.primary, ...result.alternatives]) {
+    expect(result.onlineFallback).toBe(true);
+    expect(result.recommendedTherapists.length).toBe(3);
+  });
+
+  it("gives every shown therapist at most three plain-language reasons", () => {
+    const result = evaluateIntake(
+      answers({
+        reason: REASONS.anxiety,
+        participants: PARTICIPANTS.alone,
+        format: WORK_FORMATS.online,
+      }),
+    );
+    for (const match of result.recommendedTherapists) {
       expect(match.reasons.length).toBeGreaterThan(0);
-      for (const reason of match.reasons) {
-        expect(reason).not.toMatch(/\d/); // no "87%" style scores
+      expect(match.reasons.length).toBeLessThanOrEqual(3);
+      for (const sentence of match.reasons) {
+        expect(sentence).not.toMatch(/\d+ ?(poena|bodova|%)/i);
       }
     }
   });
 
-  it("flags the earliest-appointment note when that priority is chosen", () => {
-    const result = recommendMatch(
-      answers(
-        AUDIENCE.self,
-        ADULT,
-        AREAS.stress,
-        FORMATS.online,
-        PRIORITIES.earliest,
-      ),
-    );
-    expect(result.kind).toBe("match");
-    if (result.kind !== "match") return;
-    expect(result.earliestNote).toBe(true);
+  it("inserts conditional steps only when triggered", () => {
+    expect(
+      activeIntakeSteps(emptyIntakeAnswers).map((step) => step.key),
+    ).toEqual(["reason", "participants", "priorTherapy", "goal", "format"]);
+    expect(
+      activeIntakeSteps(
+        answers({
+          participants: PARTICIPANTS.parentChild,
+          format: WORK_FORMATS.inPerson,
+        }),
+      ).map((step) => step.key),
+    ).toEqual([
+      "reason",
+      "participants",
+      "childAgeGroup",
+      "priorTherapy",
+      "goal",
+      "format",
+      "location",
+    ]);
   });
 
-  it("only ever returns slugs that exist in the therapist data", () => {
-    const known = new Set(therapists.map((therapist) => therapist.slug));
-    const result = recommendMatch(
-      answers(
-        AUDIENCE.self,
-        ADULT,
-        AREAS.growth,
-        FORMATS.any,
-        PRIORITIES.moreOptions,
-      ),
+  it("routes a minor child to Marija only (interim age rule)", () => {
+    const result = evaluateIntake(
+      answers({
+        reason: REASONS.parenting,
+        participants: PARTICIPANTS.parentChild,
+        childAgeGroup: CHILD_AGE_GROUPS[0],
+        format: WORK_FORMATS.online,
+      }),
     );
-    expect(result.kind).toBe("match");
-    if (result.kind !== "match") return;
-    for (const match of [result.primary, ...result.alternatives]) {
-      expect(known).toContain(match.therapist.slug);
-    }
+    expect(topSlugs(result)).toEqual([MARIJA]);
+  });
+
+  it("keeps Anja and Marjan eligible when the child is 18+", () => {
+    const result = evaluateIntake(
+      answers({
+        reason: REASONS.parenting,
+        participants: PARTICIPANTS.parentChild,
+        childAgeGroup: CHILD_AGE_GROUPS[3],
+        format: WORK_FORMATS.online,
+      }),
+    );
+    expect(topSlugs(result)).toContain(ANJA);
+  });
+
+  it("minor child + uzivo Nis falls back to Marija online, never empty", () => {
+    const result = evaluateIntake(
+      answers({
+        reason: REASONS.parenting,
+        participants: PARTICIPANTS.parentChild,
+        childAgeGroup: CHILD_AGE_GROUPS[1],
+        format: WORK_FORMATS.inPerson,
+        location: LOCATIONS.nis,
+      }),
+    );
+    expect(topSlugs(result)).toEqual([MARIJA]);
+    expect(result.onlineFallback).toBe(true);
   });
 });

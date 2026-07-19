@@ -5,7 +5,14 @@ import { Reveal } from "@/components/motion/reveal";
 import { PageHero } from "@/components/shared/page-hero";
 import { Chip } from "@/components/ui/chip";
 import { Eyebrow } from "@/components/ui/eyebrow";
-import { PRICE_NOTE, serviceCatalog, supportAreas } from "@/content/services";
+import {
+  PRICE_NOTE,
+  formatRsd,
+  groupPrograms,
+  serviceCatalog,
+  sessionPackages,
+  supportAreas,
+} from "@/content/services";
 import { GuidanceCtaButton } from "@/features/guidance/guidance-cta";
 
 export function ServicesPage() {
@@ -44,7 +51,7 @@ export function ServicesPage() {
                   </div>
                   <div className="flex flex-wrap gap-2.5">
                     <Chip>{service.duration}</Chip>
-                    <Chip>{service.price}</Chip>
+                    <Chip>{formatRsd(service.priceAmount)}</Chip>
                     <Chip>{service.format}</Chip>
                   </div>
                 </article>
@@ -53,6 +60,86 @@ export function ServicesPage() {
             <p className="text-coffee/60 mt-6 max-w-[680px] text-[13.5px] leading-[1.6]">
               {PRICE_NOTE}
             </p>
+          </Reveal>
+        </div>
+      </section>
+
+      <section className="pt-[72px] md:pt-24">
+        <div className="mx-auto max-w-[1536px] px-5 md:px-8">
+          <Reveal>
+            <Eyebrow className="mb-4">Paketi individualnog rada</Eyebrow>
+            <p className="text-coffee/68 mb-8 max-w-[620px] text-[15px] leading-[1.6]">
+              Za klijente koji žele kontinuitet u radu dostupni su paketi
+              individualnih seansi.
+            </p>
+            <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+              {sessionPackages.map((pack) => (
+                <article
+                  key={pack.sessions}
+                  className="bg-meadow/24 flex flex-col justify-between gap-6 rounded-[22px] px-7 py-8"
+                >
+                  <div>
+                    <h3 className="text-forest mb-1.5 font-serif text-2xl leading-[1.15] font-normal">
+                      {pack.sessions} individualnih seansi
+                    </h3>
+                    <p className="text-coffee/68 text-sm leading-[1.55]">
+                      {pack.deadline}
+                    </p>
+                  </div>
+                  <div className="flex items-baseline gap-3">
+                    {pack.fullPriceAmount ? (
+                      <s className="text-coffee/50 text-[16px]">
+                        {formatRsd(pack.fullPriceAmount)}
+                      </s>
+                    ) : null}
+                    <span className="text-forest font-serif text-[26px] font-bold">
+                      {formatRsd(pack.priceAmount)}
+                    </span>
+                  </div>
+                </article>
+              ))}
+            </div>
+          </Reveal>
+        </div>
+      </section>
+
+      <section className="pt-[72px] md:pt-24">
+        <div className="mx-auto max-w-[1536px] px-5 md:px-8">
+          <Reveal>
+            <Eyebrow className="mb-4">Grupni programi</Eyebrow>
+            <p className="text-coffee/68 mb-8 max-w-[680px] text-[15px] leading-[1.6]">
+              Grupni programi namenjeni su osobama koje žele da kroz
+              strukturisan proces, uz podršku terapeuta i grupe, rade na
+              određenoj temi. Svaki program ima jasno definisan cilj, trajanje i
+              broj susreta.
+            </p>
+            <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
+              {groupPrograms.map((program) => (
+                <article
+                  key={program.slug}
+                  className="bg-surface border-coffee/6 flex flex-col gap-4 rounded-3xl border px-7 pt-8 pb-7"
+                >
+                  <h3 className="text-forest font-serif text-[22px] leading-[1.2] font-normal text-pretty">
+                    {program.title}
+                  </h3>
+                  <p className="text-coffee/68 grow text-[14px] leading-[1.6]">
+                    {program.audience}
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    <Chip>{program.sessions}</Chip>
+                    {program.details ? <Chip>{program.details}</Chip> : null}
+                  </div>
+                  <p className="text-coffee/70 text-[13.5px] font-medium">
+                    {program.priceLine}
+                  </p>
+                  {program.note ? (
+                    <p className="text-coffee/60 text-[12.5px] leading-[1.5]">
+                      {program.note}
+                    </p>
+                  ) : null}
+                </article>
+              ))}
+            </div>
           </Reveal>
         </div>
       </section>
@@ -90,8 +177,8 @@ export function ServicesPage() {
                   Niste sigurni koja usluga vam odgovara?
                 </h2>
                 <p className="text-canvas/72 max-w-[480px] text-[15.5px] leading-[1.65]">
-                  Kroz pet kratkih pitanja predložićemo terapeuta i način rada
-                  koji najbliže odgovaraju onome što tražite.
+                  Kroz nekoliko kratkih pitanja predložićemo terapeuta i način
+                  rada koji najbliže odgovaraju onome što tražite.
                 </p>
               </div>
               <GuidanceCtaButton entry="quiz" variant="meadow">

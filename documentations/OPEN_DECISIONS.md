@@ -106,17 +106,20 @@ Datum, voditelj, cena, kapacitet, pravila prijave/otkazivanja. Dok ne stigne: `/
 > **Gde piše:** spec „Početna routing matrica" · MP §13 S11 · **Blokira:** R1.2.j sign-off
 > Engine je hardcoded v1 (`matching.ts`) sa konzervativnim pravilima. Tim treba da potvrdi ili ispravi:
 
-### O-14 · Routing matrica po terapeutu
-- **Anja** — prihvata li uzrast 16–17 ili **samo odrasle** (18+)? (sada: 18+)
-- **Marjan** — koja je najmlađa starosna granica? (sada: 18+, ne nudi se maloletnicima)
-- **Marija** — potvrda da radi 13+ sa adolescentima (sada: da)
-- Oblasti rada po terapeutu — potvrditi listu iz matrice (`matching.ts` `MATCHING_PROFILES`)
+### O-14 · Routing matrica po terapeutu *(ažurirano 2026-07-20, matching v2 / D-025)*
+- **Uzrasne granice** — privremena podela (CTO 2026-07-20): **Marija za maloletnu decu, Anja i Marjan za 18+** (`matching.ts` `worksWithMinors`). **Precizirati sa Anjom** ko radi sa kojim uzrastom (Do 7 / 7–12 / 13–17).
+- Oblasti rada po terapeutu — potvrditi listu iz `matching.ts` `therapistMatchingConfig` (preneta 1:1 iz Anjinog dokumenta)
 
 ### O-15 · Operativna pravila (za R2, ali utiču na v1 tekst)
 - Maksimalan broj novih klijenata po terapeutu (kapacitet) — sada nema ograničenja
 - Koje složenije situacije zahtevaju ljudski pregled pre prikazivanja rezultata (sada: samo „oporavak nakon nasilja/kriznog iskustva" → tim)
 - Ko može da preuzme nedodeljeni zahtev iz zajedničkog reda
 - Formulacija sigurnosnog izlaza (nije dijagnoza / nije hitna služba) — **vezano za S5**, čeka pravnu i stručnu potvrdu
+
+### O-16 · Preciziranja iz Anjinih odgovora (matching v2 / cenovnik, D-025)
+- **„Tridesete — Vreme promene", roditelji** — napomena „roditelji imaju mogućnost dolaska po ceni jednog učesnika" **se prikazuje na sajtu** (CTO 2026-07-20), ali je nejasno da li dvoje roditelja dolazi po ceni jednog. **Precizirati formulaciju sa Anjom.**
+- **Burnout: „Marjan +2 ako je vezano za zaposlenje ili kompanijski program"** — izostavljeno iz bodovanja (CTO 2026-07-20) jer upitnik nema signal o zaposlenju. **Precizirati sa Anjom** kako se uslov prepoznaje (novo pitanje? B2B kontekst?).
+- Uzrasne granice po terapeutu — vidi O-14.
 
 ---
 
@@ -130,7 +133,7 @@ Nacrt iz materijala: otkazivanje 24 h ranije; kasnije se naplaćuje; kašnjenje 
 ### O-09 · S3 — Cena za adolescente/studente
 > **Gde piše:** MP §13 S3 · Proposal §4 #4 · **Blokira:** proširenje prikaza cena
 
-Iznos, kriterijumi, kod kojih terapeuta, online/uživo. Potvrđene cene (T7) su: individualna 60 min — 3.500 RSD; bračno savetovanje 90 min — 5.000 RSD; psihoterapijsko savetovanje 60 min — 3.500 RSD. Sajt **mora** reći da su okvirne.
+Iznos, kriterijumi, kod kojih terapeuta, online/uživo. Važeće cene (D-025, Anjini odgovori 2026-07-18): individualna 60 min — 4.000 RSD; bračno savetovanje 90 min — 5.500 RSD; roditeljsko savetovanje 60 min — 5.000 RSD („psihoterapijsko savetovanje" uklonjeno iz kataloga). Sajt **mora** reći da su okvirne.
 
 ### O-10 · S12 — Google Calendar
 > **Gde piše:** MP §13 S12 · Proposal §4 #8 · **Blokira:** M2.6 (paket 2B)

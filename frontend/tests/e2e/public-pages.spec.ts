@@ -17,14 +17,33 @@ test("services page lists the three priced services with the mandatory price not
   for (const name of [
     "Individualna psihoterapija",
     "Bračno savetovanje",
-    "Psihoterapijsko savetovanje",
+    "Roditeljsko savetovanje",
   ]) {
     await expect(page.getByRole("heading", { name })).toBeVisible();
   }
 
-  // T7: prices must be flagged as indicative.
+  // Prices per Anja's answers (2026-07-18), still flagged as indicative.
   await expect(page.locator("body")).toContainText("Cene su okvirne");
-  await expect(page.locator("body")).toContainText("5.000 RSD");
+  for (const price of ["4.000 RSD", "5.500 RSD", "5.000 RSD"]) {
+    await expect(page.locator("body")).toContainText(price);
+  }
+
+  // Session packages and group programs are listed; unconfirmed group prices
+  // show the pending note instead of an invented figure.
+  await expect(page.locator("body")).toContainText("Paketi individualnog rada");
+  await expect(page.locator("body")).toContainText("Grupni programi");
+  await expect(page.locator("body")).toContainText("Tridesete — Vreme promene");
+  await expect(page.locator("body")).toContainText(
+    "Cena će biti objavljena naknadno.",
+  );
+
+  // 5-session package: regular price struck through next to the discounted one.
+  await expect(page.locator("s", { hasText: "20.000 RSD" })).toBeVisible();
+  await expect(page.locator("body")).toContainText("15.000 RSD");
+  // Tridesete parent note is visible (wording pending Anja's clarification).
+  await expect(page.locator("body")).toContainText(
+    "roditelji imaju mogućnost dolaska po ceni jednog",
+  );
 });
 
 test("knowledge page shows articles as coming soon, with no read links", async ({

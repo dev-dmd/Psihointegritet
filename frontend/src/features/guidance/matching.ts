@@ -2,85 +2,98 @@ import { therapists } from "@/content/therapists";
 import type { Therapist } from "@/types/therapist";
 
 /**
- * Intake & Matching Engine v1 — deterministic, explainable, non-diagnostic
- * (master plan T13). Answers live only in client memory; they are never
- * persisted, sent or logged (§11). No numeric scores — every shown therapist
- * gets plain-language reasons instead.
+ * Intake & Matching Engine v2 — deterministic, explainable, non-diagnostic.
+ * Questions, weights and assignment rules come from Anja's answers
+ * (documentations/odgovor-za-matching-anketa.pdf, 2026-07-18).
  *
- * The routing matrix below is engine configuration, deliberately separate from
- * the public profile content in `content/therapists.ts`. Rules are hardcoded
- * v1 drafts pending team confirmation (see OPEN_DECISIONS): whether Anja
- * accepts 16–17, Marjan's minimum age, per-therapist capacity. Until then:
- * minors route to Marija only, and Marjan is 18+.
+ * Principles (unchanged from v1):
+ * - answers live only in client memory; never persisted or logged (T13/§11);
+ * - no numeric scores shown to users — plain-language reasons only;
+ * - never "no therapist found" — always at least one recommendation or the
+ *   team-review path;
+ * - the questionnaire is NOT a diagnostic tool and must never suggest one.
+ *
+ * All scoring lives here (matchingWeights) — never in React components.
  */
 
-export interface MatchingStep {
-  question: string;
-  options: string[];
-}
+// --- Question option constants -------------------------------------------
 
-export const AUDIENCE = {
-  self: "Za mene — odrasla osoba",
-  adolescent: "Za adolescenta",
-  couple: "Za par ili partnerski odnos",
-  parent: "Podrška roditelju",
-  b2b: "Rad sa kompanijama",
+export const REASONS = {
+  anxiety: "Anksioznost",
+  depression: "Depresivno raspoloženje",
+  partnerRelationship: "Partnerski odnos",
+  maritalProblems: "Bračni problemi",
+  parenting: "Roditeljstvo",
+  adolescent: "Odnos sa adolescentom",
+  burnout: "Burnout",
+  grief: "Gubitak ili žalovanje",
+  selfEsteem: "Samopouzdanje",
+  personalGrowth: "Lični razvoj",
+  trauma: "Trauma",
+  addiction: "Zavisnost",
+  unsure: "Ne znam tačno, želim razgovor",
+  other: "Drugo",
 } as const;
 
-export const AGE_GROUPS = ["13–15", "16–17", "18–25", "26–45", "46+"] as const;
-export type AgeGroup = (typeof AGE_GROUPS)[number];
-const MINOR_AGE_GROUPS: readonly AgeGroup[] = ["13–15", "16–17"];
-
-export const AREAS = {
-  stress: "Stres i anksioznost",
-  emotions: "Emocije i samopouzdanje",
-  relationships: "Odnosi i životne promene",
-  parenting: "Roditeljstvo",
-  adolescence: "Izazovi adolescencije",
-  crisisRecovery: "Oporavak nakon nasilja ili kriznog iskustva",
-  growth: "Lični rast i razvoj",
+export const PARTICIPANTS = {
+  alone: "Sam/a",
+  partner: "Partner i ja",
+  parentChild: "Roditelj i dete",
   unsure: "Nisam siguran/na",
 } as const;
 
-export const FORMATS = {
+/**
+ * Child age groups — shown only when „Roditelj i dete" is chosen.
+ *
+ * Interim rule (CTO, 2026-07-20): a minor child routes to Marija; Anja and
+ * Marjan take 18+. TODO(Anja): potvrditi uzrasne granice po terapeutu — ovo
+ * je privremena podela dok tim ne precizira ko radi sa kojim uzrastom.
+ */
+export const CHILD_AGE_GROUPS = [
+  "Do 7 godina",
+  "7–12 godina",
+  "13–17 godina",
+  "18 i više",
+] as const;
+
+export const ADULT_CHILD_AGE_GROUP = CHILD_AGE_GROUPS[3];
+
+export const PRIOR_THERAPY = {
+  yes: "Da",
+  no: "Ne",
+} as const;
+
+export const GOALS = {
+  understandSelf: "Razumeti sebe",
+  emotions: "Naučiti kako da se nosim sa emocijama",
+  improvePartner: "Poboljšati partnerski odnos",
+  improveChild: "Poboljšati odnos sa detetom",
+  stress: "Prevazići stres",
+  concreteSituation: "Razrešiti konkretnu životnu situaciju",
+  unsure: "Nisam siguran/na",
+} as const;
+
+export const WORK_FORMATS = {
   online: "Online",
-  nis: "Uživo — Niš",
-  leskovac: "Uživo — Leskovac",
+  inPerson: "Uživo",
   any: "Svejedno",
 } as const;
 
-export const PRIORITIES = {
-  bestFit: "Najbolje stručno uklapanje",
-  earliest: "Najraniji dostupan termin",
-  moreOptions: "Želim da vidim više predloga",
-  teamConfirms: "Želim da tim potvrdi izbor",
-  specific: "Želim konkretnog terapeuta",
+export const LOCATIONS = {
+  nis: "Niš",
+  leskovac: "Leskovac",
+  other: "Druga lokacija",
 } as const;
 
-export const matchingSteps: MatchingStep[] = [
-  {
-    question: "Za koga tražite podršku?",
-    options: Object.values(AUDIENCE),
-  },
-  {
-    question: "Kojoj uzrasnoj grupi pripada osoba?",
-    options: [...AGE_GROUPS],
-  },
-  {
-    question: "Koja oblast je trenutno najvažnija?",
-    options: Object.values(AREAS),
-  },
-  {
-    question: "Koji format vam odgovara?",
-    options: Object.values(FORMATS),
-  },
-  {
-    question: "Šta vam je najvažnije pri izboru?",
-    options: Object.values(PRIORITIES),
-  },
-];
+// --- Intake copy ----------------------------------------------------------
 
-export type MatchingAnswers = (string | null)[];
+export const INTAKE_INTRO = {
+  title: "Pronađite podršku koja vam odgovara",
+  description:
+    "Odgovorite na nekoliko kratkih pitanja kako bismo vam predložili terapeuta i oblik rada koji prema oblastima rada i iskustvu može odgovarati vašim potrebama.",
+  note: "Upitnik nije dijagnostički alat i ne postavlja dijagnozu. Preporuka služi kao pomoć pri izboru i ne predstavlja stručnu procenu.",
+  cta: "Započni upitnik",
+} as const;
 
 /** Draft safety copy — final wording is blocked on legal review (STOP S5). */
 export const SAFETY_NOTICE =
@@ -90,182 +103,502 @@ export const SAFETY_NOTICE =
 export const MINOR_NOTE =
   "Termini za maloletnike dogovaraju se isključivo uz roditelja ili staratelja.";
 
-type AreaKey = keyof typeof AREAS;
-type City = "Niš" | "Leskovac";
+export const OTHER_TEXT_PROMPT =
+  "Ako želite, ukratko opišite šta vam je trenutno važno.";
 
-interface MatchingProfile {
-  slug: string;
-  /** Confirmed minimum age (S-list: Marjan's adolescent boundary unconfirmed → 18). */
-  minAge: 13 | 18;
-  worksWithCouples: boolean;
-  worksWithParents: boolean;
-  areas: readonly AreaKey[];
-  city: City;
+// --- Answers & steps ------------------------------------------------------
+
+export interface IntakeAnswers {
+  reason: string | null;
+  /** Optional free text shown for „Drugo" — appended to the summary only. */
+  reasonOtherText: string;
+  participants: string | null;
+  /** Conditional — only when participants = „Roditelj i dete". */
+  childAgeGroup: string | null;
+  priorTherapy: string | null;
+  goal: string | null;
+  format: string | null;
+  /** Conditional — only when format = „Uživo". */
+  location: string | null;
 }
 
-/** v1 routing matrix — order in this array is the deterministic tiebreaker. */
-const MATCHING_PROFILES: readonly MatchingProfile[] = [
-  {
-    slug: "anja-stamenkovic",
-    minAge: 18,
-    worksWithCouples: true,
-    worksWithParents: true,
-    areas: ["stress", "emotions", "relationships", "parenting", "growth"],
-    city: "Niš",
+export const emptyIntakeAnswers: IntakeAnswers = {
+  reason: null,
+  reasonOtherText: "",
+  participants: null,
+  childAgeGroup: null,
+  priorTherapy: null,
+  goal: null,
+  format: null,
+  location: null,
+};
+
+export type IntakeStepKey =
+  | "reason"
+  | "participants"
+  | "childAgeGroup"
+  | "priorTherapy"
+  | "goal"
+  | "format"
+  | "location";
+
+export interface IntakeStep {
+  key: IntakeStepKey;
+  question: string;
+  options: readonly string[];
+  /** Shows the optional free-text field under the options ("Drugo"). */
+  hasOtherText?: boolean;
+}
+
+const baseSteps: Record<IntakeStepKey, IntakeStep> = {
+  reason: {
+    key: "reason",
+    question: "Šta je glavni razlog zbog kojeg nam se javljate?",
+    options: Object.values(REASONS),
+    hasOtherText: true,
   },
-  {
-    slug: "marija-stamenkovic",
-    minAge: 13,
-    worksWithCouples: false,
-    worksWithParents: true,
-    areas: ["emotions", "adolescence", "parenting", "growth", "relationships"],
-    city: "Leskovac",
+  participants: {
+    key: "participants",
+    question: "Ko bi učestvovao u radu?",
+    options: Object.values(PARTICIPANTS),
   },
-  {
-    slug: "marjan-jankovic",
-    minAge: 18,
-    worksWithCouples: true,
-    worksWithParents: false,
-    areas: ["relationships", "stress", "growth"],
-    city: "Leskovac",
+  childAgeGroup: {
+    key: "childAgeGroup",
+    question: "Kojoj uzrasnoj grupi pripada dete?",
+    options: CHILD_AGE_GROUPS,
   },
-];
+  priorTherapy: {
+    key: "priorTherapy",
+    question: "Da li ste ranije bili na psihoterapiji?",
+    options: Object.values(PRIOR_THERAPY),
+  },
+  goal: {
+    key: "goal",
+    question: "Šta vam je trenutno najvažnije?",
+    options: Object.values(GOALS),
+  },
+  format: {
+    key: "format",
+    question: "Kako želite da radite?",
+    options: Object.values(WORK_FORMATS),
+  },
+  location: {
+    key: "location",
+    question: "Koja lokacija vam odgovara?",
+    options: Object.values(LOCATIONS),
+  },
+};
+
+/**
+ * Ordered active steps for the current answers. The child-age step appears
+ * only for „Roditelj i dete"; the location step only for „Uživo".
+ */
+export function activeIntakeSteps(answers: IntakeAnswers): IntakeStep[] {
+  const steps: IntakeStep[] = [baseSteps.reason, baseSteps.participants];
+  if (answers.participants === PARTICIPANTS.parentChild) {
+    steps.push(baseSteps.childAgeGroup);
+  }
+  steps.push(baseSteps.priorTherapy, baseSteps.goal, baseSteps.format);
+  if (answers.format === WORK_FORMATS.inPerson) {
+    steps.push(baseSteps.location);
+  }
+  return steps;
+}
+
+// --- Therapist matching configuration ------------------------------------
+
+const ANJA = "anja-stamenkovic";
+const MARIJA = "marija-stamenkovic";
+const MARJAN = "marjan-jankovic";
+
+type Slug = typeof ANJA | typeof MARIJA | typeof MARJAN;
+
+const ALL_SLUGS: readonly Slug[] = [ANJA, MARIJA, MARJAN];
+
+export interface TherapistMatchingProfile {
+  slug: Slug;
+  /** Areas of work per Anja's document — matching config, not public copy. */
+  areas: readonly string[];
+  /** City where in-person work is currently available. */
+  inPersonCity: "Niš" | "Leskovac";
+  /** All three therapists work online. */
+  online: true;
+  /**
+   * Interim age rule (CTO, 2026-07-20): only Marija works with minors; Anja
+   * and Marjan take 18+. TODO(Anja): potvrditi granice po terapeutu.
+   */
+  worksWithMinors: boolean;
+  /** Grammatically correct reason sentences (gender-aware). */
+  onlineReason: string;
+  inPersonReason: string;
+}
+
+/**
+ * Areas of work exactly as confirmed in Anja's answers — do not add areas that
+ * are not listed here. (Canonical name/slug for Marjan stays per D-006, even
+ * though the source document sometimes writes „Marijan".)
+ */
+export const therapistMatchingConfig: Record<Slug, TherapistMatchingProfile> = {
+  [ANJA]: {
+    slug: ANJA,
+    areas: [
+      "individualna psihoterapija",
+      "bračno savetovanje",
+      "burnout",
+      "emocionalni razvoj",
+      "lični razvoj",
+      "zavisnost",
+      "trauma",
+      "gubitak i žalovanje",
+      "anksioznost",
+      "roditeljsko savetovanje",
+      "samopouzdanje",
+    ],
+    inPersonCity: "Niš",
+    online: true,
+    worksWithMinors: false,
+    onlineReason: "Dostupna je za online rad.",
+    inPersonReason: "Radi uživo u Nišu.",
+  },
+  [MARIJA]: {
+    slug: MARIJA,
+    areas: [
+      "individualna psihoterapija",
+      "razvoj dece",
+      "vaspitni izazovi",
+      "adolescenti",
+      "porodični odnosi",
+      "lični razvoj",
+      "emocionalni razvoj",
+      "anksioznost",
+      "depresivno raspoloženje",
+      "roditeljstvo",
+    ],
+    inPersonCity: "Leskovac",
+    online: true,
+    worksWithMinors: true,
+    onlineReason: "Dostupna je za online rad.",
+    inPersonReason: "Radi uživo u Leskovcu.",
+  },
+  [MARJAN]: {
+    slug: MARJAN,
+    areas: [
+      "individualna psihoterapija",
+      "bračno savetovanje",
+      "podrška zaposlenima",
+      "trauma",
+      "anksioznost",
+      "depresivno raspoloženje",
+      "lični razvoj",
+      "gubitak i žalovanje",
+      "konkretne životne situacije",
+    ],
+    inPersonCity: "Leskovac",
+    online: true,
+    worksWithMinors: false,
+    onlineReason: "Dostupan je za online rad.",
+    inPersonReason: "Radi uživo u Leskovcu.",
+  },
+};
+
+// --- Weights (Anja's demo starting weights) -------------------------------
+
+type WeightMap = Partial<Record<Slug, number>>;
+
+/**
+ * Question 1 — main reason.
+ *
+ * TODO(team): „Burnout: Marijan +2 ako je povezano sa zaposlenjem ili
+ * kompanijskim programom" — upitnik trenutno nema pitanje/signal o zaposlenju,
+ * pa se taj uslovni bonus ne primenjuje dok tim ne potvrdi kako se prepoznaje.
+ */
+const reasonWeights: Record<string, WeightMap> = {
+  [REASONS.anxiety]: { [ANJA]: 3, [MARIJA]: 3, [MARJAN]: 3 },
+  [REASONS.depression]: { [MARIJA]: 4, [MARJAN]: 4 },
+  [REASONS.partnerRelationship]: { [ANJA]: 5, [MARJAN]: 5 },
+  [REASONS.maritalProblems]: { [ANJA]: 5, [MARJAN]: 5 },
+  [REASONS.parenting]: { [ANJA]: 4, [MARIJA]: 4 },
+  [REASONS.adolescent]: { [MARIJA]: 6 },
+  [REASONS.burnout]: { [ANJA]: 6 },
+  [REASONS.grief]: { [ANJA]: 5, [MARJAN]: 5 },
+  [REASONS.selfEsteem]: { [ANJA]: 5, [MARIJA]: 2, [MARJAN]: 2 },
+  [REASONS.personalGrowth]: { [ANJA]: 3, [MARIJA]: 3, [MARJAN]: 3 },
+  [REASONS.trauma]: { [ANJA]: 5, [MARJAN]: 5 },
+  [REASONS.addiction]: { [ANJA]: 6 },
+  [REASONS.unsure]: { [ANJA]: 1, [MARIJA]: 1, [MARJAN]: 1 },
+  [REASONS.other]: { [ANJA]: 1, [MARIJA]: 1, [MARJAN]: 1 },
+};
+
+/** Question 2 — participants. (Prior-therapy question never affects scores.) */
+const participantWeights: Record<string, WeightMap> = {
+  [PARTICIPANTS.alone]: { [ANJA]: 1, [MARIJA]: 1, [MARJAN]: 1 },
+  [PARTICIPANTS.partner]: { [ANJA]: 6, [MARJAN]: 6 },
+  // Anja +2 is for roditeljsko savetovanje only — never automatic direct work
+  // with the child.
+  [PARTICIPANTS.parentChild]: { [MARIJA]: 6, [ANJA]: 2 },
+  [PARTICIPANTS.unsure]: { [ANJA]: 1, [MARIJA]: 1, [MARJAN]: 1 },
+};
+
+/** Question 4 — what matters most right now. */
+const goalWeights: Record<string, WeightMap> = {
+  [GOALS.understandSelf]: { [ANJA]: 3, [MARIJA]: 2, [MARJAN]: 2 },
+  [GOALS.emotions]: { [ANJA]: 4, [MARIJA]: 4, [MARJAN]: 2 },
+  [GOALS.improvePartner]: { [ANJA]: 6, [MARJAN]: 6 },
+  [GOALS.improveChild]: { [MARIJA]: 6, [ANJA]: 3 },
+  [GOALS.stress]: { [ANJA]: 4, [MARJAN]: 4, [MARIJA]: 2 },
+  [GOALS.concreteSituation]: { [MARJAN]: 5, [ANJA]: 2, [MARIJA]: 2 },
+  [GOALS.unsure]: { [ANJA]: 1, [MARIJA]: 1, [MARJAN]: 1 },
+};
+
+export const matchingWeights = {
+  reason: reasonWeights,
+  participants: participantWeights,
+  goal: goalWeights,
+} as const;
+
+// --- Services -------------------------------------------------------------
+
+export const RECOMMENDED_SERVICES = {
+  individual: "Individualna psihoterapija",
+  couples: "Bračno savetovanje",
+  parenting: "Roditeljsko savetovanje",
+} as const;
+
+/** Which therapists provide which recommended service (per Anja's lists). */
+const serviceProviders: Record<string, readonly Slug[]> = {
+  [RECOMMENDED_SERVICES.individual]: ALL_SLUGS,
+  [RECOMMENDED_SERVICES.couples]: [ANJA, MARJAN],
+  [RECOMMENDED_SERVICES.parenting]: [ANJA, MARIJA],
+};
+
+/**
+ * Service is decided separately from the therapist:
+ * 1. „Partner i ja" → Bračno savetovanje;
+ * 2. „Roditelj i dete" / „Roditeljstvo" / „Odnos sa adolescentom" →
+ *    Roditeljsko savetovanje (adolescent support goes through the parent);
+ * 3. otherwise → Individualna psihoterapija.
+ */
+export function recommendService(answers: IntakeAnswers): string {
+  if (answers.participants === PARTICIPANTS.partner) {
+    return RECOMMENDED_SERVICES.couples;
+  }
+  if (
+    answers.participants === PARTICIPANTS.parentChild ||
+    answers.reason === REASONS.parenting ||
+    answers.reason === REASONS.adolescent
+  ) {
+    return RECOMMENDED_SERVICES.parenting;
+  }
+  return RECOMMENDED_SERVICES.individual;
+}
+
+// --- Reason sentences (max 3 per recommendation, no scores) ---------------
+
+const reasonAreaSentence: Record<string, string> = {
+  [REASONS.anxiety]: "Radi sa temom anksioznosti.",
+  [REASONS.depression]: "Radi sa temom depresivnog raspoloženja.",
+  [REASONS.partnerRelationship]: "Radi sa parovima i partnerskim temama.",
+  [REASONS.maritalProblems]: "Radi sa parovima i partnerskim temama.",
+  [REASONS.parenting]: "Radi sa temama roditeljstva.",
+  [REASONS.adolescent]: "Radi sa adolescentima i porodičnim odnosima.",
+  [REASONS.burnout]: "Radi sa temama burnouta i stresa.",
+  [REASONS.grief]: "Radi sa temama gubitka i žalovanja.",
+  [REASONS.selfEsteem]: "Radi sa temama samopouzdanja.",
+  [REASONS.personalGrowth]: "Radi sa temama ličnog razvoja.",
+  [REASONS.trauma]: "Radi sa temom traume.",
+  [REASONS.addiction]: "Radi sa temom zavisnosti.",
+};
+
+/** Maps a reason answer to the config area it corresponds to, per therapist. */
+const reasonToArea: Record<string, string[]> = {
+  [REASONS.anxiety]: ["anksioznost"],
+  [REASONS.depression]: ["depresivno raspoloženje"],
+  [REASONS.partnerRelationship]: ["bračno savetovanje"],
+  [REASONS.maritalProblems]: ["bračno savetovanje"],
+  [REASONS.parenting]: ["roditeljsko savetovanje", "roditeljstvo"],
+  [REASONS.adolescent]: ["adolescenti"],
+  [REASONS.burnout]: ["burnout"],
+  [REASONS.grief]: ["gubitak i žalovanje"],
+  [REASONS.selfEsteem]: ["samopouzdanje"],
+  [REASONS.personalGrowth]: ["lični razvoj"],
+  [REASONS.trauma]: ["trauma"],
+  [REASONS.addiction]: ["zavisnost"],
+};
+
+const serviceSentence: Record<string, string> = {
+  [RECOMMENDED_SERVICES.individual]: "Pruža individualnu psihoterapiju.",
+  [RECOMMENDED_SERVICES.couples]: "Pruža bračno savetovanje.",
+  [RECOMMENDED_SERVICES.parenting]: "Pruža roditeljsko savetovanje.",
+};
+
+function buildReasons(
+  slug: Slug,
+  answers: IntakeAnswers,
+  service: string,
+): string[] {
+  const profile = therapistMatchingConfig[slug];
+  const sentences: string[] = [];
+
+  const reason = answers.reason;
+  if (reason && reasonAreaSentence[reason]) {
+    const areas = reasonToArea[reason] ?? [];
+    if (areas.some((area) => profile.areas.includes(area))) {
+      sentences.push(reasonAreaSentence[reason]);
+    }
+  }
+
+  if (serviceProviders[service]?.includes(slug)) {
+    sentences.push(serviceSentence[service] ?? "");
+  }
+
+  if (
+    answers.format === WORK_FORMATS.inPerson &&
+    (answers.location === profile.inPersonCity ||
+      answers.location === LOCATIONS.other)
+  ) {
+    sentences.push(
+      answers.location === profile.inPersonCity
+        ? profile.inPersonReason
+        : profile.onlineReason,
+    );
+  } else {
+    sentences.push(profile.onlineReason);
+  }
+
+  return sentences.filter(Boolean).slice(0, 3);
+}
+
+// --- Evaluation -----------------------------------------------------------
 
 export interface TherapistMatch {
   therapist: Therapist;
-  /** Plain-language reasons — never a numeric score. */
   reasons: string[];
 }
 
-export type MatchResult =
-  | {
-      kind: "match";
-      primary: TherapistMatch;
-      alternatives: TherapistMatch[];
-      minorNote: boolean;
-      earliestNote: boolean;
-    }
-  | { kind: "team" }
-  | { kind: "b2b" };
-
-function areaKeyForAnswer(answer: string | null): AreaKey | null {
-  const entry = Object.entries(AREAS).find(([, label]) => label === answer);
-  return entry ? (entry[0] as AreaKey) : null;
+export interface IntakeMatchResult {
+  /** All eligible therapists, best first. */
+  recommendedTherapists: TherapistMatch[];
+  primaryRecommendation: TherapistMatch | null;
+  alternativeRecommendation: TherapistMatch | null;
+  /** True → show two therapists side by side (difference < 3 or a tie). */
+  showBoth: boolean;
+  recommendedService: string;
+  /** True when the chosen location has no in-person availability → offer online. */
+  onlineFallback: boolean;
+  needsManualReview: boolean;
+  /** Development/debug only — never rendered to users, never emailed. */
+  scoreBreakdown: Record<string, number>;
 }
 
-function therapistBySlug(slug: string): Therapist {
-  const found = therapists.find((therapist) => therapist.slug === slug);
+function therapistBySlug(slug: Slug): Therapist {
+  const found = therapists.find((item) => item.slug === slug);
   if (!found) {
-    throw new Error(`Matching profile references unknown therapist: ${slug}`);
+    throw new Error(`Matching config references unknown therapist: ${slug}`);
   }
   return found;
 }
 
-function buildReasons(
-  profile: MatchingProfile,
-  areaKey: AreaKey | null,
-  format: string | null,
-): string[] {
-  const reasons = ["radi sa ovom uzrasnom grupom"];
-  if (areaKey !== null && profile.areas.includes(areaKey)) {
-    reasons.push("oblast rada odgovara izabranim potrebama");
-  }
-  if (format === FORMATS.online) {
-    reasons.push("radi online");
-  } else if (format === FORMATS.nis || format === FORMATS.leskovac) {
-    reasons.push(`radi uživo u ${therapistBySlug(profile.slug).cityLocative}`);
-  } else {
-    reasons.push("radi online i uživo");
-  }
-  return reasons;
-}
-
 /**
- * Deterministic recommendation. Hard filters exclude completely; survivors are
- * ranked by primary-area match, then matrix order. Branches that skip matching
- * entirely: B2B, crisis recovery (never auto-routed — needs human review, per
- * spec), explicit team confirmation, minors outside Marija's scope, or an
- * empty survivor set.
+ * Pure, deterministic evaluation:
+ * 1. score all therapists from the weight tables (prior-therapy never scores);
+ * 2. apply format/location constraints (in-person filters by city; a location
+ *    without coverage falls back to online — never "no therapist");
+ * 3. top result ≥3 points ahead → one primary + optional alternative;
+ *    otherwise show the top two together.
  */
-export function recommendMatch(answers: MatchingAnswers): MatchResult {
-  const [audience, ageGroup, area, format, priority] = answers;
+export function evaluateIntake(answers: IntakeAnswers): IntakeMatchResult {
+  const scores: Record<Slug, number> = { [ANJA]: 0, [MARIJA]: 0, [MARJAN]: 0 };
 
-  if (audience === AUDIENCE.b2b) {
-    return { kind: "b2b" };
+  const apply = (weights: WeightMap | undefined) => {
+    if (!weights) return;
+    for (const slug of ALL_SLUGS) {
+      scores[slug] += weights[slug] ?? 0;
+    }
+  };
+
+  apply(answers.reason ? reasonWeights[answers.reason] : undefined);
+  apply(
+    answers.participants ? participantWeights[answers.participants] : undefined,
+  );
+  apply(answers.goal ? goalWeights[answers.goal] : undefined);
+
+  // „Odnos sa adolescentom" + „Roditelj i dete" → Marija dobija dodatnih +3.
+  if (
+    answers.reason === REASONS.adolescent &&
+    answers.participants === PARTICIPANTS.parentChild
+  ) {
+    scores[MARIJA] += 3;
   }
 
-  // Crisis/violence recovery is flagged for professional review — never
-  // auto-assigned to a therapist just because it appears in a bio (spec §matrix).
-  if (area === AREAS.crisisRecovery) {
-    return { kind: "team" };
+  // Format/location constraints. In-person in a specific city is a hard
+  // filter; „Druga lokacija" keeps everyone but flags the online fallback.
+  let eligible: Slug[] = [...ALL_SLUGS];
+  let onlineFallback = false;
+  if (answers.format === WORK_FORMATS.inPerson) {
+    if (answers.location === LOCATIONS.nis) {
+      eligible = ALL_SLUGS.filter(
+        (slug) => therapistMatchingConfig[slug].inPersonCity === "Niš",
+      );
+    } else if (answers.location === LOCATIONS.leskovac) {
+      eligible = ALL_SLUGS.filter(
+        (slug) => therapistMatchingConfig[slug].inPersonCity === "Leskovac",
+      );
+    } else if (answers.location === LOCATIONS.other) {
+      onlineFallback = true; // all three online — never "no therapist"
+    }
   }
 
-  if (priority === PRIORITIES.teamConfirms) {
-    return { kind: "team" };
+  // Interim age rule: a minor child routes to Marija (TODO(Anja): potvrditi
+  // granice). If the city filter excluded her, fall back to her online work
+  // rather than returning nobody.
+  const minorChild =
+    answers.participants === PARTICIPANTS.parentChild &&
+    answers.childAgeGroup !== null &&
+    answers.childAgeGroup !== ADULT_CHILD_AGE_GROUP;
+  if (minorChild) {
+    const withMinors = eligible.filter(
+      (slug) => therapistMatchingConfig[slug].worksWithMinors,
+    );
+    if (withMinors.length > 0) {
+      eligible = withMinors;
+    } else {
+      eligible = ALL_SLUGS.filter(
+        (slug) => therapistMatchingConfig[slug].worksWithMinors,
+      );
+      onlineFallback = true;
+    }
   }
 
-  const isMinor = MINOR_AGE_GROUPS.includes((ageGroup ?? "") as AgeGroup);
-  const areaKey = areaKeyForAnswer(area ?? null);
+  const service = recommendService(answers);
+  const needsManualReview = answers.reason === REASONS.other;
 
-  let eligible = MATCHING_PROFILES.filter((profile) => {
-    if (isMinor && profile.minAge > 15) {
-      // Only Marija works with adolescents until the team confirms boundaries.
-      return profile.minAge === 13;
-    }
-    if (audience === AUDIENCE.adolescent && profile.minAge > 15) {
-      return false;
-    }
-    if (audience === AUDIENCE.couple && !profile.worksWithCouples) {
-      return false;
-    }
-    if (audience === AUDIENCE.parent && !profile.worksWithParents) {
-      return false;
-    }
-    if (format === FORMATS.nis && profile.city !== "Niš") {
-      return false;
-    }
-    if (format === FORMATS.leskovac && profile.city !== "Leskovac") {
-      return false;
-    }
-    return true;
+  const ranked = eligible
+    .map((slug) => ({ slug, score: scores[slug] }))
+    .sort(
+      (a, b) =>
+        b.score - a.score ||
+        ALL_SLUGS.indexOf(a.slug) - ALL_SLUGS.indexOf(b.slug),
+    );
+
+  const toMatch = (slug: Slug): TherapistMatch => ({
+    therapist: therapistBySlug(slug),
+    reasons: buildReasons(slug, answers, service),
   });
 
-  // If the hard filters left no one (e.g. adolescent + uživo Niš), there is no
-  // reliable result — the team takes over.
-  if (eligible.length === 0) {
-    return { kind: "team" };
-  }
-
-  // Rank: primary-area match first, matrix order as the stable tiebreaker.
-  if (areaKey !== null) {
-    eligible = [...eligible].sort((a, b) => {
-      const aHit = a.areas.includes(areaKey) ? 0 : 1;
-      const bHit = b.areas.includes(areaKey) ? 0 : 1;
-      return aHit - bHit;
-    });
-  }
-
-  const showAll =
-    priority === PRIORITIES.moreOptions || priority === PRIORITIES.specific;
-  const shown = showAll ? eligible : eligible.slice(0, 3);
-
-  const [primaryProfile, ...alternativeProfiles] = shown;
-  if (!primaryProfile) {
-    return { kind: "team" };
-  }
-
-  const toMatch = (profile: MatchingProfile): TherapistMatch => ({
-    therapist: therapistBySlug(profile.slug),
-    reasons: buildReasons(profile, areaKey, format ?? null),
-  });
+  const recommendedTherapists = ranked.map((entry) => toMatch(entry.slug));
+  const primary = recommendedTherapists[0] ?? null;
+  const alternative = recommendedTherapists[1] ?? null;
+  const showBoth =
+    ranked.length > 1 && (ranked[0]?.score ?? 0) - (ranked[1]?.score ?? 0) < 3;
 
   return {
-    kind: "match",
-    primary: toMatch(primaryProfile),
-    alternatives: alternativeProfiles.slice(0, 2).map(toMatch),
-    // The parent/guardian note follows the age group, not the Q1 label — an
-    // 18+ adolescent is legally an adult (T10 applies to minors only).
-    minorNote: isMinor,
-    earliestNote: priority === PRIORITIES.earliest,
+    recommendedTherapists,
+    primaryRecommendation: primary,
+    alternativeRecommendation: alternative,
+    showBoth,
+    recommendedService: service,
+    onlineFallback,
+    needsManualReview,
+    scoreBreakdown: scores,
   };
 }

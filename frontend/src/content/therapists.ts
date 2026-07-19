@@ -21,11 +21,11 @@ import type { Therapist } from "@/types/therapist";
  *   savetovanje") never change per therapist — they are product terminology,
  *   not personal speech.
  * - Service names follow T1 („Bračno savetovanje", never „partnersko
- *   savjetovanje" / „partnerska terapija") and T2 („Psihoterapijsko
- *   savetovanje", never „psihološko savjetovanje" — a legal distinction in
- *   Serbia). The design handoff violated both.
- * - Prices are the draft ones from T7 and must always be shown as „okvirne".
- *   A null duration/price means there is no confirmed figure — never invent one.
+ *   savetovanje" / „partnerska terapija"). „Psihoterapijsko savetovanje" was
+ *   removed from the catalog per Anja's answers (D-025) and must not reappear.
+ * - Prices follow Anja's answers (odgovor-za-matching-anketa.pdf, 2026-07-18;
+ *   supersede the T7 draft) and must always be shown as „okvirne". A null
+ *   duration/price means there is no confirmed figure — never invent one.
  */
 export const therapists: Therapist[] = [
   {
@@ -55,19 +55,18 @@ export const therapists: Therapist[] = [
       {
         title: "Individualna psihoterapija",
         duration: "60 minuta",
-        price: "3.500 RSD",
+        price: "4.000 RSD",
       },
       {
         title: "Bračno savetovanje",
         duration: "90 minuta",
-        price: "5.000 RSD",
+        price: "5.500 RSD",
       },
       {
-        title: "Psihoterapijsko savetovanje",
+        title: "Roditeljsko savetovanje",
         duration: "60 minuta",
-        price: "3.500 RSD",
+        price: "5.000 RSD",
       },
-      { title: "Roditeljstvo", duration: null, price: null },
     ],
     image: "/images/therapists/anja.jpeg",
     cardExcerpt:
@@ -106,15 +105,14 @@ export const therapists: Therapist[] = [
       {
         title: "Individualna psihoterapija",
         duration: "60 minuta",
-        price: "3.500 RSD",
+        price: "4.000 RSD",
+      },
+      {
+        title: "Roditeljsko savetovanje",
+        duration: "60 minuta",
+        price: "5.000 RSD",
       },
       { title: "Savetovanje adolescenata", duration: null, price: null },
-      {
-        title: "Psihoterapijsko savetovanje",
-        duration: "60 minuta",
-        price: "3.500 RSD",
-      },
-      { title: "Roditeljstvo", duration: null, price: null },
     ],
     image: "/images/therapists/marija.jpeg",
     cardExcerpt:
@@ -151,19 +149,13 @@ export const therapists: Therapist[] = [
       {
         title: "Individualna psihoterapija",
         duration: "60 minuta",
-        price: "3.500 RSD",
+        price: "4.000 RSD",
       },
       {
         title: "Bračno savetovanje",
         duration: "90 minuta",
-        price: "5.000 RSD",
+        price: "5.500 RSD",
       },
-      {
-        title: "Psihoterapijsko savetovanje",
-        duration: "60 minuta",
-        price: "3.500 RSD",
-      },
-      { title: "Roditeljstvo", duration: null, price: null },
     ],
     image: "/images/therapists/marjan.jpeg",
     cardExcerpt:
