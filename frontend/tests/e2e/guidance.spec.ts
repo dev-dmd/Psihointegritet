@@ -108,7 +108,7 @@ test("adolescent + parent routes to Marija with the child-age step and minor not
   // Conditional step appears only for „Roditelj i dete".
   await expect(drawer).toContainText("Kojoj uzrasnoj grupi pripada dete?");
   await expect(drawer).toContainText("Pitanje 3 od 6");
-  await drawer.getByRole("button", { name: "13–17 godina" }).click();
+  await drawer.getByRole("button", { name: "16–17 godina" }).click();
 
   await drawer.getByRole("button", { name: "Ne", exact: true }).click();
   await drawer

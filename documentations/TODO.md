@@ -282,6 +282,22 @@ Svaki ima SUPERSEDED zaglavlje sa razlogom i zamenom. Arhivirano 2026-07-17: `PR
 
 ---
 
+## 5C. Control Center (radni-prostor) — R2 preview (role-based staff panel)
+
+> **Gde piše:** `CONTROL_CENTER_PLAN_v1_0.md` · dizajn handoff `Control Center.dc.html` + README §8.1 · odluka **D-027**
+> **Šta je:** operativni panel za tim (org_admin/therapist) na `/radni-prostor`, funkcionalan read-only demo sa mock podacima. Tabovi po roli, server-side. Union iz stvarnih rola (bez demo prekidača).
+
+| ID | Zadatak | Gde piše | Status | Napomena |
+|---|---|---|---|---|
+| **CC-1** | Guardovi `requireOrgAdmin`/`requireTherapist` (+ `isWorkspaceAdmin/Therapist`) + testovi | plan §3 · D-027 | ✅ | **2026-07-20**; matrica rola, 37 auth+nav testova |
+| CC-2 | `(staff)/radni-prostor` grupa: layout (role flags → `WorkspaceProvider`) + shell (forest sidebar, topbar, mobilni bottom-nav sa FAB) + 9 guarded stranica; e2e auth | plan §4–5 | ✅ | **2026-07-20**; 10 workspace-auth e2e (redirect + return path) |
+| CC-3 | `nav.tsx` (`visibleNav` role-gated) + data/types (11 statusa, mock usklađen sa D-025 katalogom) + panel `ProgressBar` | plan §5–6 | ✅ | Nav testabilan; terapeuti iz `content/therapists.ts` |
+| CC-4 | Ekrani: Pregled · Termini (5 tabova) · Klijenti (Svi/Nedodeljeni) · Kompanije · Usluge i cene · Istraživanja · Terapeuti · Moj profil (3 taba, 4 sloja dostupnosti) · Podešavanja (uskoro) | plan §6 | ✅ | Read-only; Preuzmi/Brza akcija = stub toast |
+| CC-5 | Vizuelna provera (desktop+mobilni) + dokumentacija (D-027, plan) + gate-ovi | plan §8 | ✅ | Screenshot potvrđen 1:1, temp fajlovi obrisani |
+| **CC-6** | **Duboki profili** (klijent/[id]: Intake sažetak+Saglasnosti; kompanija/[id]: Kapacitet; terapeut/[id]) + pravi termini | plan §7 | ⬜ | **Sledeći korak**, čeka Booking engine (M2.3) i smernice tima |
+
+---
+
 ## 6. R2 — Operativni MVP + Booking Engine
 
 > **Gde piše:** master plan §6 · Proposal v1.1 §7 (Faza 2) · Engines (status enum §7.3, dijagnostika §18)

@@ -40,9 +40,9 @@ test("services page lists the three priced services with the mandatory price not
   // 5-session package: regular price struck through next to the discounted one.
   await expect(page.locator("s", { hasText: "20.000 RSD" })).toBeVisible();
   await expect(page.locator("body")).toContainText("15.000 RSD");
-  // Tridesete parent note is visible (wording pending Anja's clarification).
+  // Tridesete parent note: the session price covers both parents together.
   await expect(page.locator("body")).toContainText(
-    "roditelji imaju mogućnost dolaska po ceni jednog",
+    "po susretu, ne po roditelju",
   );
 });
 

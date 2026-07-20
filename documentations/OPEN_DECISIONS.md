@@ -107,7 +107,7 @@ Datum, voditelj, cena, kapacitet, pravila prijave/otkazivanja. Dok ne stigne: `/
 > Engine je hardcoded v1 (`matching.ts`) sa konzervativnim pravilima. Tim treba da potvrdi ili ispravi:
 
 ### O-14 · Routing matrica po terapeutu *(ažurirano 2026-07-20, matching v2 / D-025)*
-- **Uzrasne granice** — privremena podela (CTO 2026-07-20): **Marija za maloletnu decu, Anja i Marjan za 18+** (`matching.ts` `worksWithMinors`). **Precizirati sa Anjom** ko radi sa kojim uzrastom (Do 7 / 7–12 / 13–17).
+- ✅ **Uzrasne granice — POTVRĐENO od Anje (2026-07-20):** Marija radi sa svim uzrastima dece (0–18 i 18+); Anja i Marjan samo sa decom **16+**. Implementirano u `matching.ts` (`minChildAge`: Marija 0, Anja/Marjan 16); uzrasni bracket „13–17" podeljen na „13–15" / „16–17" da bi granica bila precizna. Maloletnici (<18) i dalje uz roditelja/staratelja (MINOR_NOTE).
 - Oblasti rada po terapeutu — potvrditi listu iz `matching.ts` `therapistMatchingConfig` (preneta 1:1 iz Anjinog dokumenta)
 
 ### O-15 · Operativna pravila (za R2, ali utiču na v1 tekst)
@@ -117,9 +117,12 @@ Datum, voditelj, cena, kapacitet, pravila prijave/otkazivanja. Dok ne stigne: `/
 - Formulacija sigurnosnog izlaza (nije dijagnoza / nije hitna služba) — **vezano za S5**, čeka pravnu i stručnu potvrdu
 
 ### O-16 · Preciziranja iz Anjinih odgovora (matching v2 / cenovnik, D-025)
-- **„Tridesete — Vreme promene", roditelji** — napomena „roditelji imaju mogućnost dolaska po ceni jednog učesnika" **se prikazuje na sajtu** (CTO 2026-07-20), ali je nejasno da li dvoje roditelja dolazi po ceni jednog. **Precizirati formulaciju sa Anjom.**
+- ✅ **„Tridesete — Vreme promene", roditelji — POTVRĐENO (2026-07-20):** cena od 3.500 RSD je **po susretu, ne po roditelju** — oba roditelja/staratelji dolaze zajedno po ceni jednog učesnika (mama + tata = 3.500, ne 2×3.500). Napomena ažurirana na sajtu (`services.ts` `groupPrograms` „tridesete" `note`).
 - **Burnout: „Marjan +2 ako je vezano za zaposlenje ili kompanijski program"** — izostavljeno iz bodovanja (CTO 2026-07-20) jer upitnik nema signal o zaposlenju. **Precizirati sa Anjom** kako se uslov prepoznaje (novo pitanje? B2B kontekst?).
-- Uzrasne granice po terapeutu — vidi O-14.
+- ✅ Uzrasne granice po terapeutu — potvrđeno, vidi O-14.
+
+### O-19 · Uzrasno i lokacijsko pitanje nisu u Anjinom upitniku *(za Anju i tim)*
+Anjin dokument (`odgovor-za-matching-anketa.pdf`) ima **tačno 5 pitanja** — nema pitanja o uzrastu deteta ni o lokaciji (Niš/Leskovac). Oba su CTO dodatak iz v2 spec-a („5 pitanja + 2 uslovna"). Uzrasno pitanje se u kodu okida **samo za izbor „Roditelj i dete" (Pitanje 2)**, ne za razlog „Roditeljstvo"/„Odnos sa adolescentom" (Pitanje 1). Posledica: ako roditelj traži savetovanje **sam** za temu deteta, uzrast se ne pita i uzrasno pravilo (O-14) se ne primenjuje. **Odluka odložena — Anja i tim da prokomentarišu** da li ostaviti tako (A: uzrast samo kad dete učestvuje), proširiti (B: pitati uzrast i za te razloge), ili ukloniti uzrast/lokaciju i vratiti se na 5 pitanja (C). Do tada ostaje varijanta A.
 
 ### O-17 · Clerk nalozi za tim (superadmin faza, D-026)
 Anja, Marija i Marjan **nemaju Clerk naloge** (postoje samo mailbox-ovi). `npm run roles:assign` ih SKIP-uje dok se nalozi ne kreiraju kroz `/registracija` — tada ponovo pokrenuti skriptu da dobiju `org_admin`+`therapist` metadata. Do tada `/radni-prostor` za njih ne radi.

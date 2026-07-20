@@ -16,9 +16,13 @@ vi.mock("@/lib/auth/identity-server", () => ({
 vi.mock("next/navigation", () => ({ redirect: redirectMock }));
 
 import {
+  isWorkspaceAdmin,
+  isWorkspaceTherapist,
+  requireOrgAdmin,
   requireStaff,
   requireSuperadmin,
   requireSuperadminApi,
+  requireTherapist,
   resolveLandingRoute,
 } from "./guards";
 
@@ -144,5 +148,78 @@ describe("resolveLandingRoute", () => {
     for (const who of [client, noRoles]) {
       expect(resolveLandingRoute(who)).toBe("/nalog");
     }
+  });
+});
+
+describe("workspace role capabilities", () => {
+  it("treats org_admin and superadmin as workspace admins", () => {
+    for (const who of [adminOnly, staff, superadmin]) {
+      expect(isWorkspaceAdmin(who)).toBe(true);
+    }
+    for (const who of [therapistOnly, client, noRoles]) {
+      expect(isWorkspaceAdmin(who)).toBe(false);
+    }
+  });
+
+  it("treats therapist and superadmin as workspace therapists", () => {
+    for (const who of [therapistOnly, staff, superadmin]) {
+      expect(isWorkspaceTherapist(who)).toBe(true);
+    }
+    for (const who of [adminOnly, client, noRoles]) {
+      expect(isWorkspaceTherapist(who)).toBe(false);
+    }
+  });
+});
+
+describe("requireOrgAdmin", () => {
+  beforeEach(() => {
+    getServerIdentityMock.mockReset();
+    redirectMock.mockClear();
+  });
+
+  it("redirects unauthenticated visitors to sign-in", async () => {
+    getServerIdentityMock.mockResolvedValue(null);
+    await expect(requireOrgAdmin()).rejects.toThrow("REDIRECT:/prijava");
+  });
+
+  it("lets org_admins and superadmins through", async () => {
+    for (const who of [adminOnly, staff, superadmin]) {
+      getServerIdentityMock.mockResolvedValue(who);
+      expect(await requireOrgAdmin()).toEqual(who);
+    }
+  });
+
+  it("sends a therapist-only user back to the workspace", async () => {
+    getServerIdentityMock.mockResolvedValue(therapistOnly);
+    await expect(requireOrgAdmin()).rejects.toThrow("REDIRECT:/radni-prostor");
+  });
+
+  it("sends a client to the account area", async () => {
+    getServerIdentityMock.mockResolvedValue(client);
+    await expect(requireOrgAdmin()).rejects.toThrow("REDIRECT:/nalog");
+  });
+});
+
+describe("requireTherapist", () => {
+  beforeEach(() => {
+    getServerIdentityMock.mockReset();
+    redirectMock.mockClear();
+  });
+
+  it("lets therapists and superadmins through", async () => {
+    for (const who of [therapistOnly, staff, superadmin]) {
+      getServerIdentityMock.mockResolvedValue(who);
+      expect(await requireTherapist()).toEqual(who);
+    }
+  });
+
+  it("sends an admin-only user back to the workspace", async () => {
+    getServerIdentityMock.mockResolvedValue(adminOnly);
+    await expect(requireTherapist()).rejects.toThrow("REDIRECT:/radni-prostor");
+  });
+
+  it("sends a client to the account area", async () => {
+    getServerIdentityMock.mockResolvedValue(client);
+    await expect(requireTherapist()).rejects.toThrow("REDIRECT:/nalog");
   });
 });

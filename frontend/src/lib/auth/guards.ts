@@ -25,6 +25,20 @@ function isStaff(identity: Identity): boolean {
 }
 
 /**
+ * Role capabilities inside the Control Center. Superadmins viewing the tenant
+ * panel are treated as holding both roles (full access). These drive both the
+ * per-page guards below and the role-derived navigation in the workspace shell
+ * — the guard is the authority, the nav only mirrors it.
+ */
+export function isWorkspaceAdmin(identity: Identity): boolean {
+  return identity.isSuperadmin || hasRole(identity, "org_admin");
+}
+
+export function isWorkspaceTherapist(identity: Identity): boolean {
+  return identity.isSuperadmin || hasRole(identity, "therapist");
+}
+
+/**
  * Where a signed-in user belongs right after authentication. Clerk's
  * `signInFallbackRedirectUrl` is a single static string ("/nalog") — it has
  * no idea about roles. This resolves the real destination for every role
@@ -78,6 +92,38 @@ export async function requireStaff(): Promise<Identity> {
   }
   if (!identity.isSuperadmin && !isStaff(identity)) {
     redirect(ACCOUNT_URL as Route);
+  }
+  return identity;
+}
+
+/**
+ * Control Center admin-only pages (Kompanije, Usluge i cene, Istraživanja,
+ * Terapeuti, Podešavanja). A therapist without the admin role is sent back to
+ * the workspace home; a client to their account. Superadmins pass.
+ */
+export async function requireOrgAdmin(): Promise<Identity> {
+  const identity = await getServerIdentity();
+  if (!identity) {
+    redirect(SIGN_IN_URL as Route);
+  }
+  if (!isWorkspaceAdmin(identity)) {
+    redirect((isStaff(identity) ? WORKSPACE_URL : ACCOUNT_URL) as Route);
+  }
+  return identity;
+}
+
+/**
+ * Control Center therapist-only pages (Moj profil). A pure org_admin who is
+ * not a therapist has no personal profile and is sent back to the workspace
+ * home; a client to their account. Superadmins pass.
+ */
+export async function requireTherapist(): Promise<Identity> {
+  const identity = await getServerIdentity();
+  if (!identity) {
+    redirect(SIGN_IN_URL as Route);
+  }
+  if (!isWorkspaceTherapist(identity)) {
+    redirect((isStaff(identity) ? WORKSPACE_URL : ACCOUNT_URL) as Route);
   }
   return identity;
 }

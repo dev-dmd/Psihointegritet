@@ -219,36 +219,58 @@ describe("evaluateIntake — supporting behaviour", () => {
     ]);
   });
 
-  it("routes a minor child to Marija only (interim age rule)", () => {
+  it("routes an under-16 child to Marija only (Anja and Marjan take 16+)", () => {
+    // „13–15 godina" — below the 16+ threshold for Anja and Marjan.
+    for (const childAgeGroup of [
+      CHILD_AGE_GROUPS[0], // Do 7 godina
+      CHILD_AGE_GROUPS[1], // 7–12 godina
+      CHILD_AGE_GROUPS[2], // 13–15 godina
+    ]) {
+      const result = evaluateIntake(
+        answers({
+          reason: REASONS.parenting,
+          participants: PARTICIPANTS.parentChild,
+          childAgeGroup,
+          format: WORK_FORMATS.online,
+        }),
+      );
+      expect(topSlugs(result)).toEqual([MARIJA]);
+    }
+  });
+
+  it("keeps Anja and Marjan eligible for a 16–17 child", () => {
     const result = evaluateIntake(
       answers({
         reason: REASONS.parenting,
         participants: PARTICIPANTS.parentChild,
-        childAgeGroup: CHILD_AGE_GROUPS[0],
+        childAgeGroup: CHILD_AGE_GROUPS[3], // 16–17 godina
         format: WORK_FORMATS.online,
       }),
     );
-    expect(topSlugs(result)).toEqual([MARIJA]);
+    const slugs = topSlugs(result);
+    expect(slugs).toContain(ANJA);
+    expect(slugs).toContain(MARJAN);
+    expect(slugs).toContain(MARIJA);
   });
 
-  it("keeps Anja and Marjan eligible when the child is 18+", () => {
+  it("keeps all three eligible when the child is 18+", () => {
     const result = evaluateIntake(
       answers({
         reason: REASONS.parenting,
         participants: PARTICIPANTS.parentChild,
-        childAgeGroup: CHILD_AGE_GROUPS[3],
+        childAgeGroup: CHILD_AGE_GROUPS[4], // 18 i više
         format: WORK_FORMATS.online,
       }),
     );
     expect(topSlugs(result)).toContain(ANJA);
   });
 
-  it("minor child + uzivo Nis falls back to Marija online, never empty", () => {
+  it("under-16 child + uzivo Nis falls back to Marija online, never empty", () => {
     const result = evaluateIntake(
       answers({
         reason: REASONS.parenting,
         participants: PARTICIPANTS.parentChild,
-        childAgeGroup: CHILD_AGE_GROUPS[1],
+        childAgeGroup: CHILD_AGE_GROUPS[1], // 7–12 godina
         format: WORK_FORMATS.inPerson,
         location: LOCATIONS.nis,
       }),

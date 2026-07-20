@@ -45,18 +45,30 @@ export const PARTICIPANTS = {
 /**
  * Child age groups — shown only when „Roditelj i dete" is chosen.
  *
- * Interim rule (CTO, 2026-07-20): a minor child routes to Marija; Anja and
- * Marjan take 18+. TODO(Anja): potvrditi uzrasne granice po terapeutu — ovo
- * je privremena podela dok tim ne precizira ko radi sa kojim uzrastom.
+ * Age rule confirmed by Anja (2026-07-20): Marija works with all child ages
+ * (0–18 and 18+); Anja and Marjan work only with children 16+. The „13–17"
+ * bracket from the earlier draft was split into „13–15" / „16–17" so the 16+
+ * boundary can be applied precisely (each bracket maps to a minimum age in
+ * `CHILD_AGE_MIN_AGE`).
  */
 export const CHILD_AGE_GROUPS = [
   "Do 7 godina",
   "7–12 godina",
-  "13–17 godina",
+  "13–15 godina",
+  "16–17 godina",
   "18 i više",
 ] as const;
 
-export const ADULT_CHILD_AGE_GROUP = CHILD_AGE_GROUPS[3];
+export const ADULT_CHILD_AGE_GROUP = CHILD_AGE_GROUPS[4];
+
+/** Minimum age represented by each bracket — used for the per-therapist gate. */
+const CHILD_AGE_MIN_AGE: Record<string, number> = {
+  "Do 7 godina": 0,
+  "7–12 godina": 7,
+  "13–15 godina": 13,
+  "16–17 godina": 16,
+  "18 i više": 18,
+};
 
 export const PRIOR_THERAPY = {
   yes: "Da",
@@ -224,10 +236,11 @@ export interface TherapistMatchingProfile {
   /** All three therapists work online. */
   online: true;
   /**
-   * Interim age rule (CTO, 2026-07-20): only Marija works with minors; Anja
-   * and Marjan take 18+. TODO(Anja): potvrditi granice po terapeutu.
+   * Youngest child age (in years) the therapist works with directly (Anja's
+   * answers, 2026-07-20): Marija 0, Anja/Marjan 16. A therapist is eligible
+   * for a „Roditelj i dete" case only when the child's age bracket meets this.
    */
-  worksWithMinors: boolean;
+  minChildAge: number;
   /** Grammatically correct reason sentences (gender-aware). */
   onlineReason: string;
   inPersonReason: string;
@@ -256,7 +269,7 @@ export const therapistMatchingConfig: Record<Slug, TherapistMatchingProfile> = {
     ],
     inPersonCity: "Niš",
     online: true,
-    worksWithMinors: false,
+    minChildAge: 16,
     onlineReason: "Dostupna je za online rad.",
     inPersonReason: "Radi uživo u Nišu.",
   },
@@ -276,7 +289,7 @@ export const therapistMatchingConfig: Record<Slug, TherapistMatchingProfile> = {
     ],
     inPersonCity: "Leskovac",
     online: true,
-    worksWithMinors: true,
+    minChildAge: 0,
     onlineReason: "Dostupna je za online rad.",
     inPersonReason: "Radi uživo u Leskovcu.",
   },
@@ -295,7 +308,7 @@ export const therapistMatchingConfig: Record<Slug, TherapistMatchingProfile> = {
     ],
     inPersonCity: "Leskovac",
     online: true,
-    worksWithMinors: false,
+    minChildAge: 16,
     onlineReason: "Dostupan je za online rad.",
     inPersonReason: "Radi uživo u Leskovcu.",
   },
@@ -548,23 +561,23 @@ export function evaluateIntake(answers: IntakeAnswers): IntakeMatchResult {
     }
   }
 
-  // Interim age rule: a minor child routes to Marija (TODO(Anja): potvrditi
-  // granice). If the city filter excluded her, fall back to her online work
-  // rather than returning nobody.
-  const minorChild =
+  // Age rule (Anja, 2026-07-20): each therapist has a minimum child age.
+  // Marija works with all ages; Anja and Marjan only with 16+. A therapist is
+  // eligible when the child's bracket meets their minimum. If the city filter
+  // already excluded everyone who works with this age, fall back to online
+  // with any qualifying therapist rather than returning nobody.
+  if (
     answers.participants === PARTICIPANTS.parentChild &&
-    answers.childAgeGroup !== null &&
-    answers.childAgeGroup !== ADULT_CHILD_AGE_GROUP;
-  if (minorChild) {
-    const withMinors = eligible.filter(
-      (slug) => therapistMatchingConfig[slug].worksWithMinors,
-    );
-    if (withMinors.length > 0) {
-      eligible = withMinors;
+    answers.childAgeGroup !== null
+  ) {
+    const bracketMinAge = CHILD_AGE_MIN_AGE[answers.childAgeGroup] ?? 18;
+    const worksWithAge = (slug: Slug) =>
+      bracketMinAge >= therapistMatchingConfig[slug].minChildAge;
+    const ageEligible = eligible.filter(worksWithAge);
+    if (ageEligible.length > 0) {
+      eligible = ageEligible;
     } else {
-      eligible = ALL_SLUGS.filter(
-        (slug) => therapistMatchingConfig[slug].worksWithMinors,
-      );
+      eligible = ALL_SLUGS.filter(worksWithAge);
       onlineFallback = true;
     }
   }

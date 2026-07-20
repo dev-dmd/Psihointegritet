@@ -106,10 +106,8 @@ export const GROUP_PRICE_PENDING = "Cena će biti objavljena naknadno.";
 /**
  * Group programs per Anja's document. Only „Tridesete" has a confirmed price.
  *
- * TODO(Anja): precizirati napomenu uz „Tridesete" — „roditelji imaju mogućnost
- * dolaska po ceni jednog" (da li dvoje roditelja dolazi po ceni jednog
- * učesnika?). Napomena SE prikazuje (CTO, 2026-07-20), formulacija se
- * dopunjuje kad Anja potvrdi.
+ * Parent-price note clarified (Anja/CTO, 2026-07-20): the 3.500 RSD per session
+ * covers both parents/guardians together — it is NOT charged per parent.
  */
 export const groupPrograms: GroupProgram[] = [
   {
@@ -165,7 +163,7 @@ export const groupPrograms: GroupProgram[] = [
     sessions: "8 susreta · 120 minuta",
     details: "8–12 učesnika · online ili uživo",
     priceLine: `${formatRsd(3500)} po susretu · ${formatRsd(25000)} ceo program`,
-    note: "Napomena: roditelji imaju mogućnost dolaska po ceni jednog učesnika.",
+    note: `Napomena: cena od ${formatRsd(3500)} je po susretu, ne po roditelju — oba roditelja ili staratelji dolaze zajedno po ceni jednog učesnika (mama i tata = ${formatRsd(3500)}, ne 2×${formatRsd(3500)}).`,
   },
 ];
 
