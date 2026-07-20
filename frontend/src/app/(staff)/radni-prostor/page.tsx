@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 
+import { requireStaff } from "@/lib/auth/guards";
 import { IdentityCard } from "@/lib/auth/clerk/identity-card";
 
 export const metadata: Metadata = {
@@ -8,10 +9,11 @@ export const metadata: Metadata = {
 
 /**
  * Protected staff area for therapists and organization admins (Milestone 1
- * skeleton). Distinguishing `therapist` from `org_admin` requires the backend
- * role, which is not yet wired.
+ * skeleton). Server-side role guard per D-026 — clients are redirected to
+ * /nalog. The real Control Center UI arrives in a later phase.
  */
-export default function StaffWorkspacePage() {
+export default async function StaffWorkspacePage() {
+  await requireStaff();
   return (
     <main className="mx-auto max-w-3xl px-5 py-20 md:px-8">
       <p className="text-forest-lift text-sm font-medium tracking-wide uppercase">

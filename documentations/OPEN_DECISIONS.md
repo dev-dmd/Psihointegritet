@@ -121,6 +121,12 @@ Datum, voditelj, cena, kapacitet, pravila prijave/otkazivanja. Dok ne stigne: `/
 - **Burnout: „Marjan +2 ako je vezano za zaposlenje ili kompanijski program"** — izostavljeno iz bodovanja (CTO 2026-07-20) jer upitnik nema signal o zaposlenju. **Precizirati sa Anjom** kako se uslov prepoznaje (novo pitanje? B2B kontekst?).
 - Uzrasne granice po terapeutu — vidi O-14.
 
+### O-17 · Clerk nalozi za tim (superadmin faza, D-026)
+Anja, Marija i Marjan **nemaju Clerk naloge** (postoje samo mailbox-ovi). `npm run roles:assign` ih SKIP-uje dok se nalozi ne kreiraju kroz `/registracija` — tada ponovo pokrenuti skriptu da dobiju `org_admin`+`therapist` metadata. Do tada `/radni-prostor` za njih ne radi.
+
+### O-18 · Dodela rola na produkcionoj Clerk instanci
+Role su dodeljene samo na **dev** instanci (2026-07-20: `drazic.milan@gmail.com` → superadmin). Pri launchu obavezno pokrenuti `roles:assign` sa produkcionim `CLERK_SECRET_KEY` (i kreirati `milan.drazic@dmdevelon.website` nalog).
+
 ---
 
 ## 🟡 Pre Faze 2

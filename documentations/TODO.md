@@ -264,6 +264,24 @@ Svaki ima SUPERSEDED zaglavlje sa razlogom i zamenom. Arhivirano 2026-07-17: `PR
 
 ---
 
+## 5B. Superadmin Control Center — R2 preview (rute + autorizacija + multi-tenant struktura)
+
+> **Gde piše:** `SUPERADMIN_CONTROL_CENTER_PLAN_v1_0.md` (plan faze) · dizajn handoff `Admin panel dizajn za Next.js-handoff/…/design_handoff_paneli/` (README + `Psihointegritet Superadmin.dc.html`, 1:1) · odluka D-026
+> **Šta je:** funkcionalan, pretežno read-only superadmin panel. Cilj: potvrditi rute, server-side autorizaciju i buduću multi-tenant strukturu — bez poslovne logike (pravi moduli su R2/R4/R6). Role privremeno u Clerk `publicMetadata` (dokumentovana devijacija od rules §10.3, šav `getServerIdentity()` za backend `/me` u M2.1).
+
+| ID | Zadatak | Gde piše | Status | Napomena |
+|---|---|---|---|---|
+| **SA-1** | **Auth šav** — `parseRoleMetadata` + `server-identity` + `identity-server` (šav) + `guards.ts` (`requireSuperadmin`/`requireStaff`/`requireSuperadminApi`) + `roles:assign` skripta; `/radni-prostor` guard (**D7 fix**) | plan §3–4 · D-026 | ✅ | **2026-07-20**; 20 unit testova. Superadmin samo `milan.drazic@dmdevelon.website`; tim = `org_admin`+`therapist` (sve troje) |
+| SA-2 | `(superadmin)` ruta grupa — poseban layout, `await requireSuperadmin()` na **svakoj** stranici, 8 ruta, brisanje starog `(staff)/superadmin/page.tsx`; e2e: sve rute → `/prijava` za neulogovane | plan §5 · README §9 | ✅ | **2026-07-20**; 10 e2e testova (9 ruta + browser) |
+| SA-3 | Panel tokeni u `@theme` + deljene primitive (`components/panel/`: StatusBadge, StatCard, TabPills, KV, Toggle, ConfirmModal, EmptyDashedCard) | plan §8 · handoff tokeni | ✅ | **2026-07-20**; primitive kasnije koriste i Control Center i Klijent panel |
+| SA-4 | Shell 1:1 — sidebar (coffee, 264px), topbar (blur, datum, status pill), mobilni bottom-nav (4 stavke) | plan §6 · prototip | ✅ | **2026-07-20**; inline SVG ikone 1:1 iz prototipa (ne lucide) |
+| SA-5 | Ekrani: Pregled (8 stat + health + aktivnost) · Tenanti · Profil tenanta (3 taba + 2 uskoro) · Feature Gates (9 gate-ova, demo toggle + ConfirmModal + razlog → activity) · Dijagnostika · U pripremi (billing/audit-log/settings) | plan §7 | ✅ | **2026-07-20**; sve mock/in-memory; refresh resetuje |
+| SA-6 | Dokumentacija (D-026, O-17/O-18) + svi gate-ovi + ručni smoke (Milan / bez-metadata nalog / odjavljen) | plan §9, §12 | ✅ | **2026-07-20** gates zeleni (tsc/lint/64 unit/build/51 e2e); ručni smoke na Milanu |
+
+**Otvoreno za tim:** Clerk nalozi za Anju/Mariju/Marjana još ne postoje (skripta ih SKIP-uje) — O-17 · pri launchu pokrenuti `roles:assign` na produkcionoj Clerk instanci — O-18.
+
+---
+
 ## 6. R2 — Operativni MVP + Booking Engine
 
 > **Gde piše:** master plan §6 · Proposal v1.1 §7 (Faza 2) · Engines (status enum §7.3, dijagnostika §18)
