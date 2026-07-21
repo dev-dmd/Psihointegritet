@@ -1,4 +1,7 @@
-import { BackToSiteButton } from "@/components/shared/back-to-site-button";
+import {
+  BackToSiteButton,
+  BackToSiteMenuItem,
+} from "@/components/shared/back-to-site-button";
 import { LogoutAvatarMenu } from "@/components/shared/logout-avatar-menu";
 
 import { APP_VERSION } from "../data";
@@ -40,13 +43,17 @@ export function SuperadminTopbar() {
       <span className="border-coffee/10 text-coffee/50 bg-surface hidden rounded-full border px-3 py-[7px] font-mono text-[11.5px] lg:inline">
         {APP_VERSION}
       </span>
-      <BackToSiteButton className="border-coffee/12 text-coffee hover:border-sage bg-surface" />
+      <div className="hidden lg:inline-flex">
+        <BackToSiteButton className="border-coffee/12 text-coffee hover:border-sage bg-surface" />
+      </div>
       <div className="lg:hidden">
         <LogoutAvatarMenu
           initials="SA"
           label="Korisnički meni"
           triggerClassName="border-warm/55 bg-warm/20 text-coffee hover:border-warm focus-visible:ring-coffee/35 flex h-10 w-10 cursor-pointer items-center justify-center rounded-full border text-[12px] font-bold tracking-[0.05em] outline-none transition-colors focus-visible:ring-2"
-        />
+        >
+          <BackToSiteMenuItem />
+        </LogoutAvatarMenu>
       </div>
     </header>
   );

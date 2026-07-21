@@ -54,6 +54,8 @@ export default async function SuperadminTenantProfilePage({
         </div>
         <Link
           href={WORKSPACE_URL}
+          target="_blank"
+          rel="noopener noreferrer"
           className="bg-coffee text-panel-canvas hover:bg-coffee-hover rounded-full px-[22px] py-3 text-[13.5px] font-semibold whitespace-nowrap no-underline transition-colors"
         >
           Otvori tenant control panel →

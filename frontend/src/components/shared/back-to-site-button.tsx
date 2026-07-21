@@ -1,7 +1,28 @@
+import { MenuItem } from "@headlessui/react";
 import type { Route } from "next";
 import Link from "next/link";
 
 import { cn } from "@/helpers/cn";
+
+function GlobeIcon() {
+  return (
+    <svg
+      aria-hidden
+      width="17"
+      height="17"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <circle cx="12" cy="12" r="9" />
+      <path d="M3 12h18" />
+      <path d="M12 3a13 13 0 0 1 0 18 13 13 0 0 1 0-18" />
+    </svg>
+  );
+}
 
 /**
  * Link back to the marketing site, always in a new tab — the panels are a
@@ -24,22 +45,30 @@ export function BackToSiteButton({ className }: { className?: string }) {
         className,
       )}
     >
-      <svg
-        aria-hidden
-        width="17"
-        height="17"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.8"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      >
-        <circle cx="12" cy="12" r="9" />
-        <path d="M3 12h18" />
-        <path d="M12 3a13 13 0 0 1 0 18 13 13 0 0 1 0-18" />
-      </svg>
+      <GlobeIcon />
       <span className="hidden lg:inline">Glavni sajt</span>
     </Link>
+  );
+}
+
+/**
+ * Dropdown-menu variant of the same link. Some topbars (Superadmin mobile)
+ * don't have room for the standalone button next to the avatar trigger, so
+ * the link moves inside that avatar's dropdown instead — same destination,
+ * same new-tab behavior.
+ */
+export function BackToSiteMenuItem() {
+  return (
+    <MenuItem>
+      <Link
+        href={"/" as Route}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="text-coffee data-[focus]:bg-coffee/8 flex w-full items-center gap-2.5 rounded-xl px-3.5 py-2.5 text-[13.5px] font-semibold no-underline transition-colors"
+      >
+        <GlobeIcon />
+        Glavni sajt
+      </Link>
+    </MenuItem>
   );
 }
