@@ -9,14 +9,7 @@
  * content in R2.
  */
 
-const rsdFormatter = new Intl.NumberFormat("sr-Latn-RS", {
-  maximumFractionDigits: 0,
-});
-
-/** 4000 → „4.000 RSD" */
-export function formatRsd(amount: number): string {
-  return `${rsdFormatter.format(amount)} RSD`;
-}
+export { formatRsd } from "@/content/currency";
 
 export interface ServiceCatalogItem {
   slug: string;
@@ -25,6 +18,8 @@ export interface ServiceCatalogItem {
   duration: string;
   priceAmount: number;
   format: string;
+  audience: string;
+  firstStep: string;
 }
 
 export const serviceCatalog: ServiceCatalogItem[] = [
@@ -36,6 +31,10 @@ export const serviceCatalog: ServiceCatalogItem[] = [
     duration: "60 minuta",
     priceAmount: 4000,
     format: "online ili uživo",
+    audience:
+      "Za osobe koje žele da uz podršku terapeuta istraže ono što ih opterećuje.",
+    firstStep:
+      "Pošaljite zahtev za termin, a zatim sa terapeutom dogovorite prvi razgovor.",
   },
   {
     slug: "bracno-savetovanje",
@@ -45,6 +44,10 @@ export const serviceCatalog: ServiceCatalogItem[] = [
     duration: "90 minuta",
     priceAmount: 5500,
     format: "online ili uživo",
+    audience:
+      "Za parove koji žele da rade na komunikaciji, bliskosti i obrascima u odnosu.",
+    firstStep:
+      "Pošaljite zajednički zahtev za termin, pa sa terapeutom dogovorite prvi razgovor.",
   },
   {
     slug: "roditeljsko-savetovanje",
@@ -54,6 +57,10 @@ export const serviceCatalog: ServiceCatalogItem[] = [
     duration: "60 minuta",
     priceAmount: 5000,
     format: "online ili uživo",
+    audience:
+      "Za roditelje koji žele podršku u razumevanju deteta i jačanju odnosa.",
+    firstStep:
+      "Pošaljite zahtev za termin, a zatim sa terapeutom dogovorite prvi razgovor.",
   },
 ];
 
@@ -86,87 +93,6 @@ export const sessionPackages: SessionPackage[] = [
   { sessions: 10, deadline: "rok realizacije 5 meseci", priceAmount: 38000 },
 ];
 
-// --- Grupni programi ------------------------------------------------------
-
-export interface GroupProgram {
-  slug: string;
-  title: string;
-  audience: string;
-  sessions: string;
-  /** Session length / group size / format — shown when confirmed. */
-  details?: string;
-  /** Formatted price line, or the „naknadno" note when unconfirmed. */
-  priceLine: string;
-  /** Extra visible note under the price line. */
-  note?: string;
-}
-
-export const GROUP_PRICE_PENDING = "Cena će biti objavljena naknadno.";
-
-/**
- * Group programs per Anja's document. Only „Tridesete" has a confirmed price.
- *
- * Parent-price note clarified (Anja/CTO, 2026-07-20): the 3.500 RSD per session
- * covers both parents/guardians together — it is NOT charged per parent.
- */
-export const groupPrograms: GroupProgram[] = [
-  {
-    slug: "postpartalni-period",
-    title: "Sigurno kroz postpartalni period",
-    audience: "Za žene u trudnoći i majke u prvoj godini nakon porođaja.",
-    sessions: "8 susreta · 120 minuta",
-    details: "8–12 učesnica · online ili uživo",
-    priceLine: GROUP_PRICE_PENDING,
-  },
-  {
-    slug: "roditeljstvo-0-3",
-    title: "Roditeljstvo od 0 do 3 godine — Sigurna baza",
-    audience: "Za roditelje dece od rođenja do treće godine.",
-    sessions: "8 susreta · 120 minuta",
-    details: "8–12 učesnika",
-    priceLine: GROUP_PRICE_PENDING,
-  },
-  {
-    slug: "roditeljstvo-3-7",
-    title: "Roditeljstvo od 3 do 7 godina — Razvoj kroz odnos",
-    audience: "Za roditelje predškolske dece.",
-    sessions: "8 susreta · 120 minuta",
-    details: "8–12 učesnika",
-    priceLine: GROUP_PRICE_PENDING,
-  },
-  {
-    slug: "roditeljstvo-7-12",
-    title: "Roditeljstvo školskog deteta (7–12 godina)",
-    audience: "Za roditelje dece školskog uzrasta.",
-    sessions: "8 susreta",
-    priceLine: GROUP_PRICE_PENDING,
-  },
-  {
-    slug: "roditelj-tinejdzera",
-    title: "Roditelj tinejdžera",
-    audience: "Podrška roditeljima adolescenata.",
-    sessions: "8 susreta",
-    priceLine: GROUP_PRICE_PENDING,
-  },
-  {
-    slug: "razumevanje-anksioznosti",
-    title: "Razumevanje anksioznosti",
-    audience:
-      "Edukativno-iskustveni program za bolje razumevanje anksioznosti.",
-    sessions: "8 susreta",
-    priceLine: GROUP_PRICE_PENDING,
-  },
-  {
-    slug: "tridesete",
-    title: "Tridesete — Vreme promene",
-    audience: "Za osobe koje prolaze kroz životnu tranziciju posle tridesete.",
-    sessions: "8 susreta · 120 minuta",
-    details: "8–12 učesnika · online ili uživo",
-    priceLine: `${formatRsd(3500)} po susretu · ${formatRsd(25000)} ceo program`,
-    note: `Napomena: cena od ${formatRsd(3500)} je po susretu, ne po roditelju — oba roditelja ili staratelji dolaze zajedno po ceni jednog učesnika (mama i tata = ${formatRsd(3500)}, ne 2×${formatRsd(3500)}).`,
-  },
-];
-
 // --- Ostale oblasti podrške ----------------------------------------------
 
 export interface SupportArea {
@@ -187,12 +113,27 @@ export const supportAreas: SupportArea[] = [
     title: "Podrška roditeljima",
     description:
       "Savetodavna podrška roditeljima u izazovima roditeljske uloge, u svim fazama.",
-    href: "/tim",
+    href: "/podrska-roditeljima",
   },
   {
     title: "Radionice",
     description:
       "Grupna iskustvena učenja kroz geštalt pristup — najave i prijava interesovanja.",
-    href: "/#radionice",
+    href: "/radionice",
   },
 ];
+
+export function findService(slug: string): ServiceCatalogItem | undefined {
+  return serviceCatalog.find((service) => service.slug === slug);
+}
+
+export function serviceSlugForName(name: string): string | undefined {
+  return serviceCatalog.find((service) => service.name === name)?.slug;
+}
+
+/** Backwards-compatible export while consumers move to `content/programs`. */
+export {
+  GROUP_PRICE_PENDING,
+  groupPrograms,
+  type GroupProgram,
+} from "@/content/programs";

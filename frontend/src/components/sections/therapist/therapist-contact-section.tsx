@@ -1,33 +1,22 @@
-"use client";
-
 import Link from "next/link";
+import type { Route } from "next";
 
 import { Reveal } from "@/components/motion/reveal";
 import { Eyebrow } from "@/components/ui/eyebrow";
-import { BookingRequestForm } from "@/features/booking/booking-request-form";
-import { useGuidance } from "@/features/guidance/guidance-context";
+import { buildBookingHref } from "@/features/booking/booking-context";
 import type { Therapist } from "@/types/therapist";
 
-/**
- * Booking CTA strip. Two deliberate departures from the design handoff:
- *
- * - The handoff hard-coded „Online ili uživo u Nišu" on every profile; only Anja
- *   works from Niš — Marija and Marjan are in Leskovac (T8), so the city comes
- *   from the data.
- * - The handoff claimed confidentiality is „Potpuna" (total). Master plan §11
- *   requires public confidentiality statements to reflect real legal exceptions,
- *   so the copy points at the rules instead of overpromising. Final wording is
- *   blocked on legal review (STOP S5).
- */
+/** Route-level booking CTA for a therapist; the form itself lives at `/zakazi`. */
 export function TherapistContactSection({
   therapist,
 }: {
   therapist: Therapist;
 }) {
-  const { openQuiz } = useGuidance();
-
   return (
-    <section id="zakazivanje" className="scroll-mt-24 pt-[72px] md:pt-32">
+    <section
+      id="zakazivanje"
+      className="scroll-mt-24 pt-[72px] pb-[72px] md:pt-32 md:pb-24"
+    >
       <div className="mx-auto max-w-[1536px] px-5 md:px-8">
         <Reveal>
           <div className="bg-warm grid grid-cols-1 gap-10 rounded-[32px] px-7 py-12 md:grid-cols-[7fr_5fr] md:gap-16 md:p-20">
@@ -38,21 +27,29 @@ export function TherapistContactSection({
               <h2 className="text-coffee mb-[22px] font-serif text-[clamp(28px,7vw,32px)] leading-[1.1] font-normal tracking-[-0.01em] text-pretty md:text-[42px]">
                 Zakažite prvi razgovor sa {therapist.firstNameInstrumental}
               </h2>
-              <p className="text-coffee/80 mb-7 max-w-[480px] text-[16.5px] leading-[1.68]">
-                Prvi razgovor nije obaveza da nastavite terapiju — to je prilika
-                da procenite da li vam pristup i način rada odgovaraju.
+              <p className="text-coffee/80 mb-7 max-w-[520px] text-[16.5px] leading-[1.68]">
+                Prvi razgovor nije obaveza da nastavite terapiju. Pošaljite
+                zahtev, a dostupnost se potvrđuje nakon provere.
               </p>
-              <BookingRequestForm
-                therapistSlug={therapist.slug}
-                therapistName={therapist.name}
-              />
-              <button
-                type="button"
-                onClick={openQuiz}
-                className="text-coffee/70 hover:text-coffee mt-4 cursor-pointer border-0 bg-transparent p-0 font-sans text-[14px] font-medium underline underline-offset-[3px]"
-              >
-                Nisam siguran/na, pomozite mi da izaberem
-              </button>
+              <div className="flex flex-wrap gap-3">
+                <Link
+                  href={
+                    buildBookingHref({
+                      therapist: therapist.slug,
+                      source: "therapist",
+                    }) as Route
+                  }
+                  className="bg-coffee text-canvas hover:bg-coffee-hover inline-flex min-h-11 items-center rounded-full px-7 text-[15px] font-semibold no-underline transition-colors"
+                >
+                  Zakaži termin
+                </Link>
+                <Link
+                  href="/pronadji-podrsku"
+                  className="border-coffee/25 text-coffee hover:border-sage inline-flex min-h-11 items-center rounded-full border px-6 text-[15px] font-semibold no-underline transition-colors"
+                >
+                  Nisam siguran/na
+                </Link>
+              </div>
             </div>
             <div className="border-coffee/18 flex flex-col gap-[22px] md:border-l md:pl-14">
               <div>
@@ -65,21 +62,13 @@ export function TherapistContactSection({
               </div>
               <div>
                 <div className="text-coffee/55 mb-1.5 text-[11.5px] font-semibold tracking-[0.14em] uppercase">
-                  Poverljivost
-                </div>
-                <div className="text-coffee font-serif text-[22px]">
-                  Po etičkom kodeksu geštalt psihoterapije
-                </div>
-              </div>
-              <div>
-                <div className="text-coffee/55 mb-1.5 text-[11.5px] font-semibold tracking-[0.14em] uppercase">
                   Kontakt
                 </div>
                 <Link
-                  href="/#kontakt"
+                  href="/kontakt"
                   className="text-coffee hover:text-canvas font-serif text-[22px] transition-colors"
                 >
-                  Kontakt podaci u podnožju
+                  Opšti kontakt
                 </Link>
               </div>
             </div>

@@ -1,8 +1,10 @@
 import Link from "next/link";
+import type { Route } from "next";
 
 import { Reveal } from "@/components/motion/reveal";
 import { Chip } from "@/components/ui/chip";
 import { Eyebrow } from "@/components/ui/eyebrow";
+import { buildBookingHref } from "@/features/booking/booking-context";
 import type { Therapist } from "@/types/therapist";
 
 /** Full bio, paragraph by paragraph — never truncated (the therapist's own text). */
@@ -22,7 +24,12 @@ export function TherapistBioSection({ therapist }: { therapist: Therapist }) {
                 ))}
               </div>
               <Link
-                href="#zakazivanje"
+                href={
+                  buildBookingHref({
+                    therapist: therapist.slug,
+                    source: "therapist",
+                  }) as Route
+                }
                 className="text-forest border-coffee/30 hover:text-sage hover:border-sage inline-flex items-center gap-2.5 border-b-[1.5px] pb-1 text-[15px] font-semibold transition-colors"
               >
                 Zakažite termin <span aria-hidden="true">→</span>

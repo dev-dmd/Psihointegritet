@@ -6,9 +6,9 @@ import { ResearchProvider } from "@/features/research/research-context";
 
 /**
  * Chrome shared by every public page: header, footer, the guided-selection
- * drawer (opened from CTAs), the research survey (the floating „?") and the B2B
- * configurator. CompanyProvider wraps the others so the matching drawer's B2B
- * branch can open the configurator directly. Scoped to the (public) group so
+ * drawer (kept during the route migration), the research survey (the floating
+ * „?") and the B2B configurator. The providers share the public shell but do
+ * not couple guided matching to the company inquiry flow. Scoped to the (public) group so
  * the marketing chrome never leaks into (auth), (client) or (staff).
  */
 export default function PublicLayout({

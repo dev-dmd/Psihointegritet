@@ -5,7 +5,6 @@
  * (documentations/odgovor-za-matching-anketa.pdf, 2026-07-18). Anja did NOT
  * provide B2B prices, so every model is „Cena po ponudi" — no guaranteed
  * capacities, no annual lease promises until the business model is confirmed.
- * The earlier demo packages (Team Flex etc.) are retired.
  *
  * Still a frontend demo: no backend, no persistence, no employee health data.
  */
@@ -109,6 +108,103 @@ export const emptyCompanyAnswers: CompanyAnswers = {
 // --- Models (all „Cena po ponudi" — no confirmed B2B prices) --------------
 
 export const COMPANY_PRICE_ON_REQUEST = "Cena po ponudi";
+
+/**
+ * Presentation-only plan cards for the public page. They are not a public
+ * price list or a contractual offer. The existing configurator still decides
+ * its own recommendation from answers.
+ */
+export interface CompanyPlanCard {
+  slug: string;
+  title: string;
+  description: string;
+  status: "draft" | "pending-confirmation";
+}
+
+export const companyPlanCards: CompanyPlanCard[] = [
+  {
+    slug: "pojedinacni-pristup",
+    title: "Pojedinačni pristup",
+    description:
+      "Za organizacije koje žele fleksibilan početak podrške zaposlenima.",
+    status: "pending-confirmation",
+  },
+  {
+    slug: "team-flex",
+    title: "Team Flex",
+    description:
+      "Za timove kojima je potreban prilagodljiv spoj radionica i podrške.",
+    status: "draft",
+  },
+  {
+    slug: "rezervisani-kapacitet",
+    title: "Rezervisani kapacitet",
+    description:
+      "Za organizacije koje žele da unapred razgovaraju o kontinuitetu podrške.",
+    status: "pending-confirmation",
+  },
+  {
+    slug: "program-po-meri",
+    title: "Program po meri",
+    description:
+      "Za kombinovane potrebe koje se definišu kroz konsultativni razgovor.",
+    status: "draft",
+  },
+];
+
+export interface CompanyDeliveryFact {
+  title: string;
+  description: string;
+}
+
+/** Public facts that do not imply a fixed B2B price or capacity commitment. */
+export const companyDeliveryFacts: CompanyDeliveryFact[] = [
+  {
+    title: "Fleksibilni termini",
+    description: "Format i termini se dogovaraju prema potrebama organizacije.",
+  },
+  {
+    title: "Rezervisani kapacitet",
+    description:
+      "Mogućnost rezervisanog kapaciteta razmatra se kroz ponudu; broj termina i trajanje nisu javno potvrđeni.",
+  },
+  {
+    title: "Način plaćanja",
+    description:
+      "Način plaćanja definiše se u ponudi, nakon dogovora o obimu programa.",
+  },
+  {
+    title: "Privatnost zaposlenih",
+    description: "Konfigurator ne prikuplja zdravstvene podatke zaposlenih.",
+  },
+];
+
+export interface CompanyFaqItem {
+  question: string;
+  answer: string;
+}
+
+export const companyFaqItems: CompanyFaqItem[] = [
+  {
+    question: "Da li su cene javno objavljene?",
+    answer:
+      "Ne. Cena, obim, kapacitet i način plaćanja potvrđuju se nakon razgovora i kroz ponudu.",
+  },
+  {
+    question: "Da li rezervisani kapacitet važi odmah?",
+    answer:
+      "Ne. Rezervisani kapacitet može biti deo dogovora, ali se potvrđuje tek kroz konkretnu ponudu.",
+  },
+  {
+    question: "Šta se dešava nakon konfiguratora?",
+    answer:
+      "Nakon kratkog upitnika tim predlaže sledeći razgovor kako bi precizirao teme, format i okvir saradnje.",
+  },
+];
+
+export function findCompanyPlan(slug: string | null | undefined) {
+  return companyPlanCards.find((plan) => plan.slug === slug);
+}
 
 export interface CompanyModel {
   slug: string;

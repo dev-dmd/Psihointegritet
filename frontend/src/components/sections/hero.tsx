@@ -1,11 +1,8 @@
 import Image from "next/image";
+import type { Route } from "next";
 import Link from "next/link";
 
 import { ButtonLink } from "@/components/ui/button-link";
-import {
-  GuidanceCtaButton,
-  GuidanceCtaText,
-} from "@/features/guidance/guidance-cta";
 import { clientLink, companies } from "@/content/homepage";
 
 export function Hero() {
@@ -37,10 +34,12 @@ export function Hero() {
               sadržaje, radionice i programe ličnog razvoja — online i uživo.
             </p>
             <div className="mt-6 flex flex-wrap items-center gap-3 md:mt-8">
-              {/* Hero visitors usually aren't sure who fits — start the quiz directly. */}
-              <GuidanceCtaButton entry="quiz" className="w-full py-4 md:w-auto">
+              <ButtonLink
+                href="/pronadji-podrsku"
+                className="w-full py-4 md:w-auto"
+              >
                 Pomozi mi da pronađem podršku
-              </GuidanceCtaButton>
+              </ButtonLink>
               <ButtonLink
                 href="/tim"
                 variant="outline"
@@ -72,9 +71,12 @@ export function Hero() {
 
             <p className="text-coffee/60 mt-auto mb-3.5 text-center text-sm">
               {clientLink.prefix}{" "}
-              {/* Returning clients already know who they see — open the chooser
-                  in „I know who I want" mode, no quiz. */}
-              <GuidanceCtaText>{clientLink.label}</GuidanceCtaText>
+              <Link
+                href={clientLink.href as Route}
+                className="text-forest hover:text-sage font-semibold underline underline-offset-[3px]"
+              >
+                {clientLink.label}
+              </Link>
             </p>
           </div>
         </div>

@@ -15,16 +15,18 @@ export function CompanyCta({
   children,
   variant = "meadow",
   className,
+  preselectedPlanSlug,
 }: {
   children: ReactNode;
   variant?: ButtonLinkVariant;
   className?: string;
+  preselectedPlanSlug?: string;
 }) {
   const { openCompany } = useCompany();
   return (
     <button
       type="button"
-      onClick={openCompany}
+      onClick={() => openCompany(preselectedPlanSlug)}
       className={cn(
         "cursor-pointer border-0",
         buttonLinkVariants({ variant }),

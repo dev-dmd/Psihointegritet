@@ -7,6 +7,7 @@ import { KV } from "@/components/panel/kv";
 import { TabPills } from "@/components/panel/tab-pills";
 import { Toggle } from "@/components/panel/toggle";
 import { Chip } from "@/components/ui/chip";
+import { formatRsd, serviceCatalog } from "@/content/services";
 import { findTherapist } from "@/content/therapists";
 
 import {
@@ -30,6 +31,17 @@ export function ScreenProfil() {
   if (!therapist) {
     return null;
   }
+
+  const publicServices = [
+    ...serviceCatalog
+      .filter((service) => therapist.bookingServiceSlugs.includes(service.slug))
+      .map((service) => ({
+        title: service.name,
+        duration: service.duration,
+        price: formatRsd(service.priceAmount),
+      })),
+    ...therapist.additionalServices,
+  ];
 
   return (
     <section className="animate-fade-up">
@@ -82,7 +94,7 @@ export function ScreenProfil() {
               Usluge
             </div>
             <div className="flex flex-col gap-1.5">
-              {therapist.services.map((service) => (
+              {publicServices.map((service) => (
                 <div
                   key={service.title}
                   className="text-coffee/80 text-[13.5px]"

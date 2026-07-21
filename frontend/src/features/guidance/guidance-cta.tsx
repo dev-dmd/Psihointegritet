@@ -17,12 +17,12 @@ import { cn } from "@/helpers/cn";
 import { useGuidance } from "./guidance-context";
 
 /**
- * Buttons that look exactly like the navigational CTAs but open the guidance
- * drawer instead of navigating. Kept as thin client islands so server sections
- * (header, hero, support-paths) stay server components.
+ * Transitional drawer triggers retained while the route-level flow settles.
+ * Current public CTAs use `/pronadji-podrsku` or `/zakazi`; do not use these
+ * components for new navigation.
  */
 
-/** „Zakaži termin" pill — opens the chooser (returning clients can skip the quiz). */
+/** Legacy pill trigger for an explicitly embedded drawer surface. */
 export function GuidanceCtaPill({
   label = "Zakaži termin",
   size = "md",
@@ -49,7 +49,7 @@ export function GuidanceCtaPill({
   );
 }
 
-/** Solid/outline button matching ButtonLink — opens the quiz or chooser. */
+/** Legacy button trigger matching ButtonLink styles. */
 export function GuidanceCtaButton({
   children,
   variant,
@@ -79,7 +79,7 @@ export function GuidanceCtaButton({
   );
 }
 
-/** Inline underlined text trigger — for „Već ste klijent? Zakažite naredni termin". */
+/** Legacy inline trigger for an explicitly embedded drawer surface. */
 export function GuidanceCtaText({
   children,
   className,

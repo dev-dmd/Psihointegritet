@@ -1,3 +1,5 @@
+import { headerNavLinks, type SiteNavLink } from "@/content/site-navigation";
+
 /**
  * Typed staging content for the public homepage, extracted from the Claude
  * Design handoff. Ekavica is the site-wide default (T9) — the only exception
@@ -6,10 +8,7 @@
  * milestones.
  */
 
-export interface NavLink {
-  label: string;
-  href: string;
-}
+export type NavLink = SiteNavLink;
 
 export type TrustIcon = "screen" | "pin" | "people" | "shield";
 
@@ -33,34 +32,6 @@ export interface ClientLink {
 
 export interface ReasonCard {
   number: string;
-  title: string;
-  description: string;
-  href: string;
-}
-
-export interface ServiceStat {
-  label: string;
-  value: string;
-}
-
-export interface FeaturedService {
-  badge: string;
-  title: string;
-  description: string;
-  stats: ServiceStat[];
-  ctaLabel: string;
-  ctaHref: string;
-}
-
-export interface MidService {
-  title: string;
-  description: string;
-  duration: string;
-  price: string;
-  format: string;
-}
-
-export interface SmallService {
   title: string;
   description: string;
   href: string;
@@ -94,14 +65,7 @@ export interface FaqItem {
  * public page (see app/(public)/layout.tsx), so „#usluge" alone would be dead
  * everywhere except the homepage.
  */
-export const navLinks: NavLink[] = [
-  { label: "Pronađi podršku", href: "/#podrska" },
-  { label: "Terapeuti", href: "/tim" },
-  { label: "Usluge", href: "/usluge" },
-  { label: "Radionice", href: "/#radionice" },
-  { label: "Znanje i resursi", href: "/znanje" },
-  { label: "O nama", href: "/#onama" },
-];
+export const navLinks: NavLink[] = headerNavLinks;
 
 export const companies: CompaniesContent = {
   eyebrow: "Za organizacije",
@@ -114,15 +78,18 @@ export const companies: CompaniesContent = {
 export const clientLink: ClientLink = {
   prefix: "Već ste klijent?",
   label: "Zakažite naredni termin",
-  href: "/zakazivanje",
+  href: "/zakazi?source=homepage",
 };
 
 /** Catalog per Anja's answers (2026-07-18); couples name fixed by T1 („Bračno savetovanje"). */
 export const footerServiceLinks: NavLink[] = [
-  { label: "Individualna psihoterapija", href: "/usluge" },
-  { label: "Bračno savetovanje", href: "/usluge" },
-  { label: "Roditeljsko savetovanje", href: "/usluge" },
-  { label: "Radionice", href: "/#radionice" },
+  {
+    label: "Individualna psihoterapija",
+    href: "/usluge/individualna-psihoterapija",
+  },
+  { label: "Bračno savetovanje", href: "/usluge/bracno-savetovanje" },
+  { label: "Roditeljsko savetovanje", href: "/usluge/roditeljsko-savetovanje" },
+  { label: "Radionice", href: "/radionice" },
 ];
 
 export const trustItems: TrustItem[] = [
@@ -138,89 +105,38 @@ export const reasons: ReasonCard[] = [
     title: "Stres i burnout",
     description:
       "Kada iscrpljenost postane svakodnevica, a odmor više ne pomaže.",
-    href: "#terapeuti",
+    href: "/pronadji-podrsku",
   },
   {
     number: "02",
     title: "Partnerski odnosi",
     description:
       "Komunikacija, bliskost, konflikti i faze kroz koje odnos prolazi.",
-    href: "#terapeuti",
+    href: "/pronadji-podrsku",
   },
   {
     number: "03",
     title: "Anksioznost i emocionalne teškoće",
     description: "Briga, napetost i osećanja koja je teško imenovati.",
-    href: "#terapeuti",
+    href: "/pronadji-podrsku",
   },
   {
     number: "04",
     title: "Roditeljstvo",
     description: "Podrška u izazovima roditeljske uloge i odnosu sa decom.",
-    href: "#terapeuti",
+    href: "/podrska-roditeljima",
   },
   {
     number: "05",
     title: "Samopouzdanje i granice",
     description: "Jasnije zauzimanje za sebe, bez osećaja krivice.",
-    href: "#terapeuti",
+    href: "/pronadji-podrsku",
   },
   {
     number: "06",
     title: "Podrška adolescentima",
     description: "Siguran prostor za mlade u periodu odrastanja i promena.",
-    href: "#terapeuti",
-  },
-];
-
-export const featuredService: FeaturedService = {
-  badge: "Najčešći izbor",
-  title: "Individualna psihoterapija",
-  description:
-    "Prostor u kojem u svom tempu istražujete ono što vas opterećuje — uz podršku terapeuta i geštalt pristup koji podstiče svesnost, autentičnost i odgovornost za vlastiti život.",
-  stats: [
-    { label: "Trajanje", value: "60 minuta" },
-    { label: "Cena", value: "4.000 RSD" },
-    { label: "Format", value: "online ili uživo" },
-  ],
-  ctaLabel: "Zakaži prvi razgovor",
-  ctaHref: "#prvi-razgovor",
-};
-
-export const midServices: MidService[] = [
-  {
-    title: "Bračno savetovanje",
-    description:
-      "Zajednički rad na komunikaciji, bliskosti i obrascima koji se ponavljaju u odnosu.",
-    duration: "90 minuta",
-    price: "5.500 RSD",
-    format: "online ili uživo",
-  },
-  {
-    title: "Roditeljsko savetovanje",
-    description:
-      "Savetodavna podrška roditeljima u razumevanju deteta i jačanju odnosa.",
-    duration: "60 minuta",
-    price: "5.000 RSD",
-    format: "online ili uživo",
-  },
-];
-
-export const smallServices: SmallService[] = [
-  {
-    title: "Adolescenti",
-    description: "Individualni rad prilagođen mladima i njihovom tempu.",
-    href: "#terapeuti",
-  },
-  {
-    title: "Roditeljstvo",
-    description: "Savetodavna podrška roditeljima u svim fazama.",
-    href: "#terapeuti",
-  },
-  {
-    title: "Radionice",
-    description: "Grupna iskustvena učenja kroz geštalt pristup.",
-    href: "#radionice",
+    href: "/tim",
   },
 ];
 

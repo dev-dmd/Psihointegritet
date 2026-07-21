@@ -3,8 +3,8 @@ import Link from "next/link";
 
 import { StickyBar } from "@/components/motion/sticky-bar";
 import { MobileMenu } from "@/components/sections/mobile-menu";
-import { navLinks } from "@/content/homepage";
-import { GuidanceCtaPill } from "@/features/guidance/guidance-cta";
+import { AnimatedCtaLink } from "@/components/ui/animated-cta-link";
+import { headerBookingHref, headerNavLinks } from "@/content/site-navigation";
 import { AuthMenu } from "@/lib/auth/clerk/auth-menu";
 import { MobileAuthSection } from "@/lib/auth/clerk/mobile-auth-section";
 
@@ -39,7 +39,7 @@ export function SiteHeader() {
             aria-label="Glavna navigacija"
             className="col-start-2 hidden items-center gap-[clamp(12px,1.4vw,26px)] justify-self-center rounded-full bg-gray-300/32 px-[clamp(18px,1.8vw,28px)] py-[13px] whitespace-nowrap backdrop-blur-[14px] lg:flex"
           >
-            {navLinks.map((link) => (
+            {headerNavLinks.map((link) => (
               <Link
                 key={link.href}
                 href={link.href as Route}
@@ -51,11 +51,15 @@ export function SiteHeader() {
           </nav>
           <div className="col-start-3 flex items-center gap-2.5 justify-self-end">
             <AuthMenu />
-            <GuidanceCtaPill
+            <AnimatedCtaLink
+              href={headerBookingHref}
               label="Zakaži termin"
               className="max-[480px]:hidden"
             />
-            <MobileMenu links={navLinks} authSlot={<MobileAuthSection />} />
+            <MobileMenu
+              links={headerNavLinks}
+              authSlot={<MobileAuthSection />}
+            />
           </div>
         </div>
       </header>
@@ -74,7 +78,7 @@ export function SiteHeader() {
           aria-label="Brza navigacija"
           className="hidden items-center gap-[clamp(12px,1.2vw,22px)] lg:flex"
         >
-          {navLinks.map((link) => (
+          {headerNavLinks.map((link) => (
             <Link
               key={link.href}
               href={link.href as Route}
@@ -85,9 +89,13 @@ export function SiteHeader() {
           ))}
         </nav>
         <AuthMenu size="sm" />
-        <GuidanceCtaPill label="Zakaži termin" size="sm" />
+        <AnimatedCtaLink
+          href={headerBookingHref}
+          label="Zakaži termin"
+          size="sm"
+        />
         <MobileMenu
-          links={navLinks}
+          links={headerNavLinks}
           variant="solid"
           authSlot={<MobileAuthSection />}
         />

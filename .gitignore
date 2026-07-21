@@ -38,3 +38,4 @@ Thumbs.db
 # Dokumentacija — .md se verzioniše; binarni izvornici (DOCX/PDF) ostaju van gita
 documentations/*.docx
 documentations/*.pdf
+COMMANDS.md

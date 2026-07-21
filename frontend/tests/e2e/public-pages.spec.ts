@@ -83,6 +83,37 @@ test("header nav links to the dedicated services and knowledge pages", async ({
   await expect(page).toHaveURL(/\/znanje$/);
 });
 
+test("service detail has a canonical booking CTA and unknown services return 404", async ({
+  page,
+}) => {
+  await page.goto("/usluge/roditeljsko-savetovanje");
+  await expect(
+    page.locator("#usluga").getByRole("link", { name: "Zakaži termin" }),
+  ).toHaveAttribute(
+    "href",
+    "/zakazi?service=roditeljsko-savetovanje&source=service",
+  );
+
+  const response = await page.goto("/usluge/ne-postoji");
+  expect(response?.status()).toBe(404);
+});
+
+test("footer exposes the confirmed email, locations and only live routes", async ({
+  page,
+}) => {
+  await page.goto("/");
+
+  const footer = page.locator("footer");
+  await expect(footer).toContainText("info@psihointegritet.com");
+  await expect(footer).toContainText("Niš");
+  await expect(footer).toContainText("Leskovac");
+  await expect(footer).toContainText("online i uživo");
+  await expect(footer.getByRole("link", { name: "Kontakt" })).toHaveAttribute(
+    "href",
+    "/kontakt",
+  );
+});
+
 test("services and knowledge pages have no critical accessibility violations", async ({
   page,
 }) => {

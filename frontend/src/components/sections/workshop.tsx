@@ -27,8 +27,8 @@ export function Workshop() {
                 situacijama.
               </p>
               <div className="flex flex-wrap items-center gap-3.5">
-                <ButtonLink href="#kontakt" variant="coffee">
-                  Prijavite interesovanje
+                <ButtonLink href="/radionice" variant="coffee">
+                  Pogledajte radionice
                 </ButtonLink>
                 <span className="text-coffee/60 text-sm font-medium">
                   Detalji uskoro

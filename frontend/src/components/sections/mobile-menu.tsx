@@ -7,11 +7,10 @@ import { createPortal } from "react-dom";
 
 import { cn } from "@/helpers/cn";
 import { MobileDrawerCloseContext } from "@/components/sections/mobile-menu-context";
-import type { NavLink } from "@/content/homepage";
-import { useGuidance } from "@/features/guidance/guidance-context";
+import { headerBookingHref, type SiteNavLink } from "@/content/site-navigation";
 
 interface MobileMenuProps {
-  links: NavLink[];
+  links: SiteNavLink[];
   /** glass — burger over the hero header; solid — inside the sticky pill. */
   variant?: "glass" | "solid";
   /**
@@ -30,7 +29,6 @@ export function MobileMenu({
   authSlot,
 }: MobileMenuProps) {
   const [open, setOpen] = useState(false);
-  const { openChooser } = useGuidance();
 
   useEffect(() => {
     if (!open) {
@@ -124,16 +122,13 @@ export function MobileMenu({
                   ))}
                 </nav>
                 <div className="border-coffee/10 border-t px-6 pt-5 pb-7">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setOpen(false);
-                      openChooser();
-                    }}
-                    className="bg-forest text-canvas flex cursor-pointer items-center justify-center gap-2.5 rounded-full border-0 px-6 py-[15px] text-[15px] font-semibold"
+                  <Link
+                    href={headerBookingHref as Route}
+                    onClick={() => setOpen(false)}
+                    className="bg-forest text-canvas flex min-h-11 items-center justify-center gap-2.5 rounded-full px-6 text-[15px] font-semibold no-underline"
                   >
                     Zakaži termin
-                  </button>
+                  </Link>
                   {authSlot ? (
                     <MobileDrawerCloseContext.Provider
                       value={() => setOpen(false)}

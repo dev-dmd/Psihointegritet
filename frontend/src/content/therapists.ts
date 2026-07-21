@@ -51,22 +51,11 @@ export const therapists: Therapist[] = [
       "Lični razvoj",
       "Rad na emocijama",
     ],
-    services: [
-      {
-        title: "Individualna psihoterapija",
-        duration: "60 minuta",
-        price: "4.000 RSD",
-      },
-      {
-        title: "Bračno savetovanje",
-        duration: "90 minuta",
-        price: "5.500 RSD",
-      },
-      {
-        title: "Roditeljsko savetovanje",
-        duration: "60 minuta",
-        price: "5.000 RSD",
-      },
+    additionalServices: [],
+    bookingServiceSlugs: [
+      "individualna-psihoterapija",
+      "bracno-savetovanje",
+      "roditeljsko-savetovanje",
     ],
     image: "/images/therapists/anja.jpeg",
     cardExcerpt:
@@ -101,18 +90,12 @@ export const therapists: Therapist[] = [
       "Razvoj identiteta",
       "Rad na emocijama",
     ],
-    services: [
-      {
-        title: "Individualna psihoterapija",
-        duration: "60 minuta",
-        price: "4.000 RSD",
-      },
-      {
-        title: "Roditeljsko savetovanje",
-        duration: "60 minuta",
-        price: "5.000 RSD",
-      },
+    additionalServices: [
       { title: "Savetovanje adolescenata", duration: null, price: null },
+    ],
+    bookingServiceSlugs: [
+      "individualna-psihoterapija",
+      "roditeljsko-savetovanje",
     ],
     image: "/images/therapists/marija.jpeg",
     cardExcerpt:
@@ -145,18 +128,8 @@ export const therapists: Therapist[] = [
       "Lični razvoj",
       "Samopoštovanje",
     ],
-    services: [
-      {
-        title: "Individualna psihoterapija",
-        duration: "60 minuta",
-        price: "4.000 RSD",
-      },
-      {
-        title: "Bračno savetovanje",
-        duration: "90 minuta",
-        price: "5.500 RSD",
-      },
-    ],
+    additionalServices: [],
+    bookingServiceSlugs: ["individualna-psihoterapija", "bracno-savetovanje"],
     image: "/images/therapists/marjan.jpeg",
     cardExcerpt:
       "Psiholog i geštalt psihoterapeut, posvećen razumevanju čoveka u celini – njegovih misli, emocija, telesnih iskustava i odnosa sa drugima.",
