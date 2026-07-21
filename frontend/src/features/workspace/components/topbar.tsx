@@ -2,6 +2,8 @@
 
 import { toast } from "sonner";
 
+import { BackToSiteButton } from "@/components/shared/back-to-site-button";
+import { LogoutAvatarMenu } from "@/components/shared/logout-avatar-menu";
 import { therapists } from "@/content/therapists";
 
 import { useWorkspace } from "../workspace-context";
@@ -69,6 +71,7 @@ export function WorkspaceTopbar() {
           <ChevronDownIcon />
         </button>
       ) : null}
+      <BackToSiteButton className="border-coffee/12 text-coffee hover:border-sage bg-surface" />
       <button
         type="button"
         title="Obaveštenja"
@@ -82,6 +85,13 @@ export function WorkspaceTopbar() {
           className="bg-warm border-surface absolute top-2 right-[9px] h-2 w-2 rounded-full border-[1.5px]"
         />
       </button>
+      <div className="lg:hidden">
+        <LogoutAvatarMenu
+          initials={isAdmin ? "A" : "T"}
+          label="Korisnički meni"
+          triggerClassName="border-meadow/55 bg-meadow/20 text-forest hover:border-sage focus-visible:ring-forest/35 flex h-10 w-10 cursor-pointer items-center justify-center rounded-full border text-[13px] font-semibold outline-none transition-colors focus-visible:ring-2"
+        />
+      </div>
       <button
         type="button"
         onClick={() => toast("Brza akcija stiže sa Booking engine-om.")}
