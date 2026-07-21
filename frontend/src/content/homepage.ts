@@ -1,7 +1,9 @@
 /**
- * Typed staging content for the public homepage, extracted verbatim from the
- * Claude Design handoff. Ijekavica is intentional in therapist-facing copy.
- * Replaced by CMS/backend data in later milestones.
+ * Typed staging content for the public homepage, extracted from the Claude
+ * Design handoff. Ekavica is the site-wide default (T9) — the only exception
+ * is Anja Stamenković's personal voice (quotes/bio), which lives separately in
+ * `content/therapists.ts`, not here. Replaced by CMS/backend data in later
+ * milestones.
  */
 
 export interface NavLink {
@@ -95,9 +97,9 @@ export interface FaqItem {
 export const navLinks: NavLink[] = [
   { label: "Pronađi podršku", href: "/#podrska" },
   { label: "Terapeuti", href: "/tim" },
-  { label: "Usluge", href: "/#usluge" },
+  { label: "Usluge", href: "/usluge" },
   { label: "Radionice", href: "/#radionice" },
-  { label: "Znanje i resursi", href: "/#resursi" },
+  { label: "Znanje i resursi", href: "/znanje" },
   { label: "O nama", href: "/#onama" },
 ];
 
@@ -115,11 +117,11 @@ export const clientLink: ClientLink = {
   href: "/zakazivanje",
 };
 
-/** Service names are fixed by T1 („Bračno savetovanje") and T2 („Psihoterapijsko savetovanje"). */
+/** Catalog per Anja's answers (2026-07-18); couples name fixed by T1 („Bračno savetovanje"). */
 export const footerServiceLinks: NavLink[] = [
-  { label: "Individualna psihoterapija", href: "/#usluge" },
-  { label: "Bračno savetovanje", href: "/#usluge" },
-  { label: "Psihoterapijsko savetovanje", href: "/#usluge" },
+  { label: "Individualna psihoterapija", href: "/usluge" },
+  { label: "Bračno savetovanje", href: "/usluge" },
+  { label: "Roditeljsko savetovanje", href: "/usluge" },
   { label: "Radionice", href: "/#radionice" },
 ];
 
@@ -148,25 +150,25 @@ export const reasons: ReasonCard[] = [
   {
     number: "03",
     title: "Anksioznost i emocionalne teškoće",
-    description: "Briga, napetost i osjećanja koja je teško imenovati.",
+    description: "Briga, napetost i osećanja koja je teško imenovati.",
     href: "#terapeuti",
   },
   {
     number: "04",
     title: "Roditeljstvo",
-    description: "Podrška u izazovima roditeljske uloge i odnosu sa djecom.",
+    description: "Podrška u izazovima roditeljske uloge i odnosu sa decom.",
     href: "#terapeuti",
   },
   {
     number: "05",
     title: "Samopouzdanje i granice",
-    description: "Jasnije zauzimanje za sebe, bez osjećaja krivice.",
+    description: "Jasnije zauzimanje za sebe, bez osećaja krivice.",
     href: "#terapeuti",
   },
   {
     number: "06",
     title: "Podrška adolescentima",
-    description: "Siguran prostor za mlade u periodu odrastanja i promjena.",
+    description: "Siguran prostor za mlade u periodu odrastanja i promena.",
     href: "#terapeuti",
   },
 ];
@@ -175,10 +177,10 @@ export const featuredService: FeaturedService = {
   badge: "Najčešći izbor",
   title: "Individualna psihoterapija",
   description:
-    "Prostor u kojem u svom tempu istražujete ono što vas opterećuje — uz podršku terapeuta i geštalt pristup koji podstiče svjesnost, autentičnost i odgovornost za vlastiti život.",
+    "Prostor u kojem u svom tempu istražujete ono što vas opterećuje — uz podršku terapeuta i geštalt pristup koji podstiče svesnost, autentičnost i odgovornost za vlastiti život.",
   stats: [
     { label: "Trajanje", value: "60 minuta" },
-    { label: "Cijena", value: "3.500 RSD" },
+    { label: "Cena", value: "4.000 RSD" },
     { label: "Format", value: "online ili uživo" },
   ],
   ctaLabel: "Zakaži prvi razgovor",
@@ -187,19 +189,19 @@ export const featuredService: FeaturedService = {
 
 export const midServices: MidService[] = [
   {
-    title: "Partnersko savjetovanje",
+    title: "Bračno savetovanje",
     description:
       "Zajednički rad na komunikaciji, bliskosti i obrascima koji se ponavljaju u odnosu.",
     duration: "90 minuta",
-    price: "5.000 RSD",
+    price: "5.500 RSD",
     format: "online ili uživo",
   },
   {
-    title: "Psihološko savjetovanje",
+    title: "Roditeljsko savetovanje",
     description:
-      "Fokusirana podrška u konkretnim životnim situacijama i odlukama.",
+      "Savetodavna podrška roditeljima u razumevanju deteta i jačanju odnosa.",
     duration: "60 minuta",
-    price: "3.500 RSD",
+    price: "5.000 RSD",
     format: "online ili uživo",
   },
 ];
@@ -212,7 +214,7 @@ export const smallServices: SmallService[] = [
   },
   {
     title: "Roditeljstvo",
-    description: "Savjetodavna podrška roditeljima u svim fazama.",
+    description: "Savetodavna podrška roditeljima u svim fazama.",
     href: "#terapeuti",
   },
   {
@@ -239,42 +241,42 @@ export const firstSessionSteps: FirstSessionStep[] = [
     number: "03",
     title: "Naredni koraci",
     description:
-      "Terapeut objašnjava način rada i pravila povjerljivosti, pa zajedno dogovarate kako dalje.",
+      "Terapeut objašnjava način rada i pravila poverljivosti, pa zajedno dogovarate kako dalje.",
   },
 ];
 
 export const workshopFacts: WorkshopFact[] = [
   { label: "Trajanje", value: "3 sata" },
   { label: "Format", value: "Grupni rad uživo" },
-  { label: "Namijenjeno", value: "Svima, bez iskustva" },
+  { label: "Namenjeno", value: "Svima, bez iskustva" },
 ];
 
 export const resources: ResourceArticle[] = [
   {
     category: "Stres i burnout",
-    title: "Kako prepoznati burnout prije nego što postane ozbiljan problem?",
+    title: "Kako prepoznati burnout pre nego što postane ozbiljan problem?",
     description:
-      "Burnout se ne pojavljuje odjednom. Često mu prethode dugotrajan umor, gubitak motivacije, razdražljivost i osjećaj da se ni nakon odmora ne oporavljamo. Saznajte koje rane signale ne treba zanemariti.",
+      "Burnout se ne pojavljuje odjednom. Često mu prethode dugotrajan umor, gubitak motivacije, razdražljivost i osećaj da se ni nakon odmora ne oporavljamo. Saznajte koje rane signale ne treba zanemariti.",
   },
   {
     category: "Psihoterapija",
     title:
       "Zašto nije potrebno da dođemo do „pucanja“ da bismo potražili podršku?",
     description:
-      "Psihoterapija nije rezervisana samo za krizne trenutke. Razgovor sa terapeutom može biti prostor za bolje razumijevanje sebe, odnosa i obrazaca koje želimo da promijenimo.",
+      "Psihoterapija nije rezervisana samo za krizne trenutke. Razgovor sa terapeutom može biti prostor za bolje razumevanje sebe, odnosa i obrazaca koje želimo da promenimo.",
   },
   {
     category: "Granice i odnosi",
-    title: "Postavljanje granica bez osjećaja krivice",
+    title: "Postavljanje granica bez osećaja krivice",
     description:
-      "Granice nisu odbacivanje drugih, već način da zaštitimo svoje potrebe, vrijeme i emocionalni prostor. Istražite zašto se krivica javlja i kako možemo jasnije komunicirati ono što nam je važno.",
+      "Granice nisu odbacivanje drugih, već način da zaštitimo svoje potrebe, vreme i emocionalni prostor. Istražite zašto se krivica javlja i kako možemo jasnije komunicirati ono što nam je važno.",
   },
 ];
 
 export const faqItems: FaqItem[] = [
   {
-    id: "povjerljivost",
-    question: "Da li je sve što kažem povjerljivo?",
+    id: "poverljivost",
+    question: "Da li je sve što kažem poverljivo?",
     answer:
       "Da. Sve informacije ostaju između klijenta i terapeuta, osim u situacijama propisanim zakonom i etičkim kodeksom.",
   },
@@ -282,7 +284,7 @@ export const faqItems: FaqItem[] = [
     id: "trajanje",
     question: "Koliko traje terapija?",
     answer:
-      "Trajanje zavisi od vaših ciljeva i potreba. Neki ljudi dolaze nekoliko mjeseci, dok drugi biraju dugoročniji proces.",
+      "Trajanje zavisi od vaših ciljeva i potreba. Neki ljudi dolaze nekoliko meseci, dok drugi biraju dugoročniji proces.",
   },
   {
     id: "online",
@@ -293,12 +295,12 @@ export const faqItems: FaqItem[] = [
     id: "izbor-terapeuta",
     question: "Kako da znam koji terapeut mi odgovara?",
     answer:
-      "Na profilima terapeuta možete pronaći informacije o njihovom pristupu, iskustvu i oblastima rada, a uvijek nas možete kontaktirati za preporuku.",
+      "Na profilima terapeuta možete pronaći informacije o njihovom pristupu, iskustvu i oblastima rada, a uvek nas možete kontaktirati za preporuku.",
   },
   {
     id: "dijagnoza",
     question: "Da li mi treba dijagnoza da bih došao na terapiju?",
     answer:
-      "Ne. Psihoterapija je namijenjena svima koji žele bolje razumjeti sebe ili prolaze kroz izazovan životni period.",
+      "Ne. Psihoterapija je namenjena svima koji žele bolje razumeti sebe ili prolaze kroz izazovan životni period.",
   },
 ];

@@ -21,8 +21,8 @@ export function SiteFooter() {
               />
             </div>
             <p className="text-canvas/62 mb-6 max-w-[340px] text-[15px] leading-[1.65]">
-              Digitalni centar za mentalno zdravlje. Psihoterapija,
-              savjetovanje, radionice i edukativni sadržaji — na jednom mjestu.
+              Digitalni centar za mentalno zdravlje. Psihoterapija, savetovanje,
+              radionice i edukativni sadržaji — na jednom mestu.
             </p>
             <div className="text-canvas/55 text-sm leading-[1.9]">
               Niš · online i uživo
@@ -74,7 +74,7 @@ export function SiteFooter() {
           </div>
           <div className="text-canvas/40 max-w-[520px] text-[12.5px]">
             Sadržaji na ovoj stranici imaju edukativnu svrhu i ne predstavljaju
-            zamjenu za individualni razgovor sa stručnom osobom.
+            zamenu za individualni razgovor sa stručnom osobom.
           </div>
         </div>
       </div>

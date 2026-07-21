@@ -10,39 +10,53 @@ import {
 import type { ReactNode } from "react";
 
 import { GuidanceDrawer } from "./guidance-drawer";
-import { GuidanceLauncher } from "./guidance-launcher";
+
+/** Where the drawer starts: the two-way chooser, or straight into the quiz. */
+export type GuidanceEntry = "chooser" | "quiz";
 
 interface GuidanceContextValue {
-  openGuidance: () => void;
+  /** Two-way chooser: „Pomozite mi da pronađem terapeuta" vs „Znam kog terapeuta želim". */
+  openChooser: () => void;
+  /** Straight into the 5-step matching quiz — no intermediate step. */
+  openQuiz: () => void;
 }
 
 const GuidanceContext = createContext<GuidanceContextValue | null>(null);
 
 /**
- * Owns the guided-selection drawer for the whole public area: the floating
- * launcher and any section CTA („Pomozi mi da izaberem") open the same drawer.
+ * Owns the guided-selection drawer for the whole public area. Entry points pick
+ * how it opens: „Zakaži termin" opens the chooser (returning clients skip the
+ * quiz), while the hero and the „Vođeni izbor" section open the quiz directly.
  * Mounted once in the (public) layout — never per page.
  *
- * The drawer is mounted only while open, so every run starts at step one and no
+ * The drawer is mounted only while open, so every run starts fresh and no
  * answers survive a close (master plan T13 — answers are never persisted).
  */
 export function GuidanceProvider({ children }: { children: ReactNode }) {
-  const [open, setOpen] = useState(false);
+  const [entry, setEntry] = useState<GuidanceEntry | null>(null);
 
-  const openGuidance = useCallback(() => {
-    setOpen(true);
+  const openChooser = useCallback(() => {
+    setEntry("chooser");
   }, []);
-  const closeGuidance = useCallback(() => {
-    setOpen(false);
+  const openQuiz = useCallback(() => {
+    setEntry("quiz");
+  }, []);
+  const close = useCallback(() => {
+    setEntry(null);
   }, []);
 
-  const value = useMemo(() => ({ openGuidance }), [openGuidance]);
+  const value = useMemo(
+    () => ({ openChooser, openQuiz }),
+    [openChooser, openQuiz],
+  );
 
   return (
     <GuidanceContext.Provider value={value}>
       {children}
-      <GuidanceLauncher open={open} onOpen={openGuidance} />
-      {open ? <GuidanceDrawer onClose={closeGuidance} /> : null}
+      {/* No floating launcher — matching opens from „Zakaži termin", the hero
+          and the „Vođeni izbor" section. The floating „?" now opens the
+          research survey (see ResearchProvider). */}
+      {entry !== null ? <GuidanceDrawer entry={entry} onClose={close} /> : null}
     </GuidanceContext.Provider>
   );
 }

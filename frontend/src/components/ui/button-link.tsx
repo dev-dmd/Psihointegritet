@@ -5,7 +5,7 @@ import type { ReactNode } from "react";
 
 import { cn } from "@/helpers/cn";
 
-const buttonLinkVariants = cva(
+export const buttonLinkVariants = cva(
   "inline-flex items-center justify-center rounded-full text-center font-semibold no-underline transition-colors duration-200",
   {
     variants: {
@@ -35,7 +35,11 @@ const buttonLinkVariants = cva(
   },
 );
 
-interface ButtonLinkProps extends VariantProps<typeof buttonLinkVariants> {
+type ButtonLinkVariantProps = VariantProps<typeof buttonLinkVariants>;
+export type ButtonLinkVariant = NonNullable<ButtonLinkVariantProps["variant"]>;
+export type ButtonLinkSize = NonNullable<ButtonLinkVariantProps["size"]>;
+
+interface ButtonLinkProps extends ButtonLinkVariantProps {
   /** Same-page anchors render as <a>; routes navigate client-side via next/link. */
   href: string;
   children: ReactNode;

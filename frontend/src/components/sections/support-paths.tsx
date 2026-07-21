@@ -1,9 +1,9 @@
 import { Reveal } from "@/components/motion/reveal";
 import { ArrowLink } from "@/components/ui/arrow-link";
-import { ButtonLink } from "@/components/ui/button-link";
 import { Eyebrow } from "@/components/ui/eyebrow";
+import { GuidanceCtaButton } from "@/features/guidance/guidance-cta";
 
-/** Two entry paths: guided selection (coming milestone) vs. self-serve browse. */
+/** Two entry paths: guided selection quiz vs. self-serve browse. */
 export function SupportPaths() {
   return (
     <section id="podrska" className="scroll-mt-24 pt-[72px] md:pt-32">
@@ -25,9 +25,9 @@ export function SupportPaths() {
                 </p>
               </div>
               <div>
-                <ButtonLink href="#terapeuti" variant="meadow">
+                <GuidanceCtaButton entry="quiz" variant="meadow">
                   Započni kratki upitnik
-                </ButtonLink>
+                </GuidanceCtaButton>
               </div>
             </div>
             <div className="bg-meadow/32 flex flex-col justify-between gap-16 rounded-[28px] p-8 md:px-12 md:py-14">
@@ -38,11 +38,11 @@ export function SupportPaths() {
                 </h3>
                 <p className="text-coffee/72 text-[15.5px] leading-[1.65]">
                   Pregledajte profile, pristupe i oblasti rada — pa izaberite
-                  osobu koja vam uliva povjerenje.
+                  osobu koja vam uliva poverenje.
                 </p>
               </div>
               <div>
-                <ArrowLink href="#terapeuti" tone="underlineStrong">
+                <ArrowLink href="/tim" tone="underlineStrong">
                   Pregledaj terapeute
                 </ArrowLink>
               </div>

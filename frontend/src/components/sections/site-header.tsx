@@ -3,8 +3,8 @@ import Link from "next/link";
 
 import { StickyBar } from "@/components/motion/sticky-bar";
 import { MobileMenu } from "@/components/sections/mobile-menu";
-import { AnimatedCtaLink } from "@/components/ui/animated-cta-link";
 import { navLinks } from "@/content/homepage";
+import { GuidanceCtaPill } from "@/features/guidance/guidance-cta";
 import { AuthMenu } from "@/lib/auth/clerk/auth-menu";
 import { MobileAuthSection } from "@/lib/auth/clerk/mobile-auth-section";
 
@@ -37,7 +37,7 @@ export function SiteHeader() {
           </Link>
           <nav
             aria-label="Glavna navigacija"
-            className="col-start-2 hidden items-center gap-[clamp(12px,1.4vw,26px)] justify-self-center rounded-full bg-gray-400/32 px-[clamp(18px,1.8vw,28px)] py-[13px] whitespace-nowrap backdrop-blur-[14px] lg:flex"
+            className="col-start-2 hidden items-center gap-[clamp(12px,1.4vw,26px)] justify-self-center rounded-full bg-gray-300/32 px-[clamp(18px,1.8vw,28px)] py-[13px] whitespace-nowrap backdrop-blur-[14px] lg:flex"
           >
             {navLinks.map((link) => (
               <Link
@@ -51,8 +51,7 @@ export function SiteHeader() {
           </nav>
           <div className="col-start-3 flex items-center gap-2.5 justify-self-end">
             <AuthMenu />
-            <AnimatedCtaLink
-              href="/#usluge"
+            <GuidanceCtaPill
               label="Zakaži termin"
               className="max-[480px]:hidden"
             />
@@ -86,7 +85,7 @@ export function SiteHeader() {
           ))}
         </nav>
         <AuthMenu size="sm" />
-        <AnimatedCtaLink href="/#usluge" label="Zakaži termin" size="sm" />
+        <GuidanceCtaPill label="Zakaži termin" size="sm" />
         <MobileMenu
           links={navLinks}
           variant="solid"

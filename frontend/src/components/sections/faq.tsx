@@ -12,12 +12,12 @@ export function Faq() {
           <div className="grid grid-cols-1 items-start gap-10 lg:grid-cols-[5fr_7fr] lg:gap-20">
             <div className="lg:sticky lg:top-[108px]">
               <SectionHeading
-                eyebrow="Povjerenje i privatnost"
+                eyebrow="Poverenje i privatnost"
                 title="Najčešća pitanja"
                 description={
                   <span className="block max-w-[400px]">
-                    Sve što razgovarate sa terapeutom ostaje povjerljivo. Ako
-                    imate pitanje koje ovdje ne vidite, slobodno nam pišite.
+                    Sve što razgovarate sa terapeutom ostaje poverljivo. Ako
+                    imate pitanje koje ovde ne vidite, slobodno nam pišite.
                   </span>
                 }
                 className="mb-7"

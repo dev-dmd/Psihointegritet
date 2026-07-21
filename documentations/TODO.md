@@ -32,6 +32,7 @@
 |---|---|
 | `technical-documentation-architecture-v0.3.md` | Autoritet #4. Jedini izvor modela podataka (§6), granica modula (§4.2), ADR liste (§16). **Gde se sudara sa master planom, master plan pobeđuje** — 2 poznata sudara u §10 ovde |
 | `PSIHOINTEGRITET_PRODUCT_ENGINES_ARCHITECTURE_v1_0.md` | Autoritet #6, **vodič a ne propis**. Master plan ga citira normativno iz M2.3 (§7.3) i M2.7 (§18) |
+| `PSIHOINTEGRITET_INTAKE_MATCHING_ENGINE_v0.1.md` | Spec za Intake & Matching demo (24 sekcije). Formalizuje R1.2 v1 u v0.1: feature flag `intake_matching_preview` (samo staging, mock adapteri, bez pravih upisa), timski panel, claim/reassignment, booking/notification integracione tačke. **Demo, ne produkcija** — vidi §5A ovde |
 
 ### Arhiva — `archive/`, ne uzimati odluke odatle
 
@@ -96,7 +97,7 @@ Svaki ima SUPERSEDED zaglavlje sa razlogom i zamenom. Arhivirano 2026-07-17: `PR
 |---|---|---|---|---|
 | R0.2.a | `footerServiceLinks`: „Partnersko savjetovanje" → **„Bračno savetovanje"** | MP §4 R0.2 · MP §1 T1 | ⬜ | `src/content/homepage.ts:128` |
 | R0.2.b | „Psihološko savjetovanje" → **„Psihoterapijsko savetovanje"** | MP §4 R0.2 · MP §1 T2 | ⬜ | `homepage.ts:129` i `:255` (midServices) |
-| R0.2.c | Ekavica u celom `src/` | MP §1 T9 (ispravljeno 2026-07-17) | ⬜ | ~15 fajlova; `homepage.ts` ima 18 ijekavskih linija; obrisati komentar „Ijekavica is intentional" (`homepage.ts:3`) |
+| R0.2.c | Ekavica u celom `src/`, **osim Anjinog ličnog sadržaja** | MP §1 T9 (D-017, 2026-07-18) | ✅ | Kompletirano 2026-07-18. `homepage.ts` (uklj. zastareo komentar „Ijekavica is intentional") i 7 komponenti (`hero.tsx`, `site-footer.tsx`, `workshop.tsx`, `faq.tsx`, `resources.tsx`, `support-paths.tsx`, `first-session.tsx`, `layout.tsx` meta opis) na ekavici. `content/therapists.ts`: Anjin `quote`/`bio`/`cardExcerpt` namerno ijekavica (D-017), ostatak fajla ekavica. Grep preko celog `src/` potvrđuje 0 preostalih ijekavskih reči van Anjinog sadržaja |
 | R0.2.d | Ukloniti „pod supervizijom" iz zvanja | MP §4 R0.2 · MP §1 T3 | 🚫 S1 | `homepage.ts:187`, `:205`, `:217` — sva tri terapeuta |
 | R0.2.e | Kviz: „Za partnerski odnos" | MP §4 R0.2 | ⬜ | **Nosivo, ne kozmetika:** ključ rečnika u `quiz.ts:83`, tvrdnja u `quiz.test.ts:20,64` i `tests/e2e/guidance.spec.ts:14`. Logika + testovi menjaju se zajedno |
 | R0.2.f | 3 duge biografije kao `draft` sadržaj | MP §4 R0.2 · IZMENE §3 | 🚫 S1 | — |
@@ -139,37 +140,43 @@ Svaki ima SUPERSEDED zaglavlje sa razlogom i zamenom. Arhivirano 2026-07-17: `PR
 
 > **Gde piše:** MP §5 R1.1 · Proposal §6 M1.3 · v0.3 §15 („Design integration")
 > Pravila: profil = monogram inicijala (**nikad stock portret pod pravim imenom**), samo potvrđeno zvanje, formati, grad, CTA → `/zakazi?terapeut=slug`. Teme se čitaju kao životne situacije, ne dijagnoze. Neaktivne oblasti = „U pripremi" + forma interesovanja, **nikad dugme za zakazivanje**.
+> **UI pravilo (D-019, 2026-07-18):** svaka javna stranica otvara se sa `components/shared/page-hero.tsx` — zaobljen blok (`rounded-3xl md:rounded-[32px]`), `bg-surface` po default-u, bez posebne sekcije koja se preklapa negativnom marginom. Već primenjeno na `/tim`, `/tim/[slug]`, `/rad-sa-kompanijama` — **preostale rute iz tabele ispod (`/usluge`, `/o-nama`, `/kontakt`, pravne stranice…) treba da koriste isti obrazac kad se prave.**
 
 | Ruta | Sadržaj | Status | Napomena |
 |---|---|---|---|
 | `/` | Homepage, 11 sekcija + `GuidanceLauncher` | ✅ | `(public)/page.tsx`; RSC |
-| — | Navigacija vezana na prave rute | ⬜ | Sad su sve anchor linkovi (`#usluge`, `#terapeuti`…) |
+| — | Navigacija vezana na prave rute | 🟡 | **2026-07-18:** „Terapeuti"→`/tim`, „Usluge"→`/usluge`, „Znanje i resursi"→`/znanje`, footer „Usluge" kolona→`/usluge`. Ostaju anchor dok rute ne postoje: „Pronađi podršku"→`/#podrska`, „Radionice"→`/#radionice` (S6), „O nama"→`/#onama` (O-02) |
 | — | Footer: pravni linkovi + brzi linkovi + postojeći logo | ⬜ | **Struktura odblokirana (D-007):** privatnost · uslovi · kolačići · pravila zakazivanja; brzi: tim · radionice · rad sa kompanijama |
 | `/pronadji-podrsku` | Vođeni izbor (kviz kao puna strana) | ⬜ | Vidi R1.2 |
 | `/oblasti-podrske` | Pregled tema — 10 oblasti | ⬜ | Izvor tema: `archive/PRODUCT_CONTEXT.md` §17 kao **nacrt**, uz potvrdu Anje |
 | `/oblasti-podrske/[slug]` | Objašnjenje, povezani terapeuti/usluge, CTA | ⬜ | — |
 | `/tim` | Zajednički pristup, vrednosti, kartice | ✅ | Zigzag po dizajnu; jedini izvor `content/therapists.ts` |
 | `/tim/[slug]` | 3 profila | 🟡 | **Napravljeno** — `anja-stamenkovic`, `marija-stamenkovic`, `marjan-jankovic`, sve tri SSG. Prave fotografije ✅. **Objava blokirana S1** — zvanja su generička (`draft`) |
-| `/usluge` | 3 usluge + trajanje/cena/format + „okvirne cene" | ⬜ | Cene T7; napomena o okvirnosti obavezna |
+| `/usluge` | 3 usluge + trajanje/cena/format + „okvirne cene" | ✅ | **2026-07-18** — `content/services.ts` (kanonski T7 katalog), `services-page.tsx`, PageHero. Obavezna napomena o okvirnim cenama prisutna. + „Ostale oblasti podrške" + CTA na kviz. ⚠️ homepage `Services` sekcija i dalje duplira cene (oba iz T7, dokumentovano u `services.ts`) |
 | `/radionice` | Informativno + „Prijavite interesovanje" | 🚫 S6 | **Bez datuma i bez prijave** dok S6 ne stigne |
-| `/znanje` | 3 najave članaka kao „u pripremi" | ⬜ | **Bez lažnih članaka** |
-| `/rad-sa-kompanijama` | B2B strana + forma | ⬜ | 🐞 `hero.tsx:50` već linkuje ovde → **404** |
+| `/znanje` | 3 najave članaka kao „u pripremi" | ✅ | **2026-07-18** — `knowledge-page.tsx`, PageHero. 3 kartice sa „U PRIPREMI" oznakom, **bez „Pročitaj" linkova** (nema lažnih objavljenih članaka). Pravi članci = R3 Content Engine |
+| `/rad-sa-kompanijama` | B2B strana + forma | 🟡 | **Stranica napravljena** (D-013); ponuda, 3 koraka, CTA → `/#kontakt`. Forma čeka R1.3. Rešen D2 (hero 404) |
 | `/o-nama` | Misija, način rada, lokacije, prva seansa | 🟡 | Ime rešeno (D-006); **tekst o lokacijama i adrese otvoreni** (O-02) |
 | `/zakazi` | Forma zahteva za termin | ⬜ | Prefill `?terapeut=slug`. 🐞 `hero.tsx:70` linkuje na `/zakazivanje` → **404**, a spec kaže `/zakazi` |
 | `/kontakt` | Opšti kontakt | 🚫 S10 | Email/telefon/mreže i dalje nepotvrđeni (O-06) |
 | `/privatnost` `/uslovi` `/kolacici` `/pravila-zakazivanja` | Pravni placeholderi „u pripremi — pravna potvrda" | 🚫 S5 | Pravac poznat (D-008), pravna potvrda nije. **Krizni disclaimer (T11) i dalje nedostaje.** Stranice se mogu napraviti kao placeholderi; tekst ne pišemo mi (MP §0, tačka 8) |
 
-### R1.2 — Vođeni izbor
+### R1.2 — Vođeni izbor / Intake & Matching Engine v1
+
+> **Prošireno 2026-07-17** u pun Matching Engine po CTO spec-u (D-012). Hardcoded na frontendu, bez perzistencije (T13). Booking forma i slanje su R1.3/R2.
 
 | ID | Zadatak | Gde piše | Status | Napomena |
 |---|---|---|---|---|
-| R1.2.a | Kviz — deterministički, bez perzistencije | MP §5 R1.2 · MP §1 T13 | ✅ | `features/guidance/quiz.ts`; 5 koraka; odgovori samo u memoriji |
-| R1.2.b | Drawer + launcher | MP §5 R1.2 | ✅ | Escape, scroll-lock, progress |
-| R1.2.c | Promovisati na `/pronadji-podrsku` | MP §5 R1.2 · Proposal §6 M1.3 | ⬜ | Ista pravila, puna strana + drawer ulaz |
-| R1.2.d | **„Zašto je prikazano"** po preporuci | MP §5 R1.2 · Proposal §5 | ⬜ | Sad postoji samo jedna generička rečenica (`guidance-drawer.tsx:156`) — ne kaže zašto **baš taj** terapeut |
-| R1.2.e | 2–4 opcije + linkovi na profile/`/zakazi` | MP §5 R1.2 | 🟡 | Preporuke rade; linkovi ne postoje jer nema ruta |
-| R1.2.f | Bez email gate-a pre rezultata | MP §1 T13 · Proposal §5 | ✅ | Nema ga |
-| R1.2.g | Pregled pitanja od tima | MP §13 S11 · Proposal §4/6 | 🚫 S11 | Blokira sign-off R1.2 |
+| R1.2.a | Matching engine — deterministički, bez perzistencije | MP §5 R1.2 · MP §1 T13 · Engines (Intake) | ✅ | `features/guidance/matching.ts`; 5 pitanja, tvrdi filteri, grane; 13 unit testova |
+| R1.2.b | Drawer: chooser → kviz → rezultat | MP §5 R1.2 | ✅ | `guidance-drawer.tsx`; Escape, scroll-lock, progress, nazad |
+| R1.2.c | Sigurnosni izlaz (nije dijagnoza / nije hitna služba) | spec §0 · MP §1 T11 | ✅ | Stalna traka iznad pitanja; **konačna formulacija čeka S5** |
+| R1.2.d | **Objašnjiv rezultat** — razlozi po terapeutu, bez skora | MP §5 R1.2 · Proposal §5 · spec | ✅ | Rečenice („oblast rada odgovara…"), nikad „87%" |
+| R1.2.e | Tri ulaza: „Zakaži termin" → chooser; hero/sekcija → kviz | spec | ✅ | Postojeći klijenti preskaču pitanja („Znam kog terapeuta") |
+| R1.2.f | Grane: B2B, tim-pregled, maloletnici, krizni oporavak | spec | ✅ | Krizni oporavak **nikad auto-Marjan** → tim; maloletnici → Marija + napomena |
+| R1.2.g | Rezultat kartice → `/tim/[slug]` | MP §5 R1.2 | ✅ | Bez email gate-a (T13); BookingWidget kasnije |
+| R1.2.h | Opciona textarea „svojim rečima" | spec | ✅ | Samo memorija — ništa se ne šalje ni čuva |
+| R1.2.i | Promovisati na `/pronadji-podrsku` (puna strana) | MP §5 R1.2 · Proposal §6 M1.3 | ⬜ | Drawer radi svuda; zasebna ruta još ne postoji |
+| R1.2.j | Pregled pitanja + routing matrice od tima | MP §13 S11 · Proposal §4/6 | 🚫 S11 | Blokira sign-off; nove otvorene stavke u `OPEN_DECISIONS` |
 
 ### R1.3 — Prijem upita i zahteva za termin (backend)
 
@@ -186,11 +193,15 @@ Svaki ima SUPERSEDED zaglavlje sa razlogom i zamenom. Arhivirano 2026-07-17: `PR
 | R1.3.f | `POST /public/inquiries` — `create_public_inquiry` | MP §5 R1.3 | ⬜ |
 | R1.3.g | `POST /public/appointment-requests` — `create_appointment_request` | MP §5 R1.3 | ⬜ |
 | R1.3.h | Honeypot + Upstash rate limit (IP+email) + limit veličine zahteva | MP §5 R1.3 | ⬜ |
-| R1.3.i | Resend: obaveštenje timu + potvrda korisniku | MP §5 R1.3 · Proposal §6 M1.4 | 🚫 S10 |
+| R1.3.i | Resend: obaveštenje timu + potvrda korisniku | MP §5 R1.3 · Proposal §6 M1.4 | 🟡 |
+| R1.3.i.1 | `EmailService` + deljeni email wrapper — isti dizajn za sve mejlove | zahtev CTO 2026-07-18 | ⬜ |
 | R1.3.j | Potvrda **mora** reći „zahtev nije potvrda termina" | MP §5 R1.3 · MP §5 Acceptance 3 · Proposal §6 | ⬜ |
 | R1.3.k | Graciozan pad kad Resend zakaže (retry, log, correlation ID) | MP §5 Acceptance 2 | ⬜ |
 | R1.3.l | Forme: RHF + Zod, inline greške, pending, success | MP §5 R1.3 | ⬜ |
 | R1.3.m | `note` copy: **ne unositi zdravstvene detalje**; nikad logovati sadržaj poruke | MP §5 R1.3 · MP §11 | ⬜ |
+
+> **R1.3.i 🟡** — Delimično odblokirano (D-016). Adrese kreirane (O-06): po jedna za svakog terapeuta + `info@psihointegritet.com`; Resend šalje sistemske/verifikacione mejlove sa `noreply@`. `RESEND_API_KEY` postavljen u `frontend/.env.local` — **nije u `.env.example` ni na jednoj strani, 0 pominjanja u kodu**. ⚠️ Stvarno slanje ide iz **backend-a** (rules §1.1 — business CRUD nije u frontendu); ključ treba replicirati u backend env kad R1.3 počne. Lokacija templejta (react-email FE vs Jinja BE) je već otvoreno pitanje iz MP §6.1 — „decide by ADR".
+> **R1.3.i.1** — Novo (D-016). Jedan wrapper/layout za tim-obaveštenje, korisničku potvrdu i Resend `noreply@` verifikacije, isti dizajn svuda. Čeka odluku FE/BE lokacije (gore) pre nego što se piše kod.
 
 ### R1.4 — SEO, analitika, pristupačnost, performanse
 
@@ -209,18 +220,81 @@ Svaki ima SUPERSEDED zaglavlje sa razlogom i zamenom. Arhivirano 2026-07-17: `PR
 
 | ID | Zadatak | Gde piše | Status |
 |---|---|---|---|
-| R1.5.a | Domen na nalogu Psihointegriteta + DNS + SSL + `www` redirect | MP §5 R1.5 · Proposal §6 M1.5 | ⬜ |
-| R1.5.b | Resend verifikacija domena (SPF/DKIM/DMARC) uz Zoho MX | MP §5 R1.5 | 🚫 S10 |
+| R1.5.a | Domen na nalogu Psihointegriteta + DNS + SSL + `www` redirect | MP §5 R1.5 · Proposal §6 M1.5 | 🟡 |
+| R1.5.b | Resend verifikacija domena (SPF/DKIM/DMARC) uz Zoho MX | MP §5 R1.5 | ✅ |
 | R1.5.c | Adrese `info@`, `termini@` | MP §5 R1.5 | 🚫 S10 |
-| R1.5.d | Odvojeni staging i produkcija; preview nikad ne dira prod podatke | MP §5 R1.5 · MP §14 | ⬜ |
+| R1.5.d | Odvojeni staging i produkcija; preview nikad ne dira prod podatke | MP §5 R1.5 · MP §14 | 🟡 |
 | R1.5.e | Sentry (PII scrubbing) na oba app-a | MP §5 R1.5 | ⬜ |
 | R1.5.f | Uptime check na `/api/v1/health` | MP §5 R1.5 | ⬜ |
 | R1.5.g | Content freeze → **pisana saglasnost Anje** po stranicama | MP §5 R1.5 · MP §5 Acceptance 5 | ⬜ |
 | R1.5.h | Deploy → smoke testovi → launch beleška u `PRODUCT_DECISIONS.md` | MP §5 R1.5 | ⬜ |
 
+> **R1.5.a 🟡** — `psihointegritet.com` kupljen (2026-07-17, D-015). `qa.` (features) i `staging.` poddomeni u pripremi na Vercel-u. SSL/`www` redirect za apex domen — proveriti pri produkcijskom deployu.
+> **R1.5.b ✅** — Verifikovano 2026-07-17 (D-015). Resend API ključ dodat; slanje sa `@psihointegritet.com` adresa radi. Ne čeka više S10.
+> **R1.5.d 🟡** — Odvojeni Railway servisi za qa i staging (D-015) — svaki dobija sopstveni `CORS_ORIGINS`, ne mešati. Backend `CORS_ORIGINS` na svakom servisu mora sadržati tačno svoj frontend domen (`main.py:47-53` čita listu iz env-a).
+
 **Prihvatanje R1** (MP §5, 5 kriterijuma · Proposal §6): sve rute na mobilnom i desktopu, axe bez kritičnih · e2e zeleni (home→profil→`/zakazi`; home→kviz→preporuka→`/zakazi`; B2B forma) · obe forme validiraju, upisuju u PostgreSQL, obaveštavaju tim, potvrđuju korisniku i **preživljavaju pad Resend-a** · svaka površina za zahtev kaže da to nije potvrda · 0 nepotvrđenih zvanja, 0 stock portreta, 0 zabranjenih termina (T1–T4) · staging izolovan · **pisano prihvatanje Anje**.
 
 **Izričito van R1** (MP §5 · Proposal §6): nalozi i paneli · automatski slotovi · Google Calendar · plaćanje · CMS · zaštićeni resursi · chat/video · prijave na radionice.
+
+---
+
+## 5A. MVP Demo paket — za sastanak sa Anjom i timom
+
+> **Gde piše:** `PSIHOINTEGRITET_INTAKE_MATCHING_ENGINE_v0.1.md` · odluke D-021…D-024 · zahtev CTO 2026-07-18
+> **Šta je:** hardcoded, throwaway demo iza feature flag-a `intake_matching_preview` (spec §3) — samo staging/preview, mock adapteri, bez pravih upisa u produkcionu bazu. Cilj: Anja i tim na sastanku vide **ceo MVP tok** (sajt → sadržaj → matching → zakazivanje → anketa → izbor terapeuta → panel „Preuzmi") pre nego što se gradi pravi backend.
+> ⚠️ **Odstupanje od master plana §3** (pomera R4 B2B i R6 anketu unapred kao demo). Dozvoljeno jer je throwaway frontend iza flag-a, ne scaffolding pravih modula — zabeleženo u D-021. Pravi moduli ostaju R2/R4/R6.
+
+**Redosled (D-021):** Anketa → test → B2B konfigurator → demo booking-flow → *(zatim R2: role/paneli)*
+
+| ID | Zadatak | Gde piše | Status | Napomena |
+|---|---|---|---|---|
+| **D-A1** | **Research Drawer** — zaseban reusable drawer, odvojen od Matching-a (spec §17) | spec §17 · D-022 | ✅ | **2026-07-18** `features/research/*`; isti UI/UX kao guidance drawer, `surveyId`; `?survey=online-experience` auto-otvara (`research-context.tsx`, Suspense) |
+| D-A2 | Floating „?" preusmeriti na anketu (tooltip „Podelite mišljenje") | D-022 | ✅ | Guidance više nema floating dugme (matching iz „Zakaži termin"/hero/sekcije); „?" (`research-launcher.tsx`) otvara anketu, tooltip na hover |
+| D-A3 | Pitanja ankete (online vs uživo, poverenje u platformu, da li su koristili, šta ih koči) + opcioni tekst | D-022 | ✅ | `content/survey.ts` — 4 pitanja + opcioni komentar; anonimno, bez zdravstvenih podataka |
+| D-A4 | „Pošalji" → **mejl na `info@psihointegritet.com`** (D-016) | D-022 · D-024 | ✅ | `app/api/survey/route.ts` — Next Route Handler → Resend (bez baze; 503 ako nema ključa, ne pada). „Možda kasnije" zatvara/resetuje; nazad radi. 5 e2e (uklj. axe) zeleni |
+| **D-B1** | **B2B konfigurator** „Program podrške zaposlenima" | spec (B2B deo) · D-023 | ✅ | **2026-07-18** `features/company/*` + `content/company.ts`. 6 koraka (potrebe multi-select + uslovni „termina mesečno" za 12mo) → preporuka → kontakt. Ulazi: `/rad-sa-kompanijama` CTA + matching b2b „Konfigurišite program" (CompanyProvider obmotava sve) |
+| D-B2 | Hardcoded preporuka paketa + okvirne cene pre kontakt forme | D-023 · **D-025** | ✅ | **2026-07-19 rework po Anjinim odgovorima:** `recommendCompanyModel()` — 4 pitanja (zaposleni/ciljevi/teme/format), 6 modela, **sve „Cena po ponudi"** (stare demo cene povučene); >200 zaposlenih ili 3+ cilja → „Program po meri" uz obavezan kontakt. 11 unit testova |
+| D-B3 | „Pošalji upit" → mejl Anji/timu + auto-odgovor kompaniji | D-023 · D-024 | ✅ | `app/api/company-inquiry/route.ts` — Resend: strukturisan mejl na `info@` (replyTo kompanija) + auto-odgovor kompaniji. Bez zdravstvenih podataka. 4 e2e (uklj. axe) |
+| **D-C1** | **Demo booking-flow** — nastavak Matching rezultata: izbor termina → kontakt → saglasnost → „zahtev poslat" | spec §14, §18 · D-021 · **D-025** | ✅ | **2026-07-19:** `BookingRequestForm` (datum/vreme read-only „dogovara se"), mejl terapeutu (nedodeljen → svima trojima) + potvrda klijentu; iz upitnika ide **strukturisan sažetak odgovora** (bez skorova). Matching v2 po Anjinim odgovorima: 5+2 pitanja, težine u `matching.ts`, preporuka usluge, intro ekran, uslovni koraci |
+| D-C2 | **Demo timski panel** — novi zahtevi, „Preuzmi", preference, matching pregled | spec §12, §13 · D-021 | ⬜ | **Bez auth-a, mock, in-memory** — pravi panel je R2 (M2.4). Pokazuje koncept „klijent postaje onog ko preuzme" (još nepotvrđeno) |
+| D-D1 | Feature flag `intake_matching_preview` (staging on, prod off) | spec §3 | ⬜ | Ako postoji Feature Engine — koristiti njega; inače env uslov |
+
+**Šta demo NE radi** (spec §3): ne šalje prave booking rezervacije · ne piše u produkcionu bazu · ne loguje odgovore · ne veže demo na stvarne naloge. *(Anketa i B2B upit **jesu** izuzetak — oni šalju pravi mejl na `info@`, jer to Anja traži kao stvarno prikupljanje podataka; sam matching/booking ostaje mock.)*
+
+---
+
+## 5B. Superadmin Control Center — R2 preview (rute + autorizacija + multi-tenant struktura)
+
+> **Gde piše:** `SUPERADMIN_CONTROL_CENTER_PLAN_v1_0.md` (plan faze) · dizajn handoff `Admin panel dizajn za Next.js-handoff/…/design_handoff_paneli/` (README + `Psihointegritet Superadmin.dc.html`, 1:1) · odluka D-026
+> **Šta je:** funkcionalan, pretežno read-only superadmin panel. Cilj: potvrditi rute, server-side autorizaciju i buduću multi-tenant strukturu — bez poslovne logike (pravi moduli su R2/R4/R6). Role privremeno u Clerk `publicMetadata` (dokumentovana devijacija od rules §10.3, šav `getServerIdentity()` za backend `/me` u M2.1).
+
+| ID | Zadatak | Gde piše | Status | Napomena |
+|---|---|---|---|---|
+| **SA-1** | **Auth šav** — `parseRoleMetadata` + `server-identity` + `identity-server` (šav) + `guards.ts` (`requireSuperadmin`/`requireStaff`/`requireSuperadminApi`) + `roles:assign` skripta; `/radni-prostor` guard (**D7 fix**) | plan §3–4 · D-026 | ✅ | **2026-07-20**; 20 unit testova. Superadmin samo `milan.drazic@dmdevelon.website`; tim = `org_admin`+`therapist` (sve troje) |
+| SA-2 | `(superadmin)` ruta grupa — poseban layout, `await requireSuperadmin()` na **svakoj** stranici, 8 ruta, brisanje starog `(staff)/superadmin/page.tsx`; e2e: sve rute → `/prijava` za neulogovane | plan §5 · README §9 | ✅ | **2026-07-20**; 10 e2e testova (9 ruta + browser) |
+| SA-3 | Panel tokeni u `@theme` + deljene primitive (`components/panel/`: StatusBadge, StatCard, TabPills, KV, Toggle, ConfirmModal, EmptyDashedCard) | plan §8 · handoff tokeni | ✅ | **2026-07-20**; primitive kasnije koriste i Control Center i Klijent panel |
+| SA-4 | Shell 1:1 — sidebar (coffee, 264px), topbar (blur, datum, status pill), mobilni bottom-nav (4 stavke) | plan §6 · prototip | ✅ | **2026-07-20**; inline SVG ikone 1:1 iz prototipa (ne lucide) |
+| SA-5 | Ekrani: Pregled (8 stat + health + aktivnost) · Tenanti · Profil tenanta (3 taba + 2 uskoro) · Feature Gates (9 gate-ova, demo toggle + ConfirmModal + razlog → activity) · Dijagnostika · U pripremi (billing/audit-log/settings) | plan §7 | ✅ | **2026-07-20**; sve mock/in-memory; refresh resetuje |
+| SA-6 | Dokumentacija (D-026, O-17/O-18) + svi gate-ovi + ručni smoke (Milan / bez-metadata nalog / odjavljen) | plan §9, §12 | ✅ | **2026-07-20** gates zeleni (tsc/lint/64 unit/build/51 e2e); ručni smoke na Milanu |
+
+**Otvoreno za tim:** Clerk nalozi za Anju/Mariju/Marjana još ne postoje (skripta ih SKIP-uje) — O-17 · pri launchu pokrenuti `roles:assign` na produkcionoj Clerk instanci — O-18.
+
+---
+
+## 5C. Control Center (radni-prostor) — R2 preview (role-based staff panel)
+
+> **Gde piše:** `CONTROL_CENTER_PLAN_v1_0.md` · dizajn handoff `Control Center.dc.html` + README §8.1 · odluka **D-027**
+> **Šta je:** operativni panel za tim (org_admin/therapist) na `/radni-prostor`, funkcionalan read-only demo sa mock podacima. Tabovi po roli, server-side. Union iz stvarnih rola (bez demo prekidača).
+
+| ID | Zadatak | Gde piše | Status | Napomena |
+|---|---|---|---|---|
+| **CC-1** | Guardovi `requireOrgAdmin`/`requireTherapist` (+ `isWorkspaceAdmin/Therapist`) + testovi | plan §3 · D-027 | ✅ | **2026-07-20**; matrica rola, 37 auth+nav testova |
+| CC-2 | `(staff)/radni-prostor` grupa: layout (role flags → `WorkspaceProvider`) + shell (forest sidebar, topbar, mobilni bottom-nav sa FAB) + 9 guarded stranica; e2e auth | plan §4–5 | ✅ | **2026-07-20**; 10 workspace-auth e2e (redirect + return path) |
+| CC-3 | `nav.tsx` (`visibleNav` role-gated) + data/types (11 statusa, mock usklađen sa D-025 katalogom) + panel `ProgressBar` | plan §5–6 | ✅ | Nav testabilan; terapeuti iz `content/therapists.ts` |
+| CC-4 | Ekrani: Pregled · Termini (5 tabova) · Klijenti (Svi/Nedodeljeni) · Kompanije · Usluge i cene · Istraživanja · Terapeuti · Moj profil (3 taba, 4 sloja dostupnosti) · Podešavanja (uskoro) | plan §6 | ✅ | Read-only; Preuzmi/Brza akcija = stub toast |
+| CC-5 | Vizuelna provera (desktop+mobilni) + dokumentacija (D-027, plan) + gate-ovi | plan §8 | ✅ | Screenshot potvrđen 1:1, temp fajlovi obrisani |
+| **CC-6** | **Duboki profili** (klijent/[id]: Intake sažetak+Saglasnosti; kompanija/[id]: Kapacitet; terapeut/[id]) + pravi termini | plan §7 | ⬜ | **Sledeći korak**, čeka Booking engine (M2.3) i smernice tima |
 
 ---
 
@@ -307,10 +381,10 @@ Svaki ima SUPERSEDED zaglavlje sa razlogom i zamenom. Arhivirano 2026-07-17: `PR
 |---|---|---|---|
 | ~~D16~~ | ~~Tri stock portreta pod `imageSrc` terapeuta~~ | — | ✅ **REŠENO 2026-07-17** — obrisani, zamenjeni pravim fotografijama |
 | D1 | `versions/` prazan **i netrackovan**, a `railway.json:10` na deploy pokreće `alembic upgrade head` → **puca na fresh clone** | `backend/src/psihointegritet/db/migrations/versions/` | 🔴 latentan deploy failure |
-| D17 | **Footer je i dalje ijekavica i sad se vidi na svakoj javnoj stranici**: „savjetovanje… na jednom mjestu", „zamjenu za individualni razgovor". Isto i `midServices` („Partnersko savjetovanje", „Psihološko savjetovanje" — **T1/T2**), `reasons`, `featuredService` („Cijena") | `content/homepage.ts`, `site-footer.tsx` | 🟠 **R0.2 sweep** — ostatak homepage sadržaja |
+| ~~D17~~ | ~~Footer i još komponenti su i dalje ijekavica~~ | — | ✅ **REŠENO 2026-07-18** — `homepage.ts` + 7 komponenti (`hero`, `site-footer`, `workshop`, `faq`, `resources`, `support-paths`, `first-session`) prebačeni na ekavicu; usput ispravljen i T1/T2 u `midServices` („Partnersko savjetovanje"→„Bračno savetovanje", „Psihološko savjetovanje"→„Psihoterapijsko savetovanje"). Anjin lični sadržaj u `content/therapists.ts` ostaje ijekavica (D-017) |
 | D18 | Footer prikazuje **nepotvrđen email** `kontakt@psihointegritet.rs` i „Niš · online i uživo" (centar ima i Leskovac) | `site-footer.tsx:22-28` | 🟠 S10/O-06 |
-| D2 | Mrtav link → **404**: „Za organizacije" u hero kartici | `hero.tsx:50` → `/rad-sa-kompanijama` | 🟠 |
-| D3 | Mrtav link → **404**: „Već ste klijent?" | `hero.tsx:70` → `/zakazivanje` (spec: `/zakazi`) | 🟠 |
+| ~~D2~~ | ~~404: „Za organizacije" u hero kartici~~ | — | ✅ **REŠENO 2026-07-17** — `/rad-sa-kompanijama` napravljena, hero kartica je sad `Link` |
+| ~~D3~~ | ~~404: „Već ste klijent?"~~ | — | ✅ **REŠENO 2026-07-17** — link postao chooser trigger („Znam kog terapeuta"), ne ruta; taj use case je baš to |
 | D4 | `/health` ne proverava bazu, a `railway.json:8` ga koristi kao healthcheck → **deploy sa mrtvom bazom prijavljuje se kao zdrav** | `main.py:30` | 🟠 |
 | D5 | `backend/openapi.json` gitignorovan → gate za contract drift (MP §12) ne može da padne | `.gitignore:26` | 🟠 |
 | D6 | `backend/.env.local` sa **živim produkcijskim kredencijalima** u plaintextu (gitignorovan, nije u istoriji) | — | 🟠 razmotriti rotaciju |
@@ -330,7 +404,7 @@ Svaki ima SUPERSEDED zaglavlje sa razlogom i zamenom. Arhivirano 2026-07-17: `PR
 
 | # | Konflikt | Razrešenje |
 |---|---|---|
-| K1 | **Ekavica vs ijekavica.** MP T9 je tvrdio „ijekavica… the owner's authored style", a **Proposal v1.1 §3 — dokument koji Anja dobija — piše „bračno savetovanje" i „psihoterapijsko savetovanje"** (ekavica). Engines dokument: 27 ekavskih : 4 ijekavska | ✅ **Rešeno 2026-07-17 (CTO):** ekavica. MP T1/T2/T9 ispravljeni prema Proposalu. Sweep koda je R0.2.c. ⚠️ Anju obavestiti — `homepage.ts` je njen tekst |
+| K1 | **Ekavica vs ijekavica.** MP T9 je tvrdio „ijekavica… the owner's authored style", a **Proposal v1.1 §3 — dokument koji Anja dobija — piše „bračno savetovanje" i „psihoterapijsko savetovanje"** (ekavica). Engines dokument: 27 ekavskih : 4 ijekavska | ✅ **Rešeno 2026-07-17 (CTO):** ekavica kao podrazumevani jezik sajta. MP T1/T2/T9 ispravljeni prema Proposalu. Sweep koda je R0.2.c. **Dopunjeno 2026-07-18 (D-017):** Anja Stamenković (iz Prijedora) lično govori/piše isključivo ijekavicom — njen `quote`/`bio`/`cardExcerpt` u `content/therapists.ts` su namerna ijekavica, ne greška, i izuzeti su iz R0.2 sweep-a. Marija i Marjan ostaju isključivo ekavica |
 | K2 | **Status enum termina:** v0.3 §7 ima 8 statusa (`reschedule_requested`); MP §6.1 ima 11 (`change_requested`, `alternative_proposed`, `declined`, `expired`) | ✅ **MP pobeđuje** (noviji, izvor Engines §7.3). v0.3 anotiran zaglavljem |
 | K3 | **Guidance perzistencija:** v0.3 §6 predviđa `guidance_sessions`/`guidance_answers`; T13 i §11 zabranjuju čuvanje odgovora u R1 | ✅ **T13 pobeđuje** — tabele se ne prave. v0.3 anotiran |
 | K4 | **`documentations/` bio gitignorovan** — commit `6452c70` obrisao 4.059 linija iz gita | ✅ **Rešeno:** `.md` se prati, `.docx`/`.pdf` van gita |
@@ -346,20 +420,20 @@ Svaki ima SUPERSEDED zaglavlje sa razlogom i zamenom. Arhivirano 2026-07-17: `PR
 
 ## 11. Sledeći korak
 
-**R0 kao zaseban plan i PR** — `chore/docs-and-terminology-alignment` (IZMENE §8):
+**Trenutno stanje (2026-07-18):** R0 uglavnom urađen; R1 rute — `/`, `/tim`, `/tim/[slug]`, `/rad-sa-kompanijama`, `/usluge`, `/znanje` gotove; Matching Engine v1 radi (hardcoded); `PageHero` obrazac ustanovljen.
 
-1. ✅ **R0.1.h–i** — `PRODUCT_DECISIONS.md`, `OPEN_DECISIONS.md`
-2. **R0.1.j** — root `CLAUDE.md`
-3. **R0.2** — sweep u jednom prolazu: T1/T2 + ekavica + kviz ključ + testovi. **Ovo ide pre novih ruta** — inače se novi sadržaj piše ijekavicom pa prepisuje
-4. **D16** — obrisati 3 stock portreta, prebaciti na monogram inicijala
-5. **R0.3.g–h** — `versions/.gitkeep` (D1) i `openapi.json` u git (D5)
-6. **D2/D3** — dva 404 linka iz `hero.tsx`
-7. Gates (MP §12) → completion report (rules §24) → potpis CTO
+**Dogovoreni redosled (D-021):**
 
-**Zatim R1.1** — `/tim` i `/tim/[slug]` su prve rute na redu (slug odblokiran D-006). Prave se sa generičkim zvanjima (`draft`) i monogramom; **objava čeka S1 + S13**.
+1. **MVP Demo paket (§5A)** — za Anjin sastanak, iza feature flag-a:
+   - **Anketa** (Research Drawer, D-A1…D-A4) → mejl na `info@` preko Next Route Handler + Resend
+   - **testiranje**
+   - **B2B konfigurator** (D-B1…D-B3) → mejl Anji
+   - **demo booking-flow + demo panel** (D-C1, D-C2) — mock, bez auth-a
+2. **Zatim R2** — organizacione role/uloge (M2.1), pravi paneli admin/terapeut/klijent (M2.4), pravi Booking Engine (M2.3). Čeka R1 prihvaćen + SoW.
+3. **Kasnije redom:** Znanje/resursi (R3) · Radionice/programi/B2B pravi (R4) · Online rad (R5) · Diagnostic/Analitika/Marketing engine — anketa „pravo" ovde (R6) · Multi-tenant (R7) · Affiliate (R8) · AI Layer (R9).
 
-**Paralelno, ne čeka kod:** poslati Anji rezime iz `OPEN_DECISIONS.md`. **Launch blokiraju S1 (zvanja), S13 (fotografije), S5 (pravni + krizni disclaimer) i kontakt podaci iz S10.**
+**Preostale nezablokirane R1 rute** (kad se vratimo na launch): `/oblasti-podrske` (+`[slug]`), `/pronadji-podrsku`. Blokirane čekaju tim/Anju: `/radionice` (S6), `/kontakt` (S10), pravne (S5), `/o-nama` lokacije (O-02), objava zvanja (S1).
 
-**Posle prihvatanja R1:** SoW za Fazu 2 (2A obavezno; 2B i M2.8 opciono) → R2.
+**Paralelno, ne čeka kod:** poslati Anji rezime iz `OPEN_DECISIONS.md`. **Launch blokiraju S1, S13✅, S5, S10.**
 
-> **Booking flow (napomena CTO, 2026-07-17):** flow se projektuje sa naše strane pre nego što se traži od klijenta — da se izbegnu zastareli zahtevi. Artefakt je `BOOKING_POLICY` (IZMENE §2.4), a ne kod: T6 već zaključava request-first, S7 daje pravila otkazivanja. **Dokument da, implementacija tek u M2.3** (Faza 2, čeka SoW).
+> **Booking flow (napomena CTO):** pravi flow se projektuje sa naše strane pre nego što se traži od klijenta. Demo (§5A) je taj artefakt — pokazuje flow i podatke Anji. Prava implementacija je M2.3 (R2, čeka SoW).

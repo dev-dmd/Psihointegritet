@@ -5,7 +5,7 @@ import { useGuidance } from "@/features/guidance/guidance-context";
 
 /** „Niste sigurni koga da izaberete?" — opens the shared guided-selection drawer. */
 export function TeamCtaSection() {
-  const { openGuidance } = useGuidance();
+  const { openQuiz } = useGuidance();
 
   return (
     <section className="pt-[72px] pb-[72px] md:pt-24 md:pb-24">
@@ -23,7 +23,7 @@ export function TeamCtaSection() {
             </div>
             <button
               type="button"
-              onClick={openGuidance}
+              onClick={openQuiz}
               className="bg-forest text-canvas hover:bg-forest-hover cursor-pointer rounded-full border-0 px-7 py-[15px] font-sans text-[15px] font-semibold whitespace-nowrap transition-colors"
             >
               Pomozi mi da izaberem

@@ -1,0 +1,100 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* =========================================================
+   Psihointegritet paneli — globals.css
+   Fontovi se učitavaju kroz next/font/google u app/layout.tsx:
+     Newsreader (400, 500 + italic)  → var(--font-newsreader)
+     Instrument Sans (400, 500, 600) → var(--font-instrument)
+   ========================================================= */
+
+:root {
+  --forest: #2E3B2E;
+  --sage: #8A9D82;
+  --meadow: #C6D5A8;
+  --warm: #D1A48C;
+  --coffee: #3A2E28;
+  --canvas: #FAF8F3;
+  --danger: #B3402E;
+
+  /* Statusni parovi: boja teksta + pozadina bedža (tekst + tačka, nikad samo boja) */
+  --st-ok-fg: #3D6B3D;        --st-ok-bg: rgba(198, 213, 168, 0.45);
+  --st-wait-fg: #96562F;      --st-wait-bg: rgba(209, 164, 140, 0.30);
+  --st-soft-fg: #5E6F4A;      --st-soft-bg: rgba(198, 213, 168, 0.30);
+  --st-amber-fg: #8A6A3B;     --st-amber-bg: rgba(209, 164, 140, 0.22);
+  --st-neutral-fg: rgba(58, 46, 40, 0.62); --st-neutral-bg: rgba(58, 46, 40, 0.07);
+  --st-danger-fg: #B3402E;    --st-danger-bg: rgba(179, 64, 46, 0.12);
+  --st-dark-fg: #2E3B2E;      --st-dark-bg: rgba(46, 59, 46, 0.10);
+}
+
+@layer base {
+  body {
+    @apply bg-canvas text-coffee font-sans antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  ::selection { background: var(--meadow); color: var(--forest); }
+  h1, h2, h3 { @apply font-serif font-normal text-forest; letter-spacing: -0.01em; }
+}
+
+@layer components {
+  /* Statusni bedž — <span class="badge badge-ok"><i class="dot"></i>Potvrđen</span> */
+  .badge {
+    @apply inline-flex items-center gap-1.5 rounded-pill px-[11px] py-[5px] text-[12px] font-semibold whitespace-nowrap;
+  }
+  .badge .dot { @apply inline-block h-1.5 w-1.5 rounded-full bg-current; }
+  .badge-ok      { color: var(--st-ok-fg);      background: var(--st-ok-bg); }
+  .badge-wait    { color: var(--st-wait-fg);    background: var(--st-wait-bg); }
+  .badge-soft    { color: var(--st-soft-fg);    background: var(--st-soft-bg); }
+  .badge-amber   { color: var(--st-amber-fg);   background: var(--st-amber-bg); }
+  .badge-neutral { color: var(--st-neutral-fg); background: var(--st-neutral-bg); }
+  .badge-danger  { color: var(--st-danger-fg);  background: var(--st-danger-bg); }
+  .badge-dark    { color: var(--st-dark-fg);    background: var(--st-dark-bg); }
+
+  /* Kartica */
+  .card { @apply bg-surface border border-line rounded-card; }
+  .card-hover { @apply transition-all duration-200 hover:-translate-y-[3px] hover:shadow-card; }
+
+  /* Eyebrow labela */
+  .eyebrow { @apply text-[11.5px] font-semibold uppercase tracking-[0.14em] text-sage; }
+  .kv-label { @apply text-[11px] font-semibold uppercase tracking-[0.12em] text-ink-45; }
+
+  /* Dugmad */
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 rounded-pill bg-forest text-canvas
+           text-[14px] font-semibold px-5 py-3 min-h-[44px] transition-colors hover:bg-forest-hover;
+  }
+  .btn-outline {
+    @apply inline-flex items-center justify-center gap-2 rounded-pill border-[1.5px] border-line-strong
+           text-coffee text-[14px] font-semibold px-5 py-[11px] min-h-[44px] transition-colors
+           hover:border-sage hover:bg-meadow/15;
+  }
+  .btn-danger-ghost {
+    @apply inline-flex items-center justify-center rounded-pill text-danger text-[13.5px] font-bold
+           px-4 py-[10px] min-h-[44px] transition-colors hover:bg-danger/10;
+  }
+
+  /* Tab pilula — aktivna dobija .is-active */
+  .tab-pill {
+    @apply rounded-pill border border-line-strong bg-surface text-ink-70
+           text-[13px] font-semibold px-[17px] py-[9px] whitespace-nowrap transition-colors;
+  }
+  .tab-pill.is-active { @apply bg-forest border-forest text-canvas; }
+
+  /* Progress traka */
+  .track { @apply block h-2 rounded-pill bg-coffee/[0.07] overflow-hidden; }
+  .track > .fill { @apply block h-full rounded-pill bg-sage; }
+}
+
+/* Animacije ulaska */
+@keyframes fade-up { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+@keyframes sheet-in { from { opacity: 0; transform: translateY(56px); } to { opacity: 1; transform: none; } }
+@keyframes drawer-in { from { opacity: 0; transform: translateX(48px); } to { opacity: 1; transform: none; } }
+.animate-fade-up { animation: fade-up 0.4s ease both; }
+.animate-sheet { animation: sheet-in 0.32s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.animate-drawer { animation: drawer-in 0.35s cubic-bezier(0.22, 1, 0.36, 1) both; }
+
+/* Tanak scrollbar u bočnim panelima */
+.scrollbar-thin { scrollbar-width: thin; scrollbar-color: rgba(58, 46, 40, 0.2) transparent; }
+.scrollbar-thin::-webkit-scrollbar { width: 4px; height: 4px; }
+.scrollbar-thin::-webkit-scrollbar-thumb { background: rgba(58, 46, 40, 0.2); border-radius: 10px; }

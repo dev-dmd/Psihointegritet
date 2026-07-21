@@ -2,22 +2,25 @@
 
 import type { Route } from "next";
 import Link from "next/link";
-import { cloneElement, useEffect, useState, type ReactElement } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 
 import { cn } from "@/helpers/cn";
+import { MobileDrawerCloseContext } from "@/components/sections/mobile-menu-context";
 import type { NavLink } from "@/content/homepage";
+import { useGuidance } from "@/features/guidance/guidance-context";
 
 interface MobileMenuProps {
   links: NavLink[];
   /** glass — burger over the hero header; solid — inside the sticky pill. */
   variant?: "glass" | "solid";
   /**
-   * Optional auth control rendered in the drawer footer. Provided as an element
-   * (never a function — this crosses the server/client boundary) so the drawer
-   * can inject `onNavigate` to close itself on tap without coupling to Clerk.
+   * Optional auth control rendered in the drawer footer. A plain node (a client
+   * element created in the Server Component header) — rendered as-is, never
+   * cloned. It closes the drawer on tap via `MobileDrawerCloseContext`, so no
+   * prop injection crosses the server/client boundary.
    */
-  authSlot?: ReactElement<{ onNavigate?: () => void }>;
+  authSlot?: ReactNode;
 }
 
 /** Burger trigger + slide-in navigation drawer, visible below the lg breakpoint. */
@@ -27,6 +30,7 @@ export function MobileMenu({
   authSlot,
 }: MobileMenuProps) {
   const [open, setOpen] = useState(false);
+  const { openChooser } = useGuidance();
 
   useEffect(() => {
     if (!open) {
@@ -120,18 +124,23 @@ export function MobileMenu({
                   ))}
                 </nav>
                 <div className="border-coffee/10 border-t px-6 pt-5 pb-7">
-                  <Link
-                    href="/#usluge"
-                    onClick={() => setOpen(false)}
-                    className="bg-forest text-canvas flex items-center justify-center gap-2.5 rounded-full px-6 py-[15px] text-[15px] font-semibold no-underline"
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setOpen(false);
+                      openChooser();
+                    }}
+                    className="bg-forest text-canvas flex cursor-pointer items-center justify-center gap-2.5 rounded-full border-0 px-6 py-[15px] text-[15px] font-semibold"
                   >
                     Zakaži termin
-                  </Link>
-                  {authSlot
-                    ? cloneElement(authSlot, {
-                        onNavigate: () => setOpen(false),
-                      })
-                    : null}
+                  </button>
+                  {authSlot ? (
+                    <MobileDrawerCloseContext.Provider
+                      value={() => setOpen(false)}
+                    >
+                      {authSlot}
+                    </MobileDrawerCloseContext.Provider>
+                  ) : null}
                 </div>
               </div>
             </>,

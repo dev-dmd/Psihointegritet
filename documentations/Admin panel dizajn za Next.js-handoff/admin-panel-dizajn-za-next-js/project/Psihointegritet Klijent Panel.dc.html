@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;0,6..72,500;1,6..72,300;1,6..72,400&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+  body { margin: 0; background: #EDE9DF; color: #3A2E28; font-family: 'Instrument Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+  a { color: #2E3B2E; } a:hover { color: #8A9D82; }
+  ::selection { background: #C6D5A8; color: #2E3B2E; }
+  @keyframes kpFadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes kpFade { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes kpSheet { from { transform: translate(-50%, 60px); opacity: 0; } to { transform: translate(-50%, 0); opacity: 1; } }
+</style>
+</helmet>
+<div style="min-height: 100vh; display: flex; justify-content: center;">
+<div data-screen-label="Klijentski panel" style="width: 100%; max-width: 480px; min-height: 100vh; background: #FAF8F3; box-shadow: 0 30px 80px -30px rgba(58,46,40,0.35); display: flex; flex-direction: column; position: relative;">
+
+  <header style="position: sticky; top: 0; z-index: 40; background: rgba(250,248,243,0.92); backdrop-filter: blur(12px); border-bottom: 1px solid rgba(58,46,40,0.07); padding: 14px 22px; display: flex; align-items: center; gap: 12px;">
+    <span style="display: flex; align-items: baseline;"><span style="font-family: 'Newsreader', serif; font-size: 20px; font-weight: 500; color: #2E3B2E;">Psihointegritet</span><span style="width: 5px; height: 5px; border-radius: 50%; background: #D1A48C; display: inline-block; margin-left: 3px;"></span></span>
+    <span style="flex: 1;"></span>
+    <button title="Obaveštenja" style="cursor: pointer; position: relative; background: #FFFFFF; border: 1px solid rgba(58,46,40,0.1); color: #3A2E28; width: 40px; height: 40px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center;" style-hover="border-color: #8A9D82;"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.7 21a2 2 0 0 1-3.4 0"></path></svg><span style="position: absolute; top: 8px; right: 9px; width: 8px; height: 8px; border-radius: 50%; background: #D1A48C; border: 1.5px solid #FFFFFF;"></span></button>
+    <button onClick="{{ goProfil }}" aria-label="Profil" style="cursor: pointer; border: none; background: rgba(198,213,168,0.45); color: #2E3B2E; width: 40px; height: 40px; border-radius: 50%; font-family: 'Instrument Sans', sans-serif; font-size: 12.5px; font-weight: 600; letter-spacing: 0.04em; display: inline-flex; align-items: center; justify-content: center;">AM</button>
+  </header>
+
+  <main style="flex: 1; padding: 22px 22px 108px; box-sizing: border-box;">
+
+  <!-- ===== KP 01 POČETNA ===== -->
+  <sc-if value="{{ scrPocetna }}" hint-placeholder-val="{{ true }}">
+  <section data-screen-label="KP Početna" style="animation: kpFadeUp 0.4s ease both; display: flex; flex-direction: column; gap: 16px;">
+    <div>
+      <h1 style="margin: 0 0 5px; font-family: 'Newsreader', serif; font-weight: 400; font-size: 28px; line-height: 1.12; color: #2E3B2E;">{{ pozdrav }}, Ana.</h1>
+      <p style="margin: 0; font-size: 14px; color: rgba(58,46,40,0.6);">{{ danas }}</p>
+    </div>
+    <div style="background: #2E3B2E; border-radius: 24px; padding: 24px 24px 22px;">
+      <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 12px;">
+        <span style="font-size: 11px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: #C6D5A8;">Sledeći termin</span>
+        <span style="display: inline-flex; align-items: center; gap: 6px; font-size: 11.5px; font-weight: 600; padding: 4px 11px; border-radius: 999px; background: rgba(198,213,168,0.2); color: #C6D5A8;"><span style="width: 5px; height: 5px; border-radius: 50%; background: #C6D5A8;"></span>Potvrđen</span>
+      </div>
+      <div style="font-family: 'Newsreader', serif; font-size: 25px; line-height: 1.15; color: #FAF8F3; margin-bottom: 16px;">Četvrtak, 24. jul · 17:00</div>
+      <div style="display: flex; align-items: center; gap: 12px; border-top: 1px solid rgba(250,248,243,0.14); padding-top: 15px; margin-bottom: 16px;">
+        <span style="width: 42px; height: 42px; border-radius: 50%; border: 2px solid rgba(198,213,168,0.5); background-image: url('assets/anja.jpeg'); background-size: cover; background-position: center; flex-shrink: 0;"></span>
+        <span style="flex: 1;"><span style="display: block; font-size: 14px; font-weight: 600; color: #FAF8F3;">Anja Stamenković</span><span style="display: block; font-size: 12px; color: rgba(250,248,243,0.6); margin-top: 1px;">Individualna psihoterapija · 60 min</span></span>
+        <span style="display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; color: #C6D5A8;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="14" height="14" rx="2"></rect><path d="m22 7-6 5 6 5V7Z"></path></svg>Online</span>
+      </div>
+      <div style="display: flex; gap: 9px;">
+        <button style="cursor: pointer; flex: 1; border: none; background: #C6D5A8; color: #2E3B2E; font-family: 'Instrument Sans', sans-serif; font-size: 13.5px; font-weight: 600; padding: 13px; border-radius: 999px; transition: background 0.2s ease; min-height: 46px;" style-hover="background: #d5e2bc;">Uđi na sesiju</button>
+        <button onClick="{{ openNext }}" style="cursor: pointer; flex: 1; background: none; border: 1.5px solid rgba(250,248,243,0.3); color: #FAF8F3; font-family: 'Instrument Sans', sans-serif; font-size: 13.5px; font-weight: 600; padding: 12px; border-radius: 999px; transition: all 0.2s ease; min-height: 46px;" style-hover="border-color: #C6D5A8; color: #C6D5A8;">Detalji termina</button>
+      </div>
+      <p style="margin: 12px 0 0; font-size: 11.5px; color: rgba(250,248,243,0.5); text-align: center;">Link za sesiju stiže emailom 30 minuta ranije.</p>
+    </div>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+      <button onClick="{{ openBook }}" style="cursor: pointer; text-align: left; background: rgba(198,213,168,0.32); border: 1px solid rgba(138,157,130,0.3); border-radius: 20px; padding: 18px; font-family: 'Instrument Sans', sans-serif; transition: background 0.25s ease; min-height: 108px; display: flex; flex-direction: column; justify-content: space-between; gap: 10px;" style-hover="background: rgba(198,213,168,0.45);">
+        <span style="width: 36px; height: 36px; border-radius: 12px; background: #FFFFFF; color: #2E3B2E; display: flex; align-items: center; justify-content: center;"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg></span>
+        <span><span style="display: block; font-size: 14.5px; font-weight: 600; color: #2E3B2E;">Zakaži termin</span><span style="display: block; font-size: 12px; color: rgba(58,46,40,0.6); margin-top: 2px;">Zahtev potvrđuje terapeut</span></span>
+      </button>
+      <button onClick="{{ goProgrami }}" style="cursor: pointer; text-align: left; background: rgba(209,164,140,0.18); border: 1px solid rgba(209,164,140,0.45); border-radius: 20px; padding: 18px; font-family: 'Instrument Sans', sans-serif; transition: background 0.25s ease; min-height: 108px; display: flex; flex-direction: column; justify-content: space-between; gap: 10px;" style-hover="background: rgba(209,164,140,0.3);">
+        <span style="width: 36px; height: 36px; border-radius: 12px; background: #FFFFFF; color: #96562F; display: flex; align-items: center; justify-content: center;"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z"></path></svg></span>
+        <span><span style="display: block; font-size: 14.5px; font-weight: 600; color: #3A2E28;">Moj paket</span><span style="display: block; font-size: 12px; color: rgba(58,46,40,0.6); margin-top: 2px;">Preostala 2 kredita</span></span>
+      </button>
+    </div>
+    <button onClick="{{ goProgrami }}" style="cursor: pointer; text-align: left; background: #FFFFFF; border: 1px solid rgba(58,46,40,0.06); border-radius: 20px; padding: 20px; font-family: 'Instrument Sans', sans-serif; transition: box-shadow 0.25s ease;" style-hover="box-shadow: 0 12px 30px rgba(58,46,40,0.1);">
+      <span style="display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px;">
+        <span style="font-size: 11px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: #8A9D82;">Aktivni program</span>
+        <span style="color: rgba(58,46,40,0.35);">→</span>
+      </span>
+      <span style="display: block; font-family: 'Newsreader', serif; font-size: 19px; line-height: 1.2; color: #2E3B2E; margin-bottom: 12px;">Razumevanje anksioznosti — online program</span>
+      <span style="display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 7px;"><span style="font-size: 12px; color: rgba(58,46,40,0.6);">3 od 6 modula</span><span style="font-size: 12px; font-weight: 700; color: #2E3B2E;">50%</span></span>
+      <span style="display: block; height: 8px; border-radius: 999px; background: rgba(58,46,40,0.07); overflow: hidden;"><span style="display: block; height: 100%; width: 50%; border-radius: 999px; background: #8A9D82;"></span></span>
+    </button>
+  </section>
+  </sc-if>
+
+  <!-- ===== KP 02 TERMINI ===== -->
+  <sc-if value="{{ scrTermini }}" hint-placeholder-val="{{ false }}">
+  <section data-screen-label="KP Termini" style="animation: kpFadeUp 0.4s ease both;">
+    <h1 style="margin: 0 0 14px; font-family: 'Newsreader', serif; font-weight: 400; font-size: 28px; color: #2E3B2E;">Moji termini</h1>
+    <div style="display: flex; gap: 8px; margin-bottom: 16px;">
+      <button onClick="{{ setTPred }}" style="cursor: pointer; font-family: 'Instrument Sans', sans-serif; font-size: 13px; font-weight: 600; padding: 9px 17px; border-radius: 999px; transition: all 0.2s ease; border: 1px solid {{ tPred.bd }}; background: {{ tPred.bg }}; color: {{ tPred.fg }};">Predstojeći</button>
+      <button onClick="{{ setTIst }}" style="cursor: pointer; font-family: 'Instrument Sans', sans-serif; font-size: 13px; font-weight: 600; padding: 9px 17px; border-radius: 999px; transition: all 0.2s ease; border: 1px solid {{ tIst.bd }}; background: {{ tIst.bg }}; color: {{ tIst.fg }};">Istorija</button>
+    </div>
+    <sc-if value="{{ tabPred }}" hint-placeholder-val="{{ true }}">
+      <div style="display: flex; flex-direction: column; gap: 11px;">
+        <sc-for list="{{ upcoming }}" as="a" hint-placeholder-count="2">
+          <button onClick="{{ a.open }}" style="cursor: pointer; text-align: left; background: #FFFFFF; border: 1px solid rgba(58,46,40,0.06); border-radius: 18px; padding: 17px 18px; font-family: 'Instrument Sans', sans-serif; display: flex; align-items: center; gap: 14px; transition: box-shadow 0.25s ease; min-height: 48px;" style-hover="box-shadow: 0 12px 30px rgba(58,46,40,0.1);">
+            <span style="width: 48px; flex-shrink: 0; text-align: center; background: rgba(198,213,168,0.25); border-radius: 12px; padding: 8px 4px;"><span style="display: block; font-size: 10px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #8A9D82;">{{ a.mon }}</span><span style="display: block; font-family: 'Newsreader', serif; font-size: 20px; color: #2E3B2E;">{{ a.day }}</span></span>
+            <span style="flex: 1; min-width: 0;">
+              <span style="display: block; font-size: 14.5px; font-weight: 600; color: #3A2E28;">{{ a.time }} · {{ a.svc }}</span>
+              <span style="display: block; font-size: 12.5px; color: rgba(58,46,40,0.55); margin-top: 2px;">{{ a.ter }} · {{ a.fmt }}</span>
+              <span style="display: inline-flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 600; padding: 3px 9px; border-radius: 999px; margin-top: 7px; background: {{ a.stBg }}; color: {{ a.stFg }};"><span style="width: 5px; height: 5px; border-radius: 50%; background: {{ a.stFg }};"></span>{{ a.stLabel }}</span>
+            </span>
+            <span style="color: rgba(58,46,40,0.3);"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"></path></svg></span>
+          </button>
+        </sc-for>
+        <button onClick="{{ openBook }}" style="cursor: pointer; background: none; border: 1.5px dashed rgba(58,46,40,0.25); color: rgba(58,46,40,0.6); font-family: 'Instrument Sans', sans-serif; font-size: 13.5px; font-weight: 600; padding: 15px; border-radius: 18px; transition: all 0.2s ease; min-height: 48px;" style-hover="border-color: #8A9D82; color: #2E3B2E;">+ Zakaži novi termin</button>
+      </div>
+    </sc-if>
+    <sc-if value="{{ tabIst }}" hint-placeholder-val="{{ false }}">
+      <div style="display: flex; flex-direction: column; gap: 11px;">
+        <sc-for list="{{ history }}" as="a" hint-placeholder-count="3">
+          <div style="background: #FFFFFF; border: 1px solid rgba(58,46,40,0.06); border-radius: 18px; padding: 15px 18px; display: flex; align-items: center; gap: 14px;">
+            <span style="flex: 1; min-width: 0;">
+              <span style="display: block; font-size: 14px; font-weight: 600; color: #3A2E28;">{{ a.date }} · {{ a.time }}</span>
+              <span style="display: block; font-size: 12.5px; color: rgba(58,46,40,0.55); margin-top: 2px;">{{ a.svc }} · {{ a.ter }}</span>
+            </span>
+            <span style="display: inline-flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: 999px; white-space: nowrap; background: {{ a.stBg }}; color: {{ a.stFg }};"><span style="width: 5px; height: 5px; border-radius: 50%; background: {{ a.stFg }};"></span>{{ a.stLabel }}</span>
+          </div>
+        </sc-for>
+      </div>
+    </sc-if>
+  </section>
+  </sc-if>
+
+  <!-- ===== KP 03 PROGRAMI ===== -->
+  <sc-if value="{{ scrProgrami }}" hint-placeholder-val="{{ false }}">
+  <section data-screen-label="KP Programi" style="animation: kpFadeUp 0.4s ease both; display: flex; flex-direction: column; gap: 14px;">
+    <h1 style="margin: 0; font-family: 'Newsreader', serif; font-weight: 400; font-size: 28px; color: #2E3B2E;">Programi i paketi</h1>
+    <div style="background: #FFFFFF; border: 1px solid rgba(58,46,40,0.06); border-radius: 22px; padding: 22px;">
+      <div style="font-size: 11px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: #8A9D82; margin-bottom: 8px;">Online program</div>
+      <div style="font-family: 'Newsreader', serif; font-size: 21px; line-height: 1.2; color: #2E3B2E; margin-bottom: 14px;">Razumevanje anksioznosti</div>
+      <div style="display: flex; flex-direction: column;">
+        <sc-for list="{{ moduli }}" as="m" hint-placeholder-count="6">
+          <div style="display: flex; align-items: center; gap: 12px; padding: 10px 0; border-top: 1px solid rgba(58,46,40,0.06);">
+            <span style="width: 26px; height: 26px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; background: {{ m.bg }}; color: {{ m.fg }};">
+              <sc-if value="{{ m.done }}" hint-placeholder-val="{{ true }}"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12.5l5 5L20 6.5"></path></svg></sc-if>
+              <sc-if value="{{ m.notDone }}" hint-placeholder-val="{{ false }}"><span style="font-size: 11.5px; font-weight: 700;">{{ m.n }}</span></sc-if>
+            </span>
+            <span style="flex: 1; font-size: 14px; font-weight: 600; color: {{ m.tc }};">{{ m.t }}</span>
+            <span style="font-size: 11.5px; color: rgba(58,46,40,0.5);">{{ m.d }}</span>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+    <div style="background: #2E3B2E; border-radius: 22px; padding: 22px;">
+      <div style="font-size: 11px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: rgba(198,213,168,0.85); margin-bottom: 8px;">Aktivni paket</div>
+      <div style="font-family: 'Newsreader', serif; font-size: 20px; color: #FAF8F3; margin-bottom: 14px;">Paket 5 × individualna psihoterapija</div>
+      <div style="display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 8px;">
+        <span style="font-size: 12.5px; color: rgba(250,248,243,0.7);">Iskorišćeno 3 od 5</span>
+        <span style="font-size: 12.5px; font-weight: 600; color: #C6D5A8;">Ističe 30. sep 2026.</span>
+      </div>
+      <span style="display: block; height: 9px; border-radius: 999px; background: rgba(250,248,243,0.15); overflow: hidden; margin-bottom: 16px;"><span style="display: block; height: 100%; width: 60%; border-radius: 999px; background: #C6D5A8;"></span></span>
+      <button onClick="{{ openBook }}" style="cursor: pointer; width: 100%; border: none; background: #C6D5A8; color: #2E3B2E; font-family: 'Instrument Sans', sans-serif; font-size: 13.5px; font-weight: 600; padding: 13px; border-radius: 999px; transition: background 0.2s ease; min-height: 46px;" style-hover="background: #d5e2bc;">Iskoristi kredit — zakaži termin</button>
+    </div>
+  </section>
+  </sc-if>
+
+  <!-- ===== KP 04 PROFIL ===== -->
+  <sc-if value="{{ scrProfil }}" hint-placeholder-val="{{ false }}">
+  <section data-screen-label="KP Profil" style="animation: kpFadeUp 0.4s ease both; display: flex; flex-direction: column; gap: 14px;">
+    <div style="display: flex; align-items: center; gap: 16px; padding: 6px 2px;">
+      <span style="width: 64px; height: 64px; border-radius: 50%; background: rgba(198,213,168,0.45); color: #2E3B2E; font-family: 'Newsreader', serif; font-size: 23px; display: inline-flex; align-items: center; justify-content: center;">AM</span>
+      <div>
+        <h1 style="margin: 0 0 3px; font-family: 'Newsreader', serif; font-weight: 400; font-size: 26px; color: #2E3B2E;">Ana Marković</h1>
+        <div style="font-size: 13px; color: rgba(58,46,40,0.6);">ana.markovic@gmail.com · +381 64 123 4567</div>
+      </div>
+    </div>
+    <div style="background: #FFFFFF; border: 1px solid rgba(58,46,40,0.06); border-radius: 20px; padding: 18px 20px; display: flex; align-items: center; gap: 14px;">
+      <span style="width: 48px; height: 48px; border-radius: 50%; border: 2px solid rgba(198,213,168,0.6); background-image: url('assets/anja.jpeg'); background-size: cover; background-position: center; flex-shrink: 0;"></span>
+      <span style="flex: 1;"><span style="display: block; font-size: 11px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: #8A9D82;">Vaš terapeut</span><span style="display: block; font-size: 15px; font-weight: 600; color: #3A2E28; margin-top: 2px;">Anja Stamenković</span></span>
+      <button onClick="{{ openBook }}" style="cursor: pointer; background: none; border: 1.5px solid rgba(58,46,40,0.2); color: #3A2E28; font-family: 'Instrument Sans', sans-serif; font-size: 12.5px; font-weight: 600; padding: 9px 16px; border-radius: 999px; transition: all 0.2s ease; min-height: 44px;" style-hover="border-color: #8A9D82; background: rgba(198,213,168,0.15);">Zakaži</button>
+    </div>
+    <div style="background: #FFFFFF; border: 1px solid rgba(58,46,40,0.06); border-radius: 20px; padding: 8px 20px;">
+      <div style="font-size: 11px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: #8A9D82; padding: 12px 0 4px;">Obaveštenja</div>
+      <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 13px 0; border-bottom: 1px solid rgba(58,46,40,0.06);">
+        <span style="font-size: 14px; font-weight: 600; color: #3A2E28;">Potvrde termina emailom</span>
+        <button onClick="{{ togN1 }}" aria-label="Potvrde termina" style="cursor: pointer; border: none; padding: 0; width: 42px; height: 24px; border-radius: 999px; position: relative; transition: background 0.2s ease; background: {{ n1.bg }};"><span style="position: absolute; top: 2.5px; width: 19px; height: 19px; border-radius: 50%; background: #FAF8F3; transition: left 0.2s ease, right 0.2s ease; left: {{ n1.l }}; box-shadow: 0 1px 3px rgba(58,46,40,0.25);"></span></button>
+      </div>
+      <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 13px 0; border-bottom: 1px solid rgba(58,46,40,0.06);">
+        <span style="font-size: 14px; font-weight: 600; color: #3A2E28;">Podsetnik 24h pre termina</span>
+        <button onClick="{{ togN2 }}" aria-label="Podsetnik" style="cursor: pointer; border: none; padding: 0; width: 42px; height: 24px; border-radius: 999px; position: relative; transition: background 0.2s ease; background: {{ n2.bg }};"><span style="position: absolute; top: 2.5px; width: 19px; height: 19px; border-radius: 50%; background: #FAF8F3; transition: left 0.2s ease; left: {{ n2.l }}; box-shadow: 0 1px 3px rgba(58,46,40,0.25);"></span></button>
+      </div>
+      <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 13px 0;">
+        <span style="font-size: 14px; font-weight: 600; color: #3A2E28;">Novosti i edukativni sadržaji</span>
+        <button onClick="{{ togN3 }}" aria-label="Novosti" style="cursor: pointer; border: none; padding: 0; width: 42px; height: 24px; border-radius: 999px; position: relative; transition: background 0.2s ease; background: {{ n3.bg }};"><span style="position: absolute; top: 2.5px; width: 19px; height: 19px; border-radius: 50%; background: #FAF8F3; transition: left 0.2s ease; left: {{ n3.l }}; box-shadow: 0 1px 3px rgba(58,46,40,0.25);"></span></button>
+      </div>
+    </div>
+    <div style="background: #FFFFFF; border: 1px solid rgba(58,46,40,0.06); border-radius: 20px; padding: 8px 20px;">
+      <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 13px 0; border-bottom: 1px solid rgba(58,46,40,0.06);"><span style="font-size: 14px; font-weight: 600; color: #3A2E28;">Politika privatnosti</span><span style="color: rgba(58,46,40,0.35);">→</span></div>
+      <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 13px 0;"><span style="font-size: 14px; font-weight: 600; color: #3A2E28;">Moje saglasnosti</span><span style="color: rgba(58,46,40,0.35);">→</span></div>
+    </div>
+    <button style="cursor: pointer; background: none; border: none; color: #B3402E; font-family: 'Instrument Sans', sans-serif; font-size: 14px; font-weight: 700; padding: 12px; border-radius: 999px; transition: background 0.2s ease; min-height: 46px;" style-hover="background: rgba(179,64,46,0.1);">Odjavi se</button>
+  </section>
+  </sc-if>
+
+  </main>
+
+  <nav data-screen-label="KP navigacija" style="position: sticky; bottom: 0; z-index: 50; background: #FFFFFF; border-top: 1px solid rgba(58,46,40,0.08); display: grid; grid-template-columns: repeat(4, 1fr); padding: 8px 6px calc(10px + env(safe-area-inset-bottom));">
+    <button onClick="{{ goPocetna }}" style="cursor: pointer; border: none; background: none; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 4px 0; font-family: 'Instrument Sans', sans-serif; min-height: 48px; justify-content: flex-end;"><span style="width: 42px; height: 26px; border-radius: 999px; display: flex; align-items: center; justify-content: center; background: {{ bPocetna.tile }}; color: {{ bPocetna.fg }};"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"></path><path d="M5 9.5V21h14V9.5"></path></svg></span><span style="font-size: 10.5px; font-weight: 600; color: {{ bPocetna.fg }};">Početna</span></button>
+    <button onClick="{{ goTermini }}" style="cursor: pointer; border: none; background: none; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 4px 0; font-family: 'Instrument Sans', sans-serif; min-height: 48px; justify-content: flex-end;"><span style="width: 42px; height: 26px; border-radius: 999px; display: flex; align-items: center; justify-content: center; background: {{ bTermini.tile }}; color: {{ bTermini.fg }};"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2"></rect><path d="M16 2v4M8 2v4M3 10h18"></path></svg></span><span style="font-size: 10.5px; font-weight: 600; color: {{ bTermini.fg }};">Termini</span></button>
+    <button onClick="{{ goProgrami }}" style="cursor: pointer; border: none; background: none; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 4px 0; font-family: 'Instrument Sans', sans-serif; min-height: 48px; justify-content: flex-end;"><span style="width: 42px; height: 26px; border-radius: 999px; display: flex; align-items: center; justify-content: center; background: {{ bProgrami.tile }}; color: {{ bProgrami.fg }};"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z"></path></svg></span><span style="font-size: 10.5px; font-weight: 600; color: {{ bProgrami.fg }};">Programi</span></button>
+    <button onClick="{{ goProfil }}" style="cursor: pointer; border: none; background: none; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 4px 0; font-family: 'Instrument Sans', sans-serif; min-height: 48px; justify-content: flex-end;"><span style="width: 42px; height: 26px; border-radius: 999px; display: flex; align-items: center; justify-content: center; background: {{ bProfil.tile }}; color: {{ bProfil.fg }};"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg></span><span style="font-size: 10.5px; font-weight: 600; color: {{ bProfil.fg }};">Profil</span></button>
+  </nav>
+
+  <!-- ===== SHEET: DETALJ TERMINA ===== -->
+  <sc-if value="{{ apptOpen }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ closeAppt }}" style="position: fixed; inset: 0; z-index: 80; background: rgba(58,46,40,0.45); animation: kpFade 0.25s ease both;"></div>
+    <div role="dialog" aria-label="Detalj termina" style="position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); z-index: 81; width: 100%; max-width: 480px; box-sizing: border-box; background: #FAF8F3; border-radius: 26px 26px 0 0; box-shadow: 0 -18px 48px rgba(58,46,40,0.25); padding: 12px 22px calc(24px + env(safe-area-inset-bottom)); animation: kpSheet 0.32s cubic-bezier(0.22,1,0.36,1) both;">
+      <div style="width: 40px; height: 4px; border-radius: 999px; background: rgba(58,46,40,0.15); margin: 0 auto 16px;"></div>
+      <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 6px;">
+        <span style="font-size: 11px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: #8A9D82;">Termin</span>
+        <span style="display: inline-flex; align-items: center; gap: 6px; font-size: 11.5px; font-weight: 600; padding: 4px 11px; border-radius: 999px; background: {{ appt.stBg }}; color: {{ appt.stFg }};"><span style="width: 5px; height: 5px; border-radius: 50%; background: {{ appt.stFg }};"></span>{{ appt.stLabel }}</span>
+      </div>
+      <div style="font-family: 'Newsreader', serif; font-size: 23px; line-height: 1.15; color: #2E3B2E; margin-bottom: 14px;">{{ appt.dfull }} · {{ appt.time }}</div>
+      <div style="background: #FFFFFF; border: 1px solid rgba(58,46,40,0.06); border-radius: 16px; padding: 4px 16px; margin-bottom: 16px;">
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 11px 0; border-bottom: 1px solid rgba(58,46,40,0.06);"><span style="font-size: 12.5px; color: rgba(58,46,40,0.55);">Usluga</span><span style="font-size: 13.5px; font-weight: 600; color: #3A2E28;">{{ appt.svc }}</span></div>
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 11px 0; border-bottom: 1px solid rgba(58,46,40,0.06);"><span style="font-size: 12.5px; color: rgba(58,46,40,0.55);">Terapeut</span><span style="font-size: 13.5px; font-weight: 600; color: #3A2E28;">{{ appt.ter }}</span></div>
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 11px 0;"><span style="font-size: 12.5px; color: rgba(58,46,40,0.55);">Format</span><span style="font-size: 13.5px; font-weight: 600; color: #3A2E28;">{{ appt.fmt }} · 60 min</span></div>
+      </div>
+      <sc-if value="{{ appt.actionable }}" hint-placeholder-val="{{ true }}">
+        <div style="display: flex; flex-direction: column; gap: 9px;">
+          <button onClick="{{ aMove }}" style="cursor: pointer; border: none; background: #2E3B2E; color: #FAF8F3; font-family: 'Instrument Sans', sans-serif; font-size: 14px; font-weight: 600; padding: 14px; border-radius: 999px; transition: background 0.2s ease; min-height: 48px;" style-hover="background: #3d4d3d;">Zatraži pomeranje termina</button>
+          <button onClick="{{ aCancel }}" style="cursor: pointer; background: none; border: none; color: #B3402E; font-family: 'Instrument Sans', sans-serif; font-size: 13.5px; font-weight: 700; padding: 11px; border-radius: 999px; transition: background 0.2s ease; min-height: 44px;" style-hover="background: rgba(179,64,46,0.1);">Otkaži termin</button>
+          <p style="margin: 2px 0 0; font-size: 11.5px; color: rgba(58,46,40,0.5); text-align: center;">Otkazivanje je besplatno do 24h pre termina. Pomeranje potvrđuje terapeut.</p>
+        </div>
+      </sc-if>
+      <sc-if value="{{ appt.info }}" hint-placeholder-val="{{ false }}">
+        <div style="background: rgba(198,213,168,0.25); border-radius: 14px; padding: 13px 16px; font-size: 13px; line-height: 1.5; color: #3A2E28;">{{ appt.infoText }}</div>
+      </sc-if>
+    </div>
+  </sc-if>
+
+  <!-- ===== SHEET: ZAKAZIVANJE ===== -->
+  <sc-if value="{{ bookOpen }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ closeBook }}" style="position: fixed; inset: 0; z-index: 80; background: rgba(58,46,40,0.45); animation: kpFade 0.25s ease both;"></div>
+    <div role="dialog" aria-label="Zakazivanje" style="position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); z-index: 81; width: 100%; max-width: 480px; box-sizing: border-box; background: #FAF8F3; border-radius: 26px 26px 0 0; box-shadow: 0 -18px 48px rgba(58,46,40,0.25); padding: 12px 22px calc(24px + env(safe-area-inset-bottom)); animation: kpSheet 0.32s cubic-bezier(0.22,1,0.36,1) both;">
+      <div style="width: 40px; height: 4px; border-radius: 999px; background: rgba(58,46,40,0.15); margin: 0 auto 16px;"></div>
+      <sc-if value="{{ notBooked }}" hint-placeholder-val="{{ true }}">
+        <div style="font-family: 'Newsreader', serif; font-size: 22px; color: #2E3B2E; margin-bottom: 4px;">Zakaži termin</div>
+        <p style="margin: 0 0 14px; font-size: 13px; color: rgba(58,46,40,0.6);">Izaberite uslugu — zahtev potvrđuje terapeut.</p>
+        <div style="display: flex; flex-direction: column; gap: 9px;">
+          <sc-for list="{{ bookSvc }}" as="b" hint-placeholder-count="3">
+            <button onClick="{{ b.pick }}" style="cursor: pointer; text-align: left; background: #FFFFFF; border: 1px solid rgba(58,46,40,0.08); border-radius: 16px; padding: 15px 17px; font-family: 'Instrument Sans', sans-serif; display: flex; align-items: center; gap: 13px; transition: border-color 0.2s ease, background 0.2s ease; min-height: 48px;" style-hover="border-color: #8A9D82; background: rgba(198,213,168,0.12);">
+              <span style="flex: 1;"><span style="display: block; font-size: 14.5px; font-weight: 600; color: #3A2E28;">{{ b.name }}</span><span style="display: block; font-size: 12px; color: rgba(58,46,40,0.55); margin-top: 2px;">{{ b.meta }}</span></span>
+              <span style="color: rgba(58,46,40,0.3);"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"></path></svg></span>
+            </button>
+          </sc-for>
+        </div>
+      </sc-if>
+      <sc-if value="{{ booked }}" hint-placeholder-val="{{ false }}">
+        <div style="text-align: center; padding: 8px 0 4px;">
+          <span style="width: 56px; height: 56px; border-radius: 50%; background: rgba(198,213,168,0.45); color: #3D6B3D; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 14px;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12.5l5 5L20 6.5"></path></svg></span>
+          <div style="font-family: 'Newsreader', serif; font-size: 22px; color: #2E3B2E; margin-bottom: 6px;">Zahtev je poslat</div>
+          <p style="margin: 0 0 18px; font-size: 13.5px; line-height: 1.55; color: rgba(58,46,40,0.65);">Predloženi termin: <span style="font-weight: 600; color: #3A2E28;">petak, 7. avgust · 17:00</span>.<br>Anja potvrđuje zahtev — stiže vam email obaveštenje.</p>
+          <button onClick="{{ closeBook }}" style="cursor: pointer; width: 100%; border: none; background: #2E3B2E; color: #FAF8F3; font-family: 'Instrument Sans', sans-serif; font-size: 14px; font-weight: 600; padding: 14px; border-radius: 999px; min-height: 48px;" style-hover="background: #3d4d3d;">U redu</button>
+        </div>
+      </sc-if>
+    </div>
+  </sc-if>
+
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;: {&quot;width&quot;: 430, &quot;height&quot;: 900}, &quot;startScreen&quot;: {&quot;editor&quot;: &quot;enum&quot;, &quot;default&quot;: &quot;pocetna&quot;, &quot;options&quot;: [&quot;pocetna&quot;, &quot;termini&quot;, &quot;programi&quot;, &quot;profil&quot;], &quot;tsType&quot;: &quot;string&quot;, &quot;section&quot;: &quot;Demo&quot;}}">
+class Component extends DCLogic {
+  static ST = {
+    potvrdjen: ['Potvrđen', '#3D6B3D', 'rgba(198,213,168,0.45)'],
+    ceka: ['Čeka potvrdu terapeuta', '#96562F', 'rgba(209,164,140,0.30)'],
+    promena: ['Pomeranje zatraženo', '#96562F', 'rgba(209,164,140,0.30)'],
+    odrzan: ['Održan', '#3D6B3D', 'rgba(198,213,168,0.35)'],
+    otkazanK: ['Otkazan', '#B3402E', 'rgba(179,64,46,0.12)'],
+  };
+  HIST = [
+    { date: 'Čet, 10. jul', time: '17:00', svc: 'Individualna psihoterapija', ter: 'Anja S.', st: 'odrzan' },
+    { date: 'Čet, 26. jun', time: '17:00', svc: 'Individualna psihoterapija', ter: 'Anja S.', st: 'odrzan' },
+    { date: 'Čet, 12. jun', time: '17:00', svc: 'Individualna psihoterapija', ter: 'Anja S.', st: 'otkazanK' },
+  ];
+  MOD = [
+    { n: '1', t: 'Šta je anksioznost', d: 'Završeno', done: true },
+    { n: '2', t: 'Telo i signali stresa', d: 'Završeno', done: true },
+    { n: '3', t: 'Misaoni obrasci', d: 'Završeno', done: true },
+    { n: '4', t: 'Tehnike smirivanja', d: 'Sledeći · 26. jul', done: false },
+    { n: '5', t: 'Odnosi i granice', d: '', done: false },
+    { n: '6', t: 'Plan za dalje', d: '', done: false },
+  ];
+  BSVC = [
+    { name: 'Individualna psihoterapija', meta: '60 min · 3.500 RSD · Anja S. · online ili uživo' },
+    { name: 'Psihološko savjetovanje', meta: '60 min · 3.500 RSD · online ili uživo' },
+    { name: 'Partnersko savjetovanje', meta: '90 min · 5.000 RSD · dolazite udvoje' },
+  ];
+  state = {
+    screen: null, tab: 'pred', appt: null, book: false, bookDone: false,
+    n1: true, n2: true, n3: false,
+    upcoming: [
+      { id: 1, mon: 'JUL', day: '24', dfull: 'Četvrtak, 24. jul', time: '17:00', svc: 'Individualna psihoterapija', ter: 'Anja Stamenković', fmt: 'Online', st: 'potvrdjen' },
+      { id: 2, mon: 'JUL', day: '31', dfull: 'Četvrtak, 31. jul', time: '17:00', svc: 'Individualna psihoterapija', ter: 'Anja Stamenković', fmt: 'Online', st: 'ceka' },
+    ],
+  };
+  st(k) { const s = Component.ST[k] || Component.ST.potvrdjen; return { stKey: k, stLabel: s[0], stFg: s[1], stBg: s[2] }; }
+  scr() { return this.state.screen ?? this.props.startScreen ?? 'pocetna'; }
+  go(s) { this.setState({ screen: s, appt: null, book: false }); window.scrollTo(0, 0); }
+  bn(id) { return this.scr() === id ? { fg: '#2E3B2E', tile: 'rgba(198,213,168,0.55)' } : { fg: 'rgba(58,46,40,0.5)', tile: 'transparent' }; }
+  pill(on) { return on ? { bg: '#2E3B2E', fg: '#FAF8F3', bd: '#2E3B2E' } : { bg: '#FFFFFF', fg: 'rgba(58,46,40,0.72)', bd: 'rgba(58,46,40,0.14)' }; }
+  tog(on) { return { bg: on ? '#8A9D82' : 'rgba(58,46,40,0.18)', l: on ? '20px' : '3px' }; }
+  patch(id, stKey, infoText) {
+    this.setState(s => ({
+      upcoming: s.upcoming.map(a => a.id === id ? { ...a, st: stKey } : a),
+      appt: { ...s.appt, st: stKey, infoDone: true, infoText },
+    }));
+  }
+  renderVals() {
+    const s = this.state, scr = this.scr();
+    const now = new Date();
+    let danas = new Intl.DateTimeFormat('sr-Latn-RS', { weekday: 'long', day: 'numeric', month: 'long' }).format(now);
+    danas = danas.charAt(0).toUpperCase() + danas.slice(1);
+    const h = now.getHours();
+    const pozdrav = h < 12 ? 'Dobro jutro' : h < 18 ? 'Dobar dan' : 'Dobro veče';
+    const appt = s.appt ? {
+      ...s.appt, ...this.st(s.appt.st),
+      actionable: (s.appt.st === 'potvrdjen' || s.appt.st === 'ceka') && !s.appt.infoDone,
+      info: !!s.appt.infoText, infoText: s.appt.infoText || '',
+    } : null;
+    return {
+      danas, pozdrav,
+      scrPocetna: scr === 'pocetna', scrTermini: scr === 'termini', scrProgrami: scr === 'programi', scrProfil: scr === 'profil',
+      bPocetna: this.bn('pocetna'), bTermini: this.bn('termini'), bProgrami: this.bn('programi'), bProfil: this.bn('profil'),
+      goPocetna: () => this.go('pocetna'), goTermini: () => this.go('termini'), goProgrami: () => this.go('programi'), goProfil: () => this.go('profil'),
+      tabPred: s.tab === 'pred', tabIst: s.tab === 'ist',
+      tPred: this.pill(s.tab === 'pred'), tIst: this.pill(s.tab === 'ist'),
+      setTPred: () => this.setState({ tab: 'pred' }), setTIst: () => this.setState({ tab: 'ist' }),
+      upcoming: s.upcoming.map(a => ({ ...a, ...this.st(a.st), open: () => this.setState({ appt: { ...a, infoDone: false, infoText: '' } }) })),
+      history: this.HIST.map(a => ({ ...a, ...this.st(a.st) })),
+      openNext: () => { const a = s.upcoming[0]; this.setState({ appt: { ...a, infoDone: false, infoText: '' } }); },
+      apptOpen: !!appt, appt: appt || {},
+      closeAppt: () => this.setState({ appt: null }),
+      aMove: () => this.patch(s.appt.id, 'promena', 'Zahtev za pomeranje je poslat — Anja predlaže novi termin u roku od 24h.'),
+      aCancel: () => this.patch(s.appt.id, 'otkazanK', 'Termin je otkazan bez naknade. Kredit iz paketa je vraćen.'),
+      moduli: this.MOD.map(m => ({
+        ...m, notDone: !m.done,
+        bg: m.done ? 'rgba(198,213,168,0.5)' : 'rgba(58,46,40,0.06)',
+        fg: m.done ? '#3D6B3D' : 'rgba(58,46,40,0.5)',
+        tc: m.done ? 'rgba(58,46,40,0.55)' : '#3A2E28',
+      })),
+      bookOpen: s.book, openBook: () => this.setState({ book: true, bookDone: false }),
+      closeBook: () => this.setState({ book: false, bookDone: false }),
+      notBooked: !s.bookDone, booked: s.bookDone,
+      bookSvc: this.BSVC.map(b => ({
+        ...b,
+        pick: () => this.setState(x => ({
+          bookDone: true,
+          upcoming: x.upcoming.some(u => u.id === 99) ? x.upcoming : [...x.upcoming, { id: 99, mon: 'AVG', day: '7', dfull: 'Petak, 7. avgust', time: '17:00', svc: b.name, ter: 'Anja Stamenković', fmt: 'Online', st: 'ceka' }],
+        })),
+      })),
+      n1: this.tog(s.n1), n2: this.tog(s.n2), n3: this.tog(s.n3),
+      togN1: () => this.setState(x => ({ n1: !x.n1 })), togN2: () => this.setState(x => ({ n2: !x.n2 })), togN3: () => this.setState(x => ({ n3: !x.n3 })),
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -5,7 +5,7 @@ Otvorene odluke. **Doneto ide u `PRODUCT_DECISIONS.md`** i briše se odavde.
 **Gde piše:** master plan §13 (STOP lista) · §4 R0.1 · Proposal v1.1 §4 (Anjina lista)
 **Pravilo (MP §0, tačka 5):** ako se udari u otvorenu stavku — **stati i pitati**. Ne pogađati proizvodne, pravne, cenovne ni kliničke odluke.
 
-**Stanje 2026-07-17:** 3 rešene (S1 ostaje otvoren), 2 parcijalne, 7 otvorenih.
+**Stanje 2026-07-17:** S2/S13 rešeni, S5/S10 parcijalni, S1 otvoren + nove stavke Matching Engine-a (O-14/O-15) za potvrdu tima.
 
 ---
 
@@ -61,12 +61,14 @@ Otvorene odluke. **Doneto ide u `PRODUCT_DECISIONS.md`** i briše se odavde.
 > **Gde piše:** MP §13 S10 · Proposal §4 #3 · **Blokira:** `/kontakt`, Resend, JSON-LD, R1.5
 
 **Rešeno (D-007):** struktura footera, brzi linkovi, **postojeći logo**.
+**Delimično rešeno (D-016, 2026-07-18):** email adrese kreirane — po jedna za svakog od troje u timu, plus `info@psihointegritet.com`; Resend šalje sistemske/verifikacione mejlove sa `noreply@`. **Nijedna još nije upisana u kod ni u `.env.example`.**
 
 **I dalje otvoreno:**
 
 | # | Potrebno | Blokira |
 |---|---|---|
-| 1 | Email adrese (`info@`, `termini@` ili druge) | Resend verifikacija domena + SPF/DKIM/DMARC uz Zoho MX (R1.5.b/c), potvrde iz formi (R1.3.i) |
+| 1a | Da li `termini@` postoji kao posebna adresa za zahteve za termin, ili sve ide na `info@`? | R1.3.i — koja adresa prima obaveštenja o novim zahtevima |
+| 1b | Upisati kreirane adrese u `.env.example` (FE i BE) i povezati u kod | R1.3.i |
 | 2 | Telefon | `/kontakt`, footer |
 | 3 | Linkovi ka društvenim mrežama | Footer |
 | 4 | Adrese lokacija (Niš, Leskovac) | JSON-LD `LocalBusiness` (R1.4.d), `/o-nama` |
@@ -99,6 +101,37 @@ Datum, voditelj, cena, kapacitet, pravila prijave/otkazivanja. Dok ne stigne: `/
 
 ---
 
+## 🟠 Matching Engine — potvrda tima (blokira sign-off R1.2, ne launch)
+
+> **Gde piše:** spec „Početna routing matrica" · MP §13 S11 · **Blokira:** R1.2.j sign-off
+> Engine je hardcoded v1 (`matching.ts`) sa konzervativnim pravilima. Tim treba da potvrdi ili ispravi:
+
+### O-14 · Routing matrica po terapeutu *(ažurirano 2026-07-20, matching v2 / D-025)*
+- ✅ **Uzrasne granice — POTVRĐENO od Anje (2026-07-20):** Marija radi sa svim uzrastima dece (0–18 i 18+); Anja i Marjan samo sa decom **16+**. Implementirano u `matching.ts` (`minChildAge`: Marija 0, Anja/Marjan 16); uzrasni bracket „13–17" podeljen na „13–15" / „16–17" da bi granica bila precizna. Maloletnici (<18) i dalje uz roditelja/staratelja (MINOR_NOTE).
+- Oblasti rada po terapeutu — potvrditi listu iz `matching.ts` `therapistMatchingConfig` (preneta 1:1 iz Anjinog dokumenta)
+
+### O-15 · Operativna pravila (za R2, ali utiču na v1 tekst)
+- Maksimalan broj novih klijenata po terapeutu (kapacitet) — sada nema ograničenja
+- Koje složenije situacije zahtevaju ljudski pregled pre prikazivanja rezultata (sada: samo „oporavak nakon nasilja/kriznog iskustva" → tim)
+- Ko može da preuzme nedodeljeni zahtev iz zajedničkog reda
+- Formulacija sigurnosnog izlaza (nije dijagnoza / nije hitna služba) — **vezano za S5**, čeka pravnu i stručnu potvrdu
+
+### O-16 · Preciziranja iz Anjinih odgovora (matching v2 / cenovnik, D-025)
+- ✅ **„Tridesete — Vreme promene", roditelji — POTVRĐENO (2026-07-20):** cena od 3.500 RSD je **po susretu, ne po roditelju** — oba roditelja/staratelji dolaze zajedno po ceni jednog učesnika (mama + tata = 3.500, ne 2×3.500). Napomena ažurirana na sajtu (`services.ts` `groupPrograms` „tridesete" `note`).
+- **Burnout: „Marjan +2 ako je vezano za zaposlenje ili kompanijski program"** — izostavljeno iz bodovanja (CTO 2026-07-20) jer upitnik nema signal o zaposlenju. **Precizirati sa Anjom** kako se uslov prepoznaje (novo pitanje? B2B kontekst?).
+- ✅ Uzrasne granice po terapeutu — potvrđeno, vidi O-14.
+
+### O-19 · Uzrasno i lokacijsko pitanje nisu u Anjinom upitniku *(za Anju i tim)*
+Anjin dokument (`odgovor-za-matching-anketa.pdf`) ima **tačno 5 pitanja** — nema pitanja o uzrastu deteta ni o lokaciji (Niš/Leskovac). Oba su CTO dodatak iz v2 spec-a („5 pitanja + 2 uslovna"). Uzrasno pitanje se u kodu okida **samo za izbor „Roditelj i dete" (Pitanje 2)**, ne za razlog „Roditeljstvo"/„Odnos sa adolescentom" (Pitanje 1). Posledica: ako roditelj traži savetovanje **sam** za temu deteta, uzrast se ne pita i uzrasno pravilo (O-14) se ne primenjuje. **Odluka odložena — Anja i tim da prokomentarišu** da li ostaviti tako (A: uzrast samo kad dete učestvuje), proširiti (B: pitati uzrast i za te razloge), ili ukloniti uzrast/lokaciju i vratiti se na 5 pitanja (C). Do tada ostaje varijanta A.
+
+### O-17 · Clerk nalozi za tim (superadmin faza, D-026)
+Anja, Marija i Marjan **nemaju Clerk naloge** (postoje samo mailbox-ovi). `npm run roles:assign` ih SKIP-uje dok se nalozi ne kreiraju kroz `/registracija` — tada ponovo pokrenuti skriptu da dobiju `org_admin`+`therapist` metadata. Do tada `/radni-prostor` za njih ne radi.
+
+### O-18 · Dodela rola na produkcionoj Clerk instanci
+Role su dodeljene samo na **dev** instanci (2026-07-20: `drazic.milan@gmail.com` → superadmin). Pri launchu obavezno pokrenuti `roles:assign` sa produkcionim `CLERK_SECRET_KEY` (i kreirati `milan.drazic@dmdevelon.website` nalog).
+
+---
+
 ## 🟡 Pre Faze 2
 
 ### O-08 · S7 — Pravila otkazivanja
@@ -109,7 +142,7 @@ Nacrt iz materijala: otkazivanje 24 h ranije; kasnije se naplaćuje; kašnjenje 
 ### O-09 · S3 — Cena za adolescente/studente
 > **Gde piše:** MP §13 S3 · Proposal §4 #4 · **Blokira:** proširenje prikaza cena
 
-Iznos, kriterijumi, kod kojih terapeuta, online/uživo. Potvrđene cene (T7) su: individualna 60 min — 3.500 RSD; bračno savetovanje 90 min — 5.000 RSD; psihoterapijsko savetovanje 60 min — 3.500 RSD. Sajt **mora** reći da su okvirne.
+Iznos, kriterijumi, kod kojih terapeuta, online/uživo. Važeće cene (D-025, Anjini odgovori 2026-07-18): individualna 60 min — 4.000 RSD; bračno savetovanje 90 min — 5.500 RSD; roditeljsko savetovanje 60 min — 5.000 RSD („psihoterapijsko savetovanje" uklonjeno iz kataloga). Sajt **mora** reći da su okvirne.
 
 ### O-10 · S12 — Google Calendar
 > **Gde piše:** MP §13 S12 · Proposal §4 #8 · **Blokira:** M2.6 (paket 2B)

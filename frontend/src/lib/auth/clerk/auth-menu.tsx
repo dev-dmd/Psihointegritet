@@ -25,7 +25,7 @@ export function AuthMenu({ size = "md" }: { size?: "md" | "sm" }) {
             type="button"
             aria-label="Uloguj se"
             className={cn(
-              "text-forest hover:bg-forest hover:text-canvas focus-visible:ring-forest/35 flex cursor-pointer items-center justify-center rounded-full border border-white/35 bg-gray-400/30 backdrop-blur-md transition-colors outline-none focus-visible:ring-2",
+              "text-forest hover:bg-forest hover:text-canvas focus-visible:ring-forest/35 flex cursor-pointer items-center justify-center rounded-full border border-white/35 bg-gray-300/30 backdrop-blur-md transition-colors outline-none focus-visible:ring-2",
               size === "md" ? "size-11" : "size-[38px]",
             )}
           >
