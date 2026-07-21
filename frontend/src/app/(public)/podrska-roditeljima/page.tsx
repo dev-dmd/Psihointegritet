@@ -1,4 +1,3 @@
-import type { Metadata } from "next";
 import type { Route } from "next";
 import Link from "next/link";
 
@@ -7,15 +6,11 @@ import { parentPrograms } from "@/content/programs";
 import { findService, formatRsd } from "@/content/services";
 import { therapists } from "@/content/therapists";
 import { buildBookingHref } from "@/features/booking/booking-context";
+import { metadataForRoute } from "@/lib/content-governance/discoverability";
 
 const parentService = findService("roditeljsko-savetovanje");
 
-export const metadata: Metadata = {
-  title: "Podrška roditeljima",
-  description:
-    "Roditeljsko savetovanje i najavljeni programi podrške za roditelje - online i uživo.",
-  alternates: { canonical: "/podrska-roditeljima" },
-};
+export const metadata = metadataForRoute("/podrska-roditeljima");
 
 export default function ParentSupportPage() {
   if (!parentService) return null;

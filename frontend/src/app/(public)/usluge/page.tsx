@@ -1,13 +1,7 @@
-import type { Metadata } from "next";
-
 import { ServicesPage } from "@/components/sections/services/services-page";
+import { metadataForRoute } from "@/lib/content-governance/discoverability";
 
-export const metadata: Metadata = {
-  title: "Usluge",
-  description:
-    "Individualna psihoterapija, bračno savetovanje i roditeljsko savetovanje - trajanje, okvirne cene i format. Online i uživo u Nišu i Leskovcu.",
-  alternates: { canonical: "/usluge" },
-};
+export const metadata = metadataForRoute("/usluge");
 
 export default function ServicesRoute() {
   return <ServicesPage />;

@@ -1,16 +1,11 @@
-import type { Metadata } from "next";
 import Link from "next/link";
 
 import { PageHero } from "@/components/shared/page-hero";
 import { Chip } from "@/components/ui/chip";
 import { groupPrograms } from "@/content/programs";
+import { metadataForRoute } from "@/lib/content-governance/discoverability";
 
-export const metadata: Metadata = {
-  title: "Radionice",
-  description:
-    "Grupni programi i radionice Psihointegriteta - teme, trajanje, format i status najave.",
-  alternates: { canonical: "/radionice" },
-};
+export const metadata = metadataForRoute("/radionice");
 
 export default function WorkshopsPage() {
   return (

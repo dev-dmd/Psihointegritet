@@ -4,6 +4,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { PageHero } from "@/components/shared/page-hero";
+import { JsonLd } from "@/components/shared/json-ld";
 import { Chip } from "@/components/ui/chip";
 import { faqItems } from "@/content/homepage";
 import {
@@ -15,6 +16,11 @@ import {
 } from "@/content/services";
 import { therapists } from "@/content/therapists";
 import { buildBookingHref } from "@/features/booking/booking-context";
+import {
+  jsonLdForEntity,
+  metadataForEntity,
+} from "@/lib/content-governance/discoverability";
+import { staticContentProvider } from "@/lib/content-governance/static-provider";
 
 interface ServicePageProps {
   params: Promise<{ slug: string }>;
@@ -29,11 +35,11 @@ export async function generateMetadata({
 }: ServicePageProps): Promise<Metadata> {
   const service = findService((await params).slug);
   if (!service) return {};
-  return {
-    title: service.name,
-    description: `${service.description} ${service.duration}, ${formatRsd(service.priceAmount)}. ${service.format}.`,
-    alternates: { canonical: `/usluge/${service.slug}` },
-  };
+  const entity = staticContentProvider.getEntity(
+    "service",
+    `service:${service.slug}`,
+  );
+  return entity ? metadataForEntity(entity) : {};
 }
 
 export default async function ServiceDetailPage({ params }: ServicePageProps) {
@@ -44,6 +50,10 @@ export default async function ServiceDetailPage({ params }: ServicePageProps) {
     therapist.bookingServiceSlugs.includes(service.slug),
   );
   const locations = [...new Set(providers.map((therapist) => therapist.city))];
+  const contentEntity = staticContentProvider.getEntity(
+    "service",
+    `service:${service.slug}`,
+  );
   const bookingHref = buildBookingHref({
     service: service.slug,
     source: "service",
@@ -51,6 +61,7 @@ export default async function ServiceDetailPage({ params }: ServicePageProps) {
 
   return (
     <>
+      {contentEntity ? <JsonLd data={jsonLdForEntity(contentEntity)} /> : null}
       <PageHero id="usluga">
         <nav aria-label="Putanja" className="mb-9 text-sm">
           <Link href="/" className="text-coffee/60 hover:text-forest">

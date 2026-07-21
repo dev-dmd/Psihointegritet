@@ -1,18 +1,12 @@
-import type { Metadata } from "next";
-
 import { PageHero } from "@/components/shared/page-hero";
 import {
   type BookingSearchParams,
   parseBookingContext,
 } from "@/features/booking/booking-context";
 import { BookingRequestForm } from "@/features/booking/booking-request-form";
+import { metadataForRoute } from "@/lib/content-governance/discoverability";
 
-export const metadata: Metadata = {
-  title: "Zakaži termin",
-  description:
-    "Pošaljite zahtev za termin za individualnu psihoterapiju, bračno ili roditeljsko savetovanje. Zahtev nije konačna potvrda termina.",
-  alternates: { canonical: "/zakazi" },
-};
+export const metadata = metadataForRoute("/zakazi");
 
 interface BookingPageProps {
   searchParams: Promise<BookingSearchParams>;

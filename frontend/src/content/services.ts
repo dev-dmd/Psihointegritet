@@ -5,8 +5,8 @@
  * (documentations/odgovor-za-matching-anketa.pdf, 2026-07-18) and supersede
  * the earlier T7 draft prices. Names follow T1 („Bračno savetovanje") and T2
  * (never „psihološko savetovanje"). Everything is still presented as
- * indicative (PRICE_NOTE) until final confirmation. Replaced by DB-backed
- * content in R2.
+ * indicative (PRICE_NOTE) until final confirmation. R2 adds operational
+ * booking mappings; R3 later replaces this public catalog with CMS-backed content.
  */
 
 export { formatRsd } from "@/content/currency";

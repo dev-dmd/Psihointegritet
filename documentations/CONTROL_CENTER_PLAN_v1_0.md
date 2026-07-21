@@ -1,6 +1,6 @@
 # CONTROL CENTER (radni-prostor) — PLAN v1.0
 
-> **Status:** implementirano (2026-07-20) — čeka ručni smoke i commit · **Grana:** `features` · **Faza:** R2 preview
+> **Status:** implementirano (2026-07-20) — čeka ručni smoke i commit · **Grana:** `features` · **Faza:** Pre-R2 Control Center Preview (nije formalni R2)
 > **Dizajn (1:1):** `Admin panel dizajn za Next.js-handoff/…/design_handoff_paneli/Psihointegritet Control Center.dc.html` + README §8.1
 > **Odluke:** D-026 (role/šav, superadmin) · **D-027** (ovaj panel) · O-17/O-18 (Clerk nalozi tima)
 

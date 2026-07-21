@@ -10,6 +10,7 @@ frontend/out/
 frontend/coverage/
 frontend/playwright-report/
 frontend/test-results/
+frontend/artifacts/
 frontend/next-env.d.ts
 *.tsbuildinfo
 

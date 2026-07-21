@@ -3,8 +3,14 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { PageHero } from "@/components/shared/page-hero";
+import { JsonLd } from "@/components/shared/json-ld";
 import { Chip } from "@/components/ui/chip";
 import { findGroupProgram, groupPrograms } from "@/content/programs";
+import {
+  jsonLdForEntity,
+  metadataForEntity,
+} from "@/lib/content-governance/discoverability";
+import { staticContentProvider } from "@/lib/content-governance/static-provider";
 
 interface WorkshopDetailProps {
   params: Promise<{ slug: string }>;
@@ -19,11 +25,11 @@ export async function generateMetadata({
 }: WorkshopDetailProps): Promise<Metadata> {
   const program = findGroupProgram((await params).slug);
   if (!program) return {};
-  return {
-    title: program.title,
-    description: `${program.audience} ${program.sessions}. ${program.priceLine}`,
-    alternates: { canonical: `/radionice/${program.slug}` },
-  };
+  const entity = staticContentProvider.getEntity(
+    "program",
+    `program:${program.slug}`,
+  );
+  return entity ? metadataForEntity(entity) : {};
 }
 
 export default async function WorkshopDetailPage({
@@ -31,9 +37,14 @@ export default async function WorkshopDetailPage({
 }: WorkshopDetailProps) {
   const program = findGroupProgram((await params).slug);
   if (!program) notFound();
+  const contentEntity = staticContentProvider.getEntity(
+    "program",
+    `program:${program.slug}`,
+  );
 
   return (
     <>
+      {contentEntity ? <JsonLd data={jsonLdForEntity(contentEntity)} /> : null}
       <PageHero id="radionica" tone="warm">
         <nav aria-label="Putanja" className="mb-9 text-sm">
           <Link href="/" className="text-coffee/60 hover:text-forest">

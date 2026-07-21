@@ -1,15 +1,10 @@
-import type { Metadata } from "next";
 import Link from "next/link";
 
 import { PageHero } from "@/components/shared/page-hero";
 import { siteSettings } from "@/content/site-settings";
+import { metadataForRoute } from "@/lib/content-governance/discoverability";
 
-export const metadata: Metadata = {
-  title: "O nama",
-  description:
-    "Psihointegritet je digitalni centar za mentalno zdravlje sa online radom i radom uživo u Nišu i Leskovcu.",
-  alternates: { canonical: "/o-nama" },
-};
+export const metadata = metadataForRoute("/o-nama");
 
 export default function AboutPage() {
   return (

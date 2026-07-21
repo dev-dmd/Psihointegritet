@@ -407,6 +407,9 @@ pravila zakazivanja;
 pravila otkazivanja;
 načini plaćanja;
 link ka celom cenovniku.
+
+U R1.4.i/R3 paketi su samo informativni `PackageOffer` sadržaj. Nema kupovine, kredita, pretplate ni potvrde plaćanja pre R5.
+
 Stranica pojedinačne usluge
 
 Redosled sadržaja:
@@ -621,6 +624,8 @@ Svaki program dobija /radionice/[slug] i direktnu prijavu.
 
 Ovo treba da bude kompletan B2B prodajni flow.
 
+Do R5 javni `CompanyPlan` je opis ponude, a CTA vodi na konfigurator ili upit. Kompanijska pretplata, fakturisanje, krediti i finansijsko poravnanje nisu deo R1, R2 ni CMS contract-a.
+
 Redosled sadržaja
 Hero
 Šta kompanija može da reši
@@ -673,9 +678,13 @@ plaćanje po fakturi;
 mesečno;
 tromesečno;
 godišnje unapred;
-prepaid fond termina. 14. Stranica /cene
+prepaid fond termina.
+
+14. Stranica /cene
 
 Transparentan cenovnik treba da postoji kao zasebna ruta.
+
+Prikaz paketa na cenovniku je informativan dok ne postoji R5 finansijski domen; stranica ne sme sugerisati checkout, aktivan kreditni balans ili pretplatu.
 
 Sekcije:
 
@@ -693,143 +702,148 @@ rok važenja paketa;
 
 Sve kartice i stranice treba da čitaju cenu iz istog Service Catalog podatka. Cena se ne sme ručno kopirati na pet stranica.
 
-15. Booking flow bez ponavljanja
+## 15. Booking flow bez ponavljanja
 
-Ruta /zakazi mora da prihvati prethodni kontekst:
+Ruta `/zakazi` prihvata samo bezbedan prethodni kontekst:
 
+```text
 /zakazi?service=individualna-psihoterapija
 /zakazi?therapist=anja-stamenkovic
-/zakazi?service=bracno-savjetovanje&therapist=anja-stamenkovic
+/zakazi?service=bracno-savetovanje&therapist=anja-stamenkovic
+```
 
-U URL nikada ne stavljati ime klijenta, odgovor iz Intake-a ili druge lične podatke.
+U URL nikada ne idu ime klijenta, odgovori iz Intake-a, zdravstveni podaci ni status zahteva.
 
-Pravila
-sa kartice usluge dolazi unapred izabrana usluga;
-sa profila dolazi unapred izabran terapeut;
-iz Matching Engine-a dolaze usluga, terapeut i format;
-korisnik može da promeni svaki izbor;
-browser Back ne briše odgovore;
-ne postavljati ponovo pitanje na koje je korisnik već odgovorio;
-pre slanja prikazati kratak pregled;
-nakon slanja prikazati sledeći korak i očekivano vreme odgovora. 16. CMS ne treba da dozvoli menjanje flow-a
+Pravila:
 
-Anja i tim mogu uređivati sadržaj, ali ne treba da imaju slobodan page builder koji može da pokvari navigaciju.
+- kartica usluge unapred bira uslugu;
+- profil unapred bira terapeuta;
+- Matching Engine prosleđuje uslugu, terapeuta i format bez internih skorova;
+- korisnik može promeniti izbor;
+- browser Back ne briše odgovore i ne postavlja isto pitanje ponovo;
+- pre slanja postoji kratak pregled;
+- nakon slanja se prikazuje sledeći korak i realno očekivanje odgovora.
 
-Mogu da menjaju
-naslove;
-uvodne tekstove;
-opis sekcija;
-FAQ;
-fotografije;
-SEO title i description;
-status usluge;
-cenu;
-trajanje;
-format;
-lokaciju;
-terapeute;
-program i termine radionica.
-Ne mogu direktno da menjaju
-globalnu navigaciju;
-redosled booking koraka;
-matching algoritam;
-obavezne bezbednosne napomene;
-pravila privatnosti u formama;
-sistemske CTA destinacije;
-URL nakon objavljivanja bez redirecta;
-feature gate-ove;
-strukturu templejta.
-CMS modeli
-Service
-SupportArea
-Therapist
-AudiencePage
-Program
-CompanyPlan
-FAQ
-StaticPage
-LegalPage
+### Request-first BookingMode
 
-Svaka vrsta sadržaja dobija kontrolisan templejt.
+```ts
+type BookingMode = "request" | "slot_request" | "disabled";
+```
 
-Publish gate
+- `request`: korisnik predlaže datum, vreme ili period. Kreira se `AppointmentRequest`; terapeut potvrđuje ili nudi alternativu.
+- `slot_request`: korisnik vidi raspoložive slotove i bira željeni, ali izbor i dalje kreira samo `AppointmentRequest`. UI mora jasno reći da izbor slota nije rezervacija niti potvrđen termin.
+- `disabled`: nema booking CTA; stranica može ostati informativna ili kasnije dobiti zaseban interest/waitlist flow.
 
-Usluga ne može postati aktivna bez:
+Trajno pravilo je: `User selection != confirmed appointment`.
 
-naziva;
-opisa;
-cene;
-trajanja;
-formata;
-najmanje jednog terapeuta;
-booking pravila;
-SEO naslova;
-SEO opisa.
+```text
+Selected slot or preferred period
+→ AppointmentRequest
+→ Therapist review
+→ Confirmed Appointment ili AlternativeProposal
+```
 
-Program ne može postati aktivan bez:
+Naziv `live` se ne koristi. Tehnički kratki hold za već poslati zahtev nije odlučen ovom flow specifikacijom i mora biti eksplicitno odobren u Pre-R2 Booking Decision Spec-u; nikad se ne prikazuje kao korisnikova rezervacija.
 
-datuma;
-broja susreta;
-trajanja;
-kapaciteta;
-cene;
-formata;
-voditelja;
-pravila prijave.
+### R2 i R5 granica
 
-Tako kartica „Adolescenti“ neće slučajno biti objavljena bez cene.
+R2 pokriva dostupnost terapeuta, radno vreme, slotove, izuzetke, buffere, request-first tok, zahteve i potvrđene termine, alternative, pomeranje, otkazivanje bez finansijskog obračuna, listu čekanja, osnovna obaveštenja, opcioni Google Calendar, istoriju termina i operativni audit.
 
-17. Mobile-first i accessibility pravila
-    jedna primarna akcija po ekranu;
-    pitanje po pitanje u Intake i booking flow-u;
-    touch kontrole ciljano najmanje 44×44 px;
-    jasni label elementi;
-    jedna jasna H1 oznaka po stranici;
-    logičan redosled H2 i H3;
-    kartice ne smeju zahtevati hover;
-    fokus se posle navigacije pomera na naslov;
-    statusi ne zavise samo od boje;
-    sticky CTA ne sme prekriti sadržaj;
-    dovoljno donjeg razmaka zbog mobilnog browser bara;
-    prefers-reduced-motion;
-    čitljiv tekst i bez stručnog žargona.
+R2 ne pokriva kupovinu paketa, kreditni saldo/ledger, pretplate, kartično plaćanje, B2B naplatu, refundacije, fakture, kupone ni finansijsko poravnanje. To je R5. `PackageOffer` i `CompanyPlan` mogu biti javni informativni sadržaj, ali nisu kupovina, entitlement ni pretplata.
 
-WCAG 2.2 propisuje minimum od 24×24 CSS px za target, dok je 44×44 sigurniji cilj za mobilne interfejse. Forme moraju imati jasne labele i predvidivo ponašanje. W3C WCAG 2.2, W3C target-size guidance, W3C labels and instructions
+## 16. Content Governance bez slobodnog page buildera
 
-18. Redosled realizacije
-    R1.1 — Informaciona arhitektura
-    zaključati route map;
-    zaključati header i footer;
-    definisati CTA sistem;
-    definisati modele sadržaja;
-    definisati vezu usluga, oblasti i terapeuta.
-    R1.2 — Ključne odluke
-    potvrditi nedostajuće cene;
-    odlučiti da li je psihoterapijsko savjetovanje posebna usluga;
-    potvrditi cenu za adolescente;
-    potvrditi pravila za rad sa maloletnicima;
-    potvrditi cene svih aktivnih programa;
-    potvrditi B2B planove.
-    R1.3 — Javni flow
-    početna;
-    pronađi podršku;
-    usluge;
-    oblasti;
-    tim;
-    roditelji;
-    adolescenti;
-    radionice;
-    kompanije;
-    cenovnik;
-    zakazivanje.
-    R1.4 — CMS templejti
-    usluge;
-    oblasti;
-    terapeuti;
-    programi;
-    kompanijski planovi;
-    FAQ;
-    SEO;
-    preview/publish workflow.
+R1.4.i je statička `Content Governance & Discoverability Foundation`; pravi Content Engine / CMS stiže u R3. Anja i tim mogu menjati sadržaj unutar odobrenih modela, templejta i limita, ali ne mogu slobodno preurediti flow ili UI.
 
-Suština je: početna usmerava, detaljna stranica objašnjava, a booking pamti kontekst. Korisnik koji tačno zna šta želi dolazi do forme jednim klikom, dok korisnik koji nije siguran dobija vođeni izbor bez email prepiske i čekanja.
+Mogu menjati naslove, uvodne i sekcijske tekstove, FAQ, slike, SEO title/description, javne podatke o usluzi, lokaciji, terapeutu, programu i informativni `PackageOffer`/`CompanyPlan`. Svaki model ima kontrolisan templejt, maksimalan broj kartica/sekcija i ograničenja karaktera iz `CONTENT_MODEL_MATRIX_v0.1.md`; iznad limita sadržaj ne prolazi validator.
+
+Ne mogu menjati globalnu navigaciju, redosled booking koraka, Matching algoritam, bezbednosne napomene, privacy pravila u formama, sistemske CTA destinacije, feature gate-ove, sistemski slug, redirect pravila niti strukturu templejta.
+
+Widgeti imaju samo kontrolu prikaza (`enabled`/`disabled`). Admin ne menja njihov algoritam, polja, redosled, safety copy ni destinacije; layout ima unapred definisano ponašanje kada widget nije prikazan.
+
+### Četiri nezavisne dimenzije sadržaja
+
+```ts
+type PublicationStatus =
+  | "draft"
+  | "in_review"
+  | "approved"
+  | "published"
+  | "archived";
+
+type AvailabilityStatus =
+  | "active"
+  | "coming_soon"
+  | "temporarily_unavailable"
+  | "retired";
+
+type IndexingPolicy = "index" | "noindex";
+```
+
+`PublicationStatus` određuje da li je verzija javna. `AvailabilityStatus` određuje da li je usluga/program trenutno dostupan. `BookingMode` ili posebni registration/inquiry mode određuje transakcioni tok. `IndexingPolicy` određuje da li objavljena stranica ulazi u pretragu. Nijedna osa ne sme automatski menjati drugu.
+
+| Status | Javno dostupno | Sitemap |
+|---|---|---|
+| `draft` | ne | ne |
+| `in_review` | ne | ne |
+| `approved` | ne | ne |
+| `published` | da | prema `IndexingPolicy` |
+| `archived` | samo prema archival politici | ne |
+
+Dozvoljeni prelazi su `draft → in_review`, `in_review → draft`, `in_review → approved`, `approved → draft`, `approved → published`, `published → archived` i `archived → draft`. Svaka sadržajna izmena posle `approved` poništava odobrenje nove revizije i vraća je u `draft`. R1.4.i samo definiše ugovor; R3 kasnije čuva revizije, audit i zakazanu objavu.
+
+### Publish i approval gate
+
+Modeli su `Service`, `SupportArea`, `Therapist`, `AudiencePage`, `Program`, `CompanyPlan`, `PackageOffer`, `FAQ`, `StaticPage` i `LegalPage`. Publish gate ne proverava samo da li postoji tekst, već i odgovarajući kontekst: aktivna usluga traži naziv, opis, cenu, trajanje, format, terapeuta, validan booking mode, CTA i discoverability podatke; aktivna prijava programa dodatno traži datum, voditelja, kapacitet i pravila prijave/otkazivanja.
+
+Potrebna odobrenja nisu auth role:
+
+```ts
+type ApprovalCapability = "clinical" | "legal" | "business";
+```
+
+Na primer, profil terapeuta traži clinical + business, cena business, pravila za maloletnike clinical + legal + business, a privacy strana legal + business. U R1.4.i evidence je statički zapis za validator; R3 ga vezuje za naloge, workflow i audit.
+
+## 17. Discoverability i Content Health
+
+Sitemap dobija samo `published + index + valid canonical` stranice. Draft/review/archived/noindex, auth i panel rute, staging/preview, query-param varijante, rezultat Matchinga i booking koraci ne ulaze. `robots.txt` ne služi za zaštitu privatnog sadržaja; privatne rute štiti autentifikacija, a javne interne stranice koriste `noindex` i izostavljanje iz sitemapa.
+
+Metadata, canonical, OpenGraph fallback, redirect registry i JSON-LD dolaze iz jednog contract-a. Organization/WebSite, breadcrumb, Person, Service i vidljiv FAQ mogu se generisati samo kad odgovaraju javnom sadržaju. LocalBusiness traži potvrđenu adresu i poslovne podatke; Event traži stvaran datum, voditelja, kapacitet i aktivnu prijavu. Promena javnog sluga čuva stari URL kao 301 ka stvarnoj zameni ili eksplicitno bira 404/410; nikad se podrazumevano ne šalje na početnu.
+
+`Content Health` u R1.4.i je samo read-only CI provera:
+
+- `error` prekida `npm run content:check` i CI/build gate;
+- `warning` i `info` ostaju u terminalu;
+- izlaz je i `content-health-report.json` kao build artefakt.
+
+Nema Control Center taba, baze nalaza, istorije run-ova, notifikacija ni repair akcija. R2 eventualno može prikazati poslednji nalaz; pravi Diagnostic Engine je kasniji domen.
+
+## 18. Mobile-first i accessibility pravila
+
+- jedna primarna akcija po ekranu;
+- pitanje po pitanje u Intake i booking flow-u;
+- touch kontrole ciljano najmanje 44×44 px;
+- jasni label elementi;
+- jedna jasna H1 oznaka po stranici;
+- logičan redosled H2 i H3;
+- kartice ne smeju zahtevati hover;
+- fokus se posle navigacije pomera na naslov;
+- statusi ne zavise samo od boje;
+- sticky CTA ne sme prekriti sadržaj;
+- dovoljno donjeg razmaka zbog mobilnog browser bara;
+- `prefers-reduced-motion`;
+- čitljiv tekst i bez stručnog žargona.
+
+WCAG 2.2 propisuje minimum od 24×24 CSS px za target, dok je 44×44 sigurniji cilj za mobilne interfejse. Forme moraju imati jasne labele i predvidivo ponašanje.
+
+## 19. Redosled realizacije
+
+1. R1.1–R1.3: route map, javni flow i backend-owned request intake.
+2. R1.4.i: content contract, static provider, publish/approval gates, discoverability i Content Health CI.
+3. R1.5: production launch gate ostaje nepromenjen.
+4. Pre-R2 / R1.6 interno: Booking Engine Decision Specification, bez produkcionog booking ili payment koda.
+5. R2: request-first Booking Engine.
+6. R3: Content Engine / CMS i resursi.
+7. R5: packages, credits, subscriptions, payments i invoices.
+
+Suština ostaje: početna usmerava, detaljna stranica objašnjava, a booking pamti samo bezbedan kontekst. Korisnik koji tačno zna šta želi dolazi do zahteva jednim klikom, dok korisnik koji nije siguran dobija vođeni izbor bez lažnog obećanja termina ili naplate.

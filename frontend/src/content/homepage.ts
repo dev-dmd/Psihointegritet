@@ -94,7 +94,7 @@ export const footerServiceLinks: NavLink[] = [
 
 export const trustItems: TrustItem[] = [
   { icon: "screen", label: "Online i uživo" },
-  { icon: "pin", label: "Niš i rad sa dijasporom" },
+  { icon: "pin", label: "Niš, Leskovac i druge lokacije" },
   { icon: "people", label: "Individualni i partnerski rad" },
   { icon: "shield", label: "Poverljivost i stručnost" },
 ];

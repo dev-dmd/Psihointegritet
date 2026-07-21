@@ -1,7 +1,7 @@
-import type { Metadata } from "next";
 import Link from "next/link";
 
 import { PageHero } from "@/components/shared/page-hero";
+import { metadataForRoute } from "@/lib/content-governance/discoverability";
 import { groupPrograms } from "@/content/programs";
 import {
   formatRsd,
@@ -10,12 +10,7 @@ import {
   sessionPackages,
 } from "@/content/services";
 
-export const metadata: Metadata = {
-  title: "Cene",
-  description:
-    "Okvirne cene individualne psihoterapije, bračnog i roditeljskog savetovanja, paketa i najavljenih programa.",
-  alternates: { canonical: "/cene" },
-};
+export const metadata = metadataForRoute("/cene");
 
 export default function PricesPage() {
   return (

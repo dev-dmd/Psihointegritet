@@ -1,6 +1,6 @@
 # SUPERADMIN CONTROL CENTER — PLAN v1.0
 
-> **Status:** implementirano (2026-07-20) — čeka ručni smoke i commit · **Grana:** `features` · **Faza:** R2 preview — rute, autorizacija i multi-tenant struktura
+> **Status:** implementirano (2026-07-20) — čeka ručni smoke i commit · **Grana:** `features` · **Faza:** Pre-R2 Control Center Preview (nije formalni R2) — rute, autorizacija i multi-tenant struktura
 > **Dizajn (obavezujući, 1:1):** `documentations/Admin panel dizajn za Next.js-handoff/admin-panel-dizajn-za-next-js/project/design_handoff_paneli/` — `README.md` (spec, 15 sekcija) + `Psihointegritet Superadmin.dc.html` (prototip) + `globals.css`/`tailwind.config.ts` (tokeni)
 > **Odluke:** D-026 (superadmin pristup, privremeni izvor rola) · O-17, O-18 (otvoreno za tim)
 

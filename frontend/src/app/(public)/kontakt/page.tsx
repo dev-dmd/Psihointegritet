@@ -1,15 +1,10 @@
-import type { Metadata } from "next";
 import Link from "next/link";
 
 import { PageHero } from "@/components/shared/page-hero";
 import { siteSettings } from "@/content/site-settings";
+import { metadataForRoute } from "@/lib/content-governance/discoverability";
 
-export const metadata: Metadata = {
-  title: "Kontakt",
-  description:
-    "Opšti kontakt Psihointegriteta, informacije o lokacijama i jasni putevi za zakazivanje ili rad sa kompanijama.",
-  alternates: { canonical: "/kontakt" },
-};
+export const metadata = metadataForRoute("/kontakt");
 
 export default function ContactPage() {
   return (

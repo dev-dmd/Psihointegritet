@@ -257,7 +257,7 @@ Radi:
 
 ### 4.10 Superadmin i Control Center
 
-Postoji ozbiljan R2 preview:
+Postoji ozbiljan Pre-R2 Control Center Preview (nije formalni R2):
 
 - `/superadmin/*`: superadmin panel, protected server-side, mock/read-only;
 - `/radni-prostor/*`: staff Control Center, role-based, mock/read-only;
