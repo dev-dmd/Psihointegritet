@@ -65,7 +65,7 @@ Svaki ima SUPERSEDED zaglavlje sa razlogom i zamenom. Arhivirano 2026-07-17: `PR
 | R6      | Business OS: analitika, dijagnostika, marketing           | Faza 6 — 10.000–14.000 EUR | 7–9 nedelja | 0%       | ⏸️                         |
 | R7+     | SaaS, marketplace, AI navigator                           | Faze 7–9                   | —           | 0%       | ⏸️ zasebne poslovne odluke |
 
-**Gde smo zaista:** frontend sada ima većinu R1 javnih ruta, uslužni/terapeutski sadržaj, vođeni izbor, demo booking/B2B tok i Pre-R2 Control Center preview. Backend je i dalje čvrst temelj bez produkcionog domena: nema R1.3 persistence-a ni pravog Booking Engine-a. Postojeći Next.js route handleri za demo nisu zamena za backend-owned R1.3.
+**Gde smo zaista:** frontend sada ima većinu R1 javnih ruta, uslužni/terapeutski sadržaj, vođeni izbor, demo booking/B2B tok i Pre-R2 Control Center preview. Backend sada ima prvi produkcioni Intake & Matching domen iza feature flag-ova: perzistentni `IntakeCase`, deterministički matching, verzionirane potvrde, Team Queue i atomsko preuzimanje. Pravi Booking Engine, slotovi, kalendar i naplata i dalje ne postoje; postojeći Next.js route handleri za demo nisu zamena za R2 Booking domen.
 
 ---
 
@@ -163,25 +163,25 @@ Svaki ima SUPERSEDED zaglavlje sa razlogom i zamenom. Arhivirano 2026-07-17: `PR
 
 ### R1.2 — Vođeni izbor / Intake & Matching Engine v1
 
-> **Prošireno 2026-07-17** u pun Matching Engine po CTO spec-u (D-012). Hardcoded na frontendu, bez perzistencije (T13). Booking forma i slanje su R1.3/R2.
+> **Ažurirano 2026-07-22:** frontend ostaje objašnjiv fallback bez kontakta, dok je produkcioni Intake & Matching domen ispod u zasebnom IM bloku i aktivira se samo iza flag-ova. Booking forma i slotovi i dalje pripadaju R2.
 
 | ID     | Zadatak                                                   | Gde piše                                  | Status | Napomena                                                                          |
 | ------ | --------------------------------------------------------- | ----------------------------------------- | ------ | --------------------------------------------------------------------------------- |
-| R1.2.a | Matching engine — deterministički, bez perzistencije      | MP §5 R1.2 · MP §1 T13 · Engines (Intake) | ✅     | `features/guidance/matching.ts`; 5 pitanja, tvrdi filteri, grane; 13 unit testova |
-| R1.2.b | Drawer: chooser → kviz → rezultat                         | MP §5 R1.2                                | ✅     | `guidance-drawer.tsx`; Escape, scroll-lock, progress, nazad                       |
-| R1.2.c | Sigurnosni izlaz (nije dijagnoza / nije hitna služba)     | spec §0 · MP §1 T11                       | ✅     | Stalna traka iznad pitanja; **konačna formulacija čeka S5**                       |
+| R1.2.a | Matching engine — deterministički, bez perzistencije      | MP §5 R1.2 · MP §1 T13 · Engines (Intake) | ✅     | `features/guidance/matching.ts` je lokalni fallback; backend adapter je autoritet kada su produkcioni flagovi aktivni. Grane po ulozi podnosioca ostaju kratke i bez kontakta. |
+| R1.2.b | Drawer: chooser → kviz → rezultat                         | MP §5 R1.2                                | ✅     | `guidance-flow.tsx`; drawer i puna ruta dele isti flow, sa napretkom, povratkom i informativnim putem. |
+| R1.2.c | Sigurnosni izlaz (nije dijagnoza / nije hitna služba)     | spec §0 · MP §1 T11                       | ✅     | Stalna lokalizovana poruka; uski deterministički signal prebacuje samo poslati zahtev na prioritetni human review. **Konačna formulacija čeka S5.** |
 | R1.2.d | **Objašnjiv rezultat** — razlozi po terapeutu, bez skora  | MP §5 R1.2 · Proposal §5 · spec           | ✅     | Rečenice („oblast rada odgovara…"), nikad „87%"                                   |
 | R1.2.e | Tri ulaza: „Zakaži termin" → chooser; hero/sekcija → kviz | spec                                      | ✅     | Postojeći klijenti preskaču pitanja („Znam kog terapeuta")                        |
-| R1.2.f | Grane: B2B, tim-pregled, maloletnici, krizni oporavak     | spec                                      | ✅     | Krizni oporavak **nikad auto-Marjan** → tim; maloletnici → Marija + napomena      |
+| R1.2.f | Grane: B2B, tim-pregled, maloletnici, krizni oporavak     | spec                                      | ✅     | Roditelj/staralac i adolescent 16–17 idu na kontrolisani team review; za <16 nema javne mape usluge, cene ni terapeuta dok Legal + Clinical ne odobre publish gate. |
 | R1.2.g | Rezultat kartice → `/tim/[slug]`                          | MP §5 R1.2                                | ✅     | Bez email gate-a (T13); BookingWidget kasnije                                     |
-| R1.2.h | Opciona textarea „svojim rečima"                          | spec                                      | ✅     | Samo memorija — ništa se ne šalje ni čuva                                         |
-| R1.2.i | Promovisati na `/pronadji-podrsku` (puna strana)          | MP §5 R1.2 · Proposal §6 M1.3             | ⬜     | Drawer radi svuda; zasebna ruta još ne postoji                                    |
+| R1.2.h | Opciona textarea „svojim rečima"                          | spec                                      | ✅     | U produkcionom flow-u dolazi tek uz kontakt, najviše 1.000 znakova, ne šalje se email-om niti u queue; adolescent 16–17 je nema. Dok su flagovi isključeni, ne perzistira se. |
+| R1.2.i | Promovisati na `/pronadji-podrsku` (puna strana)          | MP §5 R1.2 · Proposal §6 M1.3             | ✅     | Puna ruta koristi isti `GuidanceFlow` kao drawer.                                 |
 | R1.2.j | Pregled pitanja + routing matrice od tima                 | MP §13 S11 · Proposal §4/6                | 🚫 S11 | Blokira sign-off; nove otvorene stavke u `OPEN_DECISIONS`                         |
 
 ### R1.3 — Prijem upita i zahteva za termin (backend)
 
 > **Gde piše:** MP §5 R1.3 · Proposal §6 M1.4 · rules §1.1 (business CRUD je u FastAPI — **Next Route Handlers ovo ne smeju raditi**)
-> **Stanje: 0%.** Modul `inquiries` ne postoji; Resend nije ni zavisnost; rate limiting ne postoji.
+> **Stanje legacy modula: 0%.** Generički `inquiries` i `appointment_requests` ne postoje. Produkcijski Intake Core postoji odvojeno i namerno ne uvodi slotove, generičke upite niti email/notification posao.
 
 | ID       | Zadatak                                                                        | Gde piše                                      | Status |
 | -------- | ------------------------------------------------------------------------------ | --------------------------------------------- | ------ |
@@ -245,10 +245,10 @@ Svaki ima SUPERSEDED zaglavlje sa razlogom i zamenom. Arhivirano 2026-07-17: `PR
 
 | ID   | Zadatak                                                                                                  | Status | Napomena                                                                      |
 | ---- | -------------------------------------------------------------------------------------------------------- | ------ | ----------------------------------------------------------------------------- |
-| IM-1 | Intake Core: modeli, migracije, state machine, consent/retention granice, FastAPI API i generated client | ⬜     | GuidanceSession ostaje anoniman; IntakeCase nastaje tek uz kontakt/saglasnost |
-| IM-2 | Backend deterministic MatchingAdapter i test paritet                                                     | ⬜     | `matching.ts` je referenca; UI ne poznaje adapter implementaciju              |
-| IM-3 | Team Queue: RBAC, atomic claim, reassign i assignment history                                            | ⬜     | Vertikalni Control Center slice, bez slobodnog teksta u zajedničkom redu      |
-| IM-4 | Therapist matching profile, statički CapacityAdapter i produkcijski flagovi                              | ⬜     | Odvojeno od javnog profila i R2 slotova                                       |
+| IM-1 | Intake Core: modeli, migracije, state machine, consent/retention granice, FastAPI API i generated client | ✅     | `GuidanceSession` ostaje anoniman; `IntakeCase` nastaje tek uz kontakt/potvrde. Uloge podnosioca, uzrasne grupe, safety prioritet i odvojeni statusi terapeuta postoje iza flag-ova; osetljivo slanje ostaje zatvoreno bez odobrenih tekstova. |
+| IM-2 | Backend deterministic MatchingAdapter i test paritet                                                     | ✅     | `matching.ts` ostaje referenca; backend je autoritet za rezultat kada je produkcioni flow uključen. Maloletnički controlled tok i pravilo da se za <16 ne objavljuju usluga/cena/terapeut su testirani. |
+| IM-3 | Team Queue: RBAC, atomic claim, reassign i assignment history                                            | ✅     | Backend JWT + PostgreSQL membership; queue ne prikazuje kontakt/slobodan tekst. Stvarni staff nalozi još moraju biti provisioned. |
+| IM-4 | Therapist matching profile, statički CapacityAdapter i produkcijski flagovi                              | 🟡     | Profili, hard gate-ovi i flagovi postoje; administrativni editor dolazi posle povezivanja stvarnih staff profila. |
 | IM-5 | Klijentski status zahteva                                                                                | ⬜     | Bez anamneze/privatnih dokumenata; booking detalji dolaze uz R2               |
 | IM-6 | AI assist iza consent/feature gate-a                                                                     | ⬜     | Opciono i poslednje; nikad dijagnoza, rizik, slot ili automatska potvrda      |
 
@@ -354,7 +354,7 @@ Svaki ima SUPERSEDED zaglavlje sa razlogom i zamenom. Arhivirano 2026-07-17: `PR
 > **Gde piše:** master plan §6 · Proposal v1.1 §7 (Faza 2) · Engines (status enum §7.3, dijagnostika §18)
 > **Ulazni kriterijumi:** R1 prihvaćen u produkciji · potpisan SoW za Fazu 2 · potvrđena pravila otkazivanja (S7) · Google nalozi po terapeutu (M2.6)
 > **Pakovanje:** **2A** = M2.1–M2.5 + M2.7 (6.500–9.000 EUR) · **2B** = M2.6 (2.500–4.000 EUR) · opcija M2.8 (800–1.500 EUR)
-> **Stanje: 0%.** Svih 11 backend modula je prazno; nula modela, nula migracija.
+> **Stanje Booking domena: 0%.** Pre-R2 Intake & Matching modul sada postoji odvojeno, ali R2 `AppointmentRequest`/`Appointment`, slotovi, kalendar i plaćanje još nemaju modele, migracije ni endpoint-e.
 > **Scope lock (D-031):** R2 je request-first Booking Engine. Paketi, krediti, pretplate, payment, fakture, refundacije i B2B naplata su `BLOCKED` za R5. R3, ne R2, dobija Content Engine / CMS.
 
 | ID   | Milestone                         | Gde piše                                  | Okvir      | Status                |
@@ -473,11 +473,11 @@ Svaki ima SUPERSEDED zaglavlje sa razlogom i zamenom. Arhivirano 2026-07-17: `PR
 
 ## 11. Sledeći korak
 
-**Trenutno stanje (2026-07-22):** javni route flow, matching, demo booking/B2B tok i read-only Pre-R2 paneli postoje. R1.4.i kodni gate je zatvoren: statički contract/provider, publish validatori, Content Health, metadata, sitemap/robots, JSON-LD i redirect registry postoje. R1.3 backend persistence i produkcijski Intake/Booking Engine ne postoje.
+**Trenutno stanje (2026-07-22):** javni route flow, matching, demo booking/B2B tok i read-only Pre-R2 paneli postoje. R1.4.i kodni gate je zatvoren: statički contract/provider, publish validatori, Content Health, metadata, sitemap/robots, JSON-LD i redirect registry postoje. Produkcijski Intake & Matching Engine postoji iza flag-ova; R1.3 legacy inquiry modul i R2 Booking Engine (slotovi, kalendar, plaćanje) i dalje ne postoje.
 
 **Dogovoreni sledeći redosled:**
 
-1. **Production Intake & Matching Engine** — IM-1…IM-4 vertikalno, uz postojeći frontend v1; AI je poslednji opcioni slice.
+1. **Intake activation gate** — Legal/Clinical/Operations potvrđuju maloletnički tok, safety tekst, vlasnika human review-a, kalendar i capability-je terapeuta; zatim se flagovi uključuju kontrolisano.
 2. **Pre-R2 Booking Decision Specification** — paralelno zatvoriti BDS-004…BDS-012 i Reminder/Notify Me/atomic claim odluke, bez finansijskog koda.
 3. **R2 Booking Engine** — headless request-first domen, zatim internal adaptive Booking Widget; nikakvi packages, credits, subscriptions ili payments pre R5.
 4. **Paneli vertikalno uz backend funkcije** — Control Center i klijentski panel prate Intake/Booking slice-ove; superadmin ostaje pretežno read-only.

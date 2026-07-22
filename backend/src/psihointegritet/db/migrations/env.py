@@ -5,6 +5,12 @@ from sqlalchemy import engine_from_config, pool
 
 from psihointegritet.core.config import get_settings
 from psihointegritet.db.base import Base
+from psihointegritet.modules.guidance import models as guidance_models
+from psihointegritet.modules.identity import models as identity_models
+from psihointegritet.modules.organizations import models as organization_models
+
+# Alembic needs each mapped module imported before it reads Base.metadata.
+MODEL_MODULES = (guidance_models, identity_models, organization_models)
 
 config = context.config
 

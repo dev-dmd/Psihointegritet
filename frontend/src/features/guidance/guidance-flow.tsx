@@ -5,6 +5,7 @@ import type { Route } from "next";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { MonogramAvatar } from "@/components/ui/monogram-avatar";
+import { findService, formatRsd, serviceSlugForName } from "@/content/services";
 import { therapists } from "@/content/therapists";
 import {
   buildBookingHref,
@@ -15,12 +16,11 @@ import type { BookingSummary } from "@/features/booking/booking-types";
 import { cn } from "@/helpers/cn";
 
 import {
-  ADULT_CHILD_AGE_GROUP,
+  ADULT_SUBJECT_AGE_BAND,
   INTAKE_INTRO,
   MINOR_NOTE,
-  OTHER_TEXT_PROMPT,
   PARTICIPANTS,
-  REASONS,
+  REQUESTER_ROLES,
   SAFETY_NOTICE,
   WORK_FORMATS,
   activeIntakeSteps,
@@ -31,10 +31,22 @@ import {
   type TherapistMatch,
   emptyIntakeAnswers,
 } from "./matching";
-import { serviceSlugForName } from "@/content/services";
+import { IntakeRequestForm } from "./intake-request-form";
+import { intakeFeatureFlags } from "./intake-feature-flags";
+import {
+  fetchAuthoritativeIntakeMatch,
+  type PublicIntakeSubmissionKind,
+} from "./public-intake-api";
 
 export type GuidanceFlowEntry = "chooser" | "quiz" | "page";
-type Screen = "intro" | "chooser" | "questions" | "result";
+type Screen =
+  "intro" | "chooser" | "questions" | "information" | "result" | "submit";
+
+interface SubmissionIntent {
+  kind: PublicIntakeSubmissionKind;
+  preferredTherapistSlug: string | null;
+  returnScreen: "chooser" | "result";
+}
 
 interface GuidanceFlowProps {
   entry: GuidanceFlowEntry;
@@ -45,8 +57,9 @@ interface GuidanceFlowProps {
 /**
  * One shared, non-diagnostic matching flow for the transitional drawer and
  * the canonical `/pronadji-podrsku` page. Matching state is local to the
- * component; only a structured plain-language summary may cross to `/zakazi`
- * in same-tab session storage after the visitor explicitly chooses it.
+ * component. The legacy Booking handoff remains available while the production
+ * Intake flag is off; when it is on, matching and submission move through the
+ * backend-owned contract.
  */
 export function GuidanceFlow({ entry, surface, onClose }: GuidanceFlowProps) {
   const [screen, setScreen] = useState<Screen>(
@@ -54,7 +67,14 @@ export function GuidanceFlow({ entry, surface, onClose }: GuidanceFlowProps) {
   );
   const [stepIndex, setStepIndex] = useState(0);
   const [answers, setAnswers] = useState<IntakeAnswers>(emptyIntakeAnswers);
-  const [extraText, setExtraText] = useState("");
+  const [submissionIntent, setSubmissionIntent] =
+    useState<SubmissionIntent | null>(null);
+  const [authoritativeMatch, setAuthoritativeMatch] = useState<{
+    key: string;
+    result: IntakeMatchResult;
+  } | null>(null);
+  const [matchingErrorKey, setMatchingErrorKey] = useState<string | null>(null);
+  const [matchAttempt, setMatchAttempt] = useState(0);
   const advanceTimer = useRef<number | null>(null);
   const headingRef = useRef<HTMLHeadingElement | null>(null);
 
@@ -69,10 +89,38 @@ export function GuidanceFlow({ entry, surface, onClose }: GuidanceFlowProps) {
   const steps = useMemo(() => activeIntakeSteps(answers), [answers]);
   const safeIndex = Math.min(stepIndex, steps.length - 1);
   const currentStep = steps[safeIndex];
-  const result = useMemo(
+  const localResult = useMemo(
     () => (screen === "result" ? evaluateIntake(answers) : null),
     [screen, answers],
   );
+  const matchingRequestKey = useMemo(
+    () => JSON.stringify({ answers, matchAttempt }),
+    [answers, matchAttempt],
+  );
+  const result = intakeFeatureFlags.publicFlowEnabled
+    ? authoritativeMatch?.key === matchingRequestKey
+      ? authoritativeMatch.result
+      : null
+    : localResult;
+  const matchingError = matchingErrorKey === matchingRequestKey;
+
+  useEffect(() => {
+    if (!intakeFeatureFlags.publicFlowEnabled || screen !== "result") return;
+
+    const controller = new AbortController();
+    void fetchAuthoritativeIntakeMatch(answers, controller.signal)
+      .then((next) => {
+        if (!controller.signal.aborted) {
+          setAuthoritativeMatch({ key: matchingRequestKey, result: next });
+        }
+      })
+      .catch(() => {
+        if (!controller.signal.aborted) {
+          setMatchingErrorKey(matchingRequestKey);
+        }
+      });
+    return () => controller.abort();
+  }, [answers, matchingRequestKey, screen]);
 
   useEffect(() => {
     headingRef.current?.focus();
@@ -97,21 +145,39 @@ export function GuidanceFlow({ entry, surface, onClose }: GuidanceFlowProps) {
 
   const selectOption = (key: IntakeStepKey, option: string) => {
     const next: IntakeAnswers = { ...answers, [key]: option };
-    if (key === "participants" && option !== PARTICIPANTS.parentChild) {
-      next.childAgeGroup = null;
+    if (key === "requesterRole") {
+      if (option === REQUESTER_ROLES.guardian) {
+        next.participants = PARTICIPANTS.parentChild;
+        next.subjectAgeBand = null;
+      } else if (option === REQUESTER_ROLES.adolescent) {
+        next.participants = PARTICIPANTS.alone;
+        next.subjectAgeBand = "16–17 godina";
+      } else if (option === REQUESTER_ROLES.selfAdult) {
+        next.participants = null;
+        next.subjectAgeBand = ADULT_SUBJECT_AGE_BAND;
+      }
+      if (option === REQUESTER_ROLES.informationOnly) {
+        setAnswers(next);
+        setScreen("information");
+        return;
+      }
     }
     if (key === "format" && option !== WORK_FORMATS.inPerson) {
       next.location = null;
     }
-    if (key === "reason" && option !== REASONS.other) {
-      next.reasonOtherText = "";
-    }
     setAnswers(next);
-    if (key === "reason" && option === REASONS.other) return;
     advanceFrom(next);
   };
 
   const goBack = () => {
+    if (screen === "submit") {
+      setScreen(submissionIntent?.returnScreen ?? "result");
+      return;
+    }
+    if (screen === "information") {
+      setScreen("questions");
+      return;
+    }
     if (screen === "result") {
       setScreen("questions");
       setStepIndex(steps.length - 1);
@@ -134,6 +200,8 @@ export function GuidanceFlow({ entry, surface, onClose }: GuidanceFlowProps) {
 
   const canGoBack =
     screen === "result" ||
+    screen === "submit" ||
+    screen === "information" ||
     (screen === "questions" &&
       (safeIndex > 0 || entry === "chooser" || entry === "page")) ||
     (screen === "chooser" && entry === "page");
@@ -142,9 +210,13 @@ export function GuidanceFlow({ entry, surface, onClose }: GuidanceFlowProps) {
   const label =
     screen === "result"
       ? "Vaš predlog"
-      : screen === "questions"
-        ? `Pitanje ${safeIndex + 1} od ${steps.length}`
-        : "Vođeni izbor";
+      : screen === "submit"
+        ? "Zahtev"
+        : screen === "information"
+          ? "Informacije"
+          : screen === "questions"
+            ? `Pitanje ${safeIndex + 1} od ${steps.length}`
+            : "Vođeni izbor";
 
   return (
     <div className={surface === "drawer" ? "flex h-full flex-col" : ""}>
@@ -204,6 +276,18 @@ export function GuidanceFlow({ entry, surface, onClose }: GuidanceFlowProps) {
                 setStepIndex(0);
                 setScreen("questions");
               }}
+              onChooseTherapist={
+                intakeFeatureFlags.publicFlowEnabled
+                  ? (therapistSlug) => {
+                      setSubmissionIntent({
+                        kind: "team_review",
+                        preferredTherapistSlug: therapistSlug,
+                        returnScreen: "chooser",
+                      });
+                      setScreen("submit");
+                    }
+                  : undefined
+              }
               onClose={onClose}
             />
           ) : null}
@@ -215,9 +299,11 @@ export function GuidanceFlow({ entry, surface, onClose }: GuidanceFlowProps) {
               answers={answers}
               isFirstStep={safeIndex === 0}
               onSelect={selectOption}
-              onAnswersChange={setAnswers}
-              onAdvance={() => advanceFrom(answers)}
             />
+          ) : null}
+
+          {screen === "information" ? (
+            <InformationScreen headingRef={headingRef} onClose={onClose} />
           ) : null}
 
           {screen === "result" && result ? (
@@ -225,9 +311,30 @@ export function GuidanceFlow({ entry, surface, onClose }: GuidanceFlowProps) {
               headingRef={headingRef}
               result={result}
               answers={answers}
-              extraText={extraText}
-              onExtraTextChange={setExtraText}
+              useProductionIntake={intakeFeatureFlags.publicFlowEnabled}
+              onStartSubmission={(intent) => {
+                setSubmissionIntent(intent);
+                setScreen("submit");
+              }}
               onClose={onClose}
+            />
+          ) : null}
+
+          {screen === "result" &&
+          intakeFeatureFlags.publicFlowEnabled &&
+          !result ? (
+            <MatchingStatus
+              hasError={matchingError}
+              onRetry={() => setMatchAttempt((value) => value + 1)}
+            />
+          ) : null}
+
+          {screen === "submit" && submissionIntent ? (
+            <IntakeRequestForm
+              answers={answers}
+              submissionKind={submissionIntent.kind}
+              preferredTherapistSlug={submissionIntent.preferredTherapistSlug}
+              onBack={() => setScreen(submissionIntent.returnScreen)}
             />
           ) : null}
         </div>
@@ -303,22 +410,62 @@ function GuidanceIntro({
   );
 }
 
+function InformationScreen({
+  headingRef,
+  onClose,
+}: {
+  headingRef: React.RefObject<HTMLHeadingElement | null>;
+  onClose?: (() => void) | undefined;
+}) {
+  return (
+    <section>
+      <p className="text-sage mb-3 text-[12.5px] font-semibold tracking-[0.16em] uppercase">
+        Informacije
+      </p>
+      <h2
+        ref={headingRef}
+        tabIndex={-1}
+        className="text-forest mb-3 font-serif text-[28px] leading-[1.14] font-normal outline-none md:text-[34px]"
+      >
+        Upoznajte podršku pre nego što pošaljete zahtev.
+      </h2>
+      <p className="text-coffee/75 max-w-[660px] text-[15px] leading-[1.65]">
+        Možete pogledati terapeute, usluge, formate rada i okvirne cene bez
+        ostavljanja kontakta. Kada budete želeli predlog za svoju situaciju,
+        vratite se na vođeni izbor.
+      </p>
+      <div className="mt-7 flex flex-wrap gap-3">
+        <Link
+          href="/usluge"
+          onClick={() => onClose?.()}
+          className="bg-forest text-canvas hover:bg-forest-hover inline-flex min-h-11 items-center rounded-full px-6 text-[14px] font-semibold no-underline transition-colors"
+        >
+          Pogledajte usluge
+        </Link>
+        <Link
+          href="/tim"
+          onClick={() => onClose?.()}
+          className="border-coffee/25 text-coffee hover:border-sage inline-flex min-h-11 items-center rounded-full border px-6 text-[14px] font-semibold no-underline transition-colors"
+        >
+          Upoznajte terapeute
+        </Link>
+      </div>
+    </section>
+  );
+}
+
 function QuestionsScreen({
   headingRef,
   currentStep,
   answers,
   isFirstStep,
   onSelect,
-  onAnswersChange,
-  onAdvance,
 }: {
   headingRef: React.RefObject<HTMLHeadingElement | null>;
   currentStep: ReturnType<typeof activeIntakeSteps>[number];
   answers: IntakeAnswers;
   isFirstStep: boolean;
   onSelect: (key: IntakeStepKey, option: string) => void;
-  onAnswersChange: (answers: IntakeAnswers) => void;
-  onAdvance: () => void;
 }) {
   return (
     <>
@@ -331,7 +478,7 @@ function QuestionsScreen({
       <h2
         ref={headingRef}
         tabIndex={-1}
-        className="text-forest mb-[30px] font-serif text-[26px] leading-[1.12] font-normal tracking-[-0.01em] text-pretty outline-none md:text-[32px]"
+        className="text-forest mb-[30px] font-serif text-[26px] leading-[1.12] font-normal text-pretty outline-none md:text-[32px]"
       >
         {currentStep.question}
       </h2>
@@ -358,36 +505,41 @@ function QuestionsScreen({
           );
         })}
       </div>
-      {currentStep.hasOtherText && answers.reason === REASONS.other ? (
-        <>
-          <label
-            htmlFor="guidance-other-text"
-            className="text-coffee/70 mt-5 mb-2 block text-[14px] font-medium"
-          >
-            {OTHER_TEXT_PROMPT} <span className="text-coffee/45">Opciono</span>
-          </label>
-          <textarea
-            id="guidance-other-text"
-            value={answers.reasonOtherText}
-            onChange={(event) =>
-              onAnswersChange({
-                ...answers,
-                reasonOtherText: event.target.value,
-              })
-            }
-            rows={3}
-            className="border-coffee/15 bg-surface text-coffee focus:border-sage w-full resize-none rounded-2xl border px-4 py-3 text-[15px] leading-[1.5] outline-none"
-          />
-          <button
-            type="button"
-            onClick={onAdvance}
-            className="bg-forest text-canvas hover:bg-forest-hover mt-4 min-h-11 cursor-pointer rounded-full border-0 px-7 text-[15px] font-semibold transition-colors"
-          >
-            Dalje
-          </button>
-        </>
-      ) : null}
     </>
+  );
+}
+
+function MatchingStatus({
+  hasError,
+  onRetry,
+}: {
+  hasError: boolean;
+  onRetry: () => void;
+}) {
+  if (hasError) {
+    return (
+      <section aria-live="polite">
+        <h2 className="text-forest mb-3 font-serif text-[28px] leading-[1.14] font-normal md:text-[34px]">
+          Predlog trenutno nije dostupan.
+        </h2>
+        <p className="text-coffee/75 mb-6 text-[15px] leading-[1.6]">
+          Pokušajte ponovo za trenutak ili pregledajte terapeute samostalno.
+        </p>
+        <button
+          type="button"
+          onClick={onRetry}
+          className="bg-forest text-canvas hover:bg-forest-hover min-h-11 cursor-pointer rounded-full border-0 px-7 text-[15px] font-semibold transition-colors"
+        >
+          Pokušajte ponovo
+        </button>
+      </section>
+    );
+  }
+
+  return (
+    <p aria-live="polite" className="text-coffee/70 text-[15px] leading-[1.6]">
+      Pripremamo vaš predlog...
+    </p>
   );
 }
 
@@ -395,15 +547,15 @@ function ResultScreen({
   headingRef,
   result,
   answers,
-  extraText,
-  onExtraTextChange,
+  useProductionIntake,
+  onStartSubmission,
   onClose,
 }: {
   headingRef: React.RefObject<HTMLHeadingElement | null>;
   result: IntakeMatchResult;
   answers: IntakeAnswers;
-  extraText: string;
-  onExtraTextChange: (value: string) => void;
+  useProductionIntake: boolean;
+  onStartSubmission: (intent: SubmissionIntent) => void;
   onClose?: (() => void) | undefined;
 }) {
   const [showAlternative, setShowAlternative] = useState(false);
@@ -416,17 +568,16 @@ function ResultScreen({
     : primary
       ? [primary]
       : [];
-  const minorNote =
-    answers.participants === PARTICIPANTS.parentChild &&
-    answers.childAgeGroup !== null &&
-    answers.childAgeGroup !== ADULT_CHILD_AGE_GROUP;
+  const controlledMinorFlow = result.controlledMinorFlow;
   const serviceSlug = serviceSlugForName(result.recommendedService);
   const format = bookingFormatForAnswer(answers.format);
+  const service =
+    !controlledMinorFlow && serviceSlug ? findService(serviceSlug) : undefined;
 
   const summaryFor = (match: TherapistMatch | null): BookingSummary =>
-    buildSummary(answers, result, extraText, match);
+    buildSummary(answers, result, match);
   const teamHref = buildBookingHref({
-    service: serviceSlug,
+    service: controlledMinorFlow ? undefined : serviceSlug,
     format,
     source: "matching",
   });
@@ -434,15 +585,24 @@ function ResultScreen({
   return (
     <>
       <div className="text-sage mb-3.5 text-[12.5px] font-semibold tracking-[0.16em] uppercase">
-        Predlog na osnovu vaših odgovora
+        {controlledMinorFlow
+          ? "Sledeći korak uz podršku tima"
+          : "Predlog na osnovu vaših odgovora"}
       </div>
       <h2
         ref={headingRef}
         tabIndex={-1}
         className="text-forest mb-2 font-serif text-[24px] leading-[1.15] font-normal text-pretty outline-none"
       >
-        Preporučena usluga: {result.recommendedService}
+        {controlledMinorFlow
+          ? "Tim će najpre proveriti odgovarajući sledeći korak."
+          : `Preporučena usluga: ${result.recommendedService}`}
       </h2>
+      {service ? (
+        <p className="text-coffee/70 mb-4 text-[14.5px] leading-[1.55]">
+          {service.duration} · okvirno {formatRsd(service.priceAmount)}
+        </p>
+      ) : null}
       {result.onlineFallback ? (
         <p className="bg-warm/20 text-coffee/80 mb-4 rounded-2xl px-4 py-3 text-[13.5px] leading-[1.55]">
           Na izabranoj lokaciji trenutno nema rada uživo - svi terapeuti su
@@ -451,8 +611,9 @@ function ResultScreen({
       ) : null}
       {result.needsManualReview ? (
         <p className="bg-warm/20 text-coffee/80 mb-4 rounded-2xl px-4 py-3 text-[13.5px] leading-[1.55]">
-          Pošto ste izabrali &quot;Drugo&quot;, tim će dodatno pregledati vaš
-          zahtev i predložiti najbolji sledeći korak.
+          {controlledMinorFlow
+            ? "Za ovaj tok je potreban pregled tima pre potvrđivanja usluge, terapeuta ili termina."
+            : "Za ovaj put je potreban pregled tima pre sledećeg koraka."}
         </p>
       ) : null}
       {result.showBoth && shown.length > 1 ? (
@@ -467,13 +628,33 @@ function ResultScreen({
           <TherapistResultCard
             key={match.therapist.slug}
             match={match}
-            href={buildBookingHref({
-              service: serviceSlug,
-              therapist: match.therapist.slug,
-              format,
-              source: "matching",
-            })}
-            summary={summaryFor(match)}
+            href={
+              useProductionIntake || controlledMinorFlow
+                ? undefined
+                : buildBookingHref({
+                    service: serviceSlug,
+                    therapist: match.therapist.slug,
+                    format,
+                    source: "matching",
+                  })
+            }
+            summary={
+              useProductionIntake || controlledMinorFlow
+                ? undefined
+                : summaryFor(match)
+            }
+            onRequest={
+              useProductionIntake &&
+              !result.needsManualReview &&
+              !controlledMinorFlow
+                ? () =>
+                    onStartSubmission({
+                      kind: "request",
+                      preferredTherapistSlug: match.therapist.slug,
+                      returnScreen: "result",
+                    })
+                : undefined
+            }
             onClose={onClose}
           />
         ))}
@@ -487,13 +668,33 @@ function ResultScreen({
             </div>
             <TherapistResultCard
               match={alternative}
-              href={buildBookingHref({
-                service: serviceSlug,
-                therapist: alternative.therapist.slug,
-                format,
-                source: "matching",
-              })}
-              summary={summaryFor(alternative)}
+              href={
+                useProductionIntake || controlledMinorFlow
+                  ? undefined
+                  : buildBookingHref({
+                      service: serviceSlug,
+                      therapist: alternative.therapist.slug,
+                      format,
+                      source: "matching",
+                    })
+              }
+              summary={
+                useProductionIntake || controlledMinorFlow
+                  ? undefined
+                  : summaryFor(alternative)
+              }
+              onRequest={
+                useProductionIntake &&
+                !result.needsManualReview &&
+                !controlledMinorFlow
+                  ? () =>
+                      onStartSubmission({
+                        kind: "request",
+                        preferredTherapistSlug: alternative.therapist.slug,
+                        returnScreen: "result",
+                      })
+                  : undefined
+              }
               onClose={onClose}
             />
           </div>
@@ -508,7 +709,7 @@ function ResultScreen({
         )
       ) : null}
 
-      {minorNote ? (
+      {controlledMinorFlow ? (
         <p className="text-coffee/70 bg-warm/20 mt-4 rounded-2xl px-4 py-3 text-[13.5px] leading-[1.55]">
           {MINOR_NOTE}
         </p>
@@ -517,40 +718,36 @@ function ResultScreen({
       <p className="text-coffee/60 mt-5 text-[13.5px] leading-[1.55]">
         Rezultat je objašnjiv predlog; konačan izbor je vaš.
       </p>
-      <div className="mt-7">
-        <label
-          htmlFor="guidance-note"
-          className="text-coffee/70 mb-2 block text-[14px] font-medium"
+      {useProductionIntake ? (
+        <button
+          type="button"
+          onClick={() =>
+            onStartSubmission({
+              kind: "team_review",
+              preferredTherapistSlug: null,
+              returnScreen: "result",
+            })
+          }
+          className="text-coffee/70 hover:text-forest mt-5 inline-flex min-h-11 cursor-pointer items-center gap-2 border-0 bg-transparent text-[14px] font-semibold underline underline-offset-[3px] transition-colors"
         >
-          Želite li nešto da dodate svojim rečima?{" "}
-          <span className="text-coffee/45">Opciono</span>
-        </label>
-        <textarea
-          id="guidance-note"
-          value={extraText}
-          onChange={(event) => onExtraTextChange(event.target.value)}
-          rows={3}
-          className="border-coffee/15 bg-surface text-coffee focus:border-sage w-full resize-none rounded-2xl border px-4 py-3 text-[15px] leading-[1.5] outline-none"
-          placeholder="Npr. šta vam je trenutno najvažnije."
-        />
-        <p className="text-coffee/50 mt-2 text-[12.5px] leading-[1.5]">
-          Tekst ostaje na vašem uređaju i šalje se timu samo uz zahtev za
-          termin.
-        </p>
-      </div>
-      <Link
-        href={teamHref as Route}
-        onClick={() => {
-          storeBookingSummary(summaryFor(null));
-          onClose?.();
-        }}
-        className="text-coffee/70 hover:text-forest mt-5 inline-flex min-h-11 items-center gap-2 text-[14px] font-semibold underline underline-offset-[3px] transition-colors"
-      >
-        Želim da tim pregleda moj zahtev
-      </Link>
+          {controlledMinorFlow
+            ? "Pošaljite zahtev timu"
+            : "Neka tim pregleda moj zahtev"}
+        </button>
+      ) : (
+        <Link
+          href={teamHref as Route}
+          onClick={() => {
+            storeBookingSummary(summaryFor(null));
+            onClose?.();
+          }}
+          className="text-coffee/70 hover:text-forest mt-5 inline-flex min-h-11 items-center gap-2 text-[14px] font-semibold underline underline-offset-[3px] transition-colors"
+        >
+          Želim da tim pregleda moj zahtev
+        </Link>
+      )}
       <div className="bg-meadow/25 text-coffee/70 mt-6 rounded-2xl px-5 py-[18px] text-[13.5px] leading-[1.6]">
-        Vaši odgovori se ne čuvaju i ne prate - šalju se timu isključivo uz vaš
-        zahtev za termin.
+        Kontakt tražimo tek kada odlučite da pošaljete zahtev.
       </div>
     </>
   );
@@ -560,11 +757,13 @@ function TherapistResultCard({
   match,
   href,
   summary,
+  onRequest,
   onClose,
 }: {
   match: TherapistMatch;
-  href: string;
-  summary: BookingSummary;
+  href?: string | undefined;
+  summary?: BookingSummary | undefined;
+  onRequest?: (() => void) | undefined;
   onClose?: (() => void) | undefined;
 }) {
   const { therapist, reasons } = match;
@@ -595,16 +794,27 @@ function TherapistResultCard({
         ))}
       </ul>
       <div className="mt-4 flex flex-wrap items-center gap-3">
-        <Link
-          href={href as Route}
-          onClick={() => {
-            storeBookingSummary(summary);
-            onClose?.();
-          }}
-          className="bg-forest text-canvas hover:bg-forest-hover inline-flex min-h-11 items-center rounded-full px-6 text-[14px] font-semibold no-underline transition-colors"
-        >
-          Zatražite termin
-        </Link>
+        {onRequest ? (
+          <button
+            type="button"
+            onClick={onRequest}
+            className="bg-forest text-canvas hover:bg-forest-hover inline-flex min-h-11 cursor-pointer items-center rounded-full border-0 px-6 text-[14px] font-semibold transition-colors"
+          >
+            Pošaljite zahtev
+          </button>
+        ) : null}
+        {href && summary ? (
+          <Link
+            href={href as Route}
+            onClick={() => {
+              storeBookingSummary(summary);
+              onClose?.();
+            }}
+            className="bg-forest text-canvas hover:bg-forest-hover inline-flex min-h-11 items-center rounded-full px-6 text-[14px] font-semibold no-underline transition-colors"
+          >
+            Zatražite termin
+          </Link>
+        ) : null}
         <Link
           href={`/tim/${therapist.slug}`}
           onClick={() => onClose?.()}
@@ -620,10 +830,12 @@ function TherapistResultCard({
 function ChooserScreen({
   headingRef,
   onQuiz,
+  onChooseTherapist,
   onClose,
 }: {
   headingRef: React.RefObject<HTMLHeadingElement | null>;
   onQuiz: () => void;
+  onChooseTherapist?: ((therapistSlug: string) => void) | undefined;
   onClose?: (() => void) | undefined;
 }) {
   return (
@@ -636,7 +848,7 @@ function ChooserScreen({
         Kako želite da pronađete termin?
       </h2>
       <p className="text-coffee/70 mb-7 text-[15px] leading-[1.6]">
-        Izaberite način koji vam više odgovara - oba vode do zakazivanja.
+        Izaberite način koji vam više odgovara.
       </p>
       <button
         type="button"
@@ -654,37 +866,56 @@ function ChooserScreen({
         Znam kog terapeuta želim
       </div>
       <div className="flex flex-col gap-2.5">
-        {therapists.map((therapist) => (
-          <Link
-            key={therapist.slug}
-            href={
-              buildBookingHref({
-                therapist: therapist.slug,
-                source: "therapist",
-              }) as Route
-            }
-            onClick={() => onClose?.()}
-            className="bg-surface border-coffee/8 hover:shadow-row-hover flex items-center gap-4 rounded-[18px] border px-5 py-3.5 no-underline transition-shadow duration-200"
-          >
-            <MonogramAvatar
-              initials={therapist.initials}
-              name={therapist.name}
-              imageSrc={therapist.image}
-              size="sm"
-            />
-            <span className="min-w-0 flex-1">
-              <span className="text-forest block font-serif text-lg">
-                {therapist.name}
+        {therapists.map((therapist) => {
+          const content = (
+            <>
+              <MonogramAvatar
+                initials={therapist.initials}
+                name={therapist.name}
+                imageSrc={therapist.image}
+                size="sm"
+              />
+              <span className="min-w-0 flex-1">
+                <span className="text-forest block font-serif text-lg">
+                  {therapist.name}
+                </span>
+                <span className="text-coffee/60 block truncate text-[13px]">
+                  {therapist.title}
+                </span>
               </span>
-              <span className="text-coffee/60 block truncate text-[13px]">
-                {therapist.title}
+              <span aria-hidden className="text-forest text-[15px]">
+                →
               </span>
-            </span>
-            <span aria-hidden className="text-forest text-[15px]">
-              →
-            </span>
-          </Link>
-        ))}
+            </>
+          );
+          const className =
+            "bg-surface border-coffee/8 hover:shadow-row-hover flex items-center gap-4 rounded-[18px] border px-5 py-3.5 text-left no-underline transition-shadow duration-200";
+
+          return onChooseTherapist ? (
+            <button
+              key={therapist.slug}
+              type="button"
+              onClick={() => onChooseTherapist(therapist.slug)}
+              className={`${className} w-full cursor-pointer`}
+            >
+              {content}
+            </button>
+          ) : (
+            <Link
+              key={therapist.slug}
+              href={
+                buildBookingHref({
+                  therapist: therapist.slug,
+                  source: "therapist",
+                }) as Route
+              }
+              onClick={() => onClose?.()}
+              className={className}
+            >
+              {content}
+            </Link>
+          );
+        })}
       </div>
     </>
   );
@@ -692,9 +923,12 @@ function ChooserScreen({
 
 function SafetyNotice() {
   return (
-    <div className="bg-warm/20 text-coffee/80 mb-7 rounded-2xl px-5 py-[14px] text-[13.5px] leading-[1.55]">
-      {SAFETY_NOTICE}
-    </div>
+    <aside className="bg-warm/20 text-coffee/80 mb-7 rounded-2xl px-5 py-[14px] text-[13.5px] leading-[1.55]">
+      <strong className="text-coffee block font-semibold">
+        Potrebna vam je hitna pomoć?
+      </strong>
+      <p className="mt-1.5">{SAFETY_NOTICE}</p>
+    </aside>
   );
 }
 
@@ -707,28 +941,18 @@ function bookingFormatForAnswer(value: string | null): BookingFormat | null {
 function buildSummary(
   answers: IntakeAnswers,
   result: IntakeMatchResult,
-  extraText: string,
   chosen: TherapistMatch | null,
 ): BookingSummary {
-  const rows = activeIntakeSteps(answers).map((step) => {
-    let answer = answers[step.key] ?? "—";
-    if (
-      step.key === "reason" &&
-      answers.reason === REASONS.other &&
-      answers.reasonOtherText.trim()
-    ) {
-      answer = `${answer} - ${answers.reasonOtherText.trim()}`;
-    }
-    return { question: step.question, answer };
-  });
+  const rows = activeIntakeSteps(answers).map((step) => ({
+    question: step.question,
+    answer: answers[step.key] ?? "—",
+  }));
   const primaryName = result.primaryRecommendation?.therapist.name;
   const alternativeName = result.alternativeRecommendation?.therapist.name;
   const reasons = (chosen ?? result.primaryRecommendation)?.reasons;
-  const trimmedExtra = extraText.trim();
   return {
     answers: rows,
     recommendedService: result.recommendedService,
-    ...(trimmedExtra ? { extraText: trimmedExtra } : {}),
     ...(primaryName ? { recommendedTherapist: primaryName } : {}),
     ...(alternativeName ? { alternativeTherapist: alternativeName } : {}),
     ...(reasons ? { reasons } : {}),

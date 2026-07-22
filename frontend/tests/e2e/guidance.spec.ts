@@ -42,9 +42,11 @@ test("matching result hands off only safe booking context", async ({
 }) => {
   await startQuestionnaire(page);
 
+  await page
+    .getByRole("button", { name: "Za sebe kao punoletna osoba", exact: true })
+    .click();
   await page.getByRole("button", { name: "Burnout", exact: true }).click();
   await page.getByRole("button", { name: "Sam/a", exact: true }).click();
-  await page.getByRole("button", { name: "Ne", exact: true }).click();
   await page
     .getByRole("button", { name: "Naučiti kako da se nosim sa emocijama" })
     .click();
@@ -73,6 +75,37 @@ test("matching result hands off only safe booking context", async ({
     "individualna-psihoterapija",
   );
   await expect(page.getByLabel("Terapeut")).toHaveValue("anja-stamenkovic");
+});
+
+test("a guardian request for someone under 16 remains a controlled team-review path", async ({
+  page,
+}) => {
+  await startQuestionnaire(page);
+
+  await page
+    .getByRole("button", {
+      name: "Roditelj ili zakonski staratelj",
+      exact: true,
+    })
+    .click();
+  await page.getByRole("button", { name: "Roditeljstvo", exact: true }).click();
+  await page.getByRole("button", { name: "12–15 godina", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Poboljšati odnos sa detetom" })
+    .click();
+  await page.getByRole("button", { name: "Online", exact: true }).click();
+
+  await expect(
+    page.getByRole("heading", {
+      name: "Tim će najpre proveriti odgovarajući sledeći korak.",
+    }),
+  ).toBeVisible();
+  await expect(
+    page.getByText(/Za maloletne korisnike tim najpre/),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("link", { name: "Zatražite termin" }),
+  ).toHaveCount(0);
 });
 
 test("guided route has no critical accessibility violations", async ({

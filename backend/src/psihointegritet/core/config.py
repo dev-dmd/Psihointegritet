@@ -38,9 +38,35 @@ class Settings(BaseSettings):
     clerk_jwks_url: str = ""
     clerk_audience: str = ""
 
+    default_organization_slug: str = "psihointegritet"
+    intake_matching_enabled: bool = False
+    intake_sensitive_submission_enabled: bool = False
+    intake_team_queue_enabled: bool = False
+    intake_ai_assist_enabled: bool = False
+    intake_data_processing_notice_version: str = ""
+    intake_request_acknowledgement_version: str = ""
+    intake_anonymous_retention_hours: int = Field(default=24, ge=1, le=168)
+    intake_submitted_retention_days: int = Field(default=90, ge=1, le=3650)
+    intake_closed_retention_days: int = Field(default=30, ge=1, le=3650)
+    intake_free_text_retention_days: int = Field(default=30, ge=1, le=3650)
+    intake_review_target_business_hours: int = Field(default=12, ge=1, le=168)
+    intake_review_public_max_business_days: int = Field(default=1, ge=1, le=30)
+    intake_business_timezone: str = "Europe/Belgrade"
+
     @property
     def is_production(self) -> bool:
         return self.environment is Environment.PRODUCTION
+
+    @property
+    def intake_submission_ready(self) -> bool:
+        """Sensitive Intake writes require both the flag and approved text versions."""
+
+        return (
+            self.intake_matching_enabled
+            and self.intake_sensitive_submission_enabled
+            and bool(self.intake_data_processing_notice_version)
+            and bool(self.intake_request_acknowledgement_version)
+        )
 
 
 @lru_cache

@@ -10,6 +10,7 @@ import {
   isWorkspaceAdmin,
   isWorkspaceTherapist,
 } from "@/lib/auth/guards";
+import { QueryProvider } from "@/providers/query-provider";
 
 export const metadata: Metadata = {
   title: { default: "Control Center", template: "%s · Control Center" },
@@ -35,17 +36,19 @@ export default async function WorkspaceLayout({
   const isTherapist = isWorkspaceTherapist(identity);
 
   return (
-    <WorkspaceProvider isAdmin={isAdmin} isTherapist={isTherapist}>
-      <div className="bg-panel-canvas flex min-h-screen">
-        <WorkspaceSidebar />
-        <div className="flex min-w-0 flex-1 flex-col lg:ml-[264px]">
-          <WorkspaceTopbar />
-          <main className="w-full max-w-[1160px] self-center px-4 pt-[30px] pb-[104px] md:px-8 lg:pb-14">
-            {children}
-          </main>
+    <QueryProvider>
+      <WorkspaceProvider isAdmin={isAdmin} isTherapist={isTherapist}>
+        <div className="bg-panel-canvas flex min-h-screen">
+          <WorkspaceSidebar />
+          <div className="flex min-w-0 flex-1 flex-col lg:ml-[264px]">
+            <WorkspaceTopbar />
+            <main className="w-full max-w-[1160px] self-center px-4 pt-[30px] pb-[104px] md:px-8 lg:pb-14">
+              {children}
+            </main>
+          </div>
+          <WorkspaceBottomNav />
         </div>
-        <WorkspaceBottomNav />
-      </div>
-    </WorkspaceProvider>
+      </WorkspaceProvider>
+    </QueryProvider>
   );
 }

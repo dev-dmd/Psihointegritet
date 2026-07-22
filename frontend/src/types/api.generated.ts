@@ -21,6 +21,108 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/intake/cases/queue": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Intake Team Queue */
+        get: operations["list_intake_team_queue"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/intake/cases/{case_id}/claim": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Claim Intake Case */
+        post: operations["claim_intake_case"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/intake/cases/{case_id}/reassign": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Reassign Intake Case */
+        post: operations["reassign_intake_case"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/public/intake/capabilities": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Public Intake Capabilities */
+        get: operations["get_public_intake_capabilities"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/public/intake/cases": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Submit Public Intake Case */
+        post: operations["submit_public_intake_case"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/public/intake/match": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Evaluate Public Intake Match */
+        post: operations["evaluate_public_intake_match"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/health": {
         parameters: {
             query?: never;
@@ -45,12 +147,261 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** ClaimIntakeCaseResponse */
+        ClaimIntakeCaseResponse: {
+            /**
+             * Caseid
+             * Format: uuid
+             */
+            caseId: string;
+            status: components["schemas"]["IntakeCaseStatus"];
+            /**
+             * Therapistprofileid
+             * Format: uuid
+             */
+            therapistProfileId: string;
+        };
+        /**
+         * ConsentKind
+         * @enum {string}
+         */
+        ConsentKind: "intake_data_processing_notice" | "intake_request_acknowledgement" | "marketing" | "ai_free_text_processing";
+        /**
+         * GuardianConsentStatus
+         * @enum {string}
+         */
+        GuardianConsentStatus: "not_applicable" | "confirmed" | "needs_review";
+        /** HTTPValidationError */
+        HTTPValidationError: {
+            /** Detail */
+            detail?: components["schemas"]["ValidationError"][];
+        };
         /** HealthResponse */
         HealthResponse: {
             /** Status */
             status: string;
             /** Version */
             version: string;
+        };
+        /** IntakeAcknowledgementInput */
+        IntakeAcknowledgementInput: {
+            /** Documentversion */
+            documentVersion: string;
+            kind: components["schemas"]["ConsentKind"];
+            /**
+             * Locale
+             * @default sr-Latn
+             */
+            locale: string;
+        };
+        /** IntakeAnswersInput */
+        IntakeAnswersInput: {
+            /** Format */
+            format?: string | null;
+            /** Goal */
+            goal?: string | null;
+            /** Location */
+            location?: string | null;
+            /** Participants */
+            participants?: string | null;
+            /** Priortherapy */
+            priorTherapy?: ("Da" | "Ne") | null;
+            /** Reason */
+            reason?: string | null;
+            /** @default self_adult */
+            requesterRole: components["schemas"]["RequesterRole"];
+            /** @default adult */
+            subjectAgeBand: components["schemas"]["SubjectAgeBand"];
+        };
+        /**
+         * IntakeCaseStatus
+         * @enum {string}
+         */
+        IntakeCaseStatus: "unassigned" | "claimed" | "booking_started" | "converted" | "closed" | "withdrawn" | "expired";
+        /** IntakeContactInput */
+        IntakeContactInput: {
+            /**
+             * Email
+             * Format: email
+             */
+            email: string;
+            /** Fullname */
+            fullName: string;
+            /** Phone */
+            phone?: string | null;
+            /**
+             * Replypreference
+             * @default email
+             * @enum {string}
+             */
+            replyPreference: "email" | "phone";
+        };
+        /**
+         * IntakeSubmissionKind
+         * @enum {string}
+         */
+        IntakeSubmissionKind: "request" | "team_review";
+        /** PublicIntakeCapabilitiesResponse */
+        PublicIntakeCapabilitiesResponse: {
+            /** Matchingenabled */
+            matchingEnabled: boolean;
+            /** Sensitivesubmissionenabled */
+            sensitiveSubmissionEnabled: boolean;
+        };
+        /** PublicIntakeMatchRequest */
+        PublicIntakeMatchRequest: {
+            answers: components["schemas"]["IntakeAnswersInput"];
+        };
+        /** PublicIntakeMatchResponse */
+        PublicIntakeMatchResponse: {
+            /** Candidates */
+            candidates: components["schemas"]["PublicTherapistRecommendation"][];
+            /** Controlledminorflow */
+            controlledMinorFlow: boolean;
+            /** Onlinefallback */
+            onlineFallback: boolean;
+            /** Requireshumanreview */
+            requiresHumanReview: boolean;
+            /** Ruleversion */
+            ruleVersion: string;
+            service: components["schemas"]["PublicServiceRecommendation"];
+            /** Showmultipleoptions */
+            showMultipleOptions: boolean;
+        };
+        /** PublicIntakeSubmissionRequest */
+        PublicIntakeSubmissionRequest: {
+            /** Acknowledgements */
+            acknowledgements: components["schemas"]["IntakeAcknowledgementInput"][];
+            answers: components["schemas"]["IntakeAnswersInput"];
+            contact: components["schemas"]["IntakeContactInput"];
+            /** Freetext */
+            freeText?: string | null;
+            /** @default not_applicable */
+            guardianConsentStatus: components["schemas"]["GuardianConsentStatus"];
+            /** Preferredtherapistslug */
+            preferredTherapistSlug?: string | null;
+            /**
+             * Source
+             * @default matching
+             * @enum {string}
+             */
+            source: "header" | "homepage" | "service" | "therapist" | "matching" | "manual";
+            /** Subjectisaware */
+            subjectIsAware?: boolean | null;
+            submissionKind: components["schemas"]["IntakeSubmissionKind"];
+        };
+        /** PublicIntakeSubmissionResponse */
+        PublicIntakeSubmissionResponse: {
+            /**
+             * Caseid
+             * Format: uuid
+             */
+            caseId: string;
+            /** Replayed */
+            replayed: boolean;
+            /** Requireshumanreview */
+            requiresHumanReview: boolean;
+            reviewPriority: components["schemas"]["ReviewPriority"];
+            status: components["schemas"]["IntakeCaseStatus"];
+            submissionKind: components["schemas"]["IntakeSubmissionKind"];
+        };
+        /** PublicServiceRecommendation */
+        PublicServiceRecommendation: {
+            /** Currency */
+            currency: string;
+            /** Durationminutes */
+            durationMinutes: number;
+            /** Name */
+            name: string;
+            /** Priceamount */
+            priceAmount: number;
+            /** Slug */
+            slug: string;
+        };
+        /** PublicTherapistRecommendation */
+        PublicTherapistRecommendation: {
+            /** Displayname */
+            displayName: string;
+            /** Explanationcodes */
+            explanationCodes: string[];
+            /** Reasons */
+            reasons: string[];
+            /** Slug */
+            slug: string;
+        };
+        /** ReassignIntakeCaseRequest */
+        ReassignIntakeCaseRequest: {
+            /**
+             * Reasoncode
+             * @enum {string}
+             */
+            reasonCode: "capacity" | "expertise" | "availability" | "other";
+            /**
+             * Therapistprofileid
+             * Format: uuid
+             */
+            therapistProfileId: string;
+        };
+        /**
+         * RequesterRole
+         * @enum {string}
+         */
+        RequesterRole: "self_adult" | "guardian" | "adolescent_16_17" | "information_only";
+        /**
+         * ReviewPriority
+         * @enum {string}
+         */
+        ReviewPriority: "standard" | "priority";
+        /**
+         * SubjectAgeBand
+         * @enum {string}
+         */
+        SubjectAgeBand: "under_12" | "12_15" | "16_17" | "adult";
+        /** TeamQueueItem */
+        TeamQueueItem: {
+            /**
+             * Caseid
+             * Format: uuid
+             */
+            caseId: string;
+            /**
+             * Createdat
+             * Format: date-time
+             */
+            createdAt: string;
+            /** Format */
+            format: string | null;
+            /** Hasfreetext */
+            hasFreeText: boolean;
+            /** Location */
+            location: string | null;
+            /** Preferredtherapistslug */
+            preferredTherapistSlug: string | null;
+            /** Recommendedtherapistslugs */
+            recommendedTherapistSlugs: string[];
+            requesterRole: components["schemas"]["RequesterRole"];
+            /** Requireshumanreview */
+            requiresHumanReview: boolean;
+            /** Reviewdueat */
+            reviewDueAt: string | null;
+            reviewPriority: components["schemas"]["ReviewPriority"];
+            /** Serviceslug */
+            serviceSlug: string | null;
+            subjectAgeBand: components["schemas"]["SubjectAgeBand"];
+            submissionKind: components["schemas"]["IntakeSubmissionKind"];
+        };
+        /** ValidationError */
+        ValidationError: {
+            /** Context */
+            ctx?: Record<string, never>;
+            /** Input */
+            input?: unknown;
+            /** Location */
+            loc: (string | number)[];
+            /** Message */
+            msg: string;
+            /** Error Type */
+            type: string;
         };
     };
     responses: never;
@@ -77,6 +428,180 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HealthResponse"];
+                };
+            };
+        };
+    };
+    list_intake_team_queue: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TeamQueueItem"][];
+                };
+            };
+        };
+    };
+    claim_intake_case: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                case_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClaimIntakeCaseResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reassign_intake_case: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                case_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReassignIntakeCaseRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClaimIntakeCaseResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_public_intake_capabilities: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicIntakeCapabilitiesResponse"];
+                };
+            };
+        };
+    };
+    submit_public_intake_case: {
+        parameters: {
+            query?: never;
+            header: {
+                "Idempotency-Key": string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PublicIntakeSubmissionRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicIntakeSubmissionResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    evaluate_public_intake_match: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PublicIntakeMatchRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicIntakeMatchResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
