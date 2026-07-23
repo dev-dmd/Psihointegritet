@@ -258,9 +258,13 @@ Frontend: forms with React Hook Form + Zod, inline field errors (toast is comple
 
 ### Pre-R2 — Booking Engine Decision Specification (R1.6 internal ordering; documentation only)
 
-Before R2 code, write and approve the decision specification for request/appointment lifecycle, availability, slots, buffers, overlap policy, alternatives, reschedule/cancellation, notifications, minors/consents, retention and B2B capacity. Every record is `OPEN`, `PROPOSED`, `APPROVED` or `BLOCKED`.
+Before R2 code, write and approve the decision specification for request/appointment lifecycle, availability, slots, buffers, overlap policy, alternatives, reschedule/cancellation, notifications, minors/consents, retention and B2B capacity. Every record is `OPEN`, `PROPOSED`, `CHANGE_REQUESTED`, `APPROVED` or `BLOCKED`.
 
 R2 owns request-first scheduling and operational appointment history. Packages, credits, subscriptions, payments, invoices, refunds, coupons, financial reconciliation and company billing are **BLOCKED for R5**: no R2 tables, migrations, endpoints, UI or provider integrations. A public `PackageOffer` or `CompanyPlan` remains presentation content only until then.
+
+**R1.6 scope lock:** effective `BookingMode` resolves for `Service + Therapist + Format + Location` and can only narrow `slot_request -> request -> disabled`. A selected slot creates at most `SlotHold` then `AppointmentRequest`; only therapist confirmation transactionally creates `Appointment`. A change uses `AppointmentRequest.type = initial | reschedule`, while the existing confirmed Appointment remains valid until conversion. These are D-035…D-037 and supersede the earlier one-object status baseline.
+
+**R2 capability ordering:** `R2.1 Booking Core -> R2.2 Availability -> R2.3 Request Review -> R2.4 Notify Me -> R2.5 Adaptive Booking Widget` is an internal delivery sequence, not a second formal release map. Formal M2.1–M2.8 below remain authoritative; `R2.4 Notify Me` maps to optional M2.8 / package 2B and starts only after its Pre-R2 business decisions are approved.
 
 ---
 
@@ -322,18 +326,24 @@ availability_exceptions id, therapist_profile_id, period TSTZRANGE, kind ENUM(bl
                         format NULL, note VARCHAR(200) NULL (operational only — never health text)
 external_busy_blocks    id, therapist_profile_id, source ENUM(google), external_id, period TSTZRANGE,
                         synced_at   — free/busy only, never event titles (T15)
-appointment_holds       id, organization_id, therapist_profile_id, service_id, period TSTZRANGE,
+slot_holds              id, organization_id, therapist_profile_id, service_id, period TSTZRANGE,
                         expires_at, session_key, idempotency_key UNIQUE,
-                        EXCLUDE USING gist (therapist_profile_id WITH =, period WITH &&)
-                          — provisional; BDS-007A approves only a transient technical hold, never user-visible as a reservation
-appointments            id, organization_id, therapist_profile_id, service_id, client_user_id,
-                        status appointment_status, period TSTZRANGE, format ENUM(online,in_person),
-                        booking_timezone TEXT (IANA), price_amount, price_currency,
+                        — transient technical hold only; never user-visible as a reservation (BDS-007A)
+appointment_requests   id, organization_id, type ENUM(initial,reschedule), therapist_profile_id NULL,
+                        service_id NULL, client_user_id, status appointment_request_status,
+                        requested_period TSTZRANGE NULL, selected_period TSTZRANGE NULL,
+                        format ENUM(online,in_person), location_id NULL, booking_timezone TEXT (IANA),
                         client_note VARCHAR(300) NULL (logistics only; UI forbids health detail),
-                        cancellation_reason_code NULL, google_event_id NULL,
-                        idempotency_key UNIQUE, created_from_hold NULL, created_at,
+                        source_appointment_id NULL, idempotency_key UNIQUE, created_from_hold NULL, created_at
+appointment_request_alternatives id, appointment_request_id, period TSTZRANGE, expires_at,
+                        status ENUM(offered,accepted,declined,expired,closed), created_at
+appointments            id, organization_id, therapist_profile_id, service_id, client_user_id,
+                        status ENUM(confirmed,completed,no_show,cancelled), period TSTZRANGE,
+                        format ENUM(online,in_person), booking_timezone TEXT (IANA),
+                        cancellation_reason_code NULL, cancellation_policy_version NULL,
+                        superseded_by_appointment_id NULL, google_event_id NULL, created_at,
                         EXCLUDE USING gist (therapist_profile_id WITH =, period WITH &&)
-                          WHERE (status IN ('requested','confirmed','change_requested'))
+                          WHERE (status = 'confirmed')
 appointment_participants id, appointment_id, role ENUM(owner,participant), user_id NULL,
                         invite_email NULL, invite_status, consent_at NULL   — bračno savjetovanje: 2 participants, 1 owner; no relationship/reason data (engines §7.6)
 appointment_events      id, appointment_id, event_type, actor_user_id NULL, metadata JSONB minimal, created_at
@@ -341,7 +351,7 @@ cancellation_policies   id, organization_id, service_id NULL, min_notice_hours I
                         late_cancellation_rule TEXT, active BOOL   — values from S7, seeded from client material (24 h)
 ```
 
-Status enum (engines §7.3) baseline: `held, requested, alternative_proposed, confirmed, change_requested, cancelled_by_client, cancelled_by_therapist, completed, no_show, declined, expired`. Pre-R2 BDS-004/BDS-005 must decide whether the final model separates `AppointmentRequest` and `Appointment`, plus its transition mapping, before any schema/migration. Allowed transitions live in one domain policy (`booking/domain/status_machine.py`) with exhaustive tests.
+This is an indicative R2 plan, not a schema authorization. D-036 requires separate `SlotHold`, `AppointmentRequest` and `Appointment` aggregates. `AppointmentRequest` uses the R1.6 proposed lifecycle `submitted | under_review | alternative_proposed | awaiting_client | converted | declined | withdrawn | expired`; an `Appointment` begins only as `confirmed`. Final transition mapping, policy values and database constraints require the Pre-R2 approval gate before any migration. Allowed transitions live in one domain policy (`booking/domain/status_machine.py`) with exhaustive tests.
 
 **Notifications (module `notifications`):**
 
@@ -363,7 +373,7 @@ Clerk end-to-end (sign-up/sign-in/verification/recovery; staff MFA on), Clerk we
 Operational service/therapist mappings plus therapist availability rules and exceptions UI with conflict validation; timezone handling (Europe/Belgrade default; client timezone captured at booking). This is not CMS CRUD: public content continues through the R1.4.i static provider, and R3 owns the public-content editor, review/publish workflow and eventual CMS provider.
 
 **M2.3 — Booking domain (1.5–2 weeks)**
-Slot computation (rules + exceptions − active appointments − holds − external busy), `POST /public/availability` query, request-first flow: selected slot or preferred period → `AppointmentRequest` → therapist review → confirmed appointment or alternative; therapist actions: confirm / decline / propose alternative (with expiry); client accepts/declines alternative; change/cancel per policy; completed/no_show marking; idempotency keys on all mutating booking endpoints; appointment + event + outbox in one transaction; **concurrency test proving two simultaneous requests cannot both become active for the same slot** (DB exclusion constraint is the last line). BDS-007A approves a short internal atomic contention hold only for `slot_request`; no UI may present it as a reservation. BDS-007B remains `OPEN` on public slot availability after successful submit.
+Slot computation (rules + exceptions − confirmed appointments − approved buffers − holds − external busy), `POST /public/availability` query, request-first flow: selected slot or preferred period → `AppointmentRequest` → therapist review → confirmed `Appointment` or alternative; therapist actions: confirm / decline / propose alternative (with expiry); client accepts/declines alternative; `reschedule` creates a separate request while the current appointment remains valid; change/cancel per policy; completed/no_show marking; idempotency keys on all mutating booking endpoints; request/appointment + audit event + outbox in one transaction; **concurrency test proving two simultaneous mutations cannot both create an active appointment for the same slot** (DB exclusion constraint is the last line). BDS-007A approves a short internal atomic contention hold only for `slot_request`; no UI may present it as a reservation. BDS-007B remains a proposed public-slot policy until business SLA/reminder/reopen rules are approved.
 
 **M2.4 — Client & therapist & admin panels (1.5–2 weeks)**
 Client (`/nalog`): next appointment + status, history (došao/nije došao), request change/cancel, notification prefs, consents, data export/delete request entry point. Therapist (`/radni-prostor`): today/upcoming, new requests queue with confirm/alternative actions, attendance marking and availability management. Org admin: team, booking-operational catalog mappings, all org appointments (metadata level), manual appointment creation for phone bookings. Public-profile editing and `content_status` workflow belong to R3 Content Engine / CMS. TanStack Query only in these interactive areas.
@@ -377,7 +387,7 @@ Per-therapist OAuth (minimal scopes; tokens encrypted server-side), free/busy pu
 **M2.7 — Diagnostics baseline + pilot (1 week)**
 Diagnostic framework per engines §18: read-only collectors returning `ok/warning/error/failed` with evidence IDs — initial set: overlapping active appointments; expired hold still blocking; confirmed appointment without event; alternative without expiry; participant/tenant mismatch; appointment↔calendar mirror mismatch (when 2B live); stuck notification jobs; user without membership; membership without user. Superadmin `/superadmin` shows platform health + findings (metadata only). Full Playwright critical flows (visitor→request→confirm; alternative flow; cancel per policy; therapist availability→confirm), backup/restore drill, staging pilot with the three therapists, fixes, production.
 
-**M2.8 — Notify Me / waitlist offer flow** per BDS-015…BDS-017: unresolved-request reminders, slot release events, sequential offer default unless BDS-016 changes it, atomic token claim, expiry, dedupe and nearest-slot fallback. Exact SLA/TTL/fairness values are Pre-R2 business decisions and must not be invented in code.
+**M2.8 — Notify Me / waitlist offer flow** per BDS-008/BDS-009: unresolved-request reminders, slot release events, sequential offer default unless BDS-009B changes it, atomic token claim, expiry, dedupe and nearest-slot fallback. Exact SLA/TTL/fairness values are Pre-R2 business decisions and must not be invented in code.
 
 ### 6.3 API surface (v1, indicative — freeze operation_ids at M2.1 plan review)
 
@@ -385,24 +395,28 @@ Diagnostic framework per engines §18: read-only collectors returning `ok/warnin
 Public:    GET  /public/organization | /public/therapists | /public/therapists/{slug}
            GET  /public/services | /public/topics | /public/topics/{slug}
            GET  /public/availability?therapist&service&from&to
-           POST /public/appointment-holds
+           POST /public/slot-holds                 — only for `slot_request`
+           POST /public/appointment-requests
 Client:    GET  /me            POST /me/consents
-           GET  /me/appointments           POST /appointments/{id}/request (finalize hold)
-           POST /appointments/{id}/accept-alternative | /decline-alternative
-           POST /appointments/{id}/change-request | /cancel
-Therapist: GET  /therapist/appointments?status=…
-           POST /appointments/{id}/confirm | /decline | /propose-alternative | /complete | /no-show
+           GET  /me/appointment-requests | /me/appointments
+           POST /appointment-requests/{id}/withdraw
+           POST /appointment-request-alternatives/{id}/accept | /decline
+           POST /appointments/{id}/reschedule-requests | /cancellation-requests
+Therapist: GET  /therapist/appointment-requests?status=… | /therapist/appointments?status=…
+           POST /appointment-requests/{id}/start-review | /confirm | /decline | /propose-alternatives
+           POST /appointments/{id}/complete | /no-show | /cancel
            CRUD /therapist/availability-rules | /therapist/availability-exceptions
            POST /therapist/calendar/connect|disconnect (2B)
 Admin:     CRUD /admin/team | /admin/services | /admin/topics | /admin/therapist-profiles
-           GET  /admin/appointments        POST /admin/appointments (manual)
+           GET  /admin/appointment-requests | /admin/appointments
+           POST /admin/appointment-requests (manual request; audit boundary still applies)
 Superadmin:GET  /superadmin/diagnostics    POST /superadmin/diagnostics/run
 Webhooks:  POST /webhooks/clerk | /webhooks/qstash | /webhooks/google (2B)  — signature-verified, idempotent
 ```
 
 ### 6.4 Event catalog v1 (outbox `event_type`, payload = IDs + status only)
 
-`user.registered`, `consent.granted`, `consent.revoked`, `appointment.requested`, `appointment.confirmed`, `appointment.alternative_proposed`, `appointment.change_requested`, `appointment.cancelled_by_client`, `appointment.cancelled_by_therapist`, `appointment.completed`, `appointment.no_show`, `appointment.expired`, `booking.slot_released`, `inquiry.received`, `calendar.sync_failed`, `notification.delivery_failed`.
+`user.registered`, `consent.granted`, `consent.revoked`, `SLOT_HOLD_CREATED`, `SLOT_HOLD_EXPIRED`, `SLOT_RELEASED`, `APPOINTMENT_REQUEST_SUBMITTED`, `APPOINTMENT_REQUEST_REVIEW_STARTED`, `APPOINTMENT_ALTERNATIVE_PROPOSED`, `APPOINTMENT_REQUEST_CONVERTED`, `APPOINTMENT_REQUEST_DECLINED`, `APPOINTMENT_REQUEST_WITHDRAWN`, `APPOINTMENT_REQUEST_EXPIRED`, `APPOINTMENT_CONFIRMED`, `APPOINTMENT_RESCHEDULE_REQUESTED`, `APPOINTMENT_RESCHEDULED`, `APPOINTMENT_CANCELLED`, `APPOINTMENT_COMPLETED`, `APPOINTMENT_NO_SHOW`, `WAITLIST_OFFER_CREATED`, `WAITLIST_OFFER_CLAIMED`, `WAITLIST_OFFER_EXPIRED`, `BOOKING_REVIEW_SLA_BREACHED`, `calendar.sync_failed`, `notification.delivery_failed`.
 
 ### Acceptance criteria — Release 2
 

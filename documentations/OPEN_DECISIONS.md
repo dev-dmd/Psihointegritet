@@ -5,11 +5,11 @@ Otvorene odluke. **Doneto ide u `PRODUCT_DECISIONS.md`** i briše se odavde.
 **Gde piše:** master plan §13 (STOP lista) · §4 R0.1 · Proposal v1.1 §4 (Anjina lista)
 **Pravilo (MP §0, tačka 5):** ako se udari u otvorenu stavku — **stati i pitati**. Ne pogađati proizvodne, pravne, cenovne ni kliničke odluke.
 
-**Stanje 2026-07-22:** S2/S13 rešeni, S5/S10 parcijalni, S1 otvoren. Content governance je zaključan kroz D-028…D-033; BDS-007A je zaključan kroz D-034. Pre-R2 tehničke i poslovne odluke koje stvarno ostaju otvorene vode se u `PRE_R2_BOOKING_ENGINE_DECISION_SPEC_v0.1.md`.
+**Stanje 2026-07-22:** S2/S13 rešeni, S5/S10 parcijalni, S1 otvoren. Content governance je zaključan kroz D-028…D-033; Booking arhitektonske invarijante kroz D-034…D-037. Pre-R2 tehničke i poslovne odluke koje stvarno ostaju otvorene vode se u `PRE_R2_BOOKING_ENGINE_DECISION_SPEC_v0.1.md`.
 
 ## Zaključano van ovog registra
 
-Sledeće više nisu otvorene dileme i ne treba ih ponovo uvoditi ovde: R1.4.i granica, petostepeni publication lifecycle, `request | slot_request | disabled`, zabrana `live`, R2/R5 finansijska granica, CI-only Content Health, approval capabilities i BDS-007A atomic contention hold. Izvor su D-028…D-034. Stvarni otvoreni Booking detalji ostaju BDS-004…BDS-006, BDS-007B, BDS-008…BDS-012, BDS-015/BDS-016, S4, S5, S7 i S12.
+Sledeće više nisu otvorene dileme i ne treba ih ponovo uvoditi ovde: R1.4.i granica, petostepeni publication lifecycle, `request | slot_request | disabled`, zabrana `live`, R2/R5 finansijska granica, CI-only Content Health, approval capabilities, BDS-007A atomic contention hold, offer-scoped BookingMode, odvajanje `SlotHold`/`AppointmentRequest`/`Appointment` i `reschedule` kao zaseban zahtev. Izvor su D-028…D-037. Stvarni otvoreni Booking detalji ostaju BDS-002…BDS-006, BDS-007B, BDS-008, BDS-009B, BDS-010B, BDS-011/BDS-012, S4, S5, S7 i S12.
 
 ---
 
