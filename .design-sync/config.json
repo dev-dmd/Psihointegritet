@@ -1,0 +1,23 @@
+{
+  "projectId": "9b777129-4357-4736-b780-b3a5e908ed92",
+  "pkg": "psihointegritet-ds",
+  "globalName": "PsihointegritetUI",
+  "shape": "package",
+  "srcDir": "src",
+  "tsconfig": "tsconfig.alias.json",
+  "cssEntry": "styles.css",
+  "buildCmd": "node .design-sync/prep-scoped-pkg.mjs",
+  "readmeHeader": ".design-sync/conventions.md",
+  "extraFonts": ["../../../.design-sync/fonts-src/instrument-sans.css", "../../../.design-sync/fonts-src/newsreader.css"],
+  "componentSrcMap": {
+    "Image": null,
+    "Link": null
+  },
+  "overrides": {
+    "SectionHeading": { "cardMode": "column" },
+    "Reveal": { "cardMode": "column" },
+    "TherapistRow": { "cardMode": "column" },
+    "StickyBar": { "cardMode": "single", "primaryStory": "Visible", "viewport": "900x300" },
+    "ConfirmModal": { "cardMode": "single", "primaryStory": "GateToggleConfirm", "viewport": "900x700" }
+  }
+}
