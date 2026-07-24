@@ -2,6 +2,7 @@
 
 **Status:** implementirano iza feature flag-ova; produkciona aktivacija čeka obavezna odobrenja
 **Datum:** 2026-07-22  
+**Dopunjeno:** 2026-07-23 — eksplicitna guest-first napomena, eligibility/uzrasna referentna tabela za već implementiran maloletnički tok (§1.4) i inkluzivna LGBTQIA+ napomena (§2, §2.1, §6)
 **Prethodnik:** `PSIHOINTEGRITET_INTAKE_MATCHING_ENGINE_v0.1.md` je staging/demo specifikacija.  
 **Granica:** produkcijski Intake & Matching Engine dolazi pre R2 Booking Engine-a, ali ne implementira slotove, plaćanje, waitlist ni Notification Scheduler.
 
@@ -150,8 +151,29 @@ Nedodeljeni red trenutno ima stvarnu listu i atomsko preuzimanje. Administrativn
 - Booking Engine je jedini vlasnik slotova, hold-ova, zahteva za termin i potvrđenih termina.
 - Waitlist domen određuje redosled čekanja; Notification Engine samo šalje događaje; Reminder Scheduler podseća na nerešen zahtev.
 - B2B se na prvom razdvajanju šalje u Company Configurator, nikada u therapist matching.
+- Posetilac bez naloga (guest) može da pregleda javni sadržaj, koristi osnovni javni matching, pošalje upit ili zahtev za termin i prijavi interesovanje za javnu radionicu/program. Slanje zahteva ne znači potvrđen termin; prijava interesa ne znači potvrđeno mesto. Nalog se traži tek kada potvrđena usluga, uplata, zaštićen sadržaj ili lični prostor to zaista zahtevaju — Intake sam po sebi ne uvodi raniji zahtev za nalog.
 
 Ne uvoditi `Client` ili termin "pacijent" samo zato što je korisnik završio upitnik.
+
+### 2.1 Eligibility, uzrast i inkluzivnost (referenca na već implementiran tok)
+
+Tabela ispod je čitljiv sažetak ponašanja koje §1.3/§1.4 već opisuju kao implementirano; ne uvodi novo pravilo.
+
+| Put | Javno ponašanje | Implementirano stanje |
+| --- | --- | --- |
+| Odrasla osoba 18+ | šalje sopstveni zahtev | normalan Intake → Matching → team review tok, bez ograničenja slobodnog teksta |
+| Roditelj/staratelj | traži podršku za sebe ili prijavljuje zahtev za dete | unosi svoj kontakt, uzrast deteta kao grupu (ne pun datum rođenja), svest/saglasnost deteta i status podnošenja |
+| Adolescent 16–17 | ograničen, uzrasno prilagođen tok | bez slobodnog teksta, ide na kontrolisani team review (`controlledMinorFlow`) |
+| Osoba mlađa od 16 | nema javni self-service izbor usluge, cene, terapeuta ili termina | sistem ne objavljuje javnu uslugu, cenu ni preporuku terapeuta; put završava informacijom ili team review-om do Legal + Clinical publish gate-a (§1.3) |
+| Informativni posetilac | istražuje bez obaveze zakazivanja | `GuidanceSession` bez imena/kontakta; napušten guidance ne kreira `IntakeCase` |
+
+Psihointegritet eksplicitno prima LGBTQIA+ osobe bez stigme. To nije posebna cena, usluga ili eligibility klasa. Intake i Matching:
+
+- ne zahtevaju podatak o seksualnoj orijentaciji ili rodnom identitetu da bi osoba poslala zahtev;
+- ne zaključuju identitet na osnovu izabrane teme, oblasti podrške ili slobodnog teksta;
+- primenjuju iste `acceptanceStatus`, cene i request-first statuse bez diskriminatornog rutiranja;
+- mogu ponuditi opciono neutralno polje „Kako želite da vam se obraćamo?" u javnom Intake toku;
+- tretiraju LGBTQIA+ capability terapeuta (§6) kao dodatni signal relevantnosti, ne kao hard filter koji isključuje ostale relevantne terapeute ili usluge.
 
 ## 3. Modeli i privatnost
 
@@ -199,6 +221,8 @@ Superadmin ostaje metadata/health-first i nema podrazumevan pristup slobodnom te
 
 `TherapistMatchingProfile` je interni profil, odvojen od javne biografije. Sadrži usluge, capability-je, uzrast, formate, lokacije, `acceptanceStatus`, `presenceStatus`, datum povratka, preference, isključenja, soft capacity i matching prioritet.
 
+LGBTQIA+ podrška može biti capability tek kada je terapeut eksplicitno potvrdi; to je dodatni rangirajući signal kao i druge capability-je iz §6, nikad hard filter koji ostale relevantne terapeute ili usluge proglašava nedostupnim.
+
 Intake čita `CapacityAdapter`; prvi adapter je statički, a kasniji `BookingCapacityAdapter` čita samo sažetak dostupnosti. Intake nikada ne čita slot tabele, kalendare ni buffere direktno.
 
 `intake_matching_preview` ostaje staging/demo flag. Produkcijski flagovi su odvojeni:
@@ -235,4 +259,4 @@ Svaki slice ide vertikalno: DB model -> FastAPI endpoint -> generated client -> 
 
 Pre-R2 mora definisati review SLA, remindere, escalation, istek, post-submission slot dostupnost, Notify Me redosled, offer TTL, notification dedupe i atomic claim. Preporučeni Notify Me default je sekvencijalna privatna ponuda; broadcast first-claim ostaje buduća tenant opcija.
 
-R2 zatim implementira Booking Core i reusable internal Booking Widget kao headless domen + flow controller + renderer + surface adapter. Eksterni iframe/SDK nije deo prvog R2 slice-a. Packages, krediti, pretplate, plaćanja i refundacije pripadaju R5.
+R2 zatim implementira Booking Core i reusable internal Booking Widget kao headless domen + flow controller + renderer + surface adapter. Booking preuzima već rešene requester role, uzrasnu grupu, `requiresHumanReview`/`controlledMinorFlow` i eligibility odluke iz Intake-a; ne rekonstruiše ih iz UI-ja. Eksterni iframe/SDK nije deo prvog R2 slice-a. Packages, krediti, pretplate, plaćanja i refundacije pripadaju R5.

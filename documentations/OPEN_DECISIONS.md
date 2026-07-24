@@ -148,6 +148,18 @@ Anja, Marija i Marjan **nemaju Clerk naloge** (postoje samo mailbox-ovi). `npm r
 
 Role su dodeljene samo na **dev** instanci (2026-07-20: `drazic.milan@gmail.com` → superadmin). Pri launchu obavezno pokrenuti `roles:assign` sa produkcionim `CLERK_SECRET_KEY` (i kreirati `milan.drazic@dmdevelon.website` nalog).
 
+### O-20 · LGBTQIA+ podrška kao javna oblast i terapeutska capability _(novo 2026-07-23, iz `content-architecture.md` / `PRODUCT_CONTEXT.md` v0.3)_
+
+> **Blokira:** objavu LGBTQIA+ javnog hub-a/sekcije i prikaz capability oznake na profilu terapeuta; ne blokira launch — Intake/Matching ne-diskriminatorno ponašanje (PRODUCTION_INTAKE §2.1) ne zavisi od ovoga.
+
+Psihointegritet želi eksplicitno da prikaže da prima LGBTQIA+ osobe bez stigme, kao ravnopravnu javnu oblast/cross-cutting kontekst (ne posebna usluga ili cena). Otvoreno za Anju i tim:
+
+1. Koji terapeut javno potvrđuje LGBTQIA+ profesionalnu capability oznaku na svom profilu (nijedan capability se ne prikazuje bez eksplicitne potvrde terapeuta).
+2. Da li se pravi zaseban javni hub/sekcija za LGBTQIA+ podršku odmah u R1.1, ili samo kao peti+ podnaslov u okviru postojećih pet oblasti podrške.
+3. Tačan javni tekst (poruka o inkluzivnosti na landing stranici, opciono neutralno pitanje „Kako želite da vam se obraćamo?" u Intake-u — da li se uopšte uvodi u R1).
+
+**Dok ne stigne:** ne prikazivati LGBTQIA+ kao capability ni kod jednog terapeuta i ne objavljivati zaseban hub; ne-diskriminatorna pravila (nema obaveznog pitanja o orijentaciji/rodnom identitetu, ista cena/status) već važe kao opšti proizvodni princip bez obzira na ovu odluku.
+
 ---
 
 ## 🟡 Pre Faze 2
