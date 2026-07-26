@@ -9,6 +9,7 @@ it neither depends on nor disturbs the seed data a migration creates.
 from collections.abc import AsyncIterator
 
 import pytest
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from psihointegritet.modules.guidance.models import TherapistMatchingProfile
@@ -18,6 +19,7 @@ from psihointegritet.modules.identity.provisioning import (
     StaffProvisioningRequest,
     list_staff,
     provision_staff,
+    revoke_staff,
 )
 from psihointegritet.modules.organizations.models import Organization
 
@@ -174,3 +176,61 @@ async def test_membership_status_uses_the_active_enum_value(
     staff = await list_staff(session, ORG)
     assert staff[0].disabled_roles == frozenset()
     assert MembershipStatus.ACTIVE.value == "active"
+
+
+async def test_revoke_disables_roles_and_unlinks_but_keeps_the_row(
+    session: AsyncSession,
+) -> None:
+    await provision_staff(session, request(therapist_slug="marija-stamenkovic"))
+    await session.commit()
+
+    removal = await revoke_staff(session, ORG, SUBJECT)
+    await session.commit()
+
+    assert removal.found is True
+    assert removal.deleted is False
+    assert removal.roles_disabled == frozenset({MembershipRole.ORG_ADMIN, MembershipRole.THERAPIST})
+    assert removal.therapists_unlinked == ("marija-stamenkovic",)
+
+    staff = await list_staff(session, ORG)
+    assert staff[0].roles == frozenset()
+    assert staff[0].therapist_slugs == ()
+
+
+async def test_delete_removes_an_identity_created_by_mistake(
+    session: AsyncSession,
+) -> None:
+    # The case this exists for: provisioned with the wrong Clerk id, no history.
+    await provision_staff(session, request(therapist_slug="marija-stamenkovic"))
+    await session.commit()
+
+    removal = await revoke_staff(session, ORG, SUBJECT, hard_delete=True)
+    await session.commit()
+
+    assert removal.deleted is True
+    assert await list_staff(session, ORG) == []
+
+
+async def test_revoking_an_unknown_identity_is_reported_not_an_error(
+    session: AsyncSession,
+) -> None:
+    removal = await revoke_staff(session, ORG, "user_does_not_exist")
+    assert removal.found is False
+    assert removal.deleted is False
+
+
+async def test_the_therapist_profile_survives_a_delete(session: AsyncSession) -> None:
+    await provision_staff(session, request(therapist_slug="marija-stamenkovic"))
+    await session.commit()
+    await revoke_staff(session, ORG, SUBJECT, hard_delete=True)
+    await session.commit()
+
+    # SET NULL, not CASCADE: removing the wrong account must not remove the
+    # therapist it was mistakenly linked to.
+    profile = await session.scalar(
+        select(TherapistMatchingProfile).where(
+            TherapistMatchingProfile.slug == "marija-stamenkovic"
+        )
+    )
+    assert profile is not None
+    assert profile.assigned_user_id is None

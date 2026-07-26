@@ -14,20 +14,34 @@ resolves addresses:
 
     cd frontend && npm run roles:assign -- --dry-run
 
-Usage, locally (uv provides the interpreter):
+Usage. Prefer `--person`: the roster keeps the Clerk id, email, roles and
+therapist profile together, so they cannot be paired wrongly.
 
     uv run python scripts/provision_staff.py --list
+    uv run python scripts/provision_staff.py --person marija --dry-run
+    uv run python scripts/provision_staff.py --person marija
+
+Someone without a recorded id (a new Clerk instance, or Marjan who has no
+account yet) still needs the explicit form:
 
     uv run python scripts/provision_staff.py \\
         --external-id user_2ab... \\
-        --email marija.stamenkovic@psihointegritet.com \\
+        --email marjan.jankovic@psihointegritet.com \\
         --roles org_admin,therapist \\
-        --therapist-slug marija-stamenkovic
+        --therapist-slug marjan-jankovic
 
 Inside a deployed container there is no `uv` — the runtime stage only carries
 the built virtualenv, which is already on PATH. Drop the `uv run` prefix:
 
     railway run -- python scripts/provision_staff.py --list
+
+Undo, when an identity was created with the wrong Clerk id:
+
+    python scripts/provision_staff.py --revoke --delete \
+        --external-id user_wrong... --dry-run
+
+`--revoke` alone disables the roles and keeps the row for audit; adding
+`--delete` removes it, which is refused once the person has claimed a case.
 
 Always try `--dry-run` first; it reports the change and rolls back.
 
@@ -39,7 +53,7 @@ import argparse
 import asyncio
 import sys
 
-from psihointegritet.core.config import get_settings
+from psihointegritet.core.config import Settings, get_settings
 from psihointegritet.db.session import create_engine, create_session_factory
 from psihointegritet.modules.identity.models import MembershipRole
 from psihointegritet.modules.identity.provisioning import (
@@ -47,6 +61,12 @@ from psihointegritet.modules.identity.provisioning import (
     StaffProvisioningRequest,
     list_staff,
     provision_staff,
+    revoke_staff,
+)
+from psihointegritet.modules.identity.roster import (
+    clerk_instance_for,
+    known_keys,
+    member,
 )
 
 DEFAULT_ORGANIZATION = "psihointegritet"
@@ -72,6 +92,15 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--organization", default=DEFAULT_ORGANIZATION)
     parser.add_argument("--list", action="store_true", help="show current staff and exit")
+    parser.add_argument(
+        "--person",
+        help=(
+            "known team member: "
+            + ", ".join(known_keys())
+            + ". Supplies the Clerk id, email, roles and therapist profile together, "
+            "so they cannot be mismatched."
+        ),
+    )
     parser.add_argument("--external-id", help="Clerk user id (the JWT `sub`)")
     parser.add_argument("--email", help="stored for display only; never used for authorization")
     parser.add_argument("--roles", help="comma separated: org_admin,therapist")
@@ -82,9 +111,60 @@ def build_parser() -> argparse.ArgumentParser:
         help="disable active roles that were not passed in --roles",
     )
     parser.add_argument(
+        "--revoke",
+        action="store_true",
+        help="disable this identity's roles and unlink its therapist profile",
+    )
+    parser.add_argument(
+        "--delete",
+        action="store_true",
+        help="with --revoke: also remove the row (only for an identity created by mistake)",
+    )
+    parser.add_argument(
         "--dry-run", action="store_true", help="report the change without committing"
     )
     return parser
+
+
+def resolve_request(args: argparse.Namespace, settings: Settings) -> StaffProvisioningRequest:
+    """Build the request, preferring the roster so fields cannot be mismatched."""
+    if args.person:
+        person = member(args.person)
+        if person is None:
+            raise SystemExit(f"Unknown person '{args.person}'. Known: {', '.join(known_keys())}")
+        instance = clerk_instance_for(settings.environment)
+        external_id = args.external_id or person.clerk_id_for(instance)
+        if external_id is None:
+            raise SystemExit(
+                f"No Clerk id recorded for {person.display_name} on the {instance} "
+                "instance. Pass --external-id explicitly."
+            )
+        if args.external_id and person.clerk_id_for(instance) not in (None, args.external_id):
+            raise SystemExit(
+                f"--external-id does not match the recorded id for {person.display_name} "
+                f"on the {instance} instance. Refusing to guess which one is right."
+            )
+        print(f"{person.display_name} <{person.email}> [{external_id}]")
+        return StaffProvisioningRequest(
+            organization_slug=args.organization,
+            external_auth_id=external_id,
+            roles=person.roles,
+            email=person.email,
+            therapist_slug=person.therapist_slug,
+            replace_roles=args.replace_roles,
+        )
+
+    if not args.external_id or not args.roles:
+        raise SystemExit("Use --person, or pass --external-id and --roles (or --list).")
+
+    return StaffProvisioningRequest(
+        organization_slug=args.organization,
+        external_auth_id=args.external_id,
+        roles=parse_roles(args.roles),
+        email=args.email,
+        therapist_slug=args.therapist_slug,
+        replace_roles=args.replace_roles,
+    )
 
 
 async def run(args: argparse.Namespace) -> int:
@@ -113,18 +193,38 @@ async def run(args: argparse.Namespace) -> int:
                         print("  ⚠ internal user is inactive")
                 return 0
 
-            if not args.external_id or not args.roles:
-                raise SystemExit("--external-id and --roles are required (or use --list).")
+            if args.revoke:
+                target = args.external_id
+                if target is None and args.person:
+                    person = member(args.person)
+                    if person is None:
+                        raise SystemExit(f"Unknown person '{args.person}'.")
+                    target = person.clerk_id_for(clerk_instance_for(settings.environment))
+                if target is None:
+                    raise SystemExit("--revoke needs --person or --external-id.")
+                removal = await revoke_staff(
+                    session, args.organization, target, hard_delete=args.delete
+                )
+                if not removal.found:
+                    print(f"no identity with external id {removal.external_auth_id}")
+                    return 0
+                for role in sorted(removal.roles_disabled, key=lambda r: r.value):
+                    print(f"disabled role {role.value}")
+                for slug in removal.therapists_unlinked:
+                    print(f"unlinked therapist profile {slug}")
+                if removal.deleted:
+                    print("deleted internal user")
+                elif not args.delete:
+                    print("kept internal user (use --delete to remove it entirely)")
+                if args.dry_run:
+                    await session.rollback()
+                    print("dry run: rolled back")
+                else:
+                    await session.commit()
+                    print("committed")
+                return 0
 
-            request = StaffProvisioningRequest(
-                organization_slug=args.organization,
-                external_auth_id=args.external_id,
-                roles=parse_roles(args.roles),
-                email=args.email,
-                therapist_slug=args.therapist_slug,
-                replace_roles=args.replace_roles,
-            )
-            result = await provision_staff(session, request)
+            result = await provision_staff(session, resolve_request(args, settings))
 
             if result.created_user:
                 print(f"created internal user {result.user_id}")

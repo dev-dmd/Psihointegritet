@@ -19,10 +19,10 @@ rather than duplicating rows or failing.
 from dataclasses import dataclass
 from uuid import UUID
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from psihointegritet.modules.guidance.models import TherapistMatchingProfile
+from psihointegritet.modules.guidance.models import IntakeAssignment, TherapistMatchingProfile
 from psihointegritet.modules.identity.models import (
     InternalUser,
     MembershipRole,
@@ -168,6 +168,111 @@ async def provision_staff(
         roles_disabled=frozenset(roles_disabled),
         roles_left_in_place=frozenset(extra_active - roles_disabled),
         therapist_linked=therapist_linked,
+    )
+
+
+@dataclass(frozen=True)
+class StaffRemovalResult:
+    external_auth_id: str
+    found: bool
+    roles_disabled: frozenset[MembershipRole]
+    therapists_unlinked: tuple[str, ...]
+    deleted: bool
+    claimed_cases: int
+
+
+async def revoke_staff(
+    session: AsyncSession,
+    organization_slug: str,
+    external_auth_id: str,
+    *,
+    hard_delete: bool = False,
+) -> StaffRemovalResult:
+    """Withdraw a staff identity.
+
+    Two modes, for two different situations:
+
+    - **revoke** (default) disables the memberships and unlinks the therapist
+      profile but keeps the `InternalUser` row, so an audit trail that points
+      at it still resolves. This is what a departure needs.
+    - **hard delete** removes the row entirely. It is meant for a mistake —
+      an identity that should never have existed, such as one provisioned with
+      the wrong Clerk id. It is refused once the person has claimed a case,
+      because deleting them would destroy the ownership record of clinical
+      work; `intake_assignments.claimed_by_user_id` also enforces this at the
+      database level.
+    """
+    organization = await session.scalar(
+        select(Organization).where(Organization.slug == organization_slug)
+    )
+    if organization is None:
+        raise ProvisioningError(f"Organization '{organization_slug}' does not exist.")
+
+    user = await session.scalar(
+        select(InternalUser).where(InternalUser.external_auth_id == external_auth_id)
+    )
+    if user is None:
+        return StaffRemovalResult(
+            external_auth_id=external_auth_id,
+            found=False,
+            roles_disabled=frozenset(),
+            therapists_unlinked=(),
+            deleted=False,
+            claimed_cases=0,
+        )
+
+    claimed = await session.scalar(
+        select(func.count())
+        .select_from(IntakeAssignment)
+        .where(IntakeAssignment.claimed_by_user_id == user.id)
+    )
+    claimed_cases = claimed or 0
+
+    profiles = list(
+        await session.scalars(
+            select(TherapistMatchingProfile).where(
+                TherapistMatchingProfile.organization_id == organization.id,
+                TherapistMatchingProfile.assigned_user_id == user.id,
+            )
+        )
+    )
+    unlinked = tuple(sorted(profile.slug for profile in profiles))
+    for profile in profiles:
+        profile.assigned_user_id = None
+
+    memberships = list(
+        await session.scalars(
+            select(OrganizationMembership).where(
+                OrganizationMembership.organization_id == organization.id,
+                OrganizationMembership.user_id == user.id,
+                OrganizationMembership.status == MembershipStatus.ACTIVE,
+            )
+        )
+    )
+    disabled: set[MembershipRole] = set()
+    for membership in memberships:
+        membership.status = MembershipStatus.DISABLED
+        disabled.add(membership.role)
+
+    deleted = False
+    if hard_delete:
+        if claimed_cases:
+            raise ProvisioningError(
+                f"'{external_auth_id}' has claimed {claimed_cases} case(s); deleting it "
+                "would erase who owned that work. The roles are revoked instead — "
+                "re-run without --delete to keep the audit trail."
+            )
+        await session.flush()
+        await session.delete(user)
+        deleted = True
+
+    return StaffRemovalResult(
+        external_auth_id=external_auth_id,
+        found=True,
+        roles_disabled=frozenset(disabled),
+        therapists_unlinked=unlinked,
+        deleted=deleted,
+        claimed_cases=claimed_cases,
     )
 
 

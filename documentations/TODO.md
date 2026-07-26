@@ -266,7 +266,8 @@ Svaki ima SUPERSEDED zaglavlje sa razlogom i zamenom. Arhivirano 2026-07-17: `PR
 | LD-5 | Alembic migracija za tri tabele                                                                   | ✅     | **2026-07-26.** Objedinjena sa CG-B5 u `20260726_0004` (7 tabela). Verifikovana lokalno: upgrade → downgrade → upgrade, ORM round-trip, parcijalni index odbija drugu objavljenu reviziju. Primenjuje se na staging/features kroz Railway `preDeployCommand` |
 | LD-6 | `settings.intake_submission_ready` čita objavljenu reviziju umesto env stringa                    | ⬜     | Env ostaje samo kao override za lokalni razvoj                                                                                  |
 | LD-7 | FastAPI ruter (org_admin) + generisani TS klijent                                                 | ⬜     | Posle LD-5                                                                                                                     |
-| LD-8 | **Staff provisioning komanda** — `internal_users` + `organization_memberships` + veza terapeuta   | ✅     | **2026-07-26.** `scripts/provision_staff.py` + `modules/identity/provisioning.py`; idempotentna, `--dry-run`, `--list`. Bez ovoga backend odbija svaki staff zahtev sa „Staff membership is not provisioned" — nema JIT provisioning-a i to je namerno (rules §10.3). Zatvara „korak 3" iz Intake plana §1.4 |
+| LD-8 | **Staff provisioning komanda** — `internal_users` + `organization_memberships` + veza terapeuta   | ✅     | **2026-07-26.** `scripts/provision_staff.py` + `modules/identity/provisioning.py`; idempotentna, `--dry-run`, `--list`, `--revoke`/`--delete`. Bez ovoga backend odbija svaki staff zahtev sa „Staff membership is not provisioned" — nema JIT provisioning-a i to je namerno (rules §10.3). Zatvara „korak 3" iz Intake plana §1.4 |
+| —    | ⚠️ **`external_auth_id` je ključ autorizacije, ne email.** Provisioning sa pogrešnim Clerk ID-jem znači da se **pogrešna osoba prijavljuje kao neko drugi** i da se preuzeti slučajevi pripisuju pogrešnom terapeutu. Email i `--therapist-slug` su samo prikaz i veza — ne proveravaju identitet | —                                                                                                                              | Zato `--revoke` (onemogući, zadrži red zbog audita) i `--revoke --delete` (obriši; **odbija se ako je osoba preuzela slučaj**, `intake_assignments.claimed_by_user_id` je `RESTRICT`). Profil terapeuta preživljava brisanje (`SET NULL`), samo se odvezuje |
 
 ---
 
@@ -277,14 +278,17 @@ Svaki ima SUPERSEDED zaglavlje sa razlogom i zamenom. Arhivirano 2026-07-17: `PR
 > **Granica:** uređivanje/verzionisanje/pregled/objava postojećih **6 tipova** iz R1.4.i. Statusi D-029, severity D-032 — `validation_failed`/`review_required` NISU statusi (D-044). Objavljeno se ne briše (D-045). Članci, biblioteka, zakazana objava i AI = R3.
 > **Faza A dokumentaciono zatvorena (2026-07-26):** šest ugovora A.1–A.6 (brisanje/arhiviranje, revizijska semantika povratnih tranzicija, severity/approval/gate formula, redosled i prekid provere, jedini fixture fajl, `PanelErrorResource` sa `revisionId`) zaključani u planu §„Zaključani ugovori Faze A". **Faza A zatvorena 2026-07-26** (CG-A1/A2/A3 ✅, parity fixtures aktivni). **CG-B1, CG-B2 i CG-B5/LD-5 zatvoreni 2026-07-26** — modeli, pravila i migracija `20260726_0004` (7 tabela) postoje i verifikovani su lokalno. Migracija se primenjuje na staging i features **automatski pri deploy-u** (`railway.json` → `preDeployCommand: alembic upgrade head`); produkcija ostaje netaknuta dok se tamo ne deployuje. Pri tom radu otkrivena su dva defekta: **D20** (enum kolone su činile parcijalni unique index inertnim — rešeno) i **D19** (postojeći schema drift na Intake/identity tabelama — namerno isključen iz 0004, traži zasebnu migraciju).
 
+**Stanje okruženja (2026-07-26):** **features** je na `20260726_0004` — svih 7 tabela postoji, `provision_staff.py --list` radi u kontejneru i **pročitao je `therapist_matching_profiles` bez `LookupError`**, što potvrđuje da je D21 zatvoren i u pravom okruženju, ne samo lokalno. Staging još nije deployovan. Produkcija netaknuta.
+
 **Deploy na staging/features (2026-07-26):** migracija ide sama uz deploy. **Seed nije potreban** — 7 tabela radi prazno i to je ispravan bezbedan default (Intake gate zatvoren, javni sajt na fallbacku). Ali `internal_users` je prazan i backend nema JIT provisioning, pa posle deploy-a treba pokrenuti jednom po osobi:
 
 ```bash
-railway run -- python scripts/provision_staff.py --list                  # stanje
-railway run -- python scripts/provision_staff.py \
-  --external-id <clerk_sub> --email <adresa> --roles org_admin,therapist \
-  --therapist-slug <slug>                                                # upis
+python scripts/provision_staff.py --list                    # stanje
+python scripts/provision_staff.py --person marija --dry-run # provera
+python scripts/provision_staff.py --person marija           # upis
 ```
+
+**Koristi `--person`** (`anja` / `marija` / `marjan`) — registar u `modules/identity/roster.py` drži Clerk ID, email, role i slug terapeuta **zajedno**, pa se ne mogu spariti pogrešno, i odbija poziv ako prosleđen `--external-id` ne odgovara zabeleženom. Marjan nema nalog ni na jednoj instanci (O-17), pa traži eksplicitan `--external-id`. Produkcijski ID-evi **nisu** upisani i test to čuva — pogađanje bi provisioning-ovalo pogrešnu osobu.
 
 ⚠️ **Bez `uv run` u kontejneru** — runtime stage nosi samo izgrađen virtualenv (već na PATH-u), `uv` binarka ostaje u builder stage-u. Lokalno je `uv run python scripts/…`. Uz to, `Dockerfile` je dopunjen sa `COPY scripts ./scripts` — bez toga skripta ne postoji u imidžu.
 
