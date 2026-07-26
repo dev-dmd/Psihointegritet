@@ -2,10 +2,11 @@ from datetime import datetime
 from enum import StrEnum
 from uuid import UUID, uuid4
 
-from sqlalchemy import Boolean, DateTime, Enum, ForeignKey, String, UniqueConstraint, Uuid, func
+from sqlalchemy import Boolean, DateTime, ForeignKey, String, UniqueConstraint, Uuid, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from psihointegritet.db.base import Base
+from psihointegritet.shared.types.sa_enum import value_enum
 
 
 class MembershipRole(StrEnum):
@@ -48,10 +49,10 @@ class OrganizationMembership(Base):
         Uuid(as_uuid=True), ForeignKey("internal_users.id", ondelete="CASCADE"), index=True
     )
     role: Mapped[MembershipRole] = mapped_column(
-        Enum(MembershipRole, native_enum=False, length=32), nullable=False
+        value_enum(MembershipRole, length=32), nullable=False
     )
     status: Mapped[MembershipStatus] = mapped_column(
-        Enum(MembershipStatus, native_enum=False, length=32),
+        value_enum(MembershipStatus, length=32),
         default=MembershipStatus.ACTIVE,
         server_default=MembershipStatus.ACTIVE.value,
     )

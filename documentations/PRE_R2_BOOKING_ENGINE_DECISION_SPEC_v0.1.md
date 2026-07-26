@@ -1,9 +1,20 @@
-# PRE-R2 BOOKING ENGINE DECISION SPEC v0.1
+# PRE-R2 BOOKING ENGINE DECISION SPEC v0.2
 
-**Status:** R1.6 u toku; dokumentacioni gate, bez odobrenja za R2 kod
-**Datum:** 2026-07-22
+**Status:** R1.6 zatvoren za implementaciju; preostale poslovne vrednosti su usvojene kao konfigurabilni default-i
+**Datum:** 2026-07-22 · **Dopunjeno:** 2026-07-26 (D-040, D-041)
 **Formalni naziv:** Pre-R2 Booking Engine Decision Specification  
 **Interni redosled:** R1.6; nije deo R1 production launch scope-a
+
+## 0. Šta menja v0.2
+
+**D-040** rešava zastoj u kojem su BDS-007B, BDS-008, BDS-009B i BDS-010B čekali sastanak koji se nije desio. Te odluke prelaze u `APPROVED (default, configurable)`: predložene vrednosti ulaze u bazu kao podrazumevana konfiguracija po organizaciji, a tim ih menja u panelu kada potvrdi sopstvenu praksu. **Nijedan rok ne sme biti hardkodovan u kodu.**
+
+Dve granice se time **ne** pomeraju:
+
+- javno obećanje roka se ne prikazuje korisniku dok operativni tim ne potvrdi poslovni kalendar (radni sati, praznici, zamena tokom odsustva);
+- BDS-011 (consent, retention, safety) ostaje Clinical/Legal, a BDS-014 (finansije) ostaje R5.
+
+**D-041** dodaje B2B booking površinu kao četvrtu temu widget-a. Rezervisani kapacitet kompanije je **kvota, ne novac** — bez cene, kredita, ledgera i faktura, čime BDS-014 ostaje netaknut. Sam kapacitet se puni tek u R4; u R2 `CompanyAllocationAdapter` vraća „nema alokacije" i tok pada na standardnu dostupnost. Pre implementacije se piše **ADR-015**.
 
 ## 1. Svrha i granica
 
@@ -72,15 +83,15 @@ R1.6 je završen tek kada svaki red koji ulazi u odobreni R2 scope dobije `APPRO
 | BDS-005 | Appointment Lifecycle | PROPOSED | Product + Technical | Predlog je mali lifecycle `confirmed`, `completed`, `no_show`, `cancelled`; actor i razlog su audit, ne novi javni statusi. |
 | BDS-006 | Alternative Proposal | PROPOSED | Product + Operations | Terapeut može dati jednu ili više opcija; prihvatanje jedne mora biti atomsko, uz zatvaranje ostalih. |
 | BDS-007A | Technical Contention Hold | APPROVED | Technical | Kratak atomski i idempotentan hold važi samo za `slot_request`; nije rezervacija ni Appointment. Konkretan TTL ostaje konfiguraciona R2 vrednost. |
-| BDS-007B | Slot posle slanja zahteva | PROPOSED | Business + Product + Technical | Predlog A: prvi validan zahtev privremeno uklanja slot iz javne ponude do odluke ili isteka. Za odobrenje su potrebni SLA, reopen i Notify Me pravila. |
-| BDS-008 | Review SLA | PROPOSED | Business + Operations + Legal | Predloženi rokovi su u odeljku 10; Anja i operativni tim ih potvrđuju kroz `Odobravam / Želim izmenu`. |
+| BDS-007B | Slot posle slanja zahteva | APPROVED (default, configurable) | Business + Product + Technical | **D-040:** opcija A je podrazumevana — prvi validan zahtev privremeno uklanja slot iz javne ponude do odluke ili isteka. Pending prozor je konfiguracija po organizaciji, ne konstanta. Opcija B (više kandidata za isti slot) i dalje traži zasebnu odluku. |
+| BDS-008 | Review SLA | APPROVED (default, configurable) | Business + Operations + Legal | **D-040:** rokovi iz odeljka 10 su podrazumevana konfiguracija. Poslovni kalendar (radni sati, praznici, zamena) ostaje neunet, pa se **javno obećanje roka ne prikazuje** dok ga tim ne potvrdi; interni reminderi i escalation rade po default-u. |
 | BDS-009A | Atomic waitlist offer claim | APPROVED | Technical | Prvi validni serverski atomic claim osvaja jednu privatnu ponudu; ponovni claim dobija `already_claimed` i alternative. |
-| BDS-009B | Notify Me policy | PROPOSED | Product + Operations | Sekvencijalna privatna ponuda, FIFO i rok od četiri radna sata su preporuka, ne odobrena operativna politika. |
+| BDS-009B | Notify Me policy | APPROVED (default, configurable) | Product + Operations | **D-040:** sekvencijalna privatna ponuda, FIFO i rok od četiri radna sata su podrazumevana konfiguracija. Broadcast first-claim ostaje buduća tenant opcija i ne implementira se sada. |
 | BDS-010A | Reschedule request contract | APPROVED | Product/Technical | `AppointmentRequest.type = initial | reschedule`; postojeći Appointment ostaje važeći do atomske konverzije. |
-| BDS-010B | Cancellation policy i rutinske role | OPEN | Product + Legal + Operations | S7 pravila, rokovi, late/no-show posledice i finalna role politika zahtevaju potvrdu. R2 ne obračunava novac. |
+| BDS-010B | Cancellation policy i rutinske role | APPROVED (default, configurable) | Product + Legal + Operations | **D-040:** nacrt od 24 sata (S7) postaje podrazumevani prag otkazivanja, promenljiv u panelu. R2 čuva verziju politike aktivne pri potvrdi i **ne obračunava novac**. Late/no-show posledice ostaju bez finansijskog efekta do R5. |
 | BDS-011 | Consent, retention i safety boundary | OPEN | Clinical + Legal + Product | Adult booking traži odobrene obavezne potvrde, retention i sigurnosni tekst; maloletnici su zasebno `BLOCKED` i ostaju `disabled` dok se ne odobre njihova pravila. |
 | BDS-012 | Google Calendar | OPEN | Product + terapeuti | Moguć je samo naknadni free/busy adapter; interni engine ostaje source of truth. |
-| BDS-013 | B2B rezervisani kapacitet | BLOCKED | Product | Target R4; B2B booking i billing ne ulaze u početni R2. |
+| BDS-013 | B2B rezervisani kapacitet | BLOCKED (šav u R2) | Product | Target R4 za same podatke o kapacitetu. **D-041** dozvoljava da R2 napravi B2B booking površinu i `CompanyAllocationAdapter`, koji do R4 vraća „nema alokacije" → standardna dostupnost. Kvota nije novac; billing ostaje R5. Traži ADR-015. |
 | BDS-014 | Paketi, krediti, pretplate, plaćanje i refundacije | BLOCKED | Business + Legal | Target R5; bez R2 tabela, migracija, endpoint-a, UI-ja ili provider SDK-a. |
 
 Ova revizija objedinjavanjem menja ranije radne oznake: prethodni BDS-015 prelazi u BDS-008, BDS-016 u BDS-009B, a BDS-017 u BDS-009A. BDS-007A/B zadržavaju ista značenja.
@@ -388,7 +399,14 @@ R1.6 je završen kada:
 8. Anja dobije kratak poslovni list `R1_6_BOOKING_BUSINESS_APPROVAL_SHEET_v0.1.md` sa odgovorom `Odobravam / Želim izmenu`;
 9. tehnička verzija postane stabilan ulaz za R2 plan review.
 
-Trenutno su tačke 2.1-2.3 i BDS-007A/BDS-009A zaključane. Poslovna potvrda početne matrice, BDS-007B, BDS-008, BDS-009B i BDS-010B još nedostaje.
+**Stanje 2026-07-26:** tačke 2.1-2.3, BDS-007A i BDS-009A su zaključane, a BDS-007B, BDS-008, BDS-009B i BDS-010B su zatvorene kroz D-040 kao konfigurabilni default-i. Time je tačka 4 ispunjena: rokovi imaju izričito odobrenje kao **podrazumevana, promenljiva konfiguracija**, pa nijedna funkcija ne izlazi iz R2 scope-a.
+
+Ostaje otvoreno i pre prvog R2 migration-a mora biti rešeno:
+
+- **BDS-002** — trajanja, bufferi, radno vreme, odsustva i horizont po terapeutu. Bez ovoga nema kandidat-slotova, pa `slot_request` ne može da se uključi ni za jednu ponudu.
+- **BDS-011** — adult consent, retention i safety tekst; vezuje se na isti registar dokumenata koji otvara Intake gate (D-039).
+- **BDS-012** — Google Calendar; u R2 se gradi samo free/busy šav, bez upisa u eksterni kalendar.
+- **Početna matrica ponuda** iz odeljka 5 ostaje poslovni predlog za Anju. Do njene potvrde svaka nepotvrđena kombinacija je `disabled`, što je bezbedan default i ne blokira izgradnju.
 
 ## 14. Predloženi redosled R2 nakon R1.6
 

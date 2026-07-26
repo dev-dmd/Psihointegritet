@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import { WorkspaceBottomNav } from "@/features/workspace/components/bottom-nav";
 import { WorkspaceSidebar } from "@/features/workspace/components/sidebar";
 import { WorkspaceTopbar } from "@/features/workspace/components/topbar";
+import { PanelErrorsProvider } from "@/features/workspace/panel-errors";
 import { WorkspaceProvider } from "@/features/workspace/workspace-context";
 import {
   requireStaff,
@@ -38,16 +39,18 @@ export default async function WorkspaceLayout({
   return (
     <QueryProvider>
       <WorkspaceProvider isAdmin={isAdmin} isTherapist={isTherapist}>
-        <div className="bg-panel-canvas flex min-h-screen">
-          <WorkspaceSidebar />
-          <div className="flex min-w-0 flex-1 flex-col lg:ml-[264px]">
-            <WorkspaceTopbar />
-            <main className="w-full max-w-[1160px] self-center px-4 pt-[30px] pb-[104px] md:px-8 lg:pb-14">
-              {children}
-            </main>
+        <PanelErrorsProvider>
+          <div className="bg-panel-canvas flex min-h-screen">
+            <WorkspaceSidebar />
+            <div className="flex min-w-0 flex-1 flex-col lg:ml-[264px]">
+              <WorkspaceTopbar />
+              <main className="w-full max-w-[1160px] self-center px-4 pt-[30px] pb-[104px] md:px-8 lg:pb-14">
+                {children}
+              </main>
+            </div>
+            <WorkspaceBottomNav />
           </div>
-          <WorkspaceBottomNav />
-        </div>
+        </PanelErrorsProvider>
       </WorkspaceProvider>
     </QueryProvider>
   );

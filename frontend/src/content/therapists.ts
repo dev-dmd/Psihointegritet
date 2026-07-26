@@ -4,12 +4,12 @@ import type { Therapist } from "@/types/therapist";
  * Single source of truth for therapist data — the team pages, the homepage
  * section, the site footer and the guided-selection drawer all read from here.
  *
- * Content is `draft` (master plan §4 R0.2) and NOT cleared for publication:
+ * Content is a fallback layer (D-038): the CMS overrides any field the team
+ * fills in, and nothing here is deleted when it does.
  *
- * - Titles are deliberately generic. The design handoff and the delivered bios
- *   said „pod supervizijom" for all three, which T3 records as outdated — Anja
- *   states all three are certified. Publishing either version needs each
- *   therapist's written confirmation (STOP S1 / OPEN_DECISIONS O-01).
+ * - Titles state certification. The design handoff and the delivered bios said
+ *   „pod supervizijom" for all three, which T3 recorded as outdated; D-042
+ *   closes STOP S1 by confirming all three are certified gestalt therapists.
  * - Bios are the therapists' own first-person texts, kept verbatim apart from
  *   one mandated edit: Marjan's opening sentence had „pod supervizijom"
  *   removed per §4 R0.2 („remove/neutralize any unconfirmed credential
@@ -36,7 +36,7 @@ export const therapists: Therapist[] = [
     firstNameInstrumental: "Anjom",
     initials: "AS",
     title:
-      "Osnivačica Psihointegriteta · Socijalni radnik i geštalt psihoterapeutkinja",
+      "Osnivačica Psihointegriteta · Socijalni radnik i sertifikovana geštalt psihoterapeutkinja",
     badge: "Osnivačica",
     quote:
       "Vjerujem da svaka osoba nosi kapacitet za promjenu, ali da se ona događa tek kada se osjetimo dovoljno sigurno da budemo autentični.",
@@ -75,7 +75,7 @@ export const therapists: Therapist[] = [
     firstName: "Marija",
     firstNameInstrumental: "Marijom",
     initials: "MS",
-    title: "Pedagog i geštalt psihoterapeutkinja",
+    title: "Pedagog i sertifikovana geštalt psihoterapeutkinja",
     badge: "Adolescenti i odrasli",
     quote:
       "Verujem da svaka osoba u sebi nosi kapacitet za promenu i rast, a da je uloga terapeuta da stvori siguran odnos u kojem taj potencijal može da se razvije.",
@@ -114,7 +114,7 @@ export const therapists: Therapist[] = [
     firstName: "Marjan",
     firstNameInstrumental: "Marjanom",
     initials: "MJ",
-    title: "Psiholog i geštalt psihoterapeut",
+    title: "Psiholog i sertifikovani geštalt psihoterapeut",
     badge: "Individualni rad i parovi",
     quote:
       "Verujem da se najdublje promene dešavaju onda kada se osoba oseti viđenom, prihvaćenom i dovoljno sigurnom da istraži sebe bez straha od osude.",

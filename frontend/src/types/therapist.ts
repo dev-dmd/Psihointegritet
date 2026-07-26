@@ -27,7 +27,7 @@ export interface Therapist {
   /** Instrumental case, for „razgovor sa {firstNameInstrumental}" — Anja → Anjom. */
   firstNameInstrumental: string;
   initials: string;
-  /** Generic until S1 — no „pod supervizijom", no unconfirmed certifications. */
+  /** Confirmed certification wording (D-042 closed S1); never „pod supervizijom". */
   title: string;
   badge: string;
   quote: string;

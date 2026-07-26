@@ -6,6 +6,7 @@ import Link from "next/link";
 import { ProgressBar } from "@/components/panel/progress-bar";
 
 import { priorityCards, todayAgenda, weekBars } from "../data";
+import { usePanelErrors } from "../panel-errors";
 import { isFreeSlot } from "../types";
 import { useWorkspace } from "../workspace-context";
 import { AgendaRow } from "./agenda-row";
@@ -19,6 +20,7 @@ function greeting(): string {
 
 export function ScreenPregled() {
   const { isAdmin, selectedTherapistSlug } = useWorkspace();
+  const { errors, clearError } = usePanelErrors();
 
   const cards = priorityCards.filter((card) => isAdmin || !card.adminOnly);
   const agenda = selectedTherapistSlug
@@ -41,6 +43,60 @@ export function ScreenPregled() {
           Evo šta danas traži vašu pažnju.
         </p>
       </div>
+
+      {errors.length > 0 ? (
+        <section
+          aria-labelledby="panel-errors-heading"
+          className="border-danger/45 bg-danger/8 rounded-panel mb-6 border px-5 py-4"
+        >
+          <h2
+            id="panel-errors-heading"
+            className="text-danger mb-3 text-[11px] font-semibold tracking-[0.14em] uppercase"
+          >
+            Greške koje traže vašu pažnju ({errors.length})
+          </h2>
+          <ul className="flex flex-col gap-3">
+            {errors.map((error) => (
+              <li
+                key={error.id}
+                className="border-line bg-surface rounded-tile border px-4 py-3"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="text-coffee text-sm font-semibold">
+                      {error.title}
+                    </p>
+                    <p className="text-ink-70 mt-1 text-[13px] leading-[1.5]">
+                      {error.description}
+                    </p>
+                    {error.details.length > 0 ? (
+                      <ul className="text-ink-70 mt-2 flex list-disc flex-col gap-1 pl-5 text-[12.5px] leading-[1.5]">
+                        {error.details.map((detail) => (
+                          <li key={detail}>{detail}</li>
+                        ))}
+                      </ul>
+                    ) : null}
+                    <Link
+                      href={error.href}
+                      className="text-forest hover:text-sage border-coffee/25 mt-2.5 inline-block border-b-[1.5px] text-[13px] font-semibold no-underline transition-colors"
+                    >
+                      Otvorite „{error.tabLabel}“ →
+                    </Link>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => clearError(error.id)}
+                    aria-label={`Ukloni grešku: ${error.title}`}
+                    className="text-ink-55 hover:text-coffee shrink-0 cursor-pointer rounded-full border-0 bg-transparent px-2 py-1 text-lg leading-none transition-colors"
+                  >
+                    ×
+                  </button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
 
       <div className="mb-6 grid grid-cols-2 gap-3.5 lg:grid-cols-4">
         {cards.map((card) => (

@@ -1,5 +1,6 @@
 import { therapists } from "@/content/therapists";
 
+import type { LegalDocument } from "./legal-documents";
 import type {
   AgendaEntry,
   AppointmentRequest,
@@ -494,5 +495,38 @@ export const availabilityLayers: AvailabilityLayer[] = [
     index: 4,
     title: "Rezervisani kapacitet",
     body: "TechNiš d.o.o. · Četvrtak · 16:00 — 18:00. Nedostupno javnom bookingu — koristi se samo kroz kompanijski program.",
+  },
+];
+
+/**
+ * Seed documents for the registry preview (LD-3). Deliberately unfinished:
+ * the two Intake consent texts exist as empty drafts so the panel shows the
+ * gate closed and names exactly what is missing. We do not write legal text
+ * (master plan §0, point 8) — Anja and the lawyer fill these in.
+ */
+export const seedLegalDocuments: LegalDocument[] = [
+  {
+    documentId: "doc-obavestenje-o-obradi-podataka",
+    revisionId: "doc-obavestenje-o-obradi-podataka-r1",
+    kind: "intake_data_processing_notice",
+    title: "Obaveštenje o obradi podataka",
+    slug: "obavestenje-o-obradi-podataka",
+    body: "",
+    status: "draft",
+    approvals: [],
+    versionLabel: "v1",
+    updatedAt: "2026-07-26T09:00:00.000Z",
+  },
+  {
+    documentId: "doc-zahtev-nije-termin",
+    revisionId: "doc-zahtev-nije-termin-r1",
+    kind: "intake_request_acknowledgement",
+    title: "Potvrda da zahtev nije termin",
+    slug: "zahtev-nije-termin",
+    body: "",
+    status: "draft",
+    approvals: [],
+    versionLabel: "v1",
+    updatedAt: "2026-07-26T09:00:00.000Z",
   },
 ];

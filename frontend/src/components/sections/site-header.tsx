@@ -67,7 +67,7 @@ export function SiteHeader() {
       <StickyBar>
         <Link href="/" className="flex items-baseline no-underline">
           <span className="text-forest font-serif text-[19px] font-medium tracking-[0.01em]">
-            PDC
+            P
           </span>
           <span
             aria-hidden

@@ -394,11 +394,15 @@ class StaticMatchingAdapter:
 def _recommend_service(input: MatchingInput) -> ServiceRecommendation:
     if input.participants == PARTICIPANTS["partner"]:
         return SERVICES["bracno-savetovanje"]
-    if input.participants == PARTICIPANTS["parent_child"] or input.reason in {
-        REASONS["parenting"],
-    } or (
-        input.reason == REASONS["adolescent"]
-        and input.requester_role is RequesterRole.GUARDIAN
+    if (
+        input.participants == PARTICIPANTS["parent_child"]
+        or input.reason
+        in {
+            REASONS["parenting"],
+        }
+        or (
+            input.reason == REASONS["adolescent"] and input.requester_role is RequesterRole.GUARDIAN
+        )
     ):
         return SERVICES["roditeljsko-savetovanje"]
     return SERVICES["individualna-psihoterapija"]

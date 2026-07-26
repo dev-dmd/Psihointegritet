@@ -59,6 +59,7 @@ review_priority = sa.Enum(
 )
 safety_category = sa.Enum("immediate_danger", name="safety_category", native_enum=False, length=32)
 
+
 def upgrade() -> None:
     op.add_column(
         "therapist_matching_profiles",

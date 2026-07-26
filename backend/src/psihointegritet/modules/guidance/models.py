@@ -6,7 +6,6 @@ from sqlalchemy import (
     JSON,
     Boolean,
     DateTime,
-    Enum,
     ForeignKey,
     String,
     Text,
@@ -17,6 +16,7 @@ from sqlalchemy import (
 from sqlalchemy.orm import Mapped, mapped_column
 
 from psihointegritet.db.base import Base
+from psihointegritet.shared.types.sa_enum import value_enum
 
 
 class GuidanceSessionState(StrEnum):
@@ -116,7 +116,7 @@ class GuidanceSession(Base):
         Uuid(as_uuid=True), ForeignKey("organizations.id", ondelete="CASCADE"), index=True
     )
     state: Mapped[GuidanceSessionState] = mapped_column(
-        Enum(GuidanceSessionState, native_enum=False, length=32),
+        value_enum(GuidanceSessionState, length=32),
         default=GuidanceSessionState.STARTED,
         server_default=GuidanceSessionState.STARTED.value,
     )
@@ -147,17 +147,17 @@ class TherapistMatchingProfile(Base):
         Boolean, default=True, server_default="true"
     )
     capacity_status: Mapped[CapacityStatus] = mapped_column(
-        Enum(CapacityStatus, native_enum=False, length=32),
+        value_enum(CapacityStatus, length=32),
         default=CapacityStatus.AVAILABLE,
         server_default=CapacityStatus.AVAILABLE.value,
     )
     acceptance_status: Mapped[AcceptanceStatus] = mapped_column(
-        Enum(AcceptanceStatus, native_enum=False, length=32),
+        value_enum(AcceptanceStatus, length=32),
         default=AcceptanceStatus.ACCEPTING,
         server_default=AcceptanceStatus.ACCEPTING.value,
     )
     presence_status: Mapped[PresenceStatus] = mapped_column(
-        Enum(PresenceStatus, native_enum=False, length=32),
+        value_enum(PresenceStatus, length=32),
         default=PresenceStatus.ACTIVE,
         server_default=PresenceStatus.ACTIVE.value,
     )
@@ -194,13 +194,13 @@ class IntakeCase(Base):
         Uuid(as_uuid=True), ForeignKey("guidance_sessions.id", ondelete="SET NULL"), nullable=True
     )
     submission_kind: Mapped[IntakeSubmissionKind] = mapped_column(
-        Enum(IntakeSubmissionKind, native_enum=False, length=32)
+        value_enum(IntakeSubmissionKind, length=32)
     )
     submission_intent: Mapped[SubmissionIntent] = mapped_column(
-        Enum(SubmissionIntent, native_enum=False, length=32)
+        value_enum(SubmissionIntent, length=32)
     )
     status: Mapped[IntakeCaseStatus] = mapped_column(
-        Enum(IntakeCaseStatus, native_enum=False, length=32),
+        value_enum(IntakeCaseStatus, length=32),
         default=IntakeCaseStatus.UNASSIGNED,
         server_default=IntakeCaseStatus.UNASSIGNED.value,
         index=True,
@@ -210,18 +210,18 @@ class IntakeCase(Base):
     format: Mapped[str | None] = mapped_column(String(32), nullable=True)
     location: Mapped[str | None] = mapped_column(String(120), nullable=True)
     requester_role: Mapped[RequesterRole] = mapped_column(
-        Enum(RequesterRole, native_enum=False, length=32),
+        value_enum(RequesterRole, length=32),
         default=RequesterRole.SELF_ADULT,
         server_default=RequesterRole.SELF_ADULT.value,
     )
     subject_age_band: Mapped[SubjectAgeBand] = mapped_column(
-        Enum(SubjectAgeBand, native_enum=False, length=32),
+        value_enum(SubjectAgeBand, length=32),
         default=SubjectAgeBand.ADULT,
         server_default=SubjectAgeBand.ADULT.value,
     )
     subject_is_aware: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
     guardian_consent_status: Mapped[GuardianConsentStatus] = mapped_column(
-        Enum(GuardianConsentStatus, native_enum=False, length=32),
+        value_enum(GuardianConsentStatus, length=32),
         default=GuardianConsentStatus.NOT_APPLICABLE,
         server_default=GuardianConsentStatus.NOT_APPLICABLE.value,
     )
@@ -233,14 +233,14 @@ class IntakeCase(Base):
         Boolean, default=False, server_default="false"
     )
     review_priority: Mapped[ReviewPriority] = mapped_column(
-        Enum(ReviewPriority, native_enum=False, length=32),
+        value_enum(ReviewPriority, length=32),
         default=ReviewPriority.STANDARD,
         server_default=ReviewPriority.STANDARD.value,
         index=True,
     )
     review_due_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     safety_category: Mapped[SafetyCategory | None] = mapped_column(
-        Enum(SafetyCategory, native_enum=False, length=32), nullable=True
+        value_enum(SafetyCategory, length=32), nullable=True
     )
     safety_notice_shown_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True
@@ -335,9 +335,7 @@ class ConsentRecord(Base):
     intake_case_id: Mapped[UUID] = mapped_column(
         Uuid(as_uuid=True), ForeignKey("intake_cases.id", ondelete="CASCADE"), index=True
     )
-    kind: Mapped[ConsentKind] = mapped_column(
-        Enum(ConsentKind, native_enum=False, length=64), nullable=False
-    )
+    kind: Mapped[ConsentKind] = mapped_column(value_enum(ConsentKind, length=64), nullable=False)
     document_version: Mapped[str] = mapped_column(String(80))
     locale: Mapped[str] = mapped_column(String(16), default="sr-Latn", server_default="sr-Latn")
     source: Mapped[str] = mapped_column(
@@ -383,7 +381,7 @@ class IntakeAssignmentEvent(Base):
         Uuid(as_uuid=True), ForeignKey("intake_cases.id", ondelete="CASCADE"), index=True
     )
     event_type: Mapped[AssignmentEventType] = mapped_column(
-        Enum(AssignmentEventType, native_enum=False, length=32)
+        value_enum(AssignmentEventType, length=32)
     )
     previous_therapist_profile_id: Mapped[UUID | None] = mapped_column(
         Uuid(as_uuid=True),

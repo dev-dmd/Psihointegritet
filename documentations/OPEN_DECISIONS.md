@@ -5,7 +5,7 @@ Otvorene odluke. **Doneto ide u `PRODUCT_DECISIONS.md`** i briše se odavde.
 **Gde piše:** master plan §13 (STOP lista) · §4 R0.1 · Proposal v1.1 §4 (Anjina lista)
 **Pravilo (MP §0, tačka 5):** ako se udari u otvorenu stavku — **stati i pitati**. Ne pogađati proizvodne, pravne, cenovne ni kliničke odluke.
 
-**Stanje 2026-07-22:** S2/S13 rešeni, S5/S10 parcijalni, S1 otvoren. Content governance je zaključan kroz D-028…D-033; Booking arhitektonske invarijante kroz D-034…D-037. Pre-R2 tehničke i poslovne odluke koje stvarno ostaju otvorene vode se u `PRE_R2_BOOKING_ENGINE_DECISION_SPEC_v0.1.md`.
+**Stanje 2026-07-26:** S1 rešen (D-042 — sva tri terapeuta su sertifikovana); S2/S13 rešeni. **S5 i S10 više ne blokiraju launch** (D-038): postojeći tekst je fallback, a tim ih dovršava kroz CMS. Content governance je zaključan kroz D-028…D-033; Booking arhitektonske invarijante kroz D-034…D-037, a BDS-007B/008/009B/010B su usvojeni kao konfigurabilni default-i (D-040). Pre-R2 tehničke i poslovne odluke koje stvarno ostaju otvorene vode se u `PRE_R2_BOOKING_ENGINE_DECISION_SPEC_v0.1.md`.
 
 ## Zaključano van ovog registra
 
@@ -13,40 +13,11 @@ Sledeće više nisu otvorene dileme i ne treba ih ponovo uvoditi ovde: R1.4.i gr
 
 ---
 
-## 🔴 Blokira produkcijski launch
+## 🟡 Ne blokira launch — vlasnik sadržaja dovršava kroz CMS
 
-### O-01 · S1 — Tačno stručno zvanje svakog terapeuta
-
-> **Gde piše:** MP §13 S1 · MP §1 T3 · Proposal §4 #1 · **Blokira:** objavu profila, R1.5, R0.2.d, R0.2.f, `/tim/[slug]`
-
-**Traži se:** pisana potvrda **tačne formulacije zvanja za svakog od troje**.
-
-**Zašto još stoji:** kontradikcija nije razrešena. Anja poručuje da su sve troje sertifikovani, ali:
-
-- **Marjanova nova biografija i dalje sadrži „pod supervizijom"** (MP T3)
-- U kodu **sva tri terapeuta** nose „pod supervizijom": [`homepage.ts:187`](../frontend/src/content/homepage.ts) („Socijalni radnik i geštalt psihoterapeutkinja pod supervizijom"), `:205` („Pedagog i geštalt psihoterapeutkinja pod supervizijom"), `:217` („Psiholog i geštalt psihoterapeut pod supervizijom")
-
-**Potrebno po terapeutu (Anja, Marija, Marjan):**
-
-1. Tačna formulacija zvanja za javnu objavu
-2. Da li „pod supervizijom" stoji ili ne — **za svakog posebno**
-3. Ko izdaje sertifikat, godina (ako ide u `therapist_credentials`)
-
-**Dok ne stigne:** zvanja se drže **generički** — „geštalt psihoterapeutkinja" / „geštalt psihoterapeut", `content_status: draft`, bez sertifikata (MP §4 R0.2). To dopušta da se `/tim` i `/tim/[slug]` naprave, ali **ne i objave**.
-
-> ℹ️ _Napomena 2026-07-17: na ovo pitanje je stigao odgovor „samo ekavica", što je jezička odluka (zabeležena kao D-001), ne odgovor na S1. S1 ostaje otvoren._
-
-**Stanje u kodu (2026-07-17):** `/tim` i `/tim/[slug]` su napravljeni. Zvanja su spuštena na generička u `content/therapists.ts`:
-
-| Terapeut | Handoff je tvrdio                                                    | Objavljeno sada (`draft`)                                                     |
-| -------- | -------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
-| Anja     | „Socijalni radnik i geštalt psihoterapeutkinja **pod supervizijom**" | „Osnivačica Psihointegriteta · Socijalni radnik i geštalt psihoterapeutkinja" |
-| Marija   | „Pedagog i geštalt psihoterapeutkinja **pod supervizijom**"          | „Pedagog i geštalt psihoterapeutkinja"                                        |
-| Marjan   | „Psiholog i geštalt psihoterapeut **pod supervizijom**"              | „Psiholog i geštalt psihoterapeut"                                            |
-
-⚠️ **Uz to je izmenjena Marjanova biografija.** Njegova prva rečenica doslovno glasi: _„Ja sam Marjan Janković, psiholog i geštalt psihoterapeut **pod supervizijom**, posvećen…"_. Fraza je uklonjena po MP §4 R0.2 („remove/neutralize any unconfirmed credential strings from staging copy"). To je **jedina izmena sadržaja u bilo čijoj biografiji** osim ekavice — i **vraća se u jednoj liniji** ako Anja potvrdi da „pod supervizijom" ipak stoji za njega.
-
----
+> **Promena 2026-07-26 (D-038):** ova sekcija je ranije nosila naslov „Blokira produkcijski launch". S5 i S10 su prebačeni ovde: postojeći tekst u repou je fallback koji se ne briše, a Anja i tim ga menjaju kroz CMS u admin panelu. Stavke ostaju u registru jer i dalje traže vlasnikovu akciju — samo više ne drže launch.
+>
+> **O-01 · S1 je zatvoren** i premešten u `PRODUCT_DECISIONS.md` kao **D-042**: sva tri terapeuta su sertifikovana, „pod supervizijom" se ne vraća ni za koga. Ostaje otvoreno samo izdavalac sertifikata i godina — podatak se ne prikazuje dok ga terapeut ne dostavi.
 
 ### O-03 · S5 — Pravni tekstovi i krizni disclaimer
 
@@ -162,6 +133,22 @@ Psihointegritet želi eksplicitno da prikaže da prima LGBTQIA+ osobe bez stigme
 
 ---
 
+### O-21 · Kompas — obim, vlasnik i granice novog proizvoda _(novo 2026-07-26)_
+
+> **Gde piše:** PRODUCT_CONTEXT v0.3 §11.5 · content-architecture.md §6 · **Blokira:** bilo kakav Kompas kod ili javnu najavu sa funkcijom
+
+**Šta znamo:** CTO je 2026-07-26 potvrdio da je Kompas **novi, zaseban proizvod** — nije novo ime za postojeći Vođeni izbor / Intake & Matching tok. U dokumentaciji postoji samo kao stavka access-tier liste („osnovni Kompas" u besplatnom sloju; „napredni Kompas" kao U pripremi). Integracija sa Content/Programs/Booking engine-ima dolazi **tek kada Booking ugovor bude stabilan** (posle R2).
+
+**Traži se od CTO/tima:**
+
+1. Definicija proizvoda: šta Kompas radi, za koga, čime se razlikuje od Vođenog izbora
+2. Granica osnovni vs napredni tier
+3. Vlasnik, release (R-mapa) i odnos prema Engines arhitekturi (novi engine ili deo postojećeg)
+
+**Dok ne stigne:** nikakav placeholder kod, ruta, model ni javna najava sa rokom (anti-placeholder pravila iz master plana §3 i PRODUCT_CONTEXT §11.5). Pominjanje u access-tier listi ostaje kakvo jeste.
+
+---
+
 ## 🟡 Pre Faze 2
 
 ### O-08 · S7 — Pravila otkazivanja
@@ -196,11 +183,14 @@ Koji kalendar po terapeutu, koji scope-ovi. Free/busy only, nikad naslovi (T15).
 
 ## Rezime za Anju
 
-**Hitno — bez ovoga nema launcha:**
+**Bez ovoga nema launcha:** ništa — launch više ne čeka nijednu stavku iz ovog registra (D-038, D-042).
 
-1. **Zvanja** — tačna formulacija za svakog od troje; da li „pod supervizijom" stoji (O-01)
+**Prvo posle launcha, kroz CMS u admin panelu:**
+
+1. **Tekstovi saglasnosti** — obaveštenje o obradi podataka i potvrda da zahtev nije termin. Dok nisu objavljeni, Intake ostaje zatvoren za slanje (D-039, ADR-014)
 2. **Kontakt** — email, telefon, mreže, adrese lokacija (O-06)
 3. **Pravni tekstovi** — pravnik + krizni disclaimer + provera APR statusa (O-03)
+4. **Sertifikati** — izdavalac i godina po terapeutu; zvanja su potvrđena (D-042), sertifikat kao podatak nije
 
 **Uskoro:** tekst o lokacijama (O-02) · pregled upitnika (O-04) · prva radionica (O-05)
 **Pre Faze 2:** pravila otkazivanja (O-08) · cena za studente (O-09) · Google kalendari (O-10)

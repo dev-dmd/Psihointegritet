@@ -4,6 +4,8 @@
 **Datum:** 2026-07-21  
 **Povezano:** D-032, `CONTENT_GOVERNANCE_CONTRACT_v0.1.md`, `DISCOVERABILITY_CONTRACT_v0.1.md`
 
+> **Najava v0.2 (D-044, 2026-07-26):** uz CMS Core nalaz dobija **additivna** polja `ruleVersion` i opciono `requiresApproval: clinical|legal|business` (nalaz koji reviziji dodaje obaveznu approval capability). Severity rečnik `info | warning | error`, 13 prefiksa i 32 postojeća pravila ostaju netaknuti; `block`/`review_required`/`passed` NISU severity vrednosti nego izvedene klase prikaza (BLOCK=`error`, REVIEW_REQUIRED=nalaz sa `requiresApproval`, PASSED=bez nalaza).
+
 ## 1. Svrha i granica
 
 Content Health je statička, read-only provera sadržaja i discoverability izlaza. Radi nad TypeScript providerom, testovima i build artefaktima. Ne čuva nalaze u bazi, ne šalje notifikacije, ne prikazuje Control Center tab i ne menja sadržaj.
