@@ -158,13 +158,11 @@ export function richDocFromPlainText(text: string): RichDoc {
         .trim(),
     )
     .filter((paragraph) => paragraph.length > 0)
-    .map(
-      (paragraph): ParagraphBlock => ({
-        id: createBlockId(),
-        type: "paragraph",
-        spans: [{ text: paragraph }],
-      }),
-    );
+    .map((paragraph): ParagraphBlock => ({
+      id: createBlockId(),
+      type: "paragraph",
+      spans: [{ text: paragraph }],
+    }));
   return { schemaVersion: RICH_DOC_SCHEMA_VERSION, blocks };
 }
 

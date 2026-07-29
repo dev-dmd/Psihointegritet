@@ -23,7 +23,7 @@ from __future__ import annotations
 import re
 import unicodedata
 from dataclasses import dataclass
-from typing import Literal
+from typing import Literal, cast
 from urllib.parse import urlsplit
 
 __all__ = [
@@ -164,11 +164,34 @@ def rich_doc_text_length(doc: RichDoc) -> int:
 # does not prevent reporting the rest of the document's problems in one pass.
 
 
+def _as_dict(raw: object) -> dict[str, object] | None:
+    """`isinstance(raw, dict)` alone narrows to `dict[Unknown, Unknown]`
+    under strict pyright — every `.get()` afterward comes back `Unknown`
+    and that propagates through every caller. JSON-column content is
+    trusted to have string keys once it IS a dict (Python's own `json`
+    module never produces anything else); the `cast` just tells pyright
+    what `.get()` calls below already assume."""
+    if isinstance(raw, dict):
+        return cast(dict[str, object], raw)
+    return None
+
+
+def _as_list(raw: object) -> list[object]:
+    """Same narrowing problem as `_as_dict`, for JSON arrays:
+    `isinstance(raw, list)` alone still leaves the element type `Unknown`.
+    Returns `[]` rather than `None` — every call site here already treats
+    "not a list" and "empty list" the same way (nothing to iterate)."""
+    if isinstance(raw, list):
+        return cast(list[object], raw)
+    return []
+
+
 def _parse_mark(raw: object, path: str, findings: list[RichDocFinding]) -> Mark | None:
     if raw in ("bold", "italic", "underline"):
         return raw  # type: ignore[return-value]
-    if isinstance(raw, dict) and raw.get("type") == "link":
-        href = raw.get("href")
+    mark_dict = _as_dict(raw)
+    if mark_dict is not None and mark_dict.get("type") == "link":
+        href = mark_dict.get("href")
         if not isinstance(href, str):
             findings.append(
                 RichDocFinding(
@@ -196,7 +219,9 @@ def _parse_mark(raw: object, path: str, findings: list[RichDocFinding]) -> Mark 
 
 
 def _parse_span(raw: object, path: str, findings: list[RichDocFinding]) -> Span | None:
-    if not isinstance(raw, dict) or not isinstance(raw.get("text"), str):
+    span_dict = _as_dict(raw)
+    text = span_dict.get("text") if span_dict is not None else None
+    if span_dict is None or not isinstance(text, str):
         findings.append(
             RichDocFinding(
                 rule_id="RICH-002",
@@ -208,29 +233,25 @@ def _parse_span(raw: object, path: str, findings: list[RichDocFinding]) -> Span 
             )
         )
         return None
-    raw_marks = raw.get("marks") or []
-    if not isinstance(raw_marks, list):
-        raw_marks = []
-    marks = tuple(
-        mark
-        for i, raw_mark in enumerate(raw_marks)
-        if (mark := _parse_mark(raw_mark, f"{path}.marks[{i}]", findings)) is not None
-    )
-    return Span(text=raw["text"], marks=marks)
+    marks: list[Mark] = []
+    for i, raw_mark in enumerate(_as_list(span_dict.get("marks"))):
+        mark = _parse_mark(raw_mark, f"{path}.marks[{i}]", findings)
+        if mark is not None:
+            marks.append(mark)
+    return Span(text=text, marks=tuple(marks))
 
 
 def _parse_spans(raw: object, path: str, findings: list[RichDocFinding]) -> tuple[Span, ...]:
-    if not isinstance(raw, list):
-        return ()
     return tuple(
         span
-        for i, raw_span in enumerate(raw)
+        for i, raw_span in enumerate(_as_list(raw))
         if (span := _parse_span(raw_span, f"{path}[{i}]", findings)) is not None
     )
 
 
 def _parse_block(raw: object, path: str, findings: list[RichDocFinding]) -> RichBlock | None:
-    if not isinstance(raw, dict):
+    block_dict = _as_dict(raw)
+    if block_dict is None:
         findings.append(
             RichDocFinding(
                 rule_id="RICH-001",
@@ -243,8 +264,9 @@ def _parse_block(raw: object, path: str, findings: list[RichDocFinding]) -> Rich
         )
         return None
 
-    block_id = raw.get("id")
-    block_type = raw.get("type")
+    raw = block_dict
+    block_id = block_dict.get("id")
+    block_type = block_dict.get("type")
     if not isinstance(block_id, str) or not block_id:
         findings.append(
             RichDocFinding(
@@ -273,7 +295,9 @@ def _parse_block(raw: object, path: str, findings: list[RichDocFinding]) -> Rich
             )
             return None
         return HeadingBlock(
-            id=block_id, level=level, spans=_parse_spans(raw.get("spans"), f"{path}.spans", findings)
+            id=block_id,
+            level=level,
+            spans=_parse_spans(raw.get("spans"), f"{path}.spans", findings),
         )
 
     if block_type == "paragraph":
@@ -287,30 +311,28 @@ def _parse_block(raw: object, path: str, findings: list[RichDocFinding]) -> Rich
         )
 
     if block_type == "list":
-        raw_items = raw.get("items")
         items: list[ListItem] = []
-        if isinstance(raw_items, list):
-            for i, raw_item in enumerate(raw_items):
-                if not isinstance(raw_item, dict) or not isinstance(raw_item.get("id"), str):
-                    findings.append(
-                        RichDocFinding(
-                            rule_id="RICH-006",
-                            rule_version="1",
-                            severity="error",
-                            message="Stavka liste nema stabilan id.",
-                            remediation="Dodeliti jedinstven id stavci liste.",
-                            field_path=f"{path}.items[{i}]",
-                        )
-                    )
-                    continue
-                items.append(
-                    ListItem(
-                        id=raw_item["id"],
-                        spans=_parse_spans(
-                            raw_item.get("spans"), f"{path}.items[{i}].spans", findings
-                        ),
+        for i, raw_item_untyped in enumerate(_as_list(raw.get("items"))):
+            raw_item = _as_dict(raw_item_untyped)
+            item_id = raw_item.get("id") if raw_item is not None else None
+            if raw_item is None or not isinstance(item_id, str):
+                findings.append(
+                    RichDocFinding(
+                        rule_id="RICH-006",
+                        rule_version="1",
+                        severity="error",
+                        message="Stavka liste nema stabilan id.",
+                        remediation="Dodeliti jedinstven id stavci liste.",
+                        field_path=f"{path}.items[{i}]",
                     )
                 )
+                continue
+            items.append(
+                ListItem(
+                    id=item_id,
+                    spans=_parse_spans(raw_item.get("spans"), f"{path}.items[{i}].spans", findings),
+                )
+            )
         return ListBlock(id=block_id, ordered=bool(raw.get("ordered")), items=tuple(items))
 
     # Forward-compat: an unrecognized block type is skipped, not a parse
@@ -335,7 +357,8 @@ def parse_rich_doc(raw: object) -> tuple[RichDoc, tuple[RichDocFinding, ...]]:
     empty one plus a top-level finding, so a caller always has something
     renderable to work with."""
     findings: list[RichDocFinding] = []
-    if not isinstance(raw, dict) or not isinstance(raw.get("blocks"), list):
+    doc_dict = _as_dict(raw)
+    if doc_dict is None or not isinstance(doc_dict.get("blocks"), list):
         findings.append(
             RichDocFinding(
                 rule_id="RICH-001",
@@ -350,7 +373,7 @@ def parse_rich_doc(raw: object) -> tuple[RichDoc, tuple[RichDocFinding, ...]]:
 
     blocks = tuple(
         block
-        for i, raw_block in enumerate(raw["blocks"])
+        for i, raw_block in enumerate(_as_list(doc_dict.get("blocks")))
         if (block := _parse_block(raw_block, f"blocks[{i}]", findings)) is not None
     )
     return RichDoc(blocks=blocks), tuple(findings)

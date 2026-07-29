@@ -20,6 +20,7 @@ from psihointegritet.modules.privacy.publication import (
     require_publishable,
     require_transition,
 )
+from psihointegritet.shared.domain.rich_doc import ParagraphBlock, RichDoc, Span
 
 
 def approval(capability: ApprovalCapability) -> dict[str, str]:
@@ -132,7 +133,17 @@ def test_draft_revision_can_be_deleted() -> None:
     require_deletable(RevisionStatus.DRAFT)
 
 
-VALID_BODY = "Tekst koji je dovoljno dugačak da prođe minimalnu proveru sadržaja."
+EMPTY_BODY = RichDoc()
+VALID_BODY = RichDoc(
+    blocks=(
+        ParagraphBlock(
+            id="p1",
+            spans=(
+                Span(text=("Tekst koji je dovoljno dugačak da prođe minimalnu proveru sadržaja.")),
+            ),
+        ),
+    )
+)
 
 
 def test_check_publishable_reports_content_stage_first() -> None:
@@ -142,7 +153,7 @@ def test_check_publishable_reports_content_stage_first() -> None:
         RevisionStatus.DRAFT,
         title="",
         slug="Ne Valja!",
-        body="",
+        body=EMPTY_BODY,
         approvals=[],
     )
     assert check.ok is False

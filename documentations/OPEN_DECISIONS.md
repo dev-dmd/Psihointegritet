@@ -111,9 +111,13 @@ Datum, voditelj, cena, kapacitet, pravila prijave/otkazivanja. Dok ne stigne: `/
 
 Anjin dokument (`odgovor-za-matching-anketa.pdf`) ima **tačno 5 pitanja** — nema pitanja o uzrastu deteta ni o lokaciji (Niš/Leskovac). Oba su CTO dodatak iz v2 spec-a („5 pitanja + 2 uslovna"). Uzrasno pitanje se u kodu okida **samo za izbor „Roditelj i dete" (Pitanje 2)**, ne za razlog „Roditeljstvo"/„Odnos sa adolescentom" (Pitanje 1). Posledica: ako roditelj traži savetovanje **sam** za temu deteta, uzrast se ne pita i uzrasno pravilo (O-14) se ne primenjuje. **Odluka odložena — Anja i tim da prokomentarišu** da li ostaviti tako (A: uzrast samo kad dete učestvuje), proširiti (B: pitati uzrast i za te razloge), ili ukloniti uzrast/lokaciju i vratiti se na 5 pitanja (C). Do tada ostaje varijanta A.
 
-### O-17 · Clerk nalozi za tim (superadmin faza, D-026)
+### O-17 · Clerk nalozi za tim (superadmin faza, D-026) — ✅ REŠEN za dev instancu (2026-07-29)
 
-Anja, Marija i Marjan **nemaju Clerk naloge** (postoje samo mailbox-ovi). `npm run roles:assign` ih SKIP-uje dok se nalozi ne kreiraju kroz `/registracija` — tada ponovo pokrenuti skriptu da dobiju `org_admin`+`therapist` metadata. Do tada `/radni-prostor` za njih ne radi.
+Sve troje sad imaju Clerk nalog na `development` instanci (Marjan se registrovao poslednji, 2026-07-29). Obe strane zatvorene:
+- **Backend:** `provision_staff.py --person <ime>` provisioning-ovan za sve troje na `features`/`staging` (`org_admin`+`therapist`, `roster.py` ima sva tri ID-a).
+- **Frontend:** `npm run roles:assign` pokrenut (`set -a; . ./.env.local; set +a; npm run roles:assign`) — Clerk publicMetadata dodeljena, potvrđeno da Marjan ima role na Clerk-u.
+
+Ostaje samo **O-18** — ništa od ovoga nije urađeno na produkcionoj Clerk instanci (nalozi ni role).
 
 ### O-18 · Dodela rola na produkcionoj Clerk instanci
 

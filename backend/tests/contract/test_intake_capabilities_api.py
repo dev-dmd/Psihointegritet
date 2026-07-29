@@ -10,8 +10,16 @@ class IsolatedSettings(Settings):
 
 
 async def _get_capabilities(settings: IsolatedSettings) -> httpx.Response:
-    transport = httpx.ASGITransport(app=create_app(settings))
-    async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+    # `httpx.ASGITransport` does not run FastAPI's startup/shutdown events on
+    # its own (unlike `starlette.testclient.TestClient`) — LD-6 made this
+    # endpoint DB-backed, so `app.state.session_factory` now has to exist
+    # before the request, which only the lifespan context manager sets up.
+    app = create_app(settings)
+    transport = httpx.ASGITransport(app=app)
+    async with (
+        app.router.lifespan_context(app),
+        httpx.AsyncClient(transport=transport, base_url="http://test") as client,
+    ):
         return await client.get("/api/v1/public/intake/capabilities")
 
 

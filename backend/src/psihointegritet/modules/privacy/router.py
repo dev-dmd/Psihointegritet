@@ -9,6 +9,7 @@ since this manages legally significant content, not just staff content.
 
 from __future__ import annotations
 
+from typing import Annotated
 from uuid import UUID
 
 from fastapi import APIRouter, File, HTTPException, UploadFile, status
@@ -62,9 +63,7 @@ async def get_public_legal_document(
         )
         if organization is None:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not published")
-        revision = await LegalDocumentService(session).get_published_by_kind(
-            organization.id, kind
-        )
+        revision = await LegalDocumentService(session).get_published_by_kind(organization.id, kind)
     if revision is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not published")
     return PublicLegalDocumentOut(
@@ -75,6 +74,7 @@ async def get_public_legal_document(
         version_label=revision.version_label,
         published_at=revision.published_at,
     )
+
 
 # Multipart uploads for `.docx` are capped well below the 15 MB backend limit
 # at the ASGI/proxy layer in production; this is the last line of defense.
@@ -161,23 +161,30 @@ async def import_legal_document_docx(
     identity: CurrentIdentity,
     session: DatabaseSession,
     settings: AppSettings,
-    file: UploadFile = File(...),
+    file: Annotated[UploadFile, File()],
 ) -> ImportDocxResponse:
     if file.filename and not file.filename.lower().endswith(".docx"):
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
-            detail="Samo .docx fajlovi su podržani. Sačuvajte dokument kao .docx i pokušajte ponovo.",
+            detail=(
+                "Samo .docx fajlovi su podržani. Sačuvajte dokument kao .docx i pokušajte ponovo."
+            ),
         )
     data = await file.read(_MAX_UPLOAD_BYTES + 1)
     if len(data) > _MAX_UPLOAD_BYTES:
         raise HTTPException(
-            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, detail="Fajl je odbijen: prevelik."
+            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            detail="Fajl je odbijen: prevelik.",
         )
     try:
         async with session.begin():
             actor = await _org_admin_actor(session, settings, identity)
             return await LegalDocumentService(session).import_docx(actor, document_id, data)
-    except (LegalDocumentNotFoundError, LegalDocumentForbiddenError, LegalDocumentImportError) as error:
+    except (
+        LegalDocumentNotFoundError,
+        LegalDocumentForbiddenError,
+        LegalDocumentImportError,
+    ) as error:
         raise _handle(error) from error
 
 

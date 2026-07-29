@@ -200,6 +200,14 @@ class ContentRevision(Base):
     published_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     archived_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
+    # CG-B3 optimistic locking: SQLAlchemy's built-in `version_id_col`
+    # appends `WHERE lock_version = :current` to every UPDATE and raises
+    # `StaleDataError` (caught in `modules/content/service.py`) when zero
+    # rows match — a concurrent editor already moved the row forward. This
+    # is the documented SQLAlchemy 2.0 mechanism for exactly this guarantee,
+    # not a hand-rolled `UPDATE ... WHERE` — same outcome, no raw SQL needed.
+    __mapper_args__ = {"version_id_col": lock_version}  # noqa: RUF012 — matches DeclarativeBase's own (non-ClassVar) typing
+
 
 class ContentReviewDecision(Base):
     """One capability's decision on one revision.

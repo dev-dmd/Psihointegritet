@@ -49,20 +49,16 @@ def test_no_production_ids_are_recorded_yet() -> None:
 
 
 def test_development_ids_exist_for_the_accounts_that_were_created() -> None:
-    assert member("anja") is not None
-    assert member("marija") is not None
-    anja = member("anja")
-    marija = member("marija")
-    assert anja is not None and marija is not None
-    assert anja.clerk_id_for(CLERK_DEVELOPMENT) is not None
-    assert marija.clerk_id_for(CLERK_DEVELOPMENT) is not None
-    assert anja.clerk_id_for(CLERK_DEVELOPMENT) != marija.clerk_id_for(CLERK_DEVELOPMENT)
-
-
-def test_marjan_has_no_recorded_account() -> None:
-    marjan = member("marjan")
-    assert marjan is not None
-    assert marjan.clerk_ids == {}
+    # All three team members registered on the development instance
+    # (Marjan last, 2026-07-29) — no one is missing an id here anymore.
+    ids: set[str] = set()
+    for key in ("anja", "marija", "marjan"):
+        person = member(key)
+        assert person is not None, key
+        clerk_id = person.clerk_id_for(CLERK_DEVELOPMENT)
+        assert clerk_id is not None, key
+        assert clerk_id not in ids, f"{key}'s development id is not unique"
+        ids.add(clerk_id)
 
 
 def test_lookup_is_case_insensitive_and_trimmed() -> None:

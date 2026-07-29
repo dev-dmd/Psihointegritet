@@ -74,8 +74,10 @@ TEAM: Mapping[str, TeamMember] = {
         email="marjan.jankovic@psihointegritet.com",
         roles=BOTH_ROLES,
         therapist_slug="marjan-jankovic",
-        # No account on any instance yet (O-17); pass --external-id when there is.
-        clerk_ids={},
+        # Registered and provisioned on features/staging 2026-07-29 (O-17).
+        # No production account yet — that id must still be passed explicitly
+        # when it exists, per this module's docstring.
+        clerk_ids={CLERK_DEVELOPMENT: "user_3HBcL93c1DXDjlHjelBklHdxFxw"},
     ),
 }
 

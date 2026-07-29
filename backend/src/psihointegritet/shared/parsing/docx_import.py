@@ -25,6 +25,7 @@ from __future__ import annotations
 import io
 import zipfile
 from dataclasses import dataclass
+from typing import cast
 
 import mammoth  # type: ignore[import-untyped]
 from mammoth.images import img_element  # type: ignore[import-untyped]
@@ -35,13 +36,13 @@ from psihointegritet.shared.parsing.html_normalize import normalize_html_to_rich
 __all__ = [
     "DEFAULT_IMPORT_LIMITS",
     "DocxImportLimits",
-    "DocxImportRejected",
+    "DocxImportRejectedError",
     "DocxImportResult",
     "convert_docx_bytes",
 ]
 
 
-class DocxImportRejected(ValueError):
+class DocxImportRejectedError(ValueError):
     """Raised before or during parsing when the upload itself is not
     acceptable — never for content-quality problems, which surface as
     findings instead so the author gets a report, not a bare failure."""
@@ -79,21 +80,21 @@ def _check_zip_bounds(data: bytes, limits: DocxImportLimits) -> None:
     try:
         archive = zipfile.ZipFile(io.BytesIO(data))
     except zipfile.BadZipFile as error:
-        raise DocxImportRejected("Fajl nije važeći .docx dokument.") from error
+        raise DocxImportRejectedError("Fajl nije važeći .docx dokument.") from error
 
     with archive:
         names = archive.namelist()
         if "[Content_Types].xml" not in names:
-            raise DocxImportRejected("Fajl nije važeći .docx dokument.")
+            raise DocxImportRejectedError("Fajl nije važeći .docx dokument.")
 
         total_uncompressed = 0
         for info in archive.infolist():
             total_uncompressed += info.file_size
             compressed = max(info.compress_size, 1)
             if info.file_size / compressed > limits.max_decompression_ratio:
-                raise DocxImportRejected("Fajl je odbijen: sumnjivo visok odnos kompresije.")
+                raise DocxImportRejectedError("Fajl je odbijen: sumnjivo visok odnos kompresije.")
         if total_uncompressed > limits.max_uncompressed_bytes:
-            raise DocxImportRejected("Fajl je odbijen: prevelik nakon raspakivanja.")
+            raise DocxImportRejectedError("Fajl je odbijen: prevelik nakon raspakivanja.")
 
 
 def _drop_image(_image: object) -> dict[str, str]:
@@ -108,18 +109,23 @@ def convert_docx_bytes(
     data: bytes, limits: DocxImportLimits = DEFAULT_IMPORT_LIMITS
 ) -> DocxImportResult:
     if not data:
-        raise DocxImportRejected("Fajl je prazan.")
+        raise DocxImportRejectedError("Fajl je prazan.")
     if len(data) > limits.max_file_bytes:
-        raise DocxImportRejected("Fajl je odbijen: prevelik.")
+        raise DocxImportRejectedError("Fajl je odbijen: prevelik.")
 
     _check_zip_bounds(data, limits)
 
-    result = mammoth.convert_to_html(
+    # mammoth ships no type stubs (`# type: ignore[import-untyped]` on the
+    # import above); `.value` is documented as `str` in its README. Both
+    # pyright suppressions below are that same untyped-library boundary,
+    # not a mask over a real unknown.
+    result = mammoth.convert_to_html(  # pyright: ignore[reportUnknownMemberType]
         io.BytesIO(data),
         style_map=_STYLE_MAP,
         convert_image=img_element(_drop_image),
     )
-    document, findings = normalize_html_to_rich_doc(result.value)
+    html_output = cast(str, result.value)  # pyright: ignore[reportUnknownMemberType]
+    document, findings = normalize_html_to_rich_doc(html_output)
 
     if len(document.blocks) > limits.max_blocks:
         # Truncated, not rejected: the author still gets an import report for

@@ -18,6 +18,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from psihointegritet.core.config import Settings
 from psihointegritet.modules.guidance.authorization import StaffActor
+from psihointegritet.modules.identity.models import InternalUser
 from psihointegritet.modules.organizations.models import Organization
 from psihointegritet.modules.privacy.models import (
     LegalDocument,
@@ -51,7 +52,6 @@ from psihointegritet.shared.domain.publication import (
 from psihointegritet.shared.domain.rich_doc import (
     HeadingBlock,
     LinkMark,
-    ListBlock,
     Mark,
     ParagraphBlock,
     QuoteBlock,
@@ -62,7 +62,7 @@ from psihointegritet.shared.domain.rich_doc import (
 )
 from psihointegritet.shared.parsing.docx_import import (
     DocxImportLimits,
-    DocxImportRejected,
+    DocxImportRejectedError,
     convert_docx_bytes,
 )
 
@@ -156,9 +156,7 @@ class LegalDocumentService:
     async def list_documents(self, actor: StaffActor) -> list[LegalDocumentRevisionOut]:
         documents = (
             await self._session.scalars(
-                select(LegalDocument).where(
-                    LegalDocument.organization_id == actor.organization_id
-                )
+                select(LegalDocument).where(LegalDocument.organization_id == actor.organization_id)
             )
         ).all()
         results: list[LegalDocumentRevisionOut] = []
@@ -168,9 +166,7 @@ class LegalDocumentService:
                 results.append(self._to_schema(document, revision))
         return results
 
-    async def get_document(
-        self, actor: StaffActor, document_id: UUID
-    ) -> LegalDocumentRevisionOut:
+    async def get_document(self, actor: StaffActor, document_id: UUID) -> LegalDocumentRevisionOut:
         document = await self._document(actor, document_id)
         revision = await self._latest_revision(document.id)
         if revision is None:
@@ -233,7 +229,7 @@ class LegalDocumentService:
             )
         except TimeoutError as error:
             raise LegalDocumentImportError("Konverzija dokumenta je istekla.") from error
-        except DocxImportRejected as error:
+        except DocxImportRejectedError as error:
             raise LegalDocumentImportError(str(error)) from error
 
         findings = [
@@ -302,8 +298,7 @@ class LegalDocumentService:
 
         if revision.status not in (RevisionStatus.DRAFT, RevisionStatus.APPROVED):
             raise LegalDocumentConflictError(
-                f"Revision in status {revision.status} is not editable; "
-                "return it to draft first."
+                f"Revision in status {revision.status} is not editable; return it to draft first."
             )
 
         revision = await self._reissue_if_needed(revision, actor)
@@ -412,9 +407,10 @@ class LegalDocumentService:
         document = await self._document(actor, document_id)
         revision = await self._revision(actor, document_id, revision_id)
 
+        approver_label = request.approver_label or await self._actor_label(actor)
         entry = {
             "capability": request.capability.value,
-            "approver": request.approver_label,
+            "approver": approver_label,
             "approved_at": datetime.now(UTC).isoformat(),
         }
         if request.note:
@@ -423,12 +419,23 @@ class LegalDocumentService:
         # JSON columns are not mutation-tracked — reassign, do not mutate
         # the existing list in place, or SQLAlchemy will not see a change.
         remaining = [
-            item for item in revision.approvals if item.get("capability") != request.capability.value
+            item
+            for item in revision.approvals
+            if item.get("capability") != request.capability.value
         ]
         revision.approvals = [*remaining, entry]
 
         await self._session.flush()
         return self._to_schema(document, revision)
+
+    async def _actor_label(self, actor: StaffActor) -> str:
+        """Fallback approver label when the panel doesn't collect one yet
+        (no reviewer-identity UI — D-033 defers that to real staff accounts).
+        Best-effort: the acting user's email, or their bare id if missing."""
+        user = await self._session.get(InternalUser, actor.user_id)
+        if user is not None and user.email:
+            return user.email
+        return str(actor.user_id)
 
     async def delete_revision(
         self, actor: StaffActor, document_id: UUID, revision_id: UUID
@@ -522,17 +529,18 @@ def _block_to_json(block: RichBlock) -> dict[str, object]:
             "type": "quote",
             "spans": [_span_to_json(span) for span in block.spans],
         }
-    if isinstance(block, ListBlock):
-        return {
-            "id": block.id,
-            "type": "list",
-            "ordered": block.ordered,
-            "items": [
-                {"id": item.id, "spans": [_span_to_json(span) for span in item.spans]}
-                for item in block.items
-            ],
-        }
-    raise AssertionError(f"unreachable RichBlock variant: {block!r}")
+    # `block` is provably `ListBlock` here — the three prior branches cover
+    # every other `RichBlock` variant, so an `isinstance` check on this last
+    # one is redundant (pyright flags it as such).
+    return {
+        "id": block.id,
+        "type": "list",
+        "ordered": block.ordered,
+        "items": [
+            {"id": item.id, "spans": [_span_to_json(span) for span in item.spans]}
+            for item in block.items
+        ],
+    }
 
 
 def _rich_doc_to_json(document: RichDoc) -> dict[str, object]:

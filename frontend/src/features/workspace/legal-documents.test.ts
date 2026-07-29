@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  emptyRichDoc,
+  richDocFromPlainText,
+} from "@/lib/content-governance/rich-doc";
+
+import {
   CONSENT_GATE_KINDS,
   REQUIRED_APPROVALS,
   applyTransition,
@@ -25,7 +30,9 @@ function makeDocument(overrides: Partial<LegalDocument> = {}): LegalDocument {
     kind: "intake_data_processing_notice",
     title: "Obaveštenje o obradi podataka",
     slug: "obavestenje-o-obradi-podataka",
-    body: "Tekst koji je dovoljno dugačak da prođe minimalnu proveru sadržaja.",
+    body: richDocFromPlainText(
+      "Tekst koji je dovoljno dugačak da prođe minimalnu proveru sadržaja.",
+    ),
     status: "approved",
     approvals: ["legal", "clinical", "business"],
     versionLabel: "v1",
@@ -172,7 +179,9 @@ describe("checkPublishable", () => {
   });
 
   it("blocks empty content before anything else", () => {
-    const check = checkPublishable(makeDocument({ body: "", approvals: [] }));
+    const check = checkPublishable(
+      makeDocument({ body: emptyRichDoc(), approvals: [] }),
+    );
     expect(check.ok).toBe(false);
     // Content problems come first so the admin fixes the obvious gap first.
     if (!check.ok) expect(check.block.kind).toBe("content");

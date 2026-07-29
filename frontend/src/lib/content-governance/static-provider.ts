@@ -47,6 +47,10 @@ const publicRoutePatterns = [
   "/kontakt",
   "/pronadji-podrsku",
   "/zakazi",
+  "/privatnost",
+  "/uslovi",
+  "/kolacici",
+  "/pravila-zakazivanja",
 ] as const;
 
 export type PublicRoutePattern = (typeof publicRoutePatterns)[number];
@@ -439,6 +443,86 @@ const staticPages: readonly StaticPageEntity[] = [
     ],
     widgets: noWidgets,
     jsonLdKinds: noJsonLd,
+  }),
+  // Four legal pages (0.7, D-046/D-047). `noindex`: these are placeholders
+  // pending legal confirmation (S5) until the registry publishes real text —
+  // see `LegalDocumentPage` for the actual body source (backend-fetched, not
+  // this static entity, which exists for metadata/discoverability only).
+  staticPage({
+    id: "page:privatnost",
+    route: "/privatnost",
+    canonicalSlug: "privatnost",
+    indexingPolicy: "noindex",
+    template: "legal_page",
+    slots: ["title", "legal_copy", "version"],
+    h1: "Politika privatnosti",
+    seo: {
+      title: "Politika privatnosti",
+      description: "Kako Psihointegritet obrađuje lične podatke.",
+    },
+    textFields: [
+      { field: "h1", value: "Politika privatnosti", limit: "pageH1" },
+    ],
+    ctas: noCtas,
+    widgets: noWidgets,
+    jsonLdKinds: noJsonLd,
+    requiredApprovals: requirements("legal", "business"),
+  }),
+  staticPage({
+    id: "page:uslovi",
+    route: "/uslovi",
+    canonicalSlug: "uslovi",
+    indexingPolicy: "noindex",
+    template: "legal_page",
+    slots: ["title", "legal_copy", "version"],
+    h1: "Uslovi korišćenja",
+    seo: {
+      title: "Uslovi korišćenja",
+      description: "Uslovi korišćenja Psihointegritet platforme.",
+    },
+    textFields: [{ field: "h1", value: "Uslovi korišćenja", limit: "pageH1" }],
+    ctas: noCtas,
+    widgets: noWidgets,
+    jsonLdKinds: noJsonLd,
+    requiredApprovals: requirements("legal", "business"),
+  }),
+  staticPage({
+    id: "page:kolacici",
+    route: "/kolacici",
+    canonicalSlug: "kolacici",
+    indexingPolicy: "noindex",
+    template: "legal_page",
+    slots: ["title", "legal_copy", "version"],
+    h1: "Politika kolačića",
+    seo: {
+      title: "Politika kolačića",
+      description: "Koje kolačiće Psihointegritet koristi i zašto.",
+    },
+    textFields: [{ field: "h1", value: "Politika kolačića", limit: "pageH1" }],
+    ctas: noCtas,
+    widgets: noWidgets,
+    jsonLdKinds: noJsonLd,
+    requiredApprovals: requirements("legal", "business"),
+  }),
+  staticPage({
+    id: "page:pravila-zakazivanja",
+    route: "/pravila-zakazivanja",
+    canonicalSlug: "pravila-zakazivanja",
+    indexingPolicy: "noindex",
+    template: "legal_page",
+    slots: ["title", "legal_copy", "version"],
+    h1: "Pravila zakazivanja",
+    seo: {
+      title: "Pravila zakazivanja",
+      description: "Pravila otkazivanja, kašnjenja i nedolaska na termin.",
+    },
+    textFields: [
+      { field: "h1", value: "Pravila zakazivanja", limit: "pageH1" },
+    ],
+    ctas: noCtas,
+    widgets: noWidgets,
+    jsonLdKinds: noJsonLd,
+    requiredApprovals: requirements("legal", "business"),
   }),
   staticPage({
     id: "page:pronadji-podrsku",

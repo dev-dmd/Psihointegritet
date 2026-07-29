@@ -73,7 +73,10 @@ class TransitionRequest(ApiSchema):
 
 class RecordApprovalRequest(ApiSchema):
     capability: ApprovalCapability
-    approver_label: str
+    # Optional: the panel has no reviewer-identity UI yet (real reviewer
+    # identity attaches once staff accounts exist, per D-033). The service
+    # falls back to the acting `org_admin`'s own label when omitted.
+    approver_label: str | None = None
     note: str | None = None
 
 

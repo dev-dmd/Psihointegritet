@@ -56,7 +56,12 @@ _IGNORED_INLINE = {"br"}
 class _Node:
     tag: str
     attrs: dict[str, str]
-    children: list["_Node | str"] = field(default_factory=list)
+    # `field(default_factory=list)` can't spell `list[_Node | str]` inline —
+    # `_Node` doesn't exist in its own class body yet, so the factory stays
+    # the bare builtin and pyright can't attach the parameter from there.
+    children: list[_Node | str] = field(  # pyright: ignore[reportUnknownVariableType]
+        default_factory=list
+    )
 
 
 class _TreeBuilder(HTMLParser):
@@ -106,7 +111,11 @@ def _finding(
     rule_id: str, severity: Literal["info", "warning", "error"], message: str, remediation: str
 ) -> RichDocFinding:
     return RichDocFinding(
-        rule_id=rule_id, rule_version="1", severity=severity, message=message, remediation=remediation
+        rule_id=rule_id,
+        rule_version="1",
+        severity=severity,
+        message=message,
+        remediation=remediation,
     )
 
 
@@ -115,7 +124,7 @@ def _new_id() -> str:
 
 
 def _inline_to_spans(
-    nodes: list["_Node | str"],
+    nodes: list[_Node | str],
     marks: tuple[Mark, ...],
     findings: list[RichDocFinding],
     counters: _Counters,
@@ -140,7 +149,9 @@ def _inline_to_spans(
             if href and is_allowed_href(href):
                 counters.links += 1
                 link_mark: Mark = LinkMark(href=href)
-                spans.extend(_inline_to_spans(node.children, (*marks, link_mark), findings, counters))
+                spans.extend(
+                    _inline_to_spans(node.children, (*marks, link_mark), findings, counters)
+                )
             else:
                 if href:
                     findings.append(
@@ -185,7 +196,9 @@ def _heading_level(tag: str) -> int:
     return int(tag[1])
 
 
-def _flatten_to_spans(node: _Node, findings: list[RichDocFinding], counters: _Counters) -> list[Span]:
+def _flatten_to_spans(
+    node: _Node, findings: list[RichDocFinding], counters: _Counters
+) -> list[Span]:
     """Used only for `blockquote`, which may itself contain nested block tags
     (Word sometimes wraps quotes in a paragraph); everything inside collapses
     into one quote's spans."""
@@ -207,10 +220,10 @@ _LOOSE_INLINE_TAGS = set(_MARK_TAGS) | {"a", "br", "img"}
 
 
 def _blocks_from_nodes(
-    nodes: list["_Node | str"], findings: list[RichDocFinding], counters: _Counters
+    nodes: list[_Node | str], findings: list[RichDocFinding], counters: _Counters
 ) -> list[RichBlock]:
     blocks: list[RichBlock] = []
-    loose_text_run: list["_Node | str"] = []
+    loose_text_run: list[_Node | str] = []
 
     def flush_loose_text() -> None:
         nonlocal loose_text_run
@@ -220,7 +233,7 @@ def _blocks_from_nodes(
         loose_text_run = []
         if spans:
             counters.paragraphs += 1
-            blocks.append(ParagraphBlock(id=_new_id(), spans=spans))
+            blocks.append(ParagraphBlock(id=_new_id(), spans=tuple(spans)))
 
     for node in nodes:
         if isinstance(node, str):
@@ -252,26 +265,28 @@ def _blocks_from_nodes(
             spans = _inline_to_spans(node.children, (), findings, counters)
             if spans:
                 counters.headings += 1
-                blocks.append(HeadingBlock(id=_new_id(), level=level, spans=spans))  # type: ignore[arg-type]
+                blocks.append(
+                    HeadingBlock(id=_new_id(), level=level, spans=tuple(spans))  # type: ignore[arg-type]
+                )
         elif tag == "p":
             spans = _inline_to_spans(node.children, (), findings, counters)
             if spans:
                 counters.paragraphs += 1
-                blocks.append(ParagraphBlock(id=_new_id(), spans=spans))
+                blocks.append(ParagraphBlock(id=_new_id(), spans=tuple(spans)))
         elif tag in {"ul", "ol"}:
             items: list[ListItem] = []
             for child in node.children:
                 if isinstance(child, _Node) and child.tag == "li":
                     item_spans = _inline_to_spans(child.children, (), findings, counters)
                     if item_spans:
-                        items.append(ListItem(id=_new_id(), spans=item_spans))
+                        items.append(ListItem(id=_new_id(), spans=tuple(item_spans)))
             if items:
                 counters.lists += 1
                 blocks.append(ListBlock(id=_new_id(), ordered=tag == "ol", items=tuple(items)))
         elif tag == "blockquote":
             spans = _flatten_to_spans(node, findings, counters)
             if spans:
-                blocks.append(QuoteBlock(id=_new_id(), spans=spans))
+                blocks.append(QuoteBlock(id=_new_id(), spans=tuple(spans)))
         elif tag == "table":
             counters.tables_dropped += 1
             findings.append(
@@ -343,7 +358,7 @@ def normalize_plain_text_to_rich_doc(text: str) -> RichDoc:
         for chunk in re.split(r"\n\s*\n", text)
     ]
     blocks = tuple(
-        ParagraphBlock(id=_new_id(), spans=[Span(text=paragraph)])
+        ParagraphBlock(id=_new_id(), spans=(Span(text=paragraph),))
         for paragraph in paragraphs
         if paragraph
     )

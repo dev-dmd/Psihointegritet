@@ -31,6 +31,10 @@ __all__ = [
 ]
 
 
+def _default_empty_body() -> dict[str, object]:
+    return {"schemaVersion": 1, "blocks": []}
+
+
 class LegalDocumentKind(StrEnum):
     """Document identities the registry can hold.
 
@@ -92,13 +96,22 @@ class LegalDocumentRevision(Base):
     version_label: Mapped[str] = mapped_column(String(80))
     locale: Mapped[str] = mapped_column(String(16), default="sr-Latn", server_default="sr-Latn")
     title: Mapped[str] = mapped_column(String(200))
+    # Added in CG-B9/LD-7 (migration 20260729_0005): the column never
+    # existed even though `publication.py::content_problems`/
+    # `check_publishable` and the frontend `LegalDocument.slug` both already
+    # treated it as part of the document's identity — nothing had actually
+    # persisted it until the LD-7 service/router needed a real column to
+    # read and write. No uniqueness constraint yet — the panel's client-side
+    # check (`existingSlugs.includes`) is advisory only, same gap CG-B9
+    # already flagged for `create_document`.
+    slug: Mapped[str] = mapped_column(String(80), default="", server_default="")
     # RichDoc v1 JSON (ADR-017 Amendment 1 §A1.3, CG-B9). Was a plain `Text`
     # column under `20260726_0004`; a dedicated migration converts existing
     # rows to a single-paragraph document rather than editing that applied
     # revision in place.
     body: Mapped[dict[str, object]] = mapped_column(
         JSON,
-        default=lambda: {"schemaVersion": 1, "blocks": []},
+        default=_default_empty_body,
         server_default='{"schemaVersion": 1, "blocks": []}',
         nullable=False,
     )

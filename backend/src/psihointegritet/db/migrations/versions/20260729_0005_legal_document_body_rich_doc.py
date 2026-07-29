@@ -1,10 +1,18 @@
-"""Convert `legal_document_revisions.body` from plain text to RichDoc JSON.
+"""Convert `legal_document_revisions.body` to RichDoc JSON; add the missing `slug` column.
 
 CG-B9 (ADR-017 Amendment 1 §A1.3, D-046/D-047). A **new** revision, never an
 edit to `20260726_0004`: `railway.json`'s `preDeployCommand: "alembic upgrade
 head"` means 0004 is already applied on every deployed Railway environment,
 so editing it in place would leave those environments permanently
 inconsistent with the migration history.
+
+**Also adds `legal_document_revisions.slug`.** This column never existed —
+`publication.py`'s `content_problems`/`check_publishable` and the frontend
+`LegalDocument.slug` both already treated it as part of the document's
+identity, but nothing had a real column to read or write until the LD-7
+service/router (added in the same pass as this migration) needed one.
+Bundled here rather than as a third migration since `0005` had not been
+applied anywhere yet when the gap was found.
 
 Data conversion runs in Python, not a raw SQL `USING` expression: the table
 is empty in every environment this has been checked against (D-045 means a
@@ -24,6 +32,7 @@ Create Date: 2026-07-29
 
 import json
 from collections.abc import Sequence
+from typing import cast
 from uuid import uuid4
 
 import sqlalchemy as sa
@@ -34,7 +43,7 @@ down_revision: str | None = "20260726_0004"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
-_EMPTY_DOC = {"schemaVersion": 1, "blocks": []}
+_EMPTY_DOC: dict[str, object] = {"schemaVersion": 1, "blocks": []}
 
 
 def _text_to_rich_doc(body: str) -> dict[str, object]:
@@ -56,13 +65,16 @@ def _text_to_rich_doc(body: str) -> dict[str, object]:
 def upgrade() -> None:
     op.add_column(
         "legal_document_revisions",
+        sa.Column("slug", sa.String(80), nullable=False, server_default=""),
+    )
+
+    op.add_column(
+        "legal_document_revisions",
         sa.Column("body_richdoc", sa.JSON(), nullable=True),
     )
 
     connection = op.get_bind()
-    rows = connection.execute(
-        sa.text("SELECT id, body FROM legal_document_revisions")
-    ).fetchall()
+    rows = connection.execute(sa.text("SELECT id, body FROM legal_document_revisions")).fetchall()
     for row in rows:
         connection.execute(
             sa.text(
@@ -94,22 +106,28 @@ def downgrade() -> None:
     )
 
     connection = op.get_bind()
-    rows = connection.execute(
-        sa.text("SELECT id, body FROM legal_document_revisions")
-    ).fetchall()
+    rows = connection.execute(sa.text("SELECT id, body FROM legal_document_revisions")).fetchall()
     for row in rows:
         # `psycopg` may hand back a JSON column either pre-decoded (dict) or
         # as its raw text depending on driver registration — accept both
         # rather than assume one.
         raw = row.body
-        doc = raw if isinstance(raw, dict) else (json.loads(raw) if raw else _EMPTY_DOC)
+        doc = cast(
+            "dict[str, object]",
+            raw if isinstance(raw, dict) else (json.loads(raw) if raw else _EMPTY_DOC),
+        )
         paragraphs: list[str] = []
-        for block in doc.get("blocks", []):
-            spans = block.get("spans") or []
-            items = block.get("items") or []
+        blocks = cast("list[dict[str, object]]", doc.get("blocks") or [])
+        for block in blocks:
+            spans = cast("list[dict[str, object]]", block.get("spans") or [])
+            items = cast("list[dict[str, object]]", block.get("items") or [])
             if items:
-                spans = [span for item in items for span in item.get("spans", [])]
-            text = "".join(span.get("text", "") for span in spans)
+                spans = [
+                    cast("dict[str, object]", span)
+                    for item in items
+                    for span in cast("list[object]", item.get("spans") or [])
+                ]
+            text = "".join(str(span.get("text", "")) for span in spans)
             if text:
                 paragraphs.append(text)
         connection.execute(
@@ -125,3 +143,5 @@ def downgrade() -> None:
         nullable=False,
         server_default="",
     )
+
+    op.drop_column("legal_document_revisions", "slug")

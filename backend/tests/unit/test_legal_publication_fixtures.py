@@ -31,6 +31,7 @@ from psihointegritet.modules.privacy.publication import (
     intake_gate_open,
     missing_approvals,
 )
+from psihointegritet.shared.domain.rich_doc import parse_rich_doc
 
 FIXTURE_PATH = (
     Path(__file__).resolve().parents[3] / "contracts" / "fixtures" / "legal-publication.v1.json"
@@ -64,17 +65,18 @@ def test_parity_case(case: dict[str, Any]) -> None:
         return
 
     if action == "publish-check":
+        body, _ = parse_rich_doc(given["body"])
         check = check_publishable(
             LegalDocumentKind(given["kind"]),
             RevisionStatus(given["status"]),
             title=given["title"],
             slug=given["slug"],
-            body=given["body"],
+            body=body,
             approvals=_approval_evidence(given["approvals"]),
         )
         assert check.ok is case["expectedPublishAllowed"]
         assert check.stage == case["expectedStage"]
-        problems = content_problems(given["title"], given["slug"], given["body"])
+        problems = content_problems(given["title"], given["slug"], body)
         assert list(problems) == case["expectedContentProblems"]
         missing = sorted(capability.value for capability in check.missing)
         assert missing == case["expectedMissingCapabilities"]

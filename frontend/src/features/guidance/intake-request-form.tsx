@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 
 import { findTherapist } from "@/content/therapists";
 
+import { ConsentDocumentDisclosure } from "./consent-document-disclosure";
 import { intakeFeatureFlags } from "./intake-feature-flags";
 import {
   submitPublicIntakeCase,
@@ -329,27 +330,39 @@ export function IntakeRequestForm({
         </div>
       ) : null}
 
-      <div className="mt-7 flex flex-col gap-3">
-        <label className="text-coffee/75 flex cursor-pointer items-start gap-3 text-[13.5px] leading-[1.5]">
-          <input
-            required
-            type="checkbox"
-            checked={dataNoticeAccepted}
-            onChange={(event) => setDataNoticeAccepted(event.target.checked)}
-            className="mt-1 h-4 w-4 shrink-0"
+      <div className="mt-7 flex flex-col gap-4">
+        <div>
+          <label className="text-coffee/75 flex cursor-pointer items-start gap-3 text-[13.5px] leading-[1.5]">
+            <input
+              required
+              type="checkbox"
+              checked={dataNoticeAccepted}
+              onChange={(event) => setDataNoticeAccepted(event.target.checked)}
+              className="mt-1 h-4 w-4 shrink-0"
+            />
+            Upoznat/a sam sa obaveštenjem o obradi podataka za ovaj zahtev.
+          </label>
+          <ConsentDocumentDisclosure
+            kind="intake_data_processing_notice"
+            label="Pročitajte obaveštenje o obradi podataka"
           />
-          Upoznat/a sam sa obaveštenjem o obradi podataka za ovaj zahtev.
-        </label>
-        <label className="text-coffee/75 flex cursor-pointer items-start gap-3 text-[13.5px] leading-[1.5]">
-          <input
-            required
-            type="checkbox"
-            checked={requestAccepted}
-            onChange={(event) => setRequestAccepted(event.target.checked)}
-            className="mt-1 h-4 w-4 shrink-0"
+        </div>
+        <div>
+          <label className="text-coffee/75 flex cursor-pointer items-start gap-3 text-[13.5px] leading-[1.5]">
+            <input
+              required
+              type="checkbox"
+              checked={requestAccepted}
+              onChange={(event) => setRequestAccepted(event.target.checked)}
+              className="mt-1 h-4 w-4 shrink-0"
+            />
+            Razumem da slanje zahteva nije potvrda termina niti rezervacija.
+          </label>
+          <ConsentDocumentDisclosure
+            kind="intake_request_acknowledgement"
+            label="Pročitajte potvrdu da zahtev nije termin"
           />
-          Razumem da slanje zahteva nije potvrda termina niti rezervacija.
-        </label>
+        </div>
       </div>
 
       {state === "error" ? (

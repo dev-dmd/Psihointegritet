@@ -98,7 +98,7 @@ function RichBlockNode({ block }: { block: RichBlock }) {
 
   if (isQuote(block)) {
     return (
-      <blockquote className="border-sage text-coffee/85 mb-5 border-l-[3px] pl-5 text-[17px] italic leading-[1.7]">
+      <blockquote className="border-sage text-coffee/85 mb-5 border-l-[3px] pl-5 text-[17px] leading-[1.7] italic">
         <RichSpans spans={block.spans} />
       </blockquote>
     );
@@ -135,7 +135,11 @@ function RichSpanNode({ span }: { span: Span }) {
     } else if (mark === "underline") {
       // Styled distinctly from links (ADR-017 §4) so underlined text never
       // reads as a broken link.
-      node = <span className="underline decoration-1 underline-offset-2">{node}</span>;
+      node = (
+        <span className="underline decoration-1 underline-offset-2">
+          {node}
+        </span>
+      );
     }
   }
 
@@ -143,7 +147,8 @@ function RichSpanNode({ span }: { span: Span }) {
 }
 
 function RichLink({ href, children }: { href: string; children: ReactNode }) {
-  const className = "text-forest underline decoration-sage/60 underline-offset-2 hover:decoration-sage";
+  const className =
+    "text-forest underline decoration-sage/60 underline-offset-2 hover:decoration-sage";
 
   if (href.startsWith("/")) {
     return (

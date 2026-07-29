@@ -123,20 +123,23 @@
 >
 > **Bezbednosna granica (upisana u docstring modula):** `extra_findings` moraju biti izračunati na serveru. Klijent ne sme da pošalje „nema nalaza" i objavi nepregledan sadržaj — ruter (CG-B4) ih računa, nikad request body. Port punog rule engine-a (SEO, CTA, limiti) je **CG-D4**; do tada backend ima samo strukturnu proveru kao sopstveni pod.
 
-### CG-B3 — Konkurentnost · **spojen sa CG-B4 (D-047)**
+### CG-B3 — Konkurentnost · **spojen sa CG-B4 (D-047)** — 🟡 backend gotov, editor UX bez potrošača
 
-> ⚠️ **Ne isporučuje se sam.** `modules/content/` danas ima samo `models.py` i `publication.py` — nema ni router ni service, pa optimistic locking nema pisca. Locking bez pisca je „empty placeholder abstraction" iz rules §25. Oba zadatka idu u **isti PR**.
+> ⚠️ **Ne isporučuje se sam.** Ovo je poštovano — oba zadatka su implementirana i isporučena zajedno.
 
-- [ ] ~~`ContentRevision.lock_version: int`~~ — **već postoji**, `models.py:185`, u migraciji `20260726_0004`.
-- [ ] Servisni sloj: `UPDATE ... WHERE id = :id AND lock_version = :expected` — 0 redova pogođeno → 409 conflict.
-- [ ] Objava (status→published) + `ContentPublicationEvent` + eventualni outbox zapis u jednoj transakciji (isti obrazac kao Booking zahtev iz master plana §6.2 M2.3, ovde primenjen na content).
-- [ ] Editor na 409 prikazuje „neko drugi je izmenio" sa uvidom u razliku — **nikad tiho pregaziti ni izgubiti tekst**.
+- [x] `ContentRevision.lock_version: int` — postojao od `20260726_0004`; sada mu je dodat pisac.
+- [x] **Optimistic locking — odluka: SQLAlchemy `version_id_col`, ne ručni `UPDATE...WHERE`.** `ContentRevision.__mapper_args__ = {"version_id_col": lock_version}` (`models.py`) — SQLAlchemy sam dodaje `WHERE lock_version=:trenutno` na svaki UPDATE i uvećava ga, bacajući `StaleDataError` (uhvaćeno u `service.py::update_revision` → 409) kad 0 redova pogodi. Isti ishod kao ručna `UPDATE...WHERE` provera, manje koda, standardan SQLAlchemy 2.0 obrazac dokumentovan tačno za ovu namenu. **Dodatno**, servis eksplicitno proverava `request.lockVersion == revision.lockVersion` PRE mutacije (jasna poruka „izmenjeno u međuvremenu" bez čekanja na flush) — ORM mehanizam ostaje odbrana za usku trku između SELECT-a i UPDATE-a unutar iste transakcije.
+- [x] Objava (status→published) + `ContentPublicationEvent` u istoj transakciji, uz arhiviranje prethodne objavljene revizije istog unosa (`_archive_other_published`, isti obrazac kao pravni registar).
+- [ ] **Editor na 409 prikazuje „neko drugi je izmenio"** — **nema frontend potrošača** ovog API-ja u ovom prolazu (nijedan UI ga ne poziva), pa ova UX stavka ostaje otvorena do Faze 1/CG-C4.
 
-### CG-B4 — Router · **nosi i CG-B3**
+### CG-B4 — Router · **nosi i CG-B3** — 🟡 backend gotov, bez TS klijenta; putanje odstupaju od originalnog nacrta
 
-- [ ] `backend/src/psihointegritet/modules/content/router.py` — obrazac `modules/guidance/router.py` team_router: Clerk JWT + `OrganizationMembership` provera, `org_admin` rola.
-- [ ] Endpoints: `POST /content/entries`, `GET /content/entries`, `GET /content/entries/{id}`, `POST /content/entries/{id}/revisions`, `POST /content/revisions/{id}/transition`, `POST /content/revisions/{id}/review`, `POST /content/revisions/{id}/publish`, `POST /content/revisions/{id}/archive`, `DELETE /content/revisions/{id}` (samo draft — 409/403 inače).
-- [ ] `schemas.py` — Pydantic modeli za request/response, generisani OpenAPI ulazi u `export_openapi.py`.
+- [x] `backend/src/psihointegritet/modules/content/router.py` — obrazac `modules/guidance/router.py` team_router: Clerk JWT + `resolve_staff_actor` + eksplicitna `org_admin` provera (isti `_org_admin_actor` obrazac kao `modules/privacy/router.py`).
+- [x] Endpoints — **stvarne putanje se razlikuju od originalnog nacrta ispod** (usklađene sa LD-7 obrascem umesto sa ranije zamišljenim `/content/revisions/{id}/...`, jer revizija bez svog `entry_id`-a u putanji ne može tenant-scope-ovati lookup bez dodatnog upita): `GET/POST /content/entries`, `GET /content/entries/{id}`, `PATCH /content/entries/{id}/revisions/{id}`, `GET .../revisions/{id}/publish-check`, `POST .../revisions/{id}/transition` (nosi i „objavi" i „arhiviraj" — cilj je u `target`, nema zasebnog `/publish`/`/archive`), `POST .../revisions/{id}/reviews` (ne `/review`), `DELETE .../revisions/{id}`. Nema zasebnog `POST /content/entries/{id}/revisions` — nova draft revizija nastaje samo kroz A.2 reissue (`update`/`transition` na `approved`/`archived` reviziju), nikad eksplicitnim pozivom.
+- [x] `schemas.py` — Pydantic modeli (`ApiSchema` sa `to_camel` alias generatorom, isti obrazac kao `modules/privacy/schemas.py`). `slot_data` je namerno sirov `dict[str, object]` na wire-u, ne tipizovana unija devet template oblika — ista odluka i isto obrazloženje kao RichDoc na LD-7 API-ju (CG-C1 registar šema slotova još ne postoji).
+- [ ] **`npm run api:generate` nije pokretan** — nema ni ručno pisanog TS klijenta, jer CG-B3+B4 nema frontend potrošača (CG-C1/CG-C4 dolaze u Fazi 1). Registrovan u `api/v1/router.py` kao `content_router`.
+- [ ] **`ContentReviewDecision` je prava tabela** (za razliku od pravnog registra koji odobrenja drži kao JSON listu) — `record_review_decision` upisuje/ažurira red po `(revision_id, capability)`, uz `decided_by_user_id`/`decided_at`/`note` (D-033 evidencija).
+- [ ] `check_publish` poziva `check_publishable()` iz CG-B2 sa `extra_findings=()` — **puni rule engine (SEO/CTA/limiti) još ne postoji** (CG-C1/CG-D4); danas radi samo strukturna provera obaveznih/dozvoljenih slotova nasleđena iz `structural_findings`.
 
 ### CG-B5 — Migracija (napisana, primena čeka Clerk)
 

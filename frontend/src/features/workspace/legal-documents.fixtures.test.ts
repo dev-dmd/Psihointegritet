@@ -4,6 +4,8 @@ import { fileURLToPath } from "node:url";
 
 import { describe, expect, it } from "vitest";
 
+import { emptyRichDoc, type RichDoc } from "@/lib/content-governance/rich-doc";
+
 import {
   applyTransition,
   canDelete,
@@ -36,7 +38,7 @@ interface FixtureCase {
     status?: RevisionStatus;
     title?: string;
     slug?: string;
-    body?: string;
+    body?: RichDoc;
     approvals?: ApprovalCapability[];
     publishedKinds?: LegalDocumentKind[];
     fromStatus?: RevisionStatus;
@@ -73,7 +75,7 @@ function documentFrom(input: FixtureCase["input"]): LegalDocument {
     kind: input.kind ?? "intake_data_processing_notice",
     title: input.title ?? "",
     slug: input.slug ?? "",
-    body: input.body ?? "",
+    body: input.body ?? emptyRichDoc(),
     status: input.status ?? "draft",
     approvals: input.approvals ?? [],
     versionLabel: "v1",
