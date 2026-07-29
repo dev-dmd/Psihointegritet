@@ -1,6 +1,6 @@
 # CMS TODO — detaljni zadaci za CMS Core + Content Governance
 
-**Autoritet:** `CMS_CORE_CONTENT_GOVERNANCE_PLAN_v0.1.md` (odluke, ugovori A.1–A.6, DoD) · D-043/D-044/D-045 · ADR-016
+**Autoritet:** `CMS_CORE_CONTENT_GOVERNANCE_PLAN_v0.1.md` (odluke, ugovori A.1–A.6, DoD) · D-043/D-044/D-045 · ADR-016 · **autorski sloj: D-046 / ADR-017** (RichDoc v1, uvoz `.docx`, registar šema slotova, Tiptap)
 **Odnos prema `TODO.md` §5D:** `TODO.md` prati samo krupne milestone-e (CG-A1…CG-D4, jedan red po zadatku). Ovaj fajl razbija svaki od njih na konkretne pod-zadatke sa fajlovima, funkcijama i test slučajevima. Kad ceo CG-X milestone ovde ima sve kućice ✅, prebaci status na ⬜→✅ u `TODO.md` — ne pre toga.
 **Pravilo:** ne raditi Fazu B/C/D pre nego što CG-A1–A3 ovde budu 100% zatvoreni (Faza A zaključava ugovore koje sve kasnije faze pretpostavljaju).
 
@@ -15,6 +15,9 @@
 - [ ] Objavljena i arhivirana revizija se nikad fizički ne brišu (A.1).
 - [ ] Ne pisati pravni/klinički tekst umesto Anje/tima — CMS nosi strukturu i pravila, ne sadržaj.
 - [ ] Fallback sadržaj (`content/*.ts`) se nikad ne briše niti prepravlja da bi CMS "radio" — samo se nadjačava po polju (D-038).
+- [ ] **Nigde `dangerouslySetInnerHTML` u renderu sadržaja** (ADR-017 §1). Tekst se čuva kao `RichDoc` JSON i renderuje iscrpnim `switch`-om — XSS je nemoguć po konstrukciji, ne filtriran.
+- [ ] Uvoz i paste dele **jedan** normalizator (ADR-017 §7). Dve implementacije znače da nalepljeno i uploadovano tiho daju različit rezultat.
+- [ ] Limiti sekcija (koliko teksta/pasusa/slika) žive **samo** u registru šema slotova — nikad duplirani u UI komponenti.
 
 ---
 
@@ -120,13 +123,16 @@
 >
 > **Bezbednosna granica (upisana u docstring modula):** `extra_findings` moraju biti izračunati na serveru. Klijent ne sme da pošalje „nema nalaza" i objavi nepregledan sadržaj — ruter (CG-B4) ih računa, nikad request body. Port punog rule engine-a (SEO, CTA, limiti) je **CG-D4**; do tada backend ima samo strukturnu proveru kao sopstveni pod.
 
-### CG-B3 — Konkurentnost
+### CG-B3 — Konkurentnost · **spojen sa CG-B4 (D-047)**
 
-- [ ] `ContentRevision.lock_version: int` (optimistic locking kolona).
+> ⚠️ **Ne isporučuje se sam.** `modules/content/` danas ima samo `models.py` i `publication.py` — nema ni router ni service, pa optimistic locking nema pisca. Locking bez pisca je „empty placeholder abstraction" iz rules §25. Oba zadatka idu u **isti PR**.
+
+- [ ] ~~`ContentRevision.lock_version: int`~~ — **već postoji**, `models.py:185`, u migraciji `20260726_0004`.
 - [ ] Servisni sloj: `UPDATE ... WHERE id = :id AND lock_version = :expected` — 0 redova pogođeno → 409 conflict.
 - [ ] Objava (status→published) + `ContentPublicationEvent` + eventualni outbox zapis u jednoj transakciji (isti obrazac kao Booking zahtev iz master plana §6.2 M2.3, ovde primenjen na content).
+- [ ] Editor na 409 prikazuje „neko drugi je izmenio" sa uvidom u razliku — **nikad tiho pregaziti ni izgubiti tekst**.
 
-### CG-B4 — Router
+### CG-B4 — Router · **nosi i CG-B3**
 
 - [ ] `backend/src/psihointegritet/modules/content/router.py` — obrazac `modules/guidance/router.py` team_router: Clerk JWT + `OrganizationMembership` provera, `org_admin` rola.
 - [ ] Endpoints: `POST /content/entries`, `GET /content/entries`, `GET /content/entries/{id}`, `POST /content/entries/{id}/revisions`, `POST /content/revisions/{id}/transition`, `POST /content/revisions/{id}/review`, `POST /content/revisions/{id}/publish`, `POST /content/revisions/{id}/archive`, `DELETE /content/revisions/{id}` (samo draft — 409/403 inače).
@@ -149,6 +155,79 @@
 - [ ] Unit testovi za `publication.py` (content): lifecycle, matrice odobrenja po tipu, redosled provere, `require_deletable`, dinamička odobrenja — isti stil kao `test_legal_document_publication.py`.
 - [ ] Proširiti `contracts/fixtures/` parity pristup i za content pravila (novi fixture fajl `content-publication.v1.json` ili deljena šema — odluka pri implementaciji; ne mešati sa legal fixture-om jer su različite matrice odobrenja po tipu).
 
+### CG-B7 — `RichDoc` v1 (autorski format teksta) — **ADR-017 / D-046** — 🟡 kontrakt gotov, testovi namerno odloženi
+
+> **2026-07-29 (D-047 nalog „radi bez testiranja"):** kontrakt, validator i renderer su napisani i ručno pregledani (sintaksa/importi provereni, kompajler nije pokretan). Fixtures i testovi su svesno preskočeni — vraćaju se na kraju CMS + Booking prolaza, pre nego što se ovo označi kao produkcijski gotovo.
+
+**Ugovor (deljen, obe strane)**
+
+- [x] `frontend/src/lib/content-governance/rich-doc.ts` — tipovi `RichDoc`, `RichBlock`, `Span`, `Mark` tačno po ADR-017 §1. `schemaVersion: 1`.
+- [x] Blokovi u v1: `heading` (level 2–4), `paragraph`, `list` (`ordered: boolean`), `quote`. **Bez `table`, bez `image`, bez embed-a** (ADR-017 §5, §6).
+- [x] Marks u v1: `bold`, `italic`, `underline`, `link` (`{ type: "link"; href: string }`).
+- [x] **Stabilan `id` na svakom bloku i svakoj stavci liste** — `createBlockId()` (`crypto.randomUUID()`, isti obrazac kao `legal-documents.ts`'s `generateRevisionId`).
+- [x] Python ogledalo: `backend/src/psihointegritet/shared/domain/rich_doc.py` — **odluka: dataclasses + ručan `parse_rich_doc(raw: object)` parser**, ne Pydantic. Razlog upisan u modul docstring: `RichDoc` se tretira kao runtime JSON oblik kakav i jeste u koloni (isti pristup kao `structural_findings` nad `Mapping[str, object]` slot podacima), a ne nešto što poziva prethodno konstruiše.
+
+**Validacija**
+
+- [x] `href` allowlist: `https://`, `mailto:` i interne rute (regex isti kao `validateRedirectRegistry`). `javascript:`/`data:` odbijeni kao **error** (`RICH-003`). *(Napomena: ne ide kroz `cta.ts` registry kao što je prvobitno pisalo — to bi vezalo RichDoc validaciju za CTA akcije, koje su nešto drugačije od slobodnih editorskih linkova u telu teksta; umesto toga koristi se isti path-regex kao redirect registry.)*
+- [x] Brojanje znakova ide po **tekstu** (`richDocText`/`rich_doc_text`), marks se ne broje.
+- [x] `RICH-0xx` prefiks, aditivno: `RICH-001` nedozvoljen/neparsibilan/nepoznat blok · `RICH-002` nedozvoljen/neparsibilan mark · `RICH-003` nevalidan `href` · `RICH-004` warning (underline+URL) · `RICH-005` prekoračen `maxBlocks` · **`RICH-006` dodat van originalne liste** (dupliran/nedostajući `blockId`) — dokumentovano u `CONTENT_HEALTH_RULES_v0.1.md` §4 kao aditivno proširenje istim obrascem kao `MODEL-004` u CG-B2.
+- [x] `H1` se ne prihvata u telu (`level: 2 | 3 | 4` tipski, `Literal[2,3,4]` na Python strani).
+
+**Renderer**
+
+- [x] `frontend/src/components/content/rich-text.tsx`. **Nigde `dangerouslySetInnerHTML`.**
+- [x] Nepoznat tip bloka se preskače bez bacanja (implementirano kroz `if`/type-guard lanac sa `return null` na kraju, ne `switch` — namerno, da TS ne tretira taj ogranak kao „unreachable" za deklarisanu uniju, a runtime ipak ostane tolerantan na budući tip).
+- [x] `underline` stilizovan odvojeno od linka (`decoration-1` bez boje nasuprot `text-forest underline decoration-sage/60`).
+
+**Parity fixtures — ⬜ namerno odloženo**
+
+- [ ] `contracts/fixtures/richdoc.v1.json` — **nije napravljen u ovom prolazu.**
+- [ ] Slučajevi iz liste — **nisu napisani.** Ovo je blokirajuće pre nego što se CG-B7 označi ✅ u `TODO.md` §5D (pravilo sa vrha ovog fajla: „Kad ceo CG-X milestone ovde ima sve kućice ✅, prebaci status").
+
+### CG-B8 — Uvoz `.docx` — **ADR-017 §7** — 🟡 kernel gotov, rate limit i testovi odloženi
+
+> ⚠️ **Odstupanje od plana ispod:** fajlovi NISU u `modules/content/` nego u `shared/parsing/` (`docx_import.py`, `html_normalize.py`). Razlog: D-047 je pravni registar (`modules/privacy`) učinio prvim potrošačem uvoza, pre nego što `modules/content` uopšte ima router (CG-B4 dolazi posle ovoga u redosledu). Postavljanje parsera u bilo koji od ta dva modula napravilo bi zavisnost unakrsno; `shared/parsing/` nema sopstvena pravila životnog ciklusa — čista je transformacija bajtova u `RichDoc`, isto obrazloženje koje je `rich_doc.py` već stavilo u `shared/`. Puno obrazloženje u docstring-u oba fajla.
+
+- [x] Zavisnost `mammoth` u `backend/pyproject.toml` (Python port, ne JS biblioteka) — dodato preko `uv add mammoth --no-sync`. ⚠️ **Nije `uv sync`-ovano u `.venv`** — potrebno pre pokretanja backend-a ili testova.
+- [x] `shared/parsing/docx_import.py`: `.docx` → mammoth → HTML → **isti normalizator** kao paste → `RichDoc`.
+- [x] `shared/parsing/html_normalize.py` — **jedan** allowlist normalizator, `html.parser.HTMLParser`-zasnovan stablo-builder + allowlist mapiranje. Nepoznat tag se odmotava; `<script>` ne preživljava jer ga nema u mapi. **Bag otkriven i ispravljen tokom pisanja:** inline formatting tagovi (`b/em/u/a/br/img`) koji se pojave BEZ omotača `<p>` (čest slučaj kod paste fragmenata) su se prvobitno tretirali kao „nepoznat kontejner" i odmotavali, gubeći bold/italic/underline. Ispravljeno uvođenjem `_LOOSE_INLINE_TAGS` skupa koji ih vodi u isti tekstualni tok umesto rekurzivnog odmotavanja.
+- [x] Mapiranje: Word `Heading 1` → `H2`, `Heading 2` → `H3`, `Heading 3+` → `H4` (`min(raw_level + 1, 4)`). `mammoth`-ov `style_map="u => u"` dodat jer mammoth po default-u ignoriše `<u>`.
+- [x] Plain-text ulaz: `normalize_plain_text_to_rich_doc` (backend) + `richDocFromPlainText` (frontend, koristi ga Phase-0 stopgap textarea u `screen-dokumenti.tsx`) — prazan red deli pasuse.
+- [x] **Limiti pri prijemu:** `DocxImportLimits` (veličina fajla, uncompressed cap, decompression ratio po zip entry-ju PRE mammoth-a, `maxBlocks` sa truncate+nalaz umesto tihog odbacivanja), MIME provera na ekstenziji u routeru + veličina bajtova pre parsiranja. Konverzija ide kroz `asyncio.to_thread` + `asyncio.wait_for(20s)` (rules §18 — nikad blokirajući poziv na event loop-u).
+- [ ] **Rate limit na endpoint — NIJE urađeno.** U backendu ne postoji nijedna postojeća rate-limit infrastruktura (provereno gerpom); graditi je od nule bez mogućnosti da se testira protiv prave baze nije rađeno u ovom prolazu. Otvorena stavka pre produkcije.
+- [x] `.doc` se odbija (provera ekstenzije u `router.py`, poruka upućuje na `.docx`). **Bez LibreOffice.**
+- [x] PDF se ne prihvata kao strukturisan uvoz (nije uveden nijedan PDF put).
+
+**Izveštaj o uvozu (`IMPORT-0xx`)**
+
+- [x] `IMPORT-001` info — sažetak (pasusi/naslovi/liste/linkovi).
+- [x] `IMPORT-002` info — broj H1→H2 democija.
+- [x] `IMPORT-003` warning — tabela izbačena.
+- [x] `IMPORT-004` warning — slika nije preneta. **Slika se nikad ne čita** — `convert_image` prosleđen mammoth-u vraća `{}` bez poziva `image.open()`, pa se čak ni memorija ne troši na base64 enkodovanje slike koja se ionako baca.
+- [x] `IMPORT-005` warning — nepoznato formatiranje odbačeno.
+- [ ] Nalazi sa `requiresApproval` kroz `dynamic_approvals()` — **NIJE povezano** za pravni registar u ovom prolazu, jer `modules/privacy` ne koristi CG-B2-ov dinamički mehanizam (ima fiksnu `REQUIRED_APPROVALS` mapu po vrsti dokumenta, ne `dynamic_approvals()`). Uvoz danas vraća `requiresApproval: boolean` kao **informativno** polje (bilo koji warning/error nalaz), ne kao stvaran gate. Otvorena stavka.
+- [x] Uvoz nikad ne piše direktno — `import-docx` endpoint je **preview-only**, ništa se ne upisuje dok autor eksplicitno ne pošalje `PATCH .../revisions/{id}`.
+
+**Testovi — ⬜ namerno odloženo (CTO nalog)**
+
+- [ ] Fixture `.docx` fajlovi, paritetni test paste↔docx, bezbednosni test `<script>`/`onerror=`/`javascript:` — **ništa od ovoga nije napisano.** Ovo je eksplicitno navedeno kao blokirajuće u `TODO.md` §5D pre nego što se CG-B8 tretira kao produkcijski spreman — bezbednosni test posebno ne sme ostati preskočen dugoročno.
+
+**`ContentPatch` — jedini interfejs koji se piše (ADR-017 A1.2)**
+
+- [x] Realizovano kao `ImportDocxResponse` u `modules/privacy/schemas.py`: `{ body: dict, findings: ImportDocxFinding[], requiresApproval: bool }` — nema `target: {revisionId, slotPath}` polje jer je za pravni registar target uvek implicitan (poziva se na `/documents/{document_id}/import-docx`, primenjuje se preko posebnog `PATCH` poziva). Kad CG-B4 (generički CMS) dobije sopstveni import endpoint, taj `target` postaje potreban i vratiće se u oblik bliži originalnom predlogu.
+- [x] `ApprovalDecision`, `AIReviewFinding`, `LayoutProposal`, `AssetPlacementSuggestion` se **ne pišu**.
+
+### CG-B9 — Migracija `LegalDocumentRevision.body` → RichDoc JSON — ✅ napisana, ⬜ verifikacija odložena
+
+> ⚠️ **Nova revizija, NIKAD izmena `20260726_0004`.** Poštovano — `20260729_0005_legal_document_body_rich_doc.py`.
+
+- [x] Nova Alembic revizija: `body` `Text` → `JSON`.
+- [x] Konverzija postojećeg teksta u dokument sa **jednim pasusom koji nosi ceo tekst** (ADR-017 Consequences: „single-paragraph documents" — **ispravljena netačna formulacija** koja je ranije stajala ovde, „jedan pasus po praznom redu"; blank-line splitting je logika `normalize_plain_text_to_rich_doc`-a za NOVI unos, ne migracije). Rađeno kroz Python petlju (`connection.execute` + `sa.text`), ne raw SQL `USING` izraz — tabela je prazna u svim proverenim okruženjima, pa je petlja i jednostavnija za proveru i dovoljno brza.
+- [x] Objavljene revizije se ne prepisuju u mestu — migracija je re-enkodovanje formata skladištenja (isti vidljiv tekst), ne izmena sadržaja, pa ne krši D-045 (koje govori o korisničkim izmenama).
+- [ ] **Verifikacija NIJE pokrenuta** (`upgrade`→`downgrade`→`upgrade`, ORM round-trip, `alembic check`) — CTO nalog, bez baze u ovom prolazu. **Ovo je pre svega drugog sledeći korak** kad testiranje počne — migracija protiv prazne baze je niskorizična ali neprovjerena.
+- [x] `legal-documents.ts` (`richDocTextLength`) i `publication.py::content_problems` (`rich_doc_text_length`) prešli sa dužine stringa na brojanje RichDoc teksta.
+
 ---
 
 ## Faza C — Frontend CMS editor — ne počinjati pre Faze B (bar CG-B1/B2/B4)
@@ -158,6 +237,15 @@
 - [ ] Nova ruta `/radni-prostor/sadrzaj` (`requireOrgAdmin`), nav stavka u `nav.tsx` (ikona, `DocumentIcon`-stil novi `ContentIcon` ili reuse).
 - [ ] `npx next typegen` posle dodavanja rute (typedRoutes).
 - [ ] Lista po `ContentType` (6 tabova/filtera) → editor revizije po `templateRegistry` slotovima iz `limits.ts` (limit je error pri validaciji, ne promena layouta — isto pravilo kao postojeći Content Health `LIMIT-*`).
+
+**Registar šema slotova (`SlotFieldSpec`) — ADR-017 §9, zatvara CG-B2 Nalaz 3**
+
+- [ ] `frontend/src/lib/content-governance/slot-schema.ts` — `SlotFieldSpec` union: `text` (sa `limit` ključem iz `contentCharacterLimits`) · `rich` (`maxBlocks`, `allowedBlocks`, `maxChars`) · `image` · `imageList` (`min`/`max`) · `cta` · `repeater` (`min`/`max`, ugnežden `item`).
+- [ ] Popuniti šemu za **svaki slot svakog od 9 template-a** iz `templateRegistry`. Primer `service_detail.hero`: `{ eyebrow: text(40), title: text(80), lead: text(300), image: image(required) }`.
+- [ ] Python ogledalo + `contracts/fixtures/slot-schema.v1.json` (parity, isti obrazac kao CG-A2) — „koliko teksta, koliko pasusa, koliko slika" definisano **jednom**, ne posebno u UI-ju i posebno na serveru.
+- [ ] **Sprovesti `LIMIT-002`** — sada kad slot payload ima deklarisan oblik, provera koju je CG-B2 Nalaz 3 morao da odloži postaje moguća. Ukloniti/zameniti `test_no_template_has_more_optional_slots_than_its_maximum` pravom proverom.
+- [ ] **Editor se crta generički iz registra** — jedna komponenta čita šemu i renderuje polja. **Ne pisati 9 ručnih editora.** Dodavanje slota kasnije = jedan red u registru + fallback mapiranje, bez nove UI.
+- [ ] Brojači uz svako polje: „Pasus 2 od najviše 4", „1.180/1.200 znakova", „Slike: 2 od 3".
 
 ### CG-C2 — Živa validacija
 
@@ -173,6 +261,25 @@
 
 - [ ] Isti obrazac kao `screen-dokumenti.tsx`: dugmad po tranziciji, `usePanelErrors` sa strukturisanim `resource` (CG-A3 tip, sada sa pravim `resourceType`/`fieldPath` po CMS nalazu).
 - [ ] **In-memory seed prvo** (isti put kao registar dokumenata pre LD-5/7) — API wiring dolazi kad CG-B4 postoji i kad je testiran.
+
+### CG-C5 — Tiptap editor — **ADR-017 §10**
+
+- [ ] Zavisnosti: `@tiptap/react`, `@tiptap/starter-kit` (ili pojedinačne ekstenzije), `@tiptap/extension-underline`, `@tiptap/extension-link`. ⚠️ **Samo MIT paketi — nijedan `@tiptap-pro`** (ADR-017 A1.4). Plaćeni sloj pokriva kolaboraciju, komentare i AI, ništa od toga nije u obimu.
+- [ ] **Šema ograničena tačno na `RichDoc` čvorove i marks** — editor ne sme da proizvede sadržaj koji bi validator odbio. Isključiti sve iz StarterKit-a što nije u v1 (code block, horizontal rule, image, strike…).
+- [ ] `rich-doc-adapter.ts` — dvosmerno `Tiptap JSON ↔ RichDoc`, sa testovima za round-trip u oba smera.
+- [ ] **U bazu ide `RichDoc`, ne Tiptap JSON.** Format mora da preživi promenu editor biblioteke, a Python validator ne sme da mora da razume ProseMirror interne strukture.
+- [ ] Toolbar: H2/H3/H4, ul/ol, bold/italic/underline, link (sa dijalogom i `href` validacijom), poništi/ponovi.
+- [ ] Paste handler → isti backend normalizator (poziv, ne druga implementacija u browseru).
+- [ ] Dugme „Uvezi `.docx`" → CG-B8 endpoint → prikaz izveštaja o uvozu **pre** primene na reviziju.
+- [ ] `readOnly` za `published`/`archived` revizije — isto pravilo koje `screen-dokumenti.tsx` već ima (CG-A1).
+- [ ] Autosave draft-a; **objava ostaje eksplicitna**. Na 409 iz CG-B3 prikazati „neko drugi je izmenio" sa opcijom da autor vidi razliku — nikad tiho pregaziti ili izgubiti tekst.
+
+### CG-C6 — SEO panel sa živim pregledom — **ADR-017 §11**
+
+- [ ] Sekcija „SEO i deljenje" u editoru: `title`, `description`, `ogImageAssetId` — **model se ne menja**, `SeoFields` i `seoTitle`/`seoDescription` limiti su već tu.
+- [ ] **Živi pregled Google rezultata** (naslov/URL/opis kako se stvarno prikazuje, sa presecanjem na limitu) i **OG kartica**.
+- [ ] Upozorenje kad je `description` prazan ili identičan naslovu.
+- [ ] Bez izmena u `discoverability.ts` — panel samo prikazuje ono što taj generator ionako proizvodi.
 
 ---
 
@@ -213,6 +320,25 @@
 - [ ] R2 Booking Engine.
 - [ ] Kompas — tek posle O-21 definicije obima; bez placeholder koda pre toga.
 
+### Preduslovi pre bilo kog kataloga sadržaja (D-047)
+
+- [ ] **O-24 taksonomija** — unifikovati `areas` u kontrolisani rečnik sa stabilnim ID-jevima + display labelama, `contracts/fixtures/taxonomy.v1.json` čitan sa obe strane. ⚠️ **Danas postoje četiri kopije i drift je već nastupio** (`matching.py:160` ima `"zavisnost"`, frontend nema nijedan pogodak; seed migracija `20260722_0001:478` ju je upisala u bazu). Nove ose se **ne dodaju** dok unifikacija ne prođe — inače je svaka peta kopija.
+- [ ] Re-keying menja rečenice razloga u vođenom izboru (D-025) → **traži Anjinu potvrdu, nije refaktor**.
+- [ ] `ADR-019` (tip `article`) pre bilo kog koda za članke — `ContentType` ih danas namerno izostavlja (`models.py:64`).
+
+### AI sloj nad sadržajem — **posle CMS-a, ADR-017 §12 + A1.1**
+
+> **Šav se pravi u CG-B7 (stabilan `blockId`) i CG-C1 (`fieldPath`); ovde se ne piše nikakav kod unapred.** Stavke stoje da bi se znalo šta šav mora da izdrži.
+
+- [ ] Tabela `ai_suggestions` (`revision_id`, `block_id`, `kind`, `original`, `proposed`, `rationale`, `model`, `status`, `created_at`) — **nikad upis u `slot_data`**.
+- [ ] Prihvatanje predloga je **obična ljudska izmena**, pripisana čoveku, diže `lock_version`. Audit ostaje istinit o tome ko je šta napisao.
+- [ ] Predlog se poništava kad se hash teksta bloka promeni.
+- [ ] Radi **samo nad draft revizijama**, nikad nad objavljenim; **AI nikad ne objavljuje sam** (R6 invarijanta).
+- [ ] ⚠️ **`dialect` je po polju/slotu, ne po unosu** (ADR-017 **A1.1**, ispravka §12). Anjin zapis u `content/therapists.ts` ima `quote`/`bio`/`cardExcerpt` na ijekavici, a `areas`/`formats`/`badge` na ekavici — **u istom redu**, jer terminologija nije lični govor (D-017). Entry-level polje to ne može da izrazi; entry vrednost je samo default. Vrednosti: `ekavica | ijekavica | preserve-source`; `preserveVoice` je zaseban flag.
+- [ ] AI **nikad ne menja sadržaj u citatu** — `quote` je tip bloka u RichDoc-u, pa je to strukturno pravilo koje validator sprovodi, ne instrukcija koju model može da ignoriše.
+- [ ] Pravne revizije i tekstovi saglasnosti su **isključeni iz AI-ja pravilom**, ne promptom.
+- [ ] Predlog SEO metadata na osnovu sadržaja — isti mehanizam (predlog, ne upis).
+
 ---
 
 ## Verifikacija (pokrenuti posle svake faze, ne samo na kraju)
@@ -220,4 +346,5 @@
 **Frontend:** `npx tsc --noEmit` · `npx eslint src --max-warnings=0` · `npx vitest run` · `npx next build` · `npm run content:check`
 **Backend:** `uv run ruff check` · `uv run ruff format --check` · `uv run pyright` · `uv run pytest`
 **Novi workspace tab (CG-C1):** e2e auth test (redirect za neulogovane) po obrascu postojećih `workspace-auth` testova.
-**Parity (CG-A2/B6):** i vitest i pytest moraju proći nad istim fixture fajlom pre nego što se bilo koji CG-A/B zadatak označi ✅.
+**Parity (CG-A2/B6/B7/C1):** i vitest i pytest moraju proći nad **istim** fixture fajlom pre nego što se bilo koji CG-A/B zadatak označi ✅ — `legal-publication.v1.json`, `content-publication.v1.json`, `richdoc.v1.json`, `slot-schema.v1.json`.
+**Bezbednost uvoza (CG-B8):** `<script>`, `onerror=` i `javascript:` href ne smeju preživeti nijedan ulazni put (docx, rich paste, plain paste) — ovo je blokirajući test, ne upozorenje.

@@ -10,6 +10,11 @@
  * keeps the Intake submission gate closed, which is the safe default.
  */
 
+import {
+  richDocTextLength,
+  type RichDoc,
+} from "@/lib/content-governance/rich-doc";
+
 export type LegalDocumentKind =
   | "intake_data_processing_notice"
   | "intake_request_acknowledgement"
@@ -35,7 +40,8 @@ export interface LegalDocument {
   kind: LegalDocumentKind;
   title: string;
   slug: string;
-  body: string;
+  /** RichDoc v1 JSON (ADR-017 Amendment 1 §A1.3, CG-B9) — was a plain string. */
+  body: RichDoc;
   status: RevisionStatus;
   approvals: ApprovalCapability[];
   versionLabel: string;
@@ -96,6 +102,7 @@ export const CAPABILITY_LABELS: Record<ApprovalCapability, string> = {
   business: "Poslovno (Business)",
 };
 
+/** Measured in RichDoc plain-text length (CG-B9) — was raw string length before the body field became RichDoc. */
 export const MIN_BODY_LENGTH = 40;
 
 export function canTransition(
@@ -208,7 +215,7 @@ export function contentProblems(
   const codes: ContentProblemCode[] = [];
   if (!document.title.trim()) codes.push("empty_title");
   if (!isValidSlug(document.slug)) codes.push("invalid_slug");
-  if (document.body.trim().length < MIN_BODY_LENGTH) {
+  if (richDocTextLength(document.body) < MIN_BODY_LENGTH) {
     codes.push("body_too_short");
   }
   return codes;

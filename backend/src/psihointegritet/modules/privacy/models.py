@@ -8,7 +8,6 @@ from sqlalchemy import (
     ForeignKey,
     Index,
     String,
-    Text,
     UniqueConstraint,
     Uuid,
     func,
@@ -93,7 +92,16 @@ class LegalDocumentRevision(Base):
     version_label: Mapped[str] = mapped_column(String(80))
     locale: Mapped[str] = mapped_column(String(16), default="sr-Latn", server_default="sr-Latn")
     title: Mapped[str] = mapped_column(String(200))
-    body: Mapped[str] = mapped_column(Text)
+    # RichDoc v1 JSON (ADR-017 Amendment 1 §A1.3, CG-B9). Was a plain `Text`
+    # column under `20260726_0004`; a dedicated migration converts existing
+    # rows to a single-paragraph document rather than editing that applied
+    # revision in place.
+    body: Mapped[dict[str, object]] = mapped_column(
+        JSON,
+        default=lambda: {"schemaVersion": 1, "blocks": []},
+        server_default='{"schemaVersion": 1, "blocks": []}',
+        nullable=False,
+    )
     status: Mapped[RevisionStatus] = mapped_column(
         value_enum(RevisionStatus, length=32),
         default=RevisionStatus.DRAFT,

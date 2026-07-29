@@ -132,3 +132,9 @@ Kada je widget `disabled`, template bira unapred definisan alternativni CTA ili 
 ## 8. Budući CMS mapping
 
 R3 CMS može proširiti model sa `revisionId`, `createdBy`, `updatedBy`, `publishedAt`, audit podacima i scheduling poljima, ali ne sme menjati javne field name-ove, CTA registry, template registry niti ograničenja bez nove product odluke.
+
+> **Napomena 2026-07-29 (D-047 / O-24).** Lista iznad je **iscrpna dozvola**, i tražene taksonomijske ose (`audience`, `topics`, `goals`, `supportLevel`, `ageGroup`, `format`, `accessLevel`, `estimatedTime`, `relatedServices`, `relatedTherapists`) **nisu na njoj** — svaka od njih traži novu produktnu odluku po ovoj istoj rečenici. Uz to `contentType` **već postoji kao javno ime polja** (`ContentBase.type: ContentType`) i ne sme dobiti drugo značenje.
+>
+> Vodi se kao **O-24**, sa dva preduslova pre bilo kakvog proširenja: (1) postojeći `areas` pojam ima **četiri kopije** (`content/therapists.ts` prikazni tekst, `features/guidance/matching.ts` i `modules/guidance/matching.py` matching predikati, plus JSON kolona `therapist_matching_profiles.areas`) i **drift je već nastupio** — `"zavisnost"` postoji na Python strani i u bazi, ali ne na frontendu; (2) unifikacija menja rečenice razloga koje korisnik vidi u vođenom izboru (D-025), pa traži potvrdu vlasnika sadržaja, a ne tehničku odluku.
+>
+> `estimatedTime` je poseban slučaj: **računa se iz RichDoc-a**, ne unosi — uneto polje driftuje pri prvoj izmeni (ADR-018).

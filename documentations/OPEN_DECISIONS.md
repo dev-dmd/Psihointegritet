@@ -141,11 +141,87 @@ Psihointegritet želi eksplicitno da prikaže da prima LGBTQIA+ osobe bez stigme
 
 **Traži se od CTO/tima:**
 
-1. Definicija proizvoda: šta Kompas radi, za koga, čime se razlikuje od Vođenog izbora
+1. ~~Definicija proizvoda: šta Kompas radi, za koga, čime se razlikuje od Vođenog izbora~~ → **napredak 2026-07-29, vidi ispod**
 2. Granica osnovni vs napredni tier
 3. Vlasnik, release (R-mapa) i odnos prema Engines arhitekturi (novi engine ili deo postojećeg)
 
+> **Napredak 2026-07-29 (CTO).** Kompas je **discovery i recommendation sloj iznad istog kataloga sadržaja** — ne novi katalog. Prvi izbor korisnika: „Želim stručnu podršku" · „Želim da razumem šta mi se dešava" · „Tražim koristan sadržaj" · „Tražim podršku za roditeljstvo" · „Tražim podršku za odnos" · „Tražim sadržaj za kompaniju ili tim". Grana **informacije** pretražuje članke, video, PDF vodiče, preporuke knjiga, programe i radionice; grana **stručna podrška** vodi na usluge, terapeute, način rada i prelazak na zahtev za termin. Zakazivanje ostaje globalno dostupno ali ne agresivno — sekundarni CTA na stručnom sadržaju („Potrebna vam je stručna podrška?") i povratak iz booking toka na sadržaj („Još nisam spreman da zakažem — želim prvo da pogledam materijale").
+>
+> **Time je tačka 1 suštinski odgovorena, ali O-21 ostaje otvoren** na tačkama 2 i 3, i na jednoj novoj: Kompas pretpostavlja **zajedničku taksonomiju** preko svih tipova sadržaja (`audience`, `topics`, `goals`, `contentType`, `supportLevel`, `ageGroup`, `format`, `accessLevel`, `estimatedTime`, `relatedServices`, `relatedTherapists`) — a to je zasebna otvorena stavka, **O-24**. Bez nje Kompas nema po čemu da pretražuje.
+
 **Dok ne stigne:** nikakav placeholder kod, ruta, model ni javna najava sa rokom (anti-placeholder pravila iz master plana §3 i PRODUCT_CONTEXT §11.5). Pominjanje u access-tier listi ostaje kakvo jeste.
+
+---
+
+### O-23 · „Dnevna soba" — obim i granice novog klijentskog prostora _(novo 2026-07-29)_
+
+> **Gde piše:** nigde — **0 pogodaka u celom repou**. **Blokira:** bilo kakav kod, model ili ruta za Dnevnu sobu
+
+**Šta znamo:** CTO je 2026-07-29 opisao Dnevnu sobu kao lični prostor korisnika sa: Sačuvano · Nastavi čitanje/gledanje · Moje kupovine · Moja pretplata · Preporučeno · Moji termini · privatne kolekcije. Predložen početni model `SavedItem { userId, contentId, listType, progress, savedAt, lastOpenedAt }`, uz izričitu nameru da se **ne** pravi slobodan „my space" sa drag-and-drop organizacijom dok se ne proveri da li ljudi uopšte čuvaju sadržaj i vraćaju mu se.
+
+**Zašto je ovo otvorena stavka a ne zadatak:** Dnevna soba je **nova produktna površina koju nijedan dokument ne opisuje**. Najbliži postojeći pojmovi su „lični prostor" i „članski deo", oba pomenuta samo kao *okidač za registraciju* odnosno stavka u „U pripremi" listi, uz izričito pravilo da ta oznaka „ne aktivira praznu funkcionalnost". Po istoj logici po kojoj je Kompas dobio O-21, i ovo traži odluku pre koda.
+
+**Uz to, tri od sedam sekcija su već blokirane drugim kapijama:**
+
+| Sekcija | Stanje |
+|---|---|
+| „Sačuvano", „Nastavi čitanje", „Preporučeno", privatne kolekcije | Traže katalog sadržaja iz kog se čuva — dakle posle ADR-019 (članci) i O-24 (taksonomija) |
+| **„Moje kupovine", „Moja pretplata"** | 🚫 **D-031 / BDS-014 / `PUB-003`** — finansijski domen je R5 |
+| **„Moji termini"** | 🚫 **R2 Booking Engine** — ne postoji |
+
+**Traži se od CTO:**
+
+1. Da li je Dnevna soba zaseban proizvod (kao Kompas) ili deo klijentskog panela iz R2 M2.4
+2. Vlasnik i release
+3. Da li v1 sme da bude samo „Sačuvano" + „Nastavi čitanje" — jedini deo koji ne udara ni u jednu kapiju
+
+**Dok ne stigne:** bez modela, rute i placeholder koda. `SavedItem` se ne piše dok ne postoji katalog iz kog se čuva — inače je to tabela sa stranim ključem ka tipu sadržaja koji još ne postoji.
+
+---
+
+### O-24 · Zajednička taksonomija sadržaja — unifikacija pre proširenja _(novo 2026-07-29)_
+
+> **Gde piše:** `CONTENT_MODEL_MATRIX_v0.1.md` §8 · `content-architecture.md` §6 · **Blokira:** Kompas (O-21), filtriranje kataloga, Dnevnu sobu (O-23)
+
+**Problem 1 — tražene ose nisu u dozvoljenoj listi.** CTO traži `audience`, `topics`, `goals`, `contentType`, `supportLevel`, `ageGroup`, `format`, `accessLevel`, `estimatedTime`, `relatedServices`, `relatedTherapists`. `CONTENT_MODEL_MATRIX_v0.1.md` §8 je iscrpna dozvola šta R3 CMS sme da doda modelu — `revisionId`, `createdBy`, `updatedBy`, `publishedAt`, audit i scheduling polja — i izričito kaže da se javni field name-ovi, CTA registry, template registry i ograničenja **ne smeju menjati bez nove produktne odluke**. Nijedna tražena osa nije na toj listi. Uz to `contentType` **već postoji kao javno ime polja** (`ContentBase.type: ContentType`) i ne sme dobiti drugo značenje.
+
+**Problem 2 — postojeća taksonomija je učetvorostručena i već je driftovala.** Isti pojam `areas` postoji na četiri mesta:
+
+| Gde | Oblik | Primer |
+|---|---|---|
+| `frontend/src/content/therapists.ts` | prikazni tekst, veliko slovo | `"Anksioznost i depresija"` |
+| `frontend/src/features/guidance/matching.ts` | matching predikat, malo slovo | `"anksioznost"` |
+| `backend/.../modules/guidance/matching.py` | isto, druga kopija | `"anksioznost"` |
+| `therapist_matching_profiles.areas` (JSON kolona) | seedovano migracijom `20260722_0001` | isto |
+
+⚠️ **Drift je već nastupio:** `matching.py:160` nosi `"zavisnost"` u Anjinim `areas`, a frontend nema **nijedan** pogodak na tu reč. Migracija `20260722_0001:478` ju je upisala i u bazu. Trenutno je bezopasno samo zato što nijedan `REASON_AREAS` ključ ne mapira na nju. **Za matching ne postoji parity fixture** — `contracts/fixtures/` sadrži samo `legal-publication.v1.json`.
+
+**Traži se:**
+
+1. **Od tima/Anje:** mapiranje prikaznih čipova na stabilne ID-jeve. Mapiranje sme biti **više-na-jedan** — `"Anksioznost i depresija"` je jedan čip koji stoji za dve matching teme, i to je jedini način da preživi bez vidljive izmene teksta. **Ovo nije refaktor:** re-keying menja rečenice razloga koje korisnik vidi u rezultatu vođenog izbora, a te su pod D-025 (najviše 3, običan jezik, bez skorova).
+2. **Od Anje, činjenično:** da li `"zavisnost"` treba da bude u Anjinim oblastima? Ona nosi `addiction_related_support` u `serviceCapabilities` na obe strane, ali `"zavisnost"` u `areas` samo na Python strani. Jedno od to dvoje je greška.
+3. **Od CTO:** da li se nove ose uopšte uvode sada. Danas imamo šest terapeuta, devet usluga i nijedan članak — nema kolekcije dovoljno velike da traži filtriranje.
+
+**Dok ne stigne:** ne dodavati nijednu novu osu. Prvo unifikacija `areas` u kontrolisani rečnik sa `contracts/fixtures/taxonomy.v1.json` koji čitaju obe strane — bez toga bi svaka nova osa bila **peta** kopija, a postojeće tri nemaju nikakvu zaštitu od drifta.
+
+---
+
+### O-22 · Web push — pravilo o sadržaju notifikacije _(novo 2026-07-29)_
+
+> **Gde piše:** MP §11 (privatnost) · MP §6.2 M2.5 (koji poznaje samo email) · **Blokira:** slanje bilo koje push notifikacije; ne blokira launch
+
+**Šta znamo:** VAPID ključni par je postavljen 2026-07-29 uz DNS/SSL rad. Infrastruktura, dakle, postoji — ali push notifikacije **nisu opisane ni u jednom obavezujućem dokumentu** i nikad nisu prošle kroz proizvodnu odluku.
+
+**Zašto ovo nije implementaciona sitnica:** push se pojavljuje na **zaključanom ekranu**, vidljiv svakome ko pogleda telefon. Notifikacija „Vaš termin kod Anje Stamenković sutra u 17h" otkriva **podatak o lečenju** — kategoriju podataka koju MP §11 tretira kao najosetljiviju. Isti tekst je bezopasan u mejlu iza lozinke i štetan na zaključanom ekranu.
+
+**Traži se od CTO (uz pravni pogled kad stigne O-03):**
+
+1. **Pravilo o payload-u.** Predlog: nikad ime terapeuta, nikad naziv usluge, nikad klinički sadržaj u vidljivom tekstu — samo neutralno („Podsetnik na zakazani termin") + deep link koji traži prijavu. Detalj se čita tek u aplikaciji.
+2. **Koji događaji uopšte idu na push** naspram onih koji ostaju samo email (podsetnik na termin, promena termina, odgovor tima na zahtev).
+3. **Saglasnost i opt-out** — push je zaseban pristanak, ne izvodi se iz pristanka na email; gde se povlači.
+4. Da li push uopšte ulazi u R2 M2.5 ili je zaseban milestone.
+
+**Dok ne stigne:** ključevi stoje u env-u, **ne šalje se nijedna notifikacija**, nema `web-push` zavisnosti ni service worker registracije za push. Bez koda unapred (MP §3).
 
 ---
 
@@ -194,3 +270,5 @@ Koji kalendar po terapeutu, koji scope-ovi. Free/busy only, nikad naslovi (T15).
 
 **Uskoro:** tekst o lokacijama (O-02) · pregled upitnika (O-04) · prva radionica (O-05)
 **Pre Faze 2:** pravila otkazivanja (O-08) · cena za studente (O-09) · Google kalendari (O-10)
+
+**Traži Anjinu potvrdu pre CMS taksonomije (O-24):** mapiranje prikaznih oblasti na stabilne ID-jeve — menja rečenice razloga u vođenom izboru, pa nije tehnička odluka · i jedno činjenično pitanje: da li „zavisnost" pripada Anjinim oblastima rada (danas stoji u bazi i na backendu, ali ne i na sajtu)

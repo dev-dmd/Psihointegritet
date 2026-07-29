@@ -24,6 +24,7 @@ from psihointegritet.shared.domain.publication import (
     require_deletable,
     require_transition,
 )
+from psihointegritet.shared.domain.rich_doc import RichDoc, rich_doc_text_length
 
 __all__ = [
     "ALLOWED_TRANSITIONS",
@@ -82,6 +83,8 @@ CONSENT_GATE_KINDS: frozenset[LegalDocumentKind] = frozenset(
 # Content minimums mirrored 1:1 by the panel preview in
 # `frontend/src/features/workspace/legal-documents.ts`; the shared fixture file
 # `contracts/fixtures/legal-publication.v1.json` asserts the two stay equal.
+# Measured in RichDoc plain-text length (CG-B9, ADR-017 Amendment 1 §A1.3) —
+# was raw string length before the body column became RichDoc JSON.
 MIN_BODY_LENGTH = 40
 SLUG_PATTERN = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
 
@@ -107,14 +110,20 @@ def is_valid_slug(slug: str) -> bool:
     return SLUG_PATTERN.fullmatch(slug) is not None
 
 
-def content_problems(title: str, slug: str, body: str) -> tuple[str, ...]:
-    """Machine-readable content findings, in the panel's display order."""
+def content_problems(title: str, slug: str, body: RichDoc) -> tuple[str, ...]:
+    """Machine-readable content findings, in the panel's display order.
+
+    `body` is an already-parsed `RichDoc` — parsing (and any structural
+    `RICH-0xx` findings that come with it) is the caller's job via
+    `parse_rich_doc`, same separation `structural_findings` keeps in
+    `modules/content/publication.py`.
+    """
     problems: list[str] = []
     if not title.strip():
         problems.append("empty_title")
     if not is_valid_slug(slug):
         problems.append("invalid_slug")
-    if len(body.strip()) < MIN_BODY_LENGTH:
+    if rich_doc_text_length(body) < MIN_BODY_LENGTH:
         problems.append("body_too_short")
     return tuple(problems)
 
@@ -141,7 +150,7 @@ def check_publishable(
     status: RevisionStatus,
     title: str,
     slug: str,
-    body: str,
+    body: RichDoc,
     approvals: list[dict[str, str]],
 ) -> PublishCheck:
     """Staged publish evaluation: content -> transition -> approvals (A.4).

@@ -1,4 +1,5 @@
 import { therapists } from "@/content/therapists";
+import { emptyRichDoc } from "@/lib/content-governance/rich-doc";
 
 import type { LegalDocument } from "./legal-documents";
 import type {
@@ -511,7 +512,7 @@ export const seedLegalDocuments: LegalDocument[] = [
     kind: "intake_data_processing_notice",
     title: "Obaveštenje o obradi podataka",
     slug: "obavestenje-o-obradi-podataka",
-    body: "",
+    body: emptyRichDoc(),
     status: "draft",
     approvals: [],
     versionLabel: "v1",
@@ -523,7 +524,7 @@ export const seedLegalDocuments: LegalDocument[] = [
     kind: "intake_request_acknowledgement",
     title: "Potvrda da zahtev nije termin",
     slug: "zahtev-nije-termin",
-    body: "",
+    body: emptyRichDoc(),
     status: "draft",
     approvals: [],
     versionLabel: "v1",

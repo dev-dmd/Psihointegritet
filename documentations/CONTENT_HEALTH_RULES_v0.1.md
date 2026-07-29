@@ -5,6 +5,8 @@
 **Povezano:** D-032, `CONTENT_GOVERNANCE_CONTRACT_v0.1.md`, `DISCOVERABILITY_CONTRACT_v0.1.md`
 
 > **Najava v0.2 (D-044, 2026-07-26):** uz CMS Core nalaz dobija **additivna** polja `ruleVersion` i opciono `requiresApproval: clinical|legal|business` (nalaz koji reviziji dodaje obaveznu approval capability). Severity rečnik `info | warning | error`, 13 prefiksa i 32 postojeća pravila ostaju netaknuti; `block`/`review_required`/`passed` NISU severity vrednosti nego izvedene klase prikaza (BLOCK=`error`, REVIEW_REQUIRED=nalaz sa `requiresApproval`, PASSED=bez nalaza).
+>
+> **Dopuna (D-046/ADR-017, 2026-07-29):** dva nova prefiksa, aditivno preko svega gore — `RICH-0xx` (RichDoc kontrakt, CG-B7) i `IMPORT-0xx` (uvoz `.docx`, CG-B8). Isti severity rečnik, isti oblik nalaza; `RICH-0xx` findings nemaju `entityType`/`entityId` dok ih poziv ne postavi (revizija/slot to zna, sam RichDoc ne).
 
 ## 1. Svrha i granica
 
@@ -105,6 +107,17 @@ Nema imena klijenta, forme, intake odgovora, booking note-a ili drugog osetljivo
 | `REDIRECT-001` | error    | slug promena nema redirect/archival odluku                       | dodati registry zapis                                   |
 | `REDIRECT-002` | error    | redirect petlja, lanac ili eksterni target                       | normalizovati na jedan interni target                   |
 | `ROUTE-001`    | error    | metadata/CTA referencira rutu koja ne postoji                    | popraviti route registry                                |
+| `RICH-001`     | error/warning | nedozvoljen tip bloka za slot, ili neparsibilan blok, ili nepoznat tip (warning, forward-compat) | koristiti dozvoljene blokove; ažurirati validator ako je proširenje formata namerno |
+| `RICH-002`     | error    | nedozvoljen/neparsibilan mark ili link bez `href`                | koristiti bold, italic, underline ili link               |
+| `RICH-003`     | error    | link nije `https://`, `mailto:` ili interna ruta                 | ispraviti href                                            |
+| `RICH-004`     | warning  | podvučen tekst izgleda kao URL                                   | pretvoriti u pravi link                                   |
+| `RICH-005`     | error    | broj blokova prelazi `maxBlocks` za slot                         | skratiti ili podeliti sekciju                              |
+| `RICH-006`     | error    | dupliran `blockId`/`itemId`, ili blok bez id-ja                  | generisati nov, jedinstven id                              |
+| `IMPORT-001`   | info     | sažetak uvoza (broj pasusa/naslova/listi/linkova)                 | —                                                          |
+| `IMPORT-002`   | info     | Word H1 spušten na H2 pri uvozu                                  | —                                                          |
+| `IMPORT-003`   | warning  | tabela izbačena (RichDoc v1 ih ne podržava)                       | uneti podatke ručno kroz dozvoljene blokove                |
+| `IMPORT-004`   | warning  | slika iz dokumenta nije preneta (nema alt tekst)                  | dodati sliku kroz galeriju sa alt tekstom                  |
+| `IMPORT-005`   | warning  | nepoznato formatiranje odbačeno pri uvozu                         | proveriti rezultat uvoza pre objave                        |
 
 ## 5. Pravila severity-ja
 

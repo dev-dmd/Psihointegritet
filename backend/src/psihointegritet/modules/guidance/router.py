@@ -25,6 +25,7 @@ from psihointegritet.modules.guidance.service import (
     IntakeFeatureDisabledError,
     IntakeValidationError,
 )
+from psihointegritet.modules.privacy.service import resolve_intake_submission_ready
 
 public_router = APIRouter(prefix="/public/intake", tags=["public-intake"])
 team_router = APIRouter(prefix="/intake", tags=["intake-team"])
@@ -36,10 +37,16 @@ IdempotencyKey = Annotated[str, Header(alias="Idempotency-Key", min_length=16, m
     response_model=PublicIntakeCapabilitiesResponse,
     operation_id="get_public_intake_capabilities",
 )
-async def get_public_intake_capabilities(settings: AppSettings) -> PublicIntakeCapabilitiesResponse:
+async def get_public_intake_capabilities(
+    session: DatabaseSession, settings: AppSettings
+) -> PublicIntakeCapabilitiesResponse:
+    # LD-6: DB-backed gate (published legal-document revisions), not the
+    # env-only `Settings.intake_submission_ready` property.
+    async with session.begin():
+        sensitive_submission_enabled = await resolve_intake_submission_ready(session, settings)
     return PublicIntakeCapabilitiesResponse(
         matching_enabled=settings.intake_matching_enabled,
-        sensitive_submission_enabled=settings.intake_submission_ready,
+        sensitive_submission_enabled=sensitive_submission_enabled,
     )
 
 

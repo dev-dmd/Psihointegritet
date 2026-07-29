@@ -54,6 +54,7 @@ from psihointegritet.modules.guidance.schemas import (
 )
 from psihointegritet.modules.guidance.state_machine import require_transition
 from psihointegritet.modules.organizations.models import Organization
+from psihointegritet.modules.privacy.service import resolve_intake_submission_ready
 
 
 class IntakeFeatureDisabledError(RuntimeError):
@@ -86,14 +87,17 @@ class GuidanceService:
     async def submit_public_case(
         self, request: PublicIntakeSubmissionRequest, idempotency_key: str
     ) -> PublicIntakeSubmissionResponse:
-        if not self._settings.intake_submission_ready:
-            raise IntakeFeatureDisabledError(
-                "Intake submission is not enabled until required text versions are configured"
-            )
-
         fingerprint = _request_fingerprint(request)
 
         async with self._session.begin():
+            # LD-6: reads published legal-document revisions (or the env
+            # override) rather than the old env-only `intake_submission_ready`
+            # property — checked first, inside the transaction, so a
+            # document archived mid-request still closes the gate.
+            if not await resolve_intake_submission_ready(self._session, self._settings):
+                raise IntakeFeatureDisabledError(
+                    "Intake submission is not enabled until required text versions are configured"
+                )
             organization = await self._organization()
             adapter = await self._matching_adapter()
             matching_result = adapter.evaluate(request.answers.to_matching_input())
