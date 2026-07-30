@@ -25,7 +25,7 @@ from psihointegritet.modules.guidance.service import (
     IntakeFeatureDisabledError,
     IntakeValidationError,
 )
-from psihointegritet.modules.privacy.service import resolve_intake_submission_ready
+from psihointegritet.modules.privacy.service import resolve_intake_consent_versions
 
 public_router = APIRouter(prefix="/public/intake", tags=["public-intake"])
 team_router = APIRouter(prefix="/intake", tags=["intake-team"])
@@ -43,10 +43,16 @@ async def get_public_intake_capabilities(
     # LD-6: DB-backed gate (published legal-document revisions), not the
     # env-only `Settings.intake_submission_ready` property.
     async with session.begin():
-        sensitive_submission_enabled = await resolve_intake_submission_ready(session, settings)
+        consent_versions = await resolve_intake_consent_versions(session, settings)
     return PublicIntakeCapabilitiesResponse(
         matching_enabled=settings.intake_matching_enabled,
-        sensitive_submission_enabled=sensitive_submission_enabled,
+        sensitive_submission_enabled=consent_versions is not None,
+        data_processing_notice_version=(
+            consent_versions.data_processing_notice if consent_versions else None
+        ),
+        request_acknowledgement_version=(
+            consent_versions.request_acknowledgement if consent_versions else None
+        ),
     )
 
 

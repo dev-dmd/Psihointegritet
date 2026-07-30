@@ -1,7 +1,7 @@
 import httpx
 from pydantic_settings import SettingsConfigDict
 
-from psihointegritet.core.config import Settings
+from psihointegritet.core.config import Environment, Settings
 from psihointegritet.main import create_app
 
 
@@ -35,6 +35,8 @@ async def test_sensitive_capability_stays_off_without_document_versions() -> Non
     assert response.json() == {
         "matchingEnabled": True,
         "sensitiveSubmissionEnabled": False,
+        "dataProcessingNoticeVersion": None,
+        "requestAcknowledgementVersion": None,
     }
 
 
@@ -52,4 +54,26 @@ async def test_sensitive_capability_requires_flag_and_both_document_versions() -
     assert response.json() == {
         "matchingEnabled": True,
         "sensitiveSubmissionEnabled": True,
+        "dataProcessingNoticeVersion": "notice-v1",
+        "requestAcknowledgementVersion": "request-v1",
+    }
+
+
+async def test_env_versions_never_override_the_registry_outside_development() -> None:
+    response = await _get_capabilities(
+        IsolatedSettings(
+            environment=Environment.STAGING,
+            intake_matching_enabled=True,
+            intake_sensitive_submission_enabled=True,
+            intake_data_processing_notice_version="notice-v1",
+            intake_request_acknowledgement_version="request-v1",
+        )
+    )
+
+    assert response.status_code == 200
+    assert response.json() == {
+        "matchingEnabled": True,
+        "sensitiveSubmissionEnabled": False,
+        "dataProcessingNoticeVersion": None,
+        "requestAcknowledgementVersion": None,
     }

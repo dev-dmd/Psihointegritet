@@ -35,6 +35,17 @@ the built virtualenv, which is already on PATH. Drop the `uv run` prefix:
 
     railway run -- python scripts/provision_staff.py --list
 
+Platform superadmin (D-051) — full `org_admin` + `therapist` capability in
+every tenant, with or without membership rows. Needs no `--roles`:
+
+    python scripts/provision_staff.py --external-id user_2ab... --superadmin
+    python scripts/provision_staff.py --external-id user_2ab... --revoke-superadmin
+
+This is a PostgreSQL column, not a Clerk claim (rules §10.3): editing
+`publicMetadata` in the Clerk dashboard grants the frontend superadmin view
+but no backend authority until this command runs. `--list` marks every
+holder with ★ so the flag is never invisible during an access review.
+
 Undo, when an identity was created with the wrong Clerk id:
 
     python scripts/provision_staff.py --revoke --delete \
@@ -103,12 +114,34 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument("--external-id", help="Clerk user id (the JWT `sub`)")
     parser.add_argument("--email", help="stored for display only; never used for authorization")
+    parser.add_argument(
+        "--display-name",
+        help="human name shown on audit badges; never used for authorization",
+    )
     parser.add_argument("--roles", help="comma separated: org_admin,therapist")
     parser.add_argument("--therapist-slug", help="link this matching profile to the user")
     parser.add_argument(
         "--replace-roles",
         action="store_true",
         help="disable active roles that were not passed in --roles",
+    )
+    parser.add_argument(
+        "--superadmin",
+        dest="superadmin",
+        action="store_const",
+        const=True,
+        default=None,
+        help=(
+            "grant the platform operator flag (D-051): full org_admin + therapist "
+            "capability in every tenant, with or without membership rows"
+        ),
+    )
+    parser.add_argument(
+        "--revoke-superadmin",
+        dest="superadmin",
+        action="store_const",
+        const=False,
+        help="remove the platform operator flag, leaving ordinary memberships alone",
     )
     parser.add_argument(
         "--revoke",
@@ -150,20 +183,30 @@ def resolve_request(args: argparse.Namespace, settings: Settings) -> StaffProvis
             external_auth_id=external_id,
             roles=person.roles,
             email=person.email,
+            display_name=person.display_name,
             therapist_slug=person.therapist_slug,
             replace_roles=args.replace_roles,
+            superadmin=args.superadmin,
         )
 
-    if not args.external_id or not args.roles:
-        raise SystemExit("Use --person, or pass --external-id and --roles (or --list).")
+    # `--superadmin` alone is a legitimate invocation: a platform operator
+    # (D-051) needs no membership row, so demanding `--roles` here would force
+    # granting tenant roles nobody asked for just to satisfy the parser.
+    if not args.external_id or not (args.roles or args.superadmin is not None):
+        raise SystemExit(
+            "Use --person, or pass --external-id with --roles "
+            "(or --superadmin / --revoke-superadmin), or --list."
+        )
 
     return StaffProvisioningRequest(
         organization_slug=args.organization,
         external_auth_id=args.external_id,
-        roles=parse_roles(args.roles),
+        roles=parse_roles(args.roles) if args.roles else frozenset(),
         email=args.email,
+        display_name=args.display_name,
         therapist_slug=args.therapist_slug,
         replace_roles=args.replace_roles,
+        superadmin=args.superadmin,
     )
 
 
@@ -182,7 +225,10 @@ async def run(args: argparse.Namespace) -> int:
                     return 0
                 for summary in summaries:
                     roles = ", ".join(sorted(role.value for role in summary.roles)) or "none"
-                    print(f"{summary.email or '(no email)'}  [{summary.external_auth_id}]")
+                    label = summary.display_name or summary.email or "(no name)"
+                    print(f"{label} <{summary.email or 'no email'}>  [{summary.external_auth_id}]")
+                    if summary.is_superadmin:
+                        print("  ★ PLATFORM SUPERADMIN — full staff capability in every tenant")
                     print(f"  active roles : {roles}")
                     if summary.disabled_roles:
                         disabled = ", ".join(sorted(r.value for r in summary.disabled_roles))
@@ -238,8 +284,14 @@ async def run(args: argparse.Namespace) -> int:
                 print(f"kept existing role {role.value} (use --replace-roles to disable)")
             if result.email_updated:
                 print("updated email")
+            if result.display_name_updated:
+                print("updated display name")
             if result.therapist_linked:
                 print(f"linked therapist profile {result.therapist_linked}")
+            if result.superadmin_changed_to is True:
+                print("granted PLATFORM SUPERADMIN — full org_admin + therapist in every tenant")
+            elif result.superadmin_changed_to is False:
+                print("revoked platform superadmin")
             if not result.changed:
                 print("already current; nothing to do")
 

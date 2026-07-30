@@ -27,7 +27,21 @@ class InternalUser(Base):
     id: Mapped[UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid4)
     external_auth_id: Mapped[str] = mapped_column(String(191), unique=True, index=True)
     email: Mapped[str | None] = mapped_column(String(320), nullable=True)
+    display_name: Mapped[str | None] = mapped_column(String(160), nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, server_default="true")
+    # Platform-wide operator flag (D-051), NOT a membership role: it lives on
+    # the user, not on `organization_memberships`, because it is global and
+    # tenant-independent — exactly the shape `frontend/src/lib/auth/identity.ts`
+    # already documents as the backend baseline ("plus a global is_superadmin").
+    #
+    # Deliberately a PostgreSQL column rather than a Clerk metadata claim:
+    # rules §10.3 forbids long-lived domain authorization that depends on
+    # editable provider metadata. Setting it is an explicit, auditable
+    # `provision_staff.py --superadmin` step, never an automatic consequence
+    # of a Clerk dashboard edit.
+    is_superadmin: Mapped[bool] = mapped_column(
+        Boolean, default=False, server_default="false", nullable=False
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )

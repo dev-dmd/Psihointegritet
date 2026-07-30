@@ -222,6 +222,8 @@ class PublicIntakeSubmissionResponse(ApiSchema):
 class PublicIntakeCapabilitiesResponse(ApiSchema):
     matching_enabled: bool
     sensitive_submission_enabled: bool
+    data_processing_notice_version: str | None = None
+    request_acknowledgement_version: str | None = None
 
 
 class TeamQueueItem(ApiSchema):

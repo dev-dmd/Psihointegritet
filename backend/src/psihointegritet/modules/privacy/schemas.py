@@ -20,6 +20,7 @@ from uuid import UUID
 from pydantic import BaseModel, ConfigDict, Field
 from pydantic.alias_generators import to_camel
 
+from psihointegritet.modules.identity.schemas import ActorSummaryOut
 from psihointegritet.modules.privacy.models import LegalDocumentKind
 from psihointegritet.shared.domain.publication import ApprovalCapability, RevisionStatus
 
@@ -36,6 +37,8 @@ class ApprovalEvidenceOut(ApiSchema):
 
     capability: ApprovalCapability
     approver: str | None = None
+    approver_user_id: UUID | None = None
+    approved_by: ActorSummaryOut | None = None
     approved_at: str | None = None
     note: str | None = None
 
@@ -50,6 +53,8 @@ class LegalDocumentRevisionOut(ApiSchema):
     status: RevisionStatus
     version_label: str
     approvals: list[ApprovalEvidenceOut]
+    created_by: ActorSummaryOut | None = None
+    updated_by: ActorSummaryOut | None = None
     updated_at: datetime
 
 

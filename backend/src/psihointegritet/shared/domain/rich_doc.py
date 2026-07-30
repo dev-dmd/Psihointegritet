@@ -43,6 +43,7 @@ __all__ = [
     "parse_rich_doc",
     "rich_doc_text",
     "rich_doc_text_length",
+    "rich_doc_to_json",
     "validate_rich_doc",
 ]
 
@@ -377,6 +378,49 @@ def parse_rich_doc(raw: object) -> tuple[RichDoc, tuple[RichDocFinding, ...]]:
         if (block := _parse_block(raw_block, f"blocks[{i}]", findings)) is not None
     )
     return RichDoc(blocks=blocks), tuple(findings)
+
+
+def rich_doc_to_json(document: RichDoc) -> dict[str, object]:
+    """Serialize the canonical dataclass tree for a JSON API/column."""
+
+    def mark_to_json(mark: Mark) -> object:
+        return {"type": "link", "href": mark.href} if isinstance(mark, LinkMark) else mark
+
+    def spans_to_json(spans: tuple[Span, ...]) -> list[dict[str, object]]:
+        return [
+            {"text": span.text, "marks": [mark_to_json(mark) for mark in span.marks]}
+            for span in spans
+        ]
+
+    blocks: list[dict[str, object]] = []
+    for block in document.blocks:
+        if isinstance(block, HeadingBlock):
+            blocks.append(
+                {
+                    "id": block.id,
+                    "type": "heading",
+                    "level": block.level,
+                    "spans": spans_to_json(block.spans),
+                }
+            )
+        elif isinstance(block, ParagraphBlock):
+            blocks.append(
+                {"id": block.id, "type": "paragraph", "spans": spans_to_json(block.spans)}
+            )
+        elif isinstance(block, QuoteBlock):
+            blocks.append({"id": block.id, "type": "quote", "spans": spans_to_json(block.spans)})
+        else:
+            blocks.append(
+                {
+                    "id": block.id,
+                    "type": "list",
+                    "ordered": block.ordered,
+                    "items": [
+                        {"id": item.id, "spans": spans_to_json(item.spans)} for item in block.items
+                    ],
+                }
+            )
+    return {"schemaVersion": document.schema_version, "blocks": blocks}
 
 
 def validate_rich_doc(

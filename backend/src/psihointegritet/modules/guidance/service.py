@@ -54,7 +54,10 @@ from psihointegritet.modules.guidance.schemas import (
 )
 from psihointegritet.modules.guidance.state_machine import require_transition
 from psihointegritet.modules.organizations.models import Organization
-from psihointegritet.modules.privacy.service import resolve_intake_submission_ready
+from psihointegritet.modules.privacy.service import (
+    IntakeConsentVersions,
+    resolve_intake_consent_versions,
+)
 
 
 class IntakeFeatureDisabledError(RuntimeError):
@@ -94,7 +97,8 @@ class GuidanceService:
             # override) rather than the old env-only `intake_submission_ready`
             # property — checked first, inside the transaction, so a
             # document archived mid-request still closes the gate.
-            if not await resolve_intake_submission_ready(self._session, self._settings):
+            consent_versions = await resolve_intake_consent_versions(self._session, self._settings)
+            if consent_versions is None:
                 raise IntakeFeatureDisabledError(
                     "Intake submission is not enabled until required text versions are configured"
                 )
@@ -107,7 +111,7 @@ class GuidanceService:
                 if safety_assessment.requires_human_review
                 else request.submission_kind
             )
-            _validate_acknowledgement_versions(request, self._settings)
+            _validate_acknowledgement_versions(request, consent_versions)
             validate_submission_choice(
                 request,
                 matching_result.candidates,
@@ -526,11 +530,11 @@ def validate_submission_choice(
 
 
 def _validate_acknowledgement_versions(
-    request: PublicIntakeSubmissionRequest, settings: Settings
+    request: PublicIntakeSubmissionRequest, versions: IntakeConsentVersions
 ) -> None:
     expected = {
-        ConsentKind.INTAKE_DATA_PROCESSING_NOTICE: settings.intake_data_processing_notice_version,
-        ConsentKind.INTAKE_REQUEST_ACKNOWLEDGEMENT: settings.intake_request_acknowledgement_version,
+        ConsentKind.INTAKE_DATA_PROCESSING_NOTICE: versions.data_processing_notice,
+        ConsentKind.INTAKE_REQUEST_ACKNOWLEDGEMENT: versions.request_acknowledgement,
     }
     submitted = {item.kind: item.document_version for item in request.acknowledgements}
     for kind, version in expected.items():

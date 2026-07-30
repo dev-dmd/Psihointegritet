@@ -42,11 +42,17 @@ class StaffProvisioningRequest:
     external_auth_id: str
     roles: frozenset[MembershipRole]
     email: str | None = None
+    display_name: str | None = None
     therapist_slug: str | None = None
     # Declarative mode: active roles outside `roles` are disabled rather than
     # left alone. Off by default so a mistyped invocation cannot lock someone
     # out of a panel they were legitimately using.
     replace_roles: bool = False
+    # Platform operator flag (D-051). Tri-state on purpose: `None` means "do
+    # not touch", so an ordinary role provisioning run can never grant or
+    # revoke platform-wide access as a side effect. `True`/`False` are the
+    # only ways it changes, and both are explicit operator intent.
+    superadmin: bool | None = None
 
 
 @dataclass(frozen=True)
@@ -55,21 +61,26 @@ class StaffProvisioningResult:
     organization_id: UUID
     created_user: bool
     email_updated: bool
+    display_name_updated: bool
     roles_added: frozenset[MembershipRole]
     roles_reactivated: frozenset[MembershipRole]
     roles_disabled: frozenset[MembershipRole]
     roles_left_in_place: frozenset[MembershipRole]
     therapist_linked: str | None
+    #: `True` granted, `False` revoked, `None` untouched (D-051).
+    superadmin_changed_to: bool | None = None
 
     @property
     def changed(self) -> bool:
         return bool(
             self.created_user
             or self.email_updated
+            or self.display_name_updated
             or self.roles_added
             or self.roles_reactivated
             or self.roles_disabled
             or self.therapist_linked
+            or self.superadmin_changed_to is not None
         )
 
 
@@ -91,7 +102,11 @@ async def provision_staff(
     )
     created_user = user is None
     if user is None:
-        user = InternalUser(external_auth_id=request.external_auth_id, email=request.email)
+        user = InternalUser(
+            external_auth_id=request.external_auth_id,
+            email=request.email,
+            display_name=request.display_name,
+        )
         session.add(user)
         await session.flush()
 
@@ -99,6 +114,16 @@ async def provision_staff(
     if request.email is not None and user.email != request.email:
         user.email = request.email
         email_updated = True
+
+    display_name_updated = False
+    if request.display_name is not None and user.display_name != request.display_name:
+        user.display_name = request.display_name
+        display_name_updated = True
+
+    superadmin_changed_to: bool | None = None
+    if request.superadmin is not None and user.is_superadmin != request.superadmin:
+        user.is_superadmin = request.superadmin
+        superadmin_changed_to = request.superadmin
 
     # Reactivating a disabled row keeps the membership's history intact rather
     # than deleting and recreating it.
@@ -163,11 +188,13 @@ async def provision_staff(
         organization_id=organization.id,
         created_user=created_user,
         email_updated=email_updated,
+        display_name_updated=display_name_updated,
         roles_added=frozenset(roles_added),
         roles_reactivated=frozenset(roles_reactivated),
         roles_disabled=frozenset(roles_disabled),
         roles_left_in_place=frozenset(extra_active - roles_disabled),
         therapist_linked=therapist_linked,
+        superadmin_changed_to=superadmin_changed_to,
     )
 
 
@@ -280,10 +307,15 @@ async def revoke_staff(
 class StaffSummary:
     external_auth_id: str
     email: str | None
+    display_name: str | None
     is_active: bool
     roles: frozenset[MembershipRole]
     disabled_roles: frozenset[MembershipRole]
     therapist_slugs: tuple[str, ...]
+    #: Platform operator (D-051). Reported here because it grants the full
+    #: staff capability set with no membership row to show for it — an
+    #: operator auditing access would otherwise never see it.
+    is_superadmin: bool = False
 
 
 async def list_staff(session: AsyncSession, organization_slug: str) -> list[StaffSummary]:
@@ -310,7 +342,13 @@ async def list_staff(session: AsyncSession, organization_slug: str) -> list[Staf
     )
 
     summaries: list[StaffSummary] = []
-    user_ids = {membership.user_id for membership in memberships}
+    # Platform superadmins (D-051) hold no membership row yet still carry full
+    # staff capability, so they are unioned in explicitly — listing only
+    # membership holders would hide exactly the most privileged accounts.
+    superadmin_ids = set(
+        await session.scalars(select(InternalUser.id).where(InternalUser.is_superadmin.is_(True)))
+    )
+    user_ids = {membership.user_id for membership in memberships} | superadmin_ids
     for user_id in sorted(user_ids, key=str):
         user = await session.get(InternalUser, user_id)
         if user is None:
@@ -320,6 +358,7 @@ async def list_staff(session: AsyncSession, organization_slug: str) -> list[Staf
             StaffSummary(
                 external_auth_id=user.external_auth_id,
                 email=user.email,
+                display_name=user.display_name,
                 is_active=user.is_active,
                 roles=frozenset(row.role for row in rows if row.status is MembershipStatus.ACTIVE),
                 disabled_roles=frozenset(
@@ -330,6 +369,7 @@ async def list_staff(session: AsyncSession, organization_slug: str) -> list[Staf
                         profile.slug for profile in profiles if profile.assigned_user_id == user_id
                     )
                 ),
+                is_superadmin=user.is_superadmin,
             )
         )
     return summaries

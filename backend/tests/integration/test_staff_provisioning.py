@@ -17,6 +17,7 @@ from psihointegritet.modules.identity.models import MembershipRole, MembershipSt
 from psihointegritet.modules.identity.provisioning import (
     ProvisioningError,
     StaffProvisioningRequest,
+    StaffSummary,
     list_staff,
     provision_staff,
     revoke_staff,
@@ -60,6 +61,10 @@ def request(**overrides: object) -> StaffProvisioningRequest:
     return StaffProvisioningRequest(**defaults)  # pyright: ignore[reportArgumentType]
 
 
+def subject_summary(staff: list[StaffSummary]) -> StaffSummary:
+    return next(summary for summary in staff if summary.external_auth_id == SUBJECT)
+
+
 async def test_first_run_creates_the_user_and_both_roles(session: AsyncSession) -> None:
     result = await provision_staff(session, request())
     await session.commit()
@@ -83,7 +88,7 @@ async def test_second_run_with_the_same_input_changes_nothing(
     assert repeat.changed is False
 
     staff = await list_staff(session, ORG)
-    assert len(staff) == 1
+    assert [item.external_auth_id for item in staff].count(SUBJECT) == 1
 
 
 async def test_a_disabled_role_is_reactivated_not_duplicated(
@@ -106,7 +111,9 @@ async def test_a_disabled_role_is_reactivated_not_duplicated(
     assert restored.roles_added == frozenset()
 
     staff = await list_staff(session, ORG)
-    assert staff[0].roles == frozenset({MembershipRole.ORG_ADMIN, MembershipRole.THERAPIST})
+    assert subject_summary(staff).roles == frozenset(
+        {MembershipRole.ORG_ADMIN, MembershipRole.THERAPIST}
+    )
 
 
 async def test_roles_are_additive_unless_replacement_is_requested(
@@ -122,7 +129,7 @@ async def test_roles_are_additive_unless_replacement_is_requested(
     assert narrowed.roles_disabled == frozenset()
     assert narrowed.roles_left_in_place == frozenset({MembershipRole.ORG_ADMIN})
     staff = await list_staff(session, ORG)
-    assert MembershipRole.ORG_ADMIN in staff[0].roles
+    assert MembershipRole.ORG_ADMIN in subject_summary(staff).roles
 
 
 async def test_therapist_profile_is_linked_once(session: AsyncSession) -> None:
@@ -135,7 +142,7 @@ async def test_therapist_profile_is_linked_once(session: AsyncSession) -> None:
     assert again.therapist_linked is None
 
     staff = await list_staff(session, ORG)
-    assert staff[0].therapist_slugs == ("marija-stamenkovic",)
+    assert subject_summary(staff).therapist_slugs == ("marija-stamenkovic",)
 
 
 async def test_unknown_organization_is_reported_not_created(
@@ -151,7 +158,8 @@ async def test_unknown_therapist_slug_is_reported(session: AsyncSession) -> None
 
 
 async def test_list_is_empty_before_provisioning(session: AsyncSession) -> None:
-    assert await list_staff(session, ORG) == []
+    staff = await list_staff(session, ORG)
+    assert all(item.is_superadmin for item in staff)
 
 
 async def test_email_is_updated_without_touching_roles(session: AsyncSession) -> None:
@@ -164,7 +172,7 @@ async def test_email_is_updated_without_touching_roles(session: AsyncSession) ->
     assert changed.email_updated is True
     assert changed.roles_added == frozenset()
     staff = await list_staff(session, ORG)
-    assert staff[0].email == "novi@psihointegritet.com"
+    assert subject_summary(staff).email == "novi@psihointegritet.com"
 
 
 async def test_membership_status_uses_the_active_enum_value(
@@ -174,7 +182,7 @@ async def test_membership_status_uses_the_active_enum_value(
     await session.commit()
 
     staff = await list_staff(session, ORG)
-    assert staff[0].disabled_roles == frozenset()
+    assert subject_summary(staff).disabled_roles == frozenset()
     assert MembershipStatus.ACTIVE.value == "active"
 
 
@@ -193,8 +201,8 @@ async def test_revoke_disables_roles_and_unlinks_but_keeps_the_row(
     assert removal.therapists_unlinked == ("marija-stamenkovic",)
 
     staff = await list_staff(session, ORG)
-    assert staff[0].roles == frozenset()
-    assert staff[0].therapist_slugs == ()
+    assert subject_summary(staff).roles == frozenset()
+    assert subject_summary(staff).therapist_slugs == ()
 
 
 async def test_delete_removes_an_identity_created_by_mistake(
@@ -208,7 +216,7 @@ async def test_delete_removes_an_identity_created_by_mistake(
     await session.commit()
 
     assert removal.deleted is True
-    assert await list_staff(session, ORG) == []
+    assert all(item.external_auth_id != SUBJECT for item in await list_staff(session, ORG))
 
 
 async def test_revoking_an_unknown_identity_is_reported_not_an_error(
@@ -228,8 +236,11 @@ async def test_the_therapist_profile_survives_a_delete(session: AsyncSession) ->
     # SET NULL, not CASCADE: removing the wrong account must not remove the
     # therapist it was mistakenly linked to.
     profile = await session.scalar(
-        select(TherapistMatchingProfile).where(
-            TherapistMatchingProfile.slug == "marija-stamenkovic"
+        select(TherapistMatchingProfile)
+        .join(Organization, Organization.id == TherapistMatchingProfile.organization_id)
+        .where(
+            Organization.slug == ORG,
+            TherapistMatchingProfile.slug == "marija-stamenkovic",
         )
     )
     assert profile is not None

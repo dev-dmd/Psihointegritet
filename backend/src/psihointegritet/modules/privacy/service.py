@@ -16,9 +16,10 @@ from uuid import UUID
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from psihointegritet.core.config import Settings
+from psihointegritet.core.config import Environment, Settings
 from psihointegritet.modules.guidance.authorization import StaffActor
 from psihointegritet.modules.identity.models import InternalUser
+from psihointegritet.modules.identity.schemas import ActorSummaryOut
 from psihointegritet.modules.organizations.models import Organization
 from psihointegritet.modules.privacy.models import (
     LegalDocument,
@@ -44,22 +45,13 @@ from psihointegritet.modules.privacy.schemas import (
     UpdateLegalDocumentRevisionRequest,
 )
 from psihointegritet.shared.domain.publication import (
+    ApprovalCapability,
     CannotDeleteRevisionError,
     RevisionStatus,
     reissues_revision,
     require_transition,
 )
-from psihointegritet.shared.domain.rich_doc import (
-    HeadingBlock,
-    LinkMark,
-    Mark,
-    ParagraphBlock,
-    QuoteBlock,
-    RichBlock,
-    RichDoc,
-    Span,
-    parse_rich_doc,
-)
+from psihointegritet.shared.domain.rich_doc import parse_rich_doc, rich_doc_to_json
 from psihointegritet.shared.parsing.docx_import import (
     DocxImportLimits,
     DocxImportRejectedError,
@@ -90,6 +82,12 @@ class LegalDocumentImportError(ValueError):
 class PublishCheckResult:
     ok: bool
     block: PublishBlockOut | None
+
+
+@dataclass(frozen=True, slots=True)
+class IntakeConsentVersions:
+    data_processing_notice: str
+    request_acknowledgement: str
 
 
 class LegalDocumentService:
@@ -133,10 +131,37 @@ class LegalDocumentService:
             .limit(1)
         )
 
-    def _to_schema(
+    async def _actor_summary(self, user_id: UUID | None) -> ActorSummaryOut | None:
+        if user_id is None:
+            return None
+        user = await self._session.get(InternalUser, user_id)
+        if user is None:
+            return None
+        return ActorSummaryOut(
+            user_id=user.id,
+            display_name=user.display_name or user.email or str(user.id),
+            is_superadmin=user.is_superadmin,
+        )
+
+    async def _to_schema(
         self, document: LegalDocument, revision: LegalDocumentRevision
     ) -> LegalDocumentRevisionOut:
-        approvals = [ApprovalEvidenceOut.model_validate(entry) for entry in revision.approvals]
+        # `updated_at` is populated/onupdate-refreshed by PostgreSQL. Avoid
+        # AsyncSession implicit I/O (MissingGreenlet) while serializing.
+        await self._session.refresh(revision)
+        approvals: list[ApprovalEvidenceOut] = []
+        for entry in revision.approvals:
+            approver_user_id = _uuid_or_none(entry.get("approver_user_id"))
+            approvals.append(
+                ApprovalEvidenceOut(
+                    capability=ApprovalCapability(entry["capability"]),
+                    approver=entry.get("approver"),
+                    approver_user_id=approver_user_id,
+                    approved_by=await self._actor_summary(approver_user_id),
+                    approved_at=entry.get("approved_at"),
+                    note=entry.get("note"),
+                )
+            )
         return LegalDocumentRevisionOut(
             document_id=document.id,
             revision_id=revision.id,
@@ -147,10 +172,9 @@ class LegalDocumentService:
             status=revision.status,
             version_label=revision.version_label,
             approvals=approvals,
-            # No dedicated `updated_at` column on the revision yet — the
-            # panel only uses this for display, and `created_at` already
-            # changes on every reissue (A.2), which covers the common case.
-            updated_at=revision.created_at,
+            created_by=await self._actor_summary(revision.created_by_user_id),
+            updated_by=await self._actor_summary(revision.updated_by_user_id),
+            updated_at=revision.updated_at,
         )
 
     async def list_documents(self, actor: StaffActor) -> list[LegalDocumentRevisionOut]:
@@ -163,7 +187,7 @@ class LegalDocumentService:
         for document in documents:
             revision = await self._latest_revision(document.id)
             if revision is not None:
-                results.append(self._to_schema(document, revision))
+                results.append(await self._to_schema(document, revision))
         return results
 
     async def get_document(self, actor: StaffActor, document_id: UUID) -> LegalDocumentRevisionOut:
@@ -171,7 +195,7 @@ class LegalDocumentService:
         revision = await self._latest_revision(document.id)
         if revision is None:
             raise LegalDocumentNotFoundError(f"Document {document_id} has no revision")
-        return self._to_schema(document, revision)
+        return await self._to_schema(document, revision)
 
     async def create_document(
         self, actor: StaffActor, request: CreateLegalDocumentRequest
@@ -202,11 +226,12 @@ class LegalDocumentService:
             status=RevisionStatus.DRAFT,
             approvals=[],
             created_by_user_id=actor.user_id,
+            updated_by_user_id=actor.user_id,
         )
         self._session.add(revision)
         await self._session.flush()
         await self._log_event(revision.id, None, RevisionStatus.DRAFT, actor)
-        return self._to_schema(document, revision)
+        return await self._to_schema(document, revision)
 
     async def import_docx(
         self, actor: StaffActor, document_id: UUID, data: bytes
@@ -244,7 +269,7 @@ class LegalDocumentService:
             for f in result.findings
         ]
         return ImportDocxResponse(
-            body=_rich_doc_to_json(result.document),
+            body=rich_doc_to_json(result.document),
             findings=findings,
             # Informational only today: legal documents use a fixed
             # per-kind approval matrix (`REQUIRED_APPROVALS`), not the
@@ -279,6 +304,7 @@ class LegalDocumentService:
             status=RevisionStatus.DRAFT,
             approvals=[],
             created_by_user_id=actor.user_id,
+            updated_by_user_id=actor.user_id,
         )
         self._session.add(reissued)
         await self._session.flush()
@@ -316,8 +342,9 @@ class LegalDocumentService:
             parse_rich_doc(patch.body)
             revision.body = patch.body
 
+        revision.updated_by_user_id = actor.user_id
         await self._session.flush()
-        return self._to_schema(document, revision)
+        return await self._to_schema(document, revision)
 
     async def check_publish(
         self, actor: StaffActor, document_id: UUID, revision_id: UUID
@@ -358,6 +385,7 @@ class LegalDocumentService:
             await self._archive_other_published(document.id, revision.id, actor)
             revision.status = RevisionStatus.PUBLISHED
             revision.published_at = datetime.now(UTC)
+            revision.updated_by_user_id = actor.user_id
             await self._log_event(revision.id, from_status, revision.status, actor)
         elif reissues_revision(revision.status, request.target):
             require_transition(revision.status, request.target)
@@ -367,12 +395,13 @@ class LegalDocumentService:
             require_transition(revision.status, request.target)
             from_status = revision.status
             revision.status = request.target
+            revision.updated_by_user_id = actor.user_id
             if request.target is RevisionStatus.ARCHIVED:
                 revision.archived_at = datetime.now(UTC)
             await self._log_event(revision.id, from_status, revision.status, actor)
 
         await self._session.flush()
-        return self._to_schema(document, revision)
+        return await self._to_schema(document, revision)
 
     async def _archive_other_published(
         self, document_id: UUID, except_revision_id: UUID, actor: StaffActor
@@ -392,6 +421,7 @@ class LegalDocumentService:
             return
         currently_published.status = RevisionStatus.ARCHIVED
         currently_published.archived_at = datetime.now(UTC)
+        currently_published.updated_by_user_id = actor.user_id
         await self._log_event(
             currently_published.id, RevisionStatus.PUBLISHED, RevisionStatus.ARCHIVED, actor
         )
@@ -411,6 +441,7 @@ class LegalDocumentService:
         entry = {
             "capability": request.capability.value,
             "approver": approver_label,
+            "approver_user_id": str(actor.user_id),
             "approved_at": datetime.now(UTC).isoformat(),
         }
         if request.note:
@@ -424,15 +455,18 @@ class LegalDocumentService:
             if item.get("capability") != request.capability.value
         ]
         revision.approvals = [*remaining, entry]
+        revision.updated_by_user_id = actor.user_id
 
         await self._session.flush()
-        return self._to_schema(document, revision)
+        return await self._to_schema(document, revision)
 
     async def _actor_label(self, actor: StaffActor) -> str:
         """Fallback approver label when the panel doesn't collect one yet
         (no reviewer-identity UI — D-033 defers that to real staff accounts).
-        Best-effort: the acting user's email, or their bare id if missing."""
+        Best-effort: the acting user's display name, email, or bare id."""
         user = await self._session.get(InternalUser, actor.user_id)
+        if user is not None and user.display_name:
+            return user.display_name
         if user is not None and user.email:
             return user.email
         return str(actor.user_id)
@@ -498,86 +532,59 @@ class LegalDocumentService:
         return intake_gate_open(published_kinds)
 
 
-def _mark_to_json(mark: Mark) -> object:
-    return {"type": "link", "href": mark.href} if isinstance(mark, LinkMark) else mark
-
-
-def _span_to_json(span: Span) -> dict[str, object]:
-    return {"text": span.text, "marks": [_mark_to_json(mark) for mark in span.marks]}
-
-
-def _block_to_json(block: RichBlock) -> dict[str, object]:
-    """Explicit per-variant conversion rather than `dataclasses.asdict`:
-    `asdict` preserves tuples instead of converting them to lists, which is
-    one more assumption than necessary at a JSON API boundary."""
-    if isinstance(block, HeadingBlock):
-        return {
-            "id": block.id,
-            "type": "heading",
-            "level": block.level,
-            "spans": [_span_to_json(span) for span in block.spans],
-        }
-    if isinstance(block, ParagraphBlock):
-        return {
-            "id": block.id,
-            "type": "paragraph",
-            "spans": [_span_to_json(span) for span in block.spans],
-        }
-    if isinstance(block, QuoteBlock):
-        return {
-            "id": block.id,
-            "type": "quote",
-            "spans": [_span_to_json(span) for span in block.spans],
-        }
-    # `block` is provably `ListBlock` here — the three prior branches cover
-    # every other `RichBlock` variant, so an `isinstance` check on this last
-    # one is redundant (pyright flags it as such).
-    return {
-        "id": block.id,
-        "type": "list",
-        "ordered": block.ordered,
-        "items": [
-            {"id": item.id, "spans": [_span_to_json(span) for span in item.spans]}
-            for item in block.items
-        ],
-    }
-
-
-def _rich_doc_to_json(document: RichDoc) -> dict[str, object]:
-    """`convert_docx_bytes` returns dataclasses; the API contract is raw
-    JSON (see module docstring), so this walks the tree once at the
-    boundary rather than teaching Pydantic the union shape."""
-    return {
-        "schemaVersion": document.schema_version,
-        "blocks": [_block_to_json(block) for block in document.blocks],
-    }
-
-
 def _next_version_label(current: str) -> str:
     if current.startswith("v") and current[1:].isdigit():
         return f"v{int(current[1:]) + 1}"
     return "v1"
 
 
-async def resolve_intake_submission_ready(session: AsyncSession, settings: Settings) -> bool:
-    """LD-6: published legal texts are the primary gate; `Settings`'s own
-    env-string check remains available as an explicit local-dev override
-    (ADR-014 §4 — "Env ostaje samo kao override za lokalni razvoj").
+def _uuid_or_none(value: object) -> UUID | None:
+    if not isinstance(value, str):
+        return None
+    try:
+        return UUID(value)
+    except ValueError:
+        return None
 
-    Callers that already hold a session inside a transaction (like
-    `GuidanceService.submit_public_case`) should call this instead of
-    `Settings.intake_submission_ready` directly.
+
+async def resolve_intake_submission_ready(session: AsyncSession, settings: Settings) -> bool:
+    """Compatibility helper for callers that need only the boolean gate."""
+    return await resolve_intake_consent_versions(session, settings) is not None
+
+
+async def resolve_intake_consent_versions(
+    session: AsyncSession, settings: Settings
+) -> IntakeConsentVersions | None:
+    """Resolve the exact two versions a submitted consent must reference.
+
+    Published database revisions are the authority in every environment
+    (D-039). Environment strings are accepted only as an explicit local
+    development fallback, never in staging/production and never ahead of a
+    published revision.
     """
     if not (settings.intake_matching_enabled and settings.intake_sensitive_submission_enabled):
-        return False
-    if settings.intake_submission_ready:
-        # The env-string override is already satisfied (local dev without
-        # seeded legal documents) — no need to touch the database.
-        return True
+        return None
 
     organization = await session.scalar(
         select(Organization).where(Organization.slug == settings.default_organization_slug)
     )
-    if organization is None:
-        return False
-    return await LegalDocumentService(session).intake_gate_open(organization.id)
+    if organization is not None:
+        service = LegalDocumentService(session)
+        data_notice = await service.get_published_by_kind(
+            organization.id, LegalDocumentKind.INTAKE_DATA_PROCESSING_NOTICE
+        )
+        request_acknowledgement = await service.get_published_by_kind(
+            organization.id, LegalDocumentKind.INTAKE_REQUEST_ACKNOWLEDGEMENT
+        )
+        if data_notice is not None and request_acknowledgement is not None:
+            return IntakeConsentVersions(
+                data_processing_notice=data_notice.version_label,
+                request_acknowledgement=request_acknowledgement.version_label,
+            )
+
+    if settings.environment is Environment.DEVELOPMENT and settings.intake_submission_ready:
+        return IntakeConsentVersions(
+            data_processing_notice=settings.intake_data_processing_notice_version,
+            request_acknowledgement=settings.intake_request_acknowledgement_version,
+        )
+    return None
