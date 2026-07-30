@@ -117,6 +117,28 @@ function describeApiPublishBlock(
   };
 }
 
+function describeDocxImportError(error: unknown): string {
+  if (!(error instanceof LegalDocumentsApiError)) {
+    return "DOCX nije moguće obraditi. Zahtev nije stigao do servisa za uvoz.";
+  }
+  if (error.status === 401) {
+    return "Prijava je istekla. Osvežite stranicu, prijavite se i ponovite uvoz.";
+  }
+  if (error.status === 403) {
+    return "Nalog nema dozvolu za uvoz dokumenata u ovom radnom prostoru.";
+  }
+  if (error.status === 405) {
+    return "DOCX uvoz nije pokrenut: aplikaciona ruta ne prihvata POST zahtev (405). Osvežite panel nakon restartovanja development servera.";
+  }
+  if (error.status === 413) {
+    return "Fajl je prevelik. Maksimalna dozvoljena veličina je 15 MB.";
+  }
+  if (error.status === 503) {
+    return "Backend za DOCX uvoz trenutno nije dostupan. Tekst i dalje možete uneti ručno.";
+  }
+  return error.message;
+}
+
 export function ScreenDokumenti() {
   const { reportError, errorsFor, clearError, clearErrorsForResource } =
     usePanelErrors();
@@ -288,7 +310,14 @@ export function ScreenDokumenti() {
         result,
       });
     } catch (error) {
-      reportApiError(document, `DOCX „${file.name}” nije uvezen`, error);
+      reportError({
+        href: HREF,
+        tabLabel: TAB_LABEL,
+        resource: resourceFor(document),
+        title: `DOCX „${file.name}” nije uvezen`,
+        description: describeDocxImportError(error),
+        details: [],
+      });
     } finally {
       setDocxImportingId(null);
     }
@@ -533,13 +562,7 @@ export function ScreenDokumenti() {
                           Pregled uvoza: {docxPreview.fileName}
                         </p>
                         {docxPreview.result.findings.length > 0 ? (
-                          <ul className="text-ink-70 mt-2 list-disc pl-5 text-[12.5px] leading-[1.55]">
-                            {docxPreview.result.findings.map((finding) => (
-                              <li key={`${finding.ruleId}-${finding.message}`}>
-                                {finding.message} {finding.remediation}
-                              </li>
-                            ))}
-                          </ul>
+                          <DocxImportFindings result={docxPreview.result} />
                         ) : (
                           <p className="text-ink-55 mt-1 text-[12.5px]">
                             Dokument je normalizovan bez upozorenja.
@@ -917,6 +940,10 @@ function NewDocumentForm({
             .join(", ")}
           .
         </p>
+        <p className="text-ink-70 mt-1 text-[12px]">
+          Ovo ne blokira unos, DOCX pregled ni čuvanje radne verzije. Odobrenja
+          se proveravaju tek u toku objave.
+        </p>
       </div>
 
       <div className="mt-4">
@@ -944,11 +971,7 @@ function NewDocumentForm({
                     setDocxPreview({ fileName: file.name, result }),
                   )
                   .catch((error: unknown) =>
-                    setDocxError(
-                      error instanceof LegalDocumentsApiError
-                        ? error.message
-                        : "DOCX nije moguće obraditi. Pokušajte ponovo.",
-                    ),
+                    setDocxError(describeDocxImportError(error)),
                   )
                   .finally(() => setDocxImporting(false));
               }}
@@ -956,7 +979,8 @@ function NewDocumentForm({
           </label>
           <p className="text-ink-55 mt-1.5 text-[12px]">
             Uvoz prvo pravi pregled. Sadržaj se primenjuje tek kada ga potvrdite
-            i čuva zajedno sa novom radnom verzijom.
+            i čuva zajedno sa novom radnom verzijom. Sada se proveravaju format
+            fajla i bezbedno parsiranje, ne pravna potpunost teksta.
           </p>
         </div>
         {docxError ? (
@@ -968,13 +992,7 @@ function NewDocumentForm({
               Pregled uvoza: {docxPreview.fileName}
             </p>
             {docxPreview.result.findings.length > 0 ? (
-              <ul className="text-ink-70 mt-2 list-disc pl-5 text-[12.5px] leading-[1.55]">
-                {docxPreview.result.findings.map((finding) => (
-                  <li key={`${finding.ruleId}-${finding.message}`}>
-                    {finding.message} {finding.remediation}
-                  </li>
-                ))}
-              </ul>
+              <DocxImportFindings result={docxPreview.result} />
             ) : (
               <p className="text-ink-55 mt-1 text-[12.5px]">
                 Dokument je normalizovan bez upozorenja.
@@ -1015,5 +1033,45 @@ function NewDocumentForm({
         </button>
       </div>
     </form>
+  );
+}
+
+const IMPORT_FINDING_LABELS = {
+  info: "Informacija",
+  warning: "Upozorenje",
+  error: "Greška",
+} as const;
+
+function DocxImportFindings({ result }: { result: ApiImportDocxResult }) {
+  return (
+    <ul className="mt-2 space-y-2 text-[12.5px] leading-[1.5]">
+      {result.findings.map((finding) => (
+        <li
+          key={`${finding.ruleId}-${finding.fieldPath ?? ""}-${finding.message}`}
+          className="border-line-strong rounded-tile border px-3 py-2"
+        >
+          <div className="flex flex-wrap items-center gap-2">
+            <span
+              className={`rounded-full px-2 py-0.5 text-[10.5px] font-semibold tracking-[0.04em] uppercase ${
+                finding.severity === "error"
+                  ? "bg-badge-danger-bg text-badge-danger"
+                  : finding.severity === "warning"
+                    ? "bg-badge-amber-bg text-badge-amber"
+                    : "bg-badge-neutral-bg text-badge-neutral"
+              }`}
+            >
+              {IMPORT_FINDING_LABELS[finding.severity]}
+            </span>
+            <code className="text-ink-55 text-[10.5px]">{finding.ruleId}</code>
+          </div>
+          <p className="text-coffee mt-1.5 font-medium">{finding.message}</p>
+          {finding.remediation ? (
+            <p className="text-ink-70 mt-1">
+              Šta uraditi: {finding.remediation}
+            </p>
+          ) : null}
+        </li>
+      ))}
+    </ul>
   );
 }

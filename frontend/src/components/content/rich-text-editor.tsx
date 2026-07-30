@@ -3,7 +3,12 @@
 import Blockquote from "@tiptap/extension-blockquote";
 import { ListItem } from "@tiptap/extension-list";
 import UniqueID from "@tiptap/extension-unique-id";
-import { EditorContent, useEditor, type Editor } from "@tiptap/react";
+import {
+  EditorContent,
+  useEditor,
+  useEditorState,
+  type Editor,
+} from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import { useEffect, useRef, useState } from "react";
 
@@ -105,6 +110,13 @@ export function RichTextEditor({
       editorRef.current = null;
     },
     editorProps: {
+      attributes: {
+        "aria-label": "Sadržaj dokumenta",
+        "aria-multiline": "true",
+        class: "rich-text-editor-document",
+        role: "textbox",
+        spellcheck: "true",
+      },
       handlePaste: (_view, event) => {
         const html = event.clipboardData?.getData("text/html") ?? "";
         if (!html.trim()) return false;
@@ -209,7 +221,14 @@ export function RichTextEditor({
       ) : null}
       <EditorContent
         editor={editor}
-        className="border-line-strong rounded-tile bg-panel-canvas prose-content min-h-[7rem] border px-3 py-2.5 text-sm read-only:opacity-70"
+        onMouseDown={(event) => {
+          if (readOnly || event.target !== event.currentTarget) return;
+          event.preventDefault();
+          editor.chain().focus("end").run();
+        }}
+        className={`rich-text-editor-surface border-line-strong focus-within:border-sage focus-within:ring-sage/20 rounded-tile bg-panel-canvas min-h-[12rem] cursor-text border px-4 py-3 transition-shadow focus-within:ring-2 ${
+          readOnly ? "cursor-default opacity-70" : ""
+        }`}
       />
       <p
         className="text-ink-55 mt-1.5 min-h-4 text-[11.5px]"
@@ -234,69 +253,104 @@ function Toolbar({
   editor: Editor;
   onLinkClick: () => void;
 }) {
+  const active = useEditorState({
+    editor,
+    selector: ({ editor: current }) => ({
+      blockquote: current.isActive("blockquote"),
+      bold: current.isActive("bold"),
+      bulletList: current.isActive("bulletList"),
+      canRedo: current.can().redo(),
+      canUndo: current.can().undo(),
+      heading2: current.isActive("heading", { level: 2 }),
+      heading3: current.isActive("heading", { level: 3 }),
+      heading4: current.isActive("heading", { level: 4 }),
+      italic: current.isActive("italic"),
+      link: current.isActive("link"),
+      orderedList: current.isActive("orderedList"),
+      paragraph: current.isActive("paragraph"),
+      underline: current.isActive("underline"),
+    }),
+  });
+
   return (
-    <div className="mb-1.5 flex flex-wrap gap-1">
+    <div
+      className="mb-1.5 flex flex-wrap gap-1"
+      role="toolbar"
+      aria-label="Formatiranje sadržaja"
+    >
       <ToolbarButton
-        active={editor.isActive("heading", { level: 2 })}
+        active={active.paragraph}
+        onClick={() => editor.chain().focus().setParagraph().run()}
+      >
+        P
+      </ToolbarButton>
+      <ToolbarButton
+        active={active.heading2}
         onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
       >
         H2
       </ToolbarButton>
       <ToolbarButton
-        active={editor.isActive("heading", { level: 3 })}
+        active={active.heading3}
         onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
       >
         H3
       </ToolbarButton>
       <ToolbarButton
-        active={editor.isActive("heading", { level: 4 })}
+        active={active.heading4}
         onClick={() => editor.chain().focus().toggleHeading({ level: 4 }).run()}
       >
         H4
       </ToolbarButton>
       <ToolbarButton
-        active={editor.isActive("bulletList")}
+        active={active.bulletList}
         onClick={() => editor.chain().focus().toggleBulletList().run()}
       >
         • Lista
       </ToolbarButton>
       <ToolbarButton
-        active={editor.isActive("orderedList")}
+        active={active.orderedList}
         onClick={() => editor.chain().focus().toggleOrderedList().run()}
       >
         1. Lista
       </ToolbarButton>
       <ToolbarButton
-        active={editor.isActive("blockquote")}
+        active={active.blockquote}
         onClick={() => editor.chain().focus().toggleBlockquote().run()}
       >
         Citat
       </ToolbarButton>
       <ToolbarButton
-        active={editor.isActive("bold")}
+        active={active.bold}
         onClick={() => editor.chain().focus().toggleBold().run()}
       >
         <strong>B</strong>
       </ToolbarButton>
       <ToolbarButton
-        active={editor.isActive("italic")}
+        active={active.italic}
         onClick={() => editor.chain().focus().toggleItalic().run()}
       >
         <em>I</em>
       </ToolbarButton>
       <ToolbarButton
-        active={editor.isActive("underline")}
+        active={active.underline}
         onClick={() => editor.chain().focus().toggleUnderline().run()}
       >
         <span className="underline">U</span>
       </ToolbarButton>
-      <ToolbarButton active={editor.isActive("link")} onClick={onLinkClick}>
+      <ToolbarButton active={active.link} onClick={onLinkClick}>
         Link
       </ToolbarButton>
-      <ToolbarButton onClick={() => editor.chain().focus().undo().run()}>
+      <ToolbarButton
+        disabled={!active.canUndo}
+        onClick={() => editor.chain().focus().undo().run()}
+      >
         ↶
       </ToolbarButton>
-      <ToolbarButton onClick={() => editor.chain().focus().redo().run()}>
+      <ToolbarButton
+        disabled={!active.canRedo}
+        onClick={() => editor.chain().focus().redo().run()}
+      >
         ↷
       </ToolbarButton>
     </div>
@@ -305,18 +359,22 @@ function Toolbar({
 
 function ToolbarButton({
   active,
+  disabled,
   onClick,
   children,
 }: {
   active?: boolean;
+  disabled?: boolean;
   onClick: () => void;
   children: React.ReactNode;
 }) {
   return (
     <button
       type="button"
+      aria-pressed={active === undefined ? undefined : active}
+      disabled={disabled}
       onClick={onClick}
-      className={`cursor-pointer rounded-full border px-2.5 py-1 text-[12px] font-semibold transition-colors ${
+      className={`focus-visible:ring-forest/30 cursor-pointer rounded-full border px-2.5 py-1 text-[12px] font-semibold transition-colors outline-none focus-visible:ring-2 disabled:cursor-not-allowed disabled:opacity-35 ${
         active
           ? "border-forest bg-forest text-panel-canvas"
           : "border-line-strong text-ink-70 hover:border-coffee/40 bg-transparent"

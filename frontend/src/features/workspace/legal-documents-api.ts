@@ -113,6 +113,15 @@ async function parseOrThrow<T>(response: Response): Promise<T> {
       const parsed: unknown = text ? JSON.parse(text) : null;
       if (isApiProblem(parsed)) {
         detail = parsed.detail ?? parsed.title;
+        if (parsed.fieldErrors) {
+          const fieldDetails = Object.entries(parsed.fieldErrors).flatMap(
+            ([field, messages]) =>
+              messages.map((message) => `${field}: ${message}`),
+          );
+          if (fieldDetails.length > 0) {
+            detail = `${detail} — ${fieldDetails.join("; ")}`;
+          }
+        }
       }
     } catch {
       // Keep a non-JSON proxy/network response as-is.
@@ -228,6 +237,7 @@ export async function importLegalDocumentDocx(
   documentId: string,
   file: File,
 ): Promise<ApiImportDocxResult> {
+  requireDocxFile(file);
   const formData = new FormData();
   formData.set("file", file);
   const response = await fetch(
@@ -242,11 +252,20 @@ export async function importLegalDocumentDocx(
 export async function previewNewLegalDocumentDocx(
   file: File,
 ): Promise<ApiImportDocxResult> {
+  requireDocxFile(file);
   const formData = new FormData();
   formData.set("file", file);
-  const response = await fetch("/api/privacy/documents/import-docx", {
+  const response = await fetch("/api/privacy/documents?action=import-docx", {
     method: "POST",
     body: formData,
   });
   return parseOrThrow<ApiImportDocxResult>(response);
+}
+
+function requireDocxFile(file: File): void {
+  if (file.name.toLowerCase().endsWith(".docx")) return;
+  throw new LegalDocumentsApiError(
+    "Izabrani fajl nije .docx. Sačuvajte Word dokument kao .docx i pokušajte ponovo.",
+    422,
+  );
 }
