@@ -127,7 +127,7 @@
 >
 > **Nalaz 3 — `LIMIT-002` se namerno NE sprovodi ovde.** `maxOptionalSections` broji ponovljive iteme _unutar_ slota, ne različite ključeve slotova; nijedan template u registriju nema više opcionih slotova od sopstvenog maksimuma, pa provera po ključu nikad ne bi mogla da se aktivira. Sprovođenje traži oblik slot payload-a koji definiše **CG-C1**. Test `test_no_template_has_more_optional_slots_than_its_maximum` čuva tu pretpostavku.
 >
-> **Bezbednosna granica (upisana u docstring modula):** `extra_findings` moraju biti izračunati na serveru. Klijent ne sme da pošalje „nema nalaza" i objavi nepregledan sadržaj — ruter (CG-B4) ih računa, nikad request body. Port punog rule engine-a (SEO, CTA, limiti) je **CG-D4**; do tada backend ima samo strukturnu proveru kao sopstveni pod.
+> **Bezbednosna granica (upisana u docstring modula):** `extra_findings` moraju biti izračunati na serveru. Klijent ne sme da pošalje „nema nalaza" i objavi nepregledan sadržaj — `health.py` (CG-D4) računa CMS-autorske nalaze, ruter ih nikada ne prima kroz request body.
 
 ### CG-B3 — Konkurentnost · **spojen sa CG-B4 (D-047)** — ✅ backend + browser 409 UX
 
@@ -145,7 +145,7 @@
 - [x] `schemas.py` — Pydantic modeli (`ApiSchema` sa `to_camel` alias generatorom, isti obrazac kao `modules/privacy/schemas.py`). `slot_data` je namerno sirov `dict[str, object]` na wire-u, ne tipizovana unija devet template oblika — ista odluka i isto obrazloženje kao RichDoc na LD-7 API-ju (CG-C1 registar šema slotova još ne postoji).
 - [x] `backend/openapi.json` ponovo izvezen i `npm run api:generate` pokrenut posle content lifecycle/SEO/public API izmena; generisani tipovi prolaze typecheck.
 - [x] **`ContentReviewDecision` je prava tabela**; `record_review_decision` upisuje/ažurira red po `(revision_id, capability)`, sa actor prikazom u panelu.
-- [ ] `check_publish` poziva `check_publishable()` iz CG-B2 sa `extra_findings=()` — **puni rule engine (SEO/CTA/limiti) još ne postoji** (CG-C1/CG-D4); danas radi samo strukturna provera obaveznih/dozvoljenih slotova nasleđena iz `structural_findings`.
+- [x] `check_publish` poziva `check_publishable()` sa serverski izračunatim `authored_content_findings` iz CG-D4; browser ne može da pošalje ili ukloni nalaze. Struktura, mode/shape, RichDoc, CTA, asset i limit pravila proveravaju se pre tranzicije i odobrenja.
 
 ### CG-B5 — Migracija (napisana, primena čeka Clerk)
 
@@ -184,7 +184,7 @@
 
 - [x] `href` allowlist: `https://`, `mailto:` i interne rute (regex isti kao `validateRedirectRegistry`). `javascript:`/`data:` odbijeni kao **error** (`RICH-003`). _(Napomena: ne ide kroz `cta.ts` registry kao što je prvobitno pisalo — to bi vezalo RichDoc validaciju za CTA akcije, koje su nešto drugačije od slobodnih editorskih linkova u telu teksta; umesto toga koristi se isti path-regex kao redirect registry.)_
 - [x] Brojanje znakova ide po **tekstu** (`richDocText`/`rich_doc_text`), marks se ne broje.
-- [x] `RICH-0xx` prefiks, aditivno: `RICH-001` nedozvoljen/neparsibilan/nepoznat blok · `RICH-002` nedozvoljen/neparsibilan mark · `RICH-003` nevalidan `href` · `RICH-004` warning (underline+URL) · `RICH-005` prekoračen `maxBlocks` · **`RICH-006` dodat van originalne liste** (dupliran/nedostajući `blockId`) — dokumentovano u `CONTENT_HEALTH_RULES_v0.1.md` §4 kao aditivno proširenje istim obrascem kao `MODEL-004` u CG-B2.
+- [x] `RICH-0xx` prefiks, aditivno: `RICH-001` nedozvoljen/neparsibilan/nepoznat blok · `RICH-002` nedozvoljen/neparsibilan mark · `RICH-003` nevalidan `href` · `RICH-004` warning (underline+URL) · `RICH-005` prekoračen `maxBlocks` · **`RICH-006` dodat van originalne liste** (dupliran/nedostajući `blockId`) — dokumentovano u `CONTENT_HEALTH_RULES_v0.2.md` §4 kao aditivno proširenje istim obrascem kao `MODEL-004` u CG-B2.
 - [x] `H1` se ne prihvata u telu (`level: 2 | 3 | 4` tipski, `Literal[2,3,4]` na Python strani).
 
 **Renderer**
@@ -265,7 +265,7 @@
 - [x] **Nalaz tokom C1b (2026-07-30), ispravljen u C1a pre nego što je editor izgrađen na tome:** `ctaList` nije imao `allowedActions` — za razliku od pojedinačnog `cta` polja (koje Amandman 2 §A2.6 namerno vezuje za CTA registry), `ctaList` je ostao bez iste zaštite. Generički editor koji bi renderovao `ctaList` bez ograničenja pustio bi administratora da izabere bilo koju CTA akciju, poništavajući tačno onu zaštitu koju je §A2.6 uveo za pojedinačni `cta`. Dodat `allowedActions`/`targetType` na `ctaList` (TS i Python `CtaListFieldSpec`), popunjen za jedinu stvarnu upotrebu (`static_information.cta`) sa pet „generičkih" akcija (bez `BOOK_THERAPIST`/`VIEW_PROGRAM` i sličnih koje ciljaju konkretan entitet). Fixture regenerisan, parity ponovo zelen.
 - [x] `frontend/src/lib/content-governance/limits.ts` — uklonjen `maxOptionalSections` iz `TemplateDefinition` na obe strane (TS `templateRegistry` i Python `TEMPLATE_REGISTRY` u `publication.py`). Dodat `shortFact` (140 znakova) limit ključ za kratke činjenice (trajanje, format, broj seansi, bedž…); reused `cardDescription`/`richParagraph`/`heroLead`/`cardTitle` gde je već postojao odgovarajući ključ.
 - [x] **Uklonjena i mrtva `LIMIT-002` provera u `validation.ts`** (frontend content-health validator) — brojala je isto pogrešno (`entity.slots` samo drži prisustvo, nema podataka o broju stavki unutar slota); `ContentEntity` model nema tu granularnost uopšte, pa provera ostaje samo u backend-u gde `slot_data` stvarno postoji.
-- [x] `inherit`/`override`/`hidden` payload ugovor (Amandman 2 §A2.3) — `SlotOverride = { mode: inherit|override|hidden, fields? }` (TS interface + Python `SlotOverrideMode` Literal). **Nalaz tokom implementacije:** prvi prolaz `LIMIT-002` provere je greškom čitao polja direktno sa vrednosti slota (`slot_data[slot][fieldName]`) umesto iz `slot_data[slot].fields[fieldName]` — ispravljeno pre nego što je ijedan test ili fixture zaključan, tako da provera sada ispravno prati `SlotOverride` omotač (i ispravno preskače `mode: "inherit"/"hidden"`, koji nemaju `fields`). Zaključava se OVDE, ne u CG-C3 — CG-C3 posle ovoga postaje samo prikaz stanja. **Nije implementirano u ovom prolazu:** provera da fiksni (obavezni) slot ne sme biti `hidden`, i da `mode:"inherit"` na obaveznom slotu zadovoljava `MODEL-004` — namerno ostavljeno za CG-C2/C3 (dublja pravila, ne oblik ugovora), pošto još ne postoji editor koji bi ove payload-e stvarno pisao.
+- [x] `inherit`/`override`/`hidden` payload ugovor (Amandman 2 §A2.3) — `SlotOverride = { mode: inherit|override|hidden, fields? }` (TS interface + Python `SlotOverrideMode` Literal). **Nalaz tokom implementacije:** prvi prolaz `LIMIT-002` provere je greškom čitao polja direktno sa vrednosti slota (`slot_data[slot][fieldName]`) umesto iz `slot_data[slot].fields[fieldName]` — ispravljeno pre nego što je ijedan test ili fixture zaključan. CG-D4 je zatim zatvorio dublja pravila: fiksni slot ne može biti `hidden`, computed/unmodeled slot ne može biti override, a `inherit` ostaje validan jer koristi zaštićeni sistemski fallback.
 - [x] Python ogledalo — **deviacija od plana**: `backend/.../modules/content/slot_schema.py`, ne `shared/domain/`. `SLOT_SPEC_REGISTRY` je indeksiran po `ContentTemplate` i `cta` polja referenciraju `ContentType` — oba žive u `modules/content/models.py`, ne u `shared/`; uvoz `modules/content` tipova u `shared/` bi obrnuo smer zavisnosti koji svaki drugi modul prati. Razlog upisan u docstring fajla.
 - [x] `contracts/fixtures/slot-schema.v1.json` parity — generisan iz Python registra (izbegnuta treća ručna kopija), TS i Python loaderi oba zelena **na prvom pravom pokretanju** — dve nezavisno pisane registre (TS i Python) su se poklopile bez ijedne razlike.
 - [x] **Pravi `LIMIT-002`** (Amandman 2 §A2.2) — za svako `imageList`/`ctaList`/`repeater` polje u `slot_data[slot].fields`, broj stavki mora biti u `[min, max]` iz registra. **Ne** broji ključeve opcionih slotova (odbačena interpretacija, CG-B2 Nalaz 3). `test_no_template_has_more_optional_slots_than_its_maximum` obrisan, zamenjen sa 8 novih testova (`TestStructuralFindings` u `test_content_publication.py`) nad stvarnim `slot_data` primerima — min/max granice, `computed`-izuzetak, `unmodeled`-i-dalje-proveren, `inherit`-nema-šta-da-proveri, ne-mapping vrednost se ignoriše.
@@ -349,18 +349,19 @@
 
 - [x] `CmsContentProvider implements ContentProvider`; backend javni endpoint vraća samo objavljene payload-e bez actor/lock/review podataka, a provider nadjačava postojeći statički entitet polje-po-polje.
 - [x] Test eksplicitno tvrdi da prva objava menja `listPublished()` i produkcijski sitemap.
-- [ ] **Odluka za net-new stranice:** trenutni `ContentEntity` union zahteva tipizovan statički `source`, pa objavljena revizija bez postojećeg statičkog identiteta nema bezbedan renderer i provider je ne izmišlja. Potvrditi da je pre-R3 CMS samo override postojećih ruta ili definisati poseban model/rutu za nove stranice.
+- [x] **Odluka za net-new stranice (2026-07-30):** sistemske rute se ne kreiraju ponovo; biraju se iz registra i menjaju isključivo kroz unapred definisanu strukturu sekcija/polja/limita/slika. Slobodne stranice su samo „Dokumenti i saglasnosti", sa minimalnim javnim layoutom (header + hero + strukturirani RichDoc/Wiki sadržaj + footer). Učitavanje svih sistemskih stranica u tab „Stranice" i uklanjanje generičkog „Nova stranica" toka je neposredno sledeći zadatak posle CG-D3/D4.
 
 ### CG-D3 — Cache i preview
 
-- [ ] `revalidatePath`/`revalidateTag` posle uspešne objave/arhiviranja.
-- [ ] Staff preview rute za draft reviziju (van `listPublished`, samo za ulogovan org_admin).
+- [x] `revalidatePath`/`revalidateTag` posle uspešne objave/arhiviranja. Javni read-model je tagovan i ima 5-minutni bounded fallback; uspešna lifecycle mutacija odmah invalidira tag, konkretnu rutu, pripadajuću listing rutu i sitemap.
+- [x] Staff preview ruta za tačnu sačuvanu draft/review reviziju (van `listPublished`, `no-store`, samo `org_admin`/superadmin). Editor ne dozvoljava preview nesačuvanih izmena.
 
 ### CG-D4 — Content Health v0.2
 
-- [ ] `ContentHealthFinding` dobija opciona polja `ruleVersion`, `requiresApproval`.
-- [ ] `npm run content:check` obuhvata CMS izvor pored statičkog (kad CG-D1/D2 postoje).
-- [ ] `CONTENT_HEALTH_RULES_v0.1.md` → v0.2 dokumentovan additivno (najava već upisana 2026-07-26 u header fajla).
+- [x] `ContentHealthFinding` ima additivni `ruleVersion`; `requiresApproval` ostaje opcion i ulazi u dinamičku approval matricu.
+- [x] Backend proverava sačuvanu CMS reviziju (mode/shape, RichDoc, tekst/count/range limiti, slike, CTA, slug), panel prikazuje serverske nalaze i upozorenja, a approve/publish ponovo računaju iste nalaze bez poverenja u browser.
+- [x] `npm run content:check` obuhvata CMS published izvor pored statičkog, validira wire oblik i ne pada tiho na fallback kada je namenski CMS check aktivan.
+- [x] `CONTENT_HEALTH_RULES_v0.1.md` prebačen u `CONTENT_HEALTH_RULES_v0.2.md` i dokumentovan additivno.
 
 ---
 

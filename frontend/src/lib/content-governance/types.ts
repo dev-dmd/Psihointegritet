@@ -246,6 +246,8 @@ export type ContentHealthSeverity = "info" | "warning" | "error";
 
 export interface ContentHealthFinding {
   ruleId: string;
+  /** Additive in Content Health v0.2; omitted only by legacy/import adapters. */
+  ruleVersion?: string;
   severity: ContentHealthSeverity;
   entityType: string;
   entityId: string;

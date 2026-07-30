@@ -3,20 +3,14 @@
  * through `app/api/content/**` Next Route Handlers — same pattern as
  * `legal-documents-api.ts` → `app/api/privacy/documents/**`.
  *
- * **CG-C1b scope: draft editing only.** No publish-check/transition/reviews
- * client here — those are CG-C4 (lifecycle), a separate step so this
- * editor's smoke test never depends on objava/pregled (see `TODO.md` §5D
- * Faza 1, korak 1.2). The backend endpoints already exist; this file simply
- * doesn't call them yet.
- *
- * **Hand-typed, not generated** — same reasoning as `legal-documents-api.ts`
- * (D-047, no `npm run api:generate` pass yet). `ApiSchema`'s
- * `alias_generator=to_camel` on the backend means the wire shape is already
- * camelCase — no case conversion happens here.
+ * Covers draft CRUD, lifecycle and the saved-revision Content Health surface.
+ * The small hand-written adapter keeps panel-specific names stable while the
+ * generated OpenAPI contract remains the wire authority. `ApiSchema`'s
+ * `alias_generator=to_camel` means no runtime case conversion is needed.
  */
 
-import { isApiProblem } from "@/lib/errors/api-problem";
 import type { ActorSummary } from "@/components/panel/actor-badge";
+import { isApiProblem } from "@/lib/errors/api-problem";
 import type {
   ApprovalCapability,
   ContentTemplate,
@@ -69,7 +63,7 @@ export interface RichDocNormalizationResult {
 export interface ApiContentFinding {
   ruleId: string;
   ruleVersion: string;
-  severity: string;
+  severity: "info" | "warning" | "error";
   message: string;
   remediation: string;
   fieldPath: string | null;
@@ -80,6 +74,15 @@ export interface ApiContentPublishBlock {
   stage: "content" | "transition" | "approvals";
   findings: ApiContentFinding[];
   missing: ApprovalCapability[];
+}
+
+export interface ApiContentHealth {
+  ruleSetVersion: string;
+  checkedAt: string;
+  summary: Record<"info" | "warning" | "error", number>;
+  findings: ApiContentFinding[];
+  requiredApprovals: ApprovalCapability[];
+  missingApprovals: ApprovalCapability[];
 }
 
 export class ContentApiError extends Error {
@@ -194,6 +197,17 @@ export async function checkContentPublishable(
     { cache: "no-store" },
   );
   return parseOrThrow<ApiContentPublishBlock | null>(response);
+}
+
+export async function fetchContentRevisionHealth(
+  entryId: string,
+  revisionId: string,
+): Promise<ApiContentHealth> {
+  const response = await fetch(
+    `/api/content/entries/${encodeURIComponent(entryId)}/revisions/${encodeURIComponent(revisionId)}/content-health`,
+    { cache: "no-store" },
+  );
+  return parseOrThrow<ApiContentHealth>(response);
 }
 
 export async function transitionContentRevision(

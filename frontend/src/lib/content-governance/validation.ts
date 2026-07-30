@@ -60,6 +60,7 @@ function finding(
 ): ContentHealthFinding {
   return {
     ruleId,
+    ruleVersion: "1",
     severity,
     entityType: entity.type,
     entityId: entity.id,
@@ -78,6 +79,7 @@ function redirectFinding(
 ): ContentHealthFinding {
   return {
     ruleId,
+    ruleVersion: "1",
     severity: "error",
     entityType: "redirect",
     entityId: redirect.sourcePath,

@@ -16,6 +16,7 @@ from sqlalchemy import select
 from psihointegritet.api.dependencies import AppSettings, CurrentIdentity, DatabaseSession
 from psihointegritet.modules.content.models import ContentType
 from psihointegritet.modules.content.schemas import (
+    ContentHealthOut,
     ContentRevisionOut,
     CreateContentEntryRequest,
     NormalizeRichHtmlRequest,
@@ -70,9 +71,15 @@ async def _org_admin_actor(
     session: DatabaseSession, settings: AppSettings, identity: CurrentIdentity
 ) -> StaffActor:
     try:
-        return await resolve_staff_actor(session, identity, settings.default_organization_slug)
+        actor = await resolve_staff_actor(session, identity, settings.default_organization_slug)
     except IntakeAuthorizationError as error:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(error)) from error
+    if not actor.is_org_admin:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only org_admin may manage CMS content",
+        )
+    return actor
 
 
 def _handle(error: Exception) -> HTTPException:
@@ -163,6 +170,48 @@ async def get_content_entry(
             actor = await _org_admin_actor(session, settings, identity)
             return await ContentService(session).get_entry(actor, entry_id)
     except ContentNotFoundError as error:
+        raise _handle(error) from error
+
+
+@router.get(
+    "/entries/{entry_id}/revisions/{revision_id}/preview",
+    response_model=ContentRevisionOut,
+    operation_id="get_content_revision_preview",
+)
+async def get_content_revision_preview(
+    entry_id: UUID,
+    revision_id: UUID,
+    identity: CurrentIdentity,
+    session: DatabaseSession,
+    settings: AppSettings,
+) -> ContentRevisionOut:
+    """Private exact-revision source for the staff preview route (CG-D3)."""
+    try:
+        async with session.begin():
+            actor = await _org_admin_actor(session, settings, identity)
+            return await ContentService(session).get_revision_preview(actor, entry_id, revision_id)
+    except (ContentNotFoundError, ContentForbiddenError) as error:
+        raise _handle(error) from error
+
+
+@router.get(
+    "/entries/{entry_id}/revisions/{revision_id}/content-health",
+    response_model=ContentHealthOut,
+    operation_id="get_content_revision_health",
+)
+async def get_content_revision_health(
+    entry_id: UUID,
+    revision_id: UUID,
+    identity: CurrentIdentity,
+    session: DatabaseSession,
+    settings: AppSettings,
+) -> ContentHealthOut:
+    """Authoritative saved-revision findings, including warnings (CG-D4)."""
+    try:
+        async with session.begin():
+            actor = await _org_admin_actor(session, settings, identity)
+            return await ContentService(session).content_health(actor, entry_id, revision_id)
+    except (ContentNotFoundError, ContentForbiddenError) as error:
         raise _handle(error) from error
 
 

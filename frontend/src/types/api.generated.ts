@@ -57,6 +57,46 @@ export interface paths {
         patch: operations["update_content_revision"];
         trace?: never;
     };
+    "/api/v1/content/entries/{entry_id}/revisions/{revision_id}/content-health": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Content Revision Health
+         * @description Authoritative saved-revision findings, including warnings (CG-D4).
+         */
+        get: operations["get_content_revision_health"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/content/entries/{entry_id}/revisions/{revision_id}/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Content Revision Preview
+         * @description Private exact-revision source for the staff preview route (CG-D3).
+         */
+        get: operations["get_content_revision_preview"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/content/entries/{entry_id}/revisions/{revision_id}/publish-check": {
         parameters: {
             query?: never;
@@ -517,8 +557,34 @@ export interface components {
             ruleId: string;
             /** Ruleversion */
             ruleVersion: string;
-            /** Severity */
-            severity: string;
+            /**
+             * Severity
+             * @enum {string}
+             */
+            severity: "info" | "warning" | "error";
+        };
+        /**
+         * ContentHealthOut
+         * @description Read-only result for one saved revision (CG-D4).
+         */
+        ContentHealthOut: {
+            /**
+             * Checkedat
+             * Format: date-time
+             */
+            checkedAt: string;
+            /** Findings */
+            findings: components["schemas"]["ContentFindingOut"][];
+            /** Missingapprovals */
+            missingApprovals: components["schemas"]["ApprovalCapability"][];
+            /** Requiredapprovals */
+            requiredApprovals: components["schemas"]["ApprovalCapability"][];
+            /** Rulesetversion */
+            ruleSetVersion: string;
+            /** Summary */
+            summary: {
+                [key: string]: number;
+            };
         };
         /** ContentRevisionOut */
         ContentRevisionOut: {
@@ -1084,8 +1150,11 @@ export interface components {
             findings: components["schemas"]["ContentFindingOut"][];
             /** Missing */
             missing: components["schemas"]["ApprovalCapability"][];
-            /** Stage */
-            stage: string;
+            /**
+             * Stage
+             * @enum {string}
+             */
+            stage: "content" | "transition" | "approvals";
         };
         /** PublishBlockOut */
         psihointegritet__modules__privacy__schemas__PublishBlockOut: {
@@ -1245,6 +1314,70 @@ export interface operations {
                 "application/json": components["schemas"]["UpdateContentRevisionRequest"];
             };
         };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ContentRevisionOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_content_revision_health: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                entry_id: string;
+                revision_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ContentHealthOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_content_revision_preview: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                entry_id: string;
+                revision_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
         responses: {
             /** @description Successful Response */
             200: {

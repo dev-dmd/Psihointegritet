@@ -16,6 +16,10 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm.exc import StaleDataError
 
+from psihointegritet.modules.content.health import (
+    CONTENT_HEALTH_RULESET_VERSION,
+    authored_content_findings,
+)
 from psihointegritet.modules.content.models import (
     ContentEntry,
     ContentPublicationEvent,
@@ -35,6 +39,7 @@ from psihointegritet.modules.content.publication import (
 )
 from psihointegritet.modules.content.schemas import (
     ContentFindingOut,
+    ContentHealthOut,
     ContentRevisionOut,
     CreateContentEntryRequest,
     PublicContentRevisionOut,
@@ -75,6 +80,7 @@ class ContentForbiddenError(PermissionError):
 class PublishCheckResult:
     ok: bool
     block: PublishBlockOut | None
+    outcome: ContentPublishCheck
 
 
 class ContentService:
@@ -187,6 +193,7 @@ class ContentService:
     async def list_entries(
         self, actor: StaffActor, content_type: ContentType | None = None
     ) -> list[ContentRevisionOut]:
+        self._require_org_admin(actor)
         query = select(ContentEntry).where(ContentEntry.organization_id == actor.organization_id)
         if content_type is not None:
             query = query.where(ContentEntry.content_type == content_type)
@@ -233,10 +240,25 @@ class ContentService:
         ]
 
     async def get_entry(self, actor: StaffActor, entry_id: UUID) -> ContentRevisionOut:
+        self._require_org_admin(actor)
         entry = await self._entry(actor, entry_id)
         revision = await self._latest_revision(entry.id)
         if revision is None:
             raise ContentNotFoundError(f"Entry {entry_id} has no revision")
+        return await self._to_schema_loaded(entry, revision)
+
+    async def get_revision_preview(
+        self, actor: StaffActor, entry_id: UUID, revision_id: UUID
+    ) -> ContentRevisionOut:
+        """Exact saved revision for the private staff preview (CG-D3).
+
+        This deliberately does not use `list_published`: draft/review content
+        is returned only after tenant scope and org_admin authorization.
+        """
+
+        self._require_org_admin(actor)
+        entry = await self._entry(actor, entry_id)
+        revision = await self._revision(actor, entry_id, revision_id)
         return await self._to_schema_loaded(entry, revision)
 
     async def create_entry(
@@ -353,25 +375,24 @@ class ContentService:
     async def check_publish(
         self, actor: StaffActor, entry_id: UUID, revision_id: UUID
     ) -> PublishCheckResult:
+        self._require_org_admin(actor)
         entry = await self._entry(actor, entry_id)
         revision = await self._revision(actor, entry_id, revision_id)
         decisions = [
             ReviewDecisionRecord(capability=d.capability, outcome=d.outcome)
             for d in await self._decisions(revision.id)
         ]
-        # `extra_findings` is deliberately empty: the slot schema / full rule
-        # engine (SEO, CTA, limits) lands with CG-C1/CG-D4. Only the
-        # structural required/allowed-slot check runs today.
+        extra_findings = authored_content_findings(entry, revision)
         outcome: ContentPublishCheck = check_publishable(
             entry.content_type,
             revision.template,
             revision.status,
             revision.slot_data,
             decisions,
-            extra_findings=(),
+            extra_findings=extra_findings,
         )
         if outcome.ok:
-            return PublishCheckResult(ok=True, block=None)
+            return PublishCheckResult(ok=True, block=None, outcome=outcome)
         return PublishCheckResult(
             ok=False,
             block=PublishBlockOut(
@@ -379,6 +400,42 @@ class ContentService:
                 findings=[_finding_out(f) for f in outcome.findings],
                 missing=sorted(outcome.missing, key=lambda item: item.value),
             ),
+            outcome=outcome,
+        )
+
+    async def content_health(
+        self, actor: StaffActor, entry_id: UUID, revision_id: UUID
+    ) -> ContentHealthOut:
+        """Always return findings for the saved revision, including warnings.
+
+        Publish-check remains the staged lifecycle endpoint and can return
+        `null` when publication is allowed. This endpoint is the read-only
+        Content Health surface, so a clean revision and a warning-only
+        revision remain distinguishable in the panel.
+        """
+
+        self._require_org_admin(actor)
+        entry = await self._entry(actor, entry_id)
+        revision = await self._revision(actor, entry_id, revision_id)
+        decisions = [
+            ReviewDecisionRecord(capability=item.capability, outcome=item.outcome)
+            for item in await self._decisions(revision.id)
+        ]
+        findings = structural_findings(
+            revision.template, revision.slot_data
+        ) + authored_content_findings(entry, revision)
+        required = effective_required_approvals(entry.content_type, revision.template, findings)
+        missing = required - granted_capabilities(decisions)
+        summary = {"info": 0, "warning": 0, "error": 0}
+        for finding in findings:
+            summary[finding.severity] += 1
+        return ContentHealthOut(
+            rule_set_version=CONTENT_HEALTH_RULESET_VERSION,
+            checked_at=datetime.now(UTC),
+            summary=summary,
+            findings=[_finding_out(item) for item in findings],
+            required_approvals=sorted(required, key=lambda item: item.value),
+            missing_approvals=sorted(missing, key=lambda item: item.value),
         )
 
     async def transition(
@@ -400,6 +457,7 @@ class ContentService:
             await self._archive_other_published(entry.id, revision.id, actor)
             revision.status = RevisionStatus.PUBLISHED
             revision.published_at = datetime.now(UTC)
+            revision.validation_snapshot = _validation_snapshot(check.outcome.findings)
             revision.updated_by_user_id = actor.user_id
             await self._log_event(revision.id, from_status, revision.status, actor)
         elif reissues_revision(revision.status, request.target):
@@ -411,10 +469,15 @@ class ContentService:
                     ReviewDecisionRecord(capability=item.capability, outcome=item.outcome)
                     for item in await self._decisions(revision.id)
                 ]
+                findings = structural_findings(
+                    revision.template, revision.slot_data
+                ) + authored_content_findings(entry, revision)
+                if any(item.severity == "error" for item in findings):
+                    raise ContentConflictError(
+                        "Revision cannot be approved while Content Health has blocking findings"
+                    )
                 required = effective_required_approvals(
-                    entry.content_type,
-                    revision.template,
-                    structural_findings(revision.template, revision.slot_data),
+                    entry.content_type, revision.template, findings
                 )
                 missing = required - granted_capabilities(decisions)
                 if missing:
@@ -422,6 +485,7 @@ class ContentService:
                     raise ContentConflictError(
                         f"Revision cannot be approved; missing decisions: {labels}"
                     )
+                revision.validation_snapshot = _validation_snapshot(findings)
             require_transition(revision.status, request.target)
             from_status = revision.status
             revision.status = request.target
@@ -533,6 +597,27 @@ def _finding_out(finding: ContentFinding) -> ContentFindingOut:
         field_path=finding.field_path,
         requires_approval=finding.requires_approval,
     )
+
+
+def _validation_snapshot(findings: tuple[ContentFinding, ...]) -> dict[str, object]:
+    """Durable evidence of the ruleset applied at approve/publish time."""
+
+    return {
+        "ruleSetVersion": CONTENT_HEALTH_RULESET_VERSION,
+        "checkedAt": datetime.now(UTC).isoformat(),
+        "findings": [
+            {
+                "ruleId": finding.rule_id,
+                "ruleVersion": finding.rule_version,
+                "severity": finding.severity,
+                "fieldPath": finding.field_path,
+                "requiresApproval": (
+                    finding.requires_approval.value if finding.requires_approval else None
+                ),
+            }
+            for finding in findings
+        ],
+    }
 
 
 def _next_version_label(current: str) -> str:

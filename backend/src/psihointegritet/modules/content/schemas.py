@@ -16,6 +16,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from pydantic.alias_generators import to_camel
 
 from psihointegritet.modules.content.models import ContentTemplate, ContentType, ReviewOutcome
+from psihointegritet.modules.content.publication import PublishStage, Severity
 from psihointegritet.modules.identity.schemas import ActorSummaryOut
 from psihointegritet.shared.domain.publication import ApprovalCapability, RevisionStatus
 
@@ -98,7 +99,7 @@ class RecordReviewDecisionRequest(ApiSchema):
 class ContentFindingOut(ApiSchema):
     rule_id: str
     rule_version: str
-    severity: str
+    severity: Severity
     message: str
     remediation: str
     field_path: str | None = None
@@ -106,9 +107,20 @@ class ContentFindingOut(ApiSchema):
 
 
 class PublishBlockOut(ApiSchema):
-    stage: str
+    stage: PublishStage
     findings: list[ContentFindingOut]
     missing: list[ApprovalCapability]
+
+
+class ContentHealthOut(ApiSchema):
+    """Read-only result for one saved revision (CG-D4)."""
+
+    rule_set_version: str
+    checked_at: datetime
+    summary: dict[str, int]
+    findings: list[ContentFindingOut]
+    required_approvals: list[ApprovalCapability]
+    missing_approvals: list[ApprovalCapability]
 
 
 class NormalizeRichHtmlRequest(ApiSchema):
