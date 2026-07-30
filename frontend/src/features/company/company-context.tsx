@@ -12,29 +12,43 @@ import type { ReactNode } from "react";
 import { CompanyConfiguratorDrawer } from "./company-configurator-drawer";
 
 interface CompanyContextValue {
-  openCompany: () => void;
+  openCompany: (preselectedPlanSlug?: string) => void;
 }
 
 const CompanyContext = createContext<CompanyContextValue | null>(null);
 
 /**
  * Owns the B2B configurator drawer for the public area. Opened from the
- * „Rad sa kompanijama" page CTA and from the matching drawer's B2B branch.
- * Wraps the other public providers so the matching drawer can open it directly.
+ * „Rad sa kompanijama" page CTA and optional plan cards. It is intentionally
+ * separate from the individual guided-selection flow.
  * Mounted only while open, so every run starts fresh (no answers persist).
  */
 export function CompanyProvider({ children }: { children: ReactNode }) {
   const [open, setOpen] = useState(false);
+  const [preselectedPlanSlug, setPreselectedPlanSlug] = useState<string | null>(
+    null,
+  );
 
-  const openCompany = useCallback(() => setOpen(true), []);
-  const closeCompany = useCallback(() => setOpen(false), []);
+  const openCompany = useCallback((planSlug?: string) => {
+    setPreselectedPlanSlug(planSlug ?? null);
+    setOpen(true);
+  }, []);
+  const closeCompany = useCallback(() => {
+    setOpen(false);
+    setPreselectedPlanSlug(null);
+  }, []);
 
   const value = useMemo(() => ({ openCompany }), [openCompany]);
 
   return (
     <CompanyContext.Provider value={value}>
       {children}
-      {open ? <CompanyConfiguratorDrawer onClose={closeCompany} /> : null}
+      {open ? (
+        <CompanyConfiguratorDrawer
+          onClose={closeCompany}
+          preselectedPlanSlug={preselectedPlanSlug}
+        />
+      ) : null}
     </CompanyContext.Provider>
   );
 }

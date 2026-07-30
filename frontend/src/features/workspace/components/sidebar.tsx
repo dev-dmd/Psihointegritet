@@ -7,6 +7,7 @@ import { usePathname } from "next/navigation";
 import { cn } from "@/helpers/cn";
 
 import { useWorkspace } from "../workspace-context";
+import { usePanelErrors } from "../panel-errors";
 import { visibleNav } from "../nav";
 import { PowerIcon } from "./icons";
 
@@ -25,6 +26,7 @@ export function WorkspaceSidebar() {
   const pathname = usePathname();
   const { signOut } = useClerk();
   const { isAdmin, isTherapist, roleLabel } = useWorkspace();
+  const { hasErrorFor } = usePanelErrors();
   const sections = visibleNav({ isAdmin, isTherapist });
 
   return (
@@ -66,14 +68,23 @@ export function WorkspaceSidebar() {
                   key={item.label}
                   href={item.href}
                   className={cn(
-                    "flex items-center gap-3 rounded-xl px-3 py-[11px] text-sm font-semibold no-underline transition-colors duration-200",
+                    // Border is always present but transparent, so flagging an
+                    // error never shifts the row by a pixel.
+                    "flex items-center gap-3 rounded-xl border border-transparent px-3 py-[11px] text-sm font-semibold no-underline transition-colors duration-200",
                     isActive(pathname, item.href)
                       ? "bg-canvas/12 text-canvas"
                       : "text-canvas/62 hover:bg-canvas/8",
+                    // A tab holding an error reads like the active tab, set
+                    // apart only by a thin red outline.
+                    hasErrorFor(item.href) &&
+                      "border-danger/80 bg-canvas/12 text-canvas",
                   )}
                 >
                   <item.icon />
                   {item.label}
+                  {hasErrorFor(item.href) ? (
+                    <span className="sr-only">(ima grešku)</span>
+                  ) : null}
                   {item.badge === "requests" ? (
                     <span className="bg-warm text-forest ml-auto rounded-full px-2 py-0.5 text-[11px] font-bold">
                       {REQUEST_COUNT}

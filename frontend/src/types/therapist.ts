@@ -8,7 +8,7 @@
  * then, so this type deliberately has no `credentials` field yet.
  */
 
-export interface TherapistService {
+export interface TherapistAdditionalService {
   title: string;
   /** Null when the service has no fixed duration — never invent one (T7/S3). */
   duration: string | null;
@@ -27,7 +27,7 @@ export interface Therapist {
   /** Instrumental case, for „razgovor sa {firstNameInstrumental}" — Anja → Anjom. */
   firstNameInstrumental: string;
   initials: string;
-  /** Generic until S1 — no „pod supervizijom", no unconfirmed certifications. */
+  /** Confirmed certification wording (D-042 closed S1); never „pod supervizijom". */
   title: string;
   badge: string;
   quote: string;
@@ -37,7 +37,10 @@ export interface Therapist {
   /** Locative case of `city`, for „uživo u {cityLocative}" — Niš → Nišu. */
   cityLocative: string;
   areas: string[];
-  services: TherapistService[];
+  /** Non-catalog services with intentionally unconfirmed commercial details. */
+  additionalServices: TherapistAdditionalService[];
+  /** Canonical booking-service slugs this therapist currently provides. */
+  bookingServiceSlugs: string[];
   image: string;
   cardExcerpt: string;
   /** Full bio, paragraph by paragraph. Never truncated on the profile page. */

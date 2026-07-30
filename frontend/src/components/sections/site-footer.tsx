@@ -1,9 +1,8 @@
 import type { Route } from "next";
 import Link from "next/link";
 
-import { footerServiceLinks, navLinks } from "@/content/homepage";
-
-const footerNavLinks = navLinks.filter((link) => link.href !== "/#onama");
+import { footerNavigationGroups } from "@/content/site-navigation";
+import { siteSettings } from "@/content/site-settings";
 
 export function SiteFooter() {
   return (
@@ -25,48 +24,34 @@ export function SiteFooter() {
               radionice i edukativni sadržaji — na jednom mestu.
             </p>
             <div className="text-canvas/55 text-sm leading-[1.9]">
-              Niš · online i uživo
+              Niš · Leskovac · online i uživo
               <br />
               <a
-                href="mailto:kontakt@psihointegritet.rs"
+                href={`mailto:${siteSettings.contactEmail}`}
                 className="text-canvas/80 hover:text-meadow no-underline transition-colors duration-200"
               >
-                kontakt@psihointegritet.rs
+                {siteSettings.contactEmail}
               </a>
             </div>
           </div>
-          <div>
-            <div className="text-sage mb-[18px] text-[11.5px] font-semibold tracking-[0.14em] uppercase">
-              Navigacija
+          {footerNavigationGroups.map((group) => (
+            <div key={group.title}>
+              <div className="text-sage mb-[18px] text-[11.5px] font-semibold tracking-[0.14em] uppercase">
+                {group.title}
+              </div>
+              <div className="flex flex-col gap-3">
+                {group.links.map((link) => (
+                  <Link
+                    key={link.href}
+                    href={link.href as Route}
+                    className="text-canvas/75 hover:text-meadow text-[15px] no-underline transition-colors duration-200"
+                  >
+                    {link.label}
+                  </Link>
+                ))}
+              </div>
             </div>
-            <div className="flex flex-col gap-3">
-              {footerNavLinks.map((link) => (
-                <Link
-                  key={link.href}
-                  href={link.href as Route}
-                  className="text-canvas/75 hover:text-meadow text-[15px] no-underline transition-colors duration-200"
-                >
-                  {link.label}
-                </Link>
-              ))}
-            </div>
-          </div>
-          <div>
-            <div className="text-sage mb-[18px] text-[11.5px] font-semibold tracking-[0.14em] uppercase">
-              Usluge
-            </div>
-            <div className="flex flex-col gap-3">
-              {footerServiceLinks.map((link) => (
-                <Link
-                  key={link.label}
-                  href={link.href as Route}
-                  className="text-canvas/75 hover:text-meadow text-[15px] no-underline transition-colors duration-200"
-                >
-                  {link.label}
-                </Link>
-              ))}
-            </div>
-          </div>
+          ))}
         </div>
         <div className="flex flex-wrap items-center justify-between gap-6 pt-7">
           <div className="text-canvas/45 text-[13px]">

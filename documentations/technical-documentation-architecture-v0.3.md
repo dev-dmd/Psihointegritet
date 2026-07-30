@@ -3,14 +3,15 @@
 > ## ⚠️ STATUS — aktivan, ali podređen master planu
 >
 > **Autoritet #4** u redosledu iz `CLAUDE_CODE_MASTER_PLAN_v1_0.md` §0.
-> Ovo je jedini dokument sa modelom podataka (§6), granicama modula (§4.2), ADR listom (§16)
-> i redosledom implementacije (§15) — zato ostaje aktivan.
+> Ovaj dokument vodi širi model podataka (§6), granice modula (§4.2), ADR listu (§16)
+> i redosled implementacije (§15) — zato ostaje aktivan.
 >
-> **Gde se sudara sa master planom, master plan pobeđuje.** Dva poznata sudara:
+> **Gde se sudara sa master planom, master plan pobeđuje.** R1.6 Booking ugovor iz
+> `PRE_R2_BOOKING_ENGINE_DECISION_SPEC_v0.1.md`, D-035…D-037 i ADR-013 su
+> merodavni za Booking i ovaj dokument ih prati u §6/§7.
 >
 > | Sudar | Ovaj dokument | Master plan (važi) |
 > |---|---|---|
-> | Status termina | §7 — 8 statusa, uklj. `reschedule_requested` | §6.1 — **11 statusa**: `held, requested, alternative_proposed, confirmed, change_requested, cancelled_by_client, cancelled_by_therapist, completed, no_show, declined, expired` (izvor: Engines §7.3) |
 > | Guidance perzistencija | §6 — predviđa tabele `guidance_sessions` i `guidance_answers` | **T13 i §11 zabranjuju** čuvanje odgovora u Release 1. Te tabele se **ne prave** |
 >
 > Model podataka u §6 je **superset** — tabela se dodaje tek kad njena funkcionalnost uđe u obim (master plan §3).
@@ -313,7 +314,9 @@ service_formats
 ```text
 availability_rules
 availability_exceptions
-appointment_holds
+slot_holds
+appointment_requests
+appointment_request_alternatives
 appointments
 appointment_events
 cancellation_policies
@@ -364,25 +367,20 @@ Future tables are added only when their feature enters scope. Do not create empt
 - Store instants in UTC.
 - Store organization/therapist timezone as IANA identifiers.
 - Generate slots from recurring rules + exceptions.
-- Create a short appointment hold before final confirmation.
-- Use a database constraint to prevent overlapping active appointments.
-- Run booking creation inside one transaction.
-- Emit appointment event and outbox event in the same transaction.
+- `SlotHold` is a short technical contention hold only for `slot_request`; it is never a reservation.
+- `AppointmentRequest` is the request aggregate. It has type `initial` or `reschedule` and may be selected-slot or preferred-period based.
+- `Appointment` is created only by therapist confirmation in the same transaction as its audit/event/outbox write.
+- A `reschedule` request does not invalidate the existing confirmed Appointment until the new one is converted.
+- Use a database constraint to prevent overlapping confirmed appointments; R1.6 BDS-007 defines the separate hold and pending-request concurrency policy.
+- Emit booking event and outbox event in the same transaction.
 
-Statuses:
+Canonical statuses and allowed transitions are owned by
+`PRE_R2_BOOKING_ENGINE_DECISION_SPEC_v0.1.md`: a request is proposed as
+`submitted | under_review | alternative_proposed | awaiting_client | converted |
+declined | withdrawn | expired`; an Appointment is `confirmed | completed |
+no_show | cancelled`. No payment requirement exists in the first booking transaction.
 
-```text
-held
-requested
-confirmed
-reschedule_requested
-cancelled_by_client
-cancelled_by_therapist
-completed
-no_show
-```
-
-No payment requirement in the first booking transaction.
+The R1.6 decision specification remains a documentation gate. This section is not authorization to create Booking migrations or endpoints.
 
 ---
 
@@ -622,4 +620,5 @@ ADR-009 No online payment requirement in first MVP
 ADR-010 Guided selection is non-clinical and deterministic
 ADR-011 No clinical notes/chat in MVP
 ADR-012 Outbox preparation for durable domain events
+ADR-013 Request-first Booking aggregates and reschedule contract
 ```

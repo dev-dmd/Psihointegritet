@@ -57,3 +57,32 @@ test("mobile menu opens from the sticky header after scrolling", async ({
   await drawer.getByRole("button", { name: "Zatvori meni" }).click();
   await expect(drawer).not.toBeVisible();
 });
+
+test("key public routes have no horizontal overflow on mobile", async ({
+  page,
+}) => {
+  for (const path of [
+    "/",
+    "/pronadji-podrsku",
+    "/zakazi",
+    "/usluge",
+    "/usluge/individualna-psihoterapija",
+    "/tim",
+    "/tim/anja-stamenkovic",
+    "/radionice",
+    "/cene",
+    "/podrska-roditeljima",
+    "/rad-sa-kompanijama",
+  ]) {
+    await page.goto(path);
+    const viewport = page.viewportSize();
+    expect(viewport).not.toBeNull();
+    const documentWidth = await page.evaluate(
+      () => document.documentElement.scrollWidth,
+    );
+    expect(
+      documentWidth,
+      `${path} should fit the mobile viewport`,
+    ).toBeLessThanOrEqual(viewport!.width);
+  }
+});

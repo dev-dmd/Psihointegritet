@@ -13,93 +13,101 @@ async function mockBooking(page: Page, sink?: { body?: unknown }) {
   });
 }
 
-test("profile booking form sends a request and is clearly not a confirmation", async ({
+test("direct booking explains the three starting choices", async ({ page }) => {
+  await page.goto("/zakazi");
+
+  await expect(
+    page.getByRole("heading", { level: 1, name: "Pošaljite zahtev za termin" }),
+  ).toBeVisible();
+  await expect(page.getByText("Kako želite da počnete?")).toBeVisible();
+  await expect(
+    page.getByRole("link", { name: "Nisam siguran/na" }),
+  ).toHaveAttribute("href", "/pronadji-podrsku");
+});
+
+test("therapist profile opens booking with a therapist prefill", async ({
   page,
 }) => {
-  await mockBooking(page);
   await page.goto("/tim/anja-stamenkovic");
 
-  const strip = page.locator("#zakazivanje");
-  // Must state it is a request, not a confirmed appointment (T6).
-  await expect(strip).toContainText("zahtev za termin");
-  await expect(strip).toContainText("ne potvrda");
+  const bookingLink = page
+    .locator("#zakazivanje")
+    .getByRole("link", { name: "Zakaži termin" });
+  await expect(bookingLink).toHaveAttribute(
+    "href",
+    "/zakazi?therapist=anja-stamenkovic&source=therapist",
+  );
+  await bookingLink.click();
 
-  // Date/time are read-only placeholders (no real slot selection yet).
-  const dateField = strip.getByLabel(/Datum — dogovara se/);
-  await expect(dateField).toHaveAttribute("readonly", "");
-
-  await strip.getByLabel("Ime i prezime").fill("Petar Petrović");
-  await strip.getByLabel("Email").fill("petar@test.rs");
-  await strip.getByRole("button", { name: "Zakaži termin" }).click();
-
-  await expect(strip).toContainText("Zahtev je poslat");
+  await expect(page).toHaveURL(
+    /\/zakazi\?therapist=anja-stamenkovic&source=therapist$/,
+  );
+  await expect(page.getByLabel("Terapeut")).toHaveValue("anja-stamenkovic");
 });
 
-test("submit stays disabled until name and a valid email are entered", async ({
+test("service detail opens booking with a service prefill", async ({
   page,
 }) => {
-  await page.goto("/tim/marjan-jankovic");
-  const strip = page.locator("#zakazivanje");
-  const submit = strip.getByRole("button", { name: "Zakaži termin" });
+  await page.goto("/usluge/individualna-psihoterapija");
 
-  await expect(submit).toBeDisabled();
-  await strip.getByLabel("Ime i prezime").fill("Ana");
-  await strip.getByLabel("Email").fill("not-an-email");
-  await expect(submit).toBeDisabled();
-  await strip.getByLabel("Email").fill("ana@test.rs");
-  await expect(submit).toBeEnabled();
+  const bookingLink = page
+    .locator("#usluga")
+    .getByRole("link", { name: "Zakaži termin" });
+  await expect(bookingLink).toHaveAttribute(
+    "href",
+    "/zakazi?service=individualna-psihoterapija&source=service",
+  );
+  await bookingLink.click();
+
+  await expect(page).toHaveURL(
+    /\/zakazi\?service=individualna-psihoterapija&source=service$/,
+  );
+  await expect(page.getByLabel("Usluga")).toHaveValue(
+    "individualna-psihoterapija",
+  );
 });
 
-test("team-review request carries the intake summary without internal scores", async ({
+test("booking request submits through the demo endpoint and remains a request", async ({
   page,
 }) => {
   const sink: { body?: unknown } = {};
   await mockBooking(page, sink);
-  await page.goto("/");
+  await page.goto(
+    "/zakazi?service=individualna-psihoterapija&therapist=anja-stamenkovic&format=online&source=matching",
+  );
+
+  await expect(page.getByText(/Ovo je zahtev za termin/)).toBeVisible();
+  await page.getByRole("button", { name: "Nastavi" }).click();
+  await page.getByRole("button", { name: "Nastavi" }).click();
+
+  await page.getByLabel("Željeni datum").fill("2026-08-10");
+  await page.getByLabel("Period dana").selectOption("Popodne");
+  await page.getByRole("button", { name: "Nastavi" }).click();
+
+  await page.getByLabel("Ime i prezime").fill("Petar Petrović");
   await page
-    .getByRole("button", { name: "Pomozi mi da pronađem podršku" })
-    .click();
-  const drawer = page.getByRole("dialog", { name: "Vođeni izbor podrške" });
+    .getByRole("textbox", { name: "Email", exact: true })
+    .fill("petar@example.com");
+  await page.getByRole("button", { name: "Nastavi" }).click();
 
-  await drawer
-    .getByRole("button", { name: "Ne znam tačno, želim razgovor" })
-    .click();
-  await drawer
-    .getByRole("button", { name: "Nisam siguran/na", exact: true })
-    .click();
-  await drawer.getByRole("button", { name: "Ne", exact: true }).click();
-  await drawer
-    .getByRole("button", { name: "Nisam siguran/na", exact: true })
-    .click();
-  await drawer.getByRole("button", { name: "Online", exact: true }).click();
+  const submit = page.getByRole("button", { name: "Pošaljite zahtev" });
+  await expect(submit).toBeDisabled();
+  await page.getByLabel(/Razumem da je ovo zahtev za termin/).check();
+  await expect(submit).toBeEnabled();
+  await submit.click();
 
-  await drawer
-    .getByLabel(/Želite li nešto da dodate svojim rečima/)
-    .fill("Radije bih razgovor pre odluke.");
-  await drawer
-    .getByRole("button", { name: "Želim da tim pregleda moj zahtev" })
-    .click();
+  await expect(page.getByText("Vaš zahtev je uspešno poslat")).toBeVisible();
+  await expect(
+    page.getByText(/Ovo još nije konačna potvrda termina/),
+  ).toBeVisible();
 
-  await expect(drawer).toContainText("Nedodeljen zahtev");
-  await drawer.getByLabel("Ime i prezime").fill("Mika Mikić");
-  await drawer.getByLabel("Email").fill("mika@test.rs");
-  await drawer.getByRole("button", { name: "Zakaži termin" }).click();
-
-  await expect(drawer).toContainText("Zahtev je poslat");
-
-  // The request carries the plain-language summary…
-  const body = sink.body as {
-    therapistSlug: string | null;
-    summary?: {
-      answers: { question: string; answer: string }[];
-      recommendedService?: string;
-      extraText?: string;
-    };
-  };
-  expect(body.therapistSlug).toBeNull();
-  expect(body.summary?.recommendedService).toBe("Individualna psihoterapija");
-  expect(body.summary?.extraText).toBe("Radije bih razgovor pre odluke.");
-  expect(body.summary?.answers.length).toBeGreaterThanOrEqual(5);
-  // …and never the internal score breakdown.
+  expect(sink.body).toMatchObject({
+    therapistSlug: "anja-stamenkovic",
+    serviceSlug: "individualna-psihoterapija",
+    format: "online",
+    preferredDate: "2026-08-10",
+    preferredTime: "Popodne",
+    source: "matching",
+  });
   expect(JSON.stringify(sink.body)).not.toContain("scoreBreakdown");
 });

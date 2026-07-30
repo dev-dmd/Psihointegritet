@@ -1,14 +1,15 @@
-import type { Metadata } from "next";
-
 import { CompaniesPage } from "@/components/sections/companies/companies-page";
+import { metadataForRoute } from "@/lib/content-governance/discoverability";
+import { getContentProvider } from "@/lib/content-governance/provider-resolver";
 
-export const metadata: Metadata = {
-  title: "Rad sa kompanijama",
-  description:
-    "Radionice, edukacije i psihološka podrška za timove i zaposlene. Psihointegritet — podrška mentalnom zdravlju u radnom okruženju, online i uživo.",
-  alternates: { canonical: "/rad-sa-kompanijama" },
-};
+export async function generateMetadata() {
+  return metadataForRoute("/rad-sa-kompanijama", await getContentProvider());
+}
 
-export default function CompaniesRoute() {
-  return <CompaniesPage />;
+export default async function CompaniesRoute() {
+  const plans = (await getContentProvider())
+    .listAll()
+    .filter((entity) => entity.type === "company_plan")
+    .map((entity) => entity.source);
+  return <CompaniesPage plans={plans} />;
 }

@@ -242,7 +242,7 @@ Ovaj engine je nova obavezna granica u odnosu na beauty proizvod.
 - recurring availability i exceptions;
 - external busy blocks;
 - slot computation;
-- short appointment hold;
+- short technical `SlotHold`;
 - appointment request/confirmation;
 - alternative proposal;
 - cancellation/reschedule policy;
@@ -254,35 +254,31 @@ Ovaj engine je nova obavezna granica u odnosu na beauty proizvod.
 ## 7.2 Request-first booking tok
 
 1. Posetilac bira uslugu ili vođeni izbor.
-2. Bira terapeuta, ili opciju „prvi odgovarajući dostupan terapeut”.
-3. Bira online/uživo i ponuđeni slot.
-4. Sistem kreira kratki hold i zahteva samo potrebne kontakt podatke.
-5. Zahtev postaje `requested`; slot nije konačno potvrđen.
-6. Terapeut potvrđuje, odbija ili predlaže alternativu.
-7. Alternativa zahteva prihvatanje klijenta.
-8. Tek `confirmed` termin dobija podsetnike i meeting/calendar vezu.
+2. Sistem rešava efektivni `BookingMode` za `Service + Therapist + Format + Location`; svaki override može samo da suzi tok.
+3. Kod `slot_request` korisnik bira ponuđeni slot; kod `request` šalje željeni period bez slot pickera.
+4. Samo `slot_request` može dobiti kratki tehnički `SlotHold`; sistem zatim traži samo potrebne kontakt podatke.
+5. Nastaje `AppointmentRequest`, nikada potvrđen termin.
+6. Terapeut počinje review, potvrđuje, odbija ili predlaže alternativu.
+7. Alternativa zahteva atomsko prihvatanje klijenta.
+8. Tek successful confirmation transakcijski pravi `Appointment(status = confirmed)` koji dobija podsetnike i meeting/calendar vezu.
 
-## 7.3 Statusi
+## 7.3 Canonicalni objekti i statusi
 
-| Status | Značenje |
+R1.6 `PRE_R2_BOOKING_ENGINE_DECISION_SPEC_v0.1.md` je merodavan ugovor za Booking. Ovaj dokument ostaje vision/engine vodič, ne paralelni status ugovor.
+
+| Objekat | Statusi / semantika |
 |---|---|
-| `held` | kratko tehničko držanje slota |
-| `requested` | klijent je poslao zahtev |
-| `alternative_proposed` | terapeut je predložio drugo vreme |
-| `confirmed` | obe strane imaju potvrđen termin |
-| `change_requested` | jedna strana traži pomeranje |
-| `cancelled_by_client` | klijent je otkazao |
-| `cancelled_by_therapist` | terapeut/organizacija je otkazao |
-| `completed` | termin je održan |
-| `no_show` | evidentirano odsustvo |
-| `declined` | zahtev nije prihvaćen |
-| `expired` | hold, alternativa ili zahtev je istekao |
+| `SlotHold` | Kratko tehničko držanje za `slot_request`; nije rezervacija niti Appointment. |
+| `AppointmentRequest` | `submitted`, `under_review`, `alternative_proposed`, `awaiting_client`, `converted`, `declined`, `withdrawn`, `expired`; `type = initial | reschedule`. |
+| `Appointment` | `confirmed`, `completed`, `no_show`, `cancelled`. Actor, razlog i naslednik pri pomeranju su audit/event podaci. |
+
+Postojeći potvrđeni Appointment ostaje važeći dok se `reschedule` zahtev ne konvertuje. Konkretni TTL, review SLA, slot after submit, Notify Me i cancellation policy i dalje čekaju BDS approval.
 
 ## 7.4 Sprečavanje preklapanja
 
-- slot se računa iz recurring pravila, exceptions, potvrđenih termina i external busy blokova;
-- booking create radi u jednoj transakciji;
-- aktivni termin ima DB-level zaštitu od preklapanja za terapeuta/resurs;
+- slot se računa iz recurring pravila, exceptions, potvrđenih termina, odobrenih buffera i external busy blokova;
+- request conversion u Appointment radi u jednoj transakciji;
+- potvrđen termin ima DB-level zaštitu od preklapanja za terapeuta/resurs; hold i `pending_request` ponašanje prate BDS-007;
 - idempotency key sprečava dupli submit;
 - concurrency test pokušava dva istovremena zahteva za isti slot;
 - expired hold se oslobađa durable job-om i reconciliation proverom.
@@ -328,7 +324,7 @@ Notify Me rešava situaciju kada korisnik želi baš određenog terapeuta, ali n
 
 1. Korisnik klikne „Obavesti me kada se pojavi termin”.
 2. Bira širok vremenski prozor; ne unosi razlog dolaska.
-3. Booking emituje `booking.slot_released` ili `booking.availability_expanded`.
+3. Booking emituje `SLOT_RELEASED` ili `AVAILABILITY_EXPANDED`.
 4. Matching job pronalazi aktivne subscription-e.
 5. Notification Engine šalje neutralnu poruku: novi termin je dostupan u Psihointegritetu.
 6. Link daje kratki claim window ili vodi na ažuriranu dostupnost.
@@ -1164,13 +1160,13 @@ Svaki događaj sadrži:
 
 ## 23.3 Početni event catalog
 
-- `booking.appointment_requested.v1`;
-- `booking.alternative_proposed.v1`;
-- `booking.appointment_confirmed.v1`;
-- `booking.appointment_cancelled.v1`;
-- `booking.appointment_completed.v1`;
-- `booking.slot_released.v1`;
-- `booking.availability_expanded.v1`;
+Booking semantika i imena su iz R1.6 ugovora; stvarni outbox može dodati schema verziju bez menjanja značenja:
+
+- `SLOT_HOLD_CREATED`, `SLOT_HOLD_EXPIRED`, `SLOT_RELEASED`;
+- `APPOINTMENT_REQUEST_SUBMITTED`, `APPOINTMENT_REQUEST_REVIEW_STARTED`, `APPOINTMENT_ALTERNATIVE_PROPOSED`;
+- `APPOINTMENT_REQUEST_CONVERTED`, `APPOINTMENT_REQUEST_DECLINED`, `APPOINTMENT_REQUEST_WITHDRAWN`, `APPOINTMENT_REQUEST_EXPIRED`;
+- `APPOINTMENT_CONFIRMED`, `APPOINTMENT_RESCHEDULE_REQUESTED`, `APPOINTMENT_RESCHEDULED`, `APPOINTMENT_CANCELLED`, `APPOINTMENT_COMPLETED`, `APPOINTMENT_NO_SHOW`;
+- `WAITLIST_OFFER_CREATED`, `WAITLIST_OFFER_CLAIMED`, `WAITLIST_OFFER_EXPIRED`, `BOOKING_REVIEW_SLA_BREACHED`, `AVAILABILITY_EXPANDED`;
 - `notification.intent_created.v1`;
 - `notification.delivered.v1`;
 - `notification.failed.v1`;

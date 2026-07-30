@@ -19,10 +19,10 @@ export function FinalCta() {
               Dovoljan je jedan korak — a mi ćemo vam pomoći da pronađete pravi.
             </p>
             <div className="flex flex-wrap items-center justify-center gap-3.5">
-              <ButtonLink href="#podrska" size="lg">
+              <ButtonLink href="/pronadji-podrsku" size="lg">
                 Pronađi podršku
               </ButtonLink>
-              <ButtonLink href="#terapeuti" variant="outline" size="lg">
+              <ButtonLink href="/tim" variant="outline" size="lg">
                 Pregledaj terapeute
               </ButtonLink>
             </div>

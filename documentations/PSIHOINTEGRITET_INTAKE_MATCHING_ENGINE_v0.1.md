@@ -525,7 +525,7 @@ U prototipu dugme `Izaberi i pogledaj termine` otvara mock slotove.
 Definiši budući ugovor:
 
 ```ts
-getEligibleSlots({ therapistId, serviceId, format, city, timezone })
+getEligibleSlots({ therapistId, serviceId, format, locationId, timezone })
 createAppointmentRequest({ intakeId, therapistId, slotId, contact, consent })
 ```
 
@@ -553,7 +553,7 @@ intake.claimed.v1
 intake.assigned.v1
 intake.reassigned.v1
 matching.completed.v1
-appointment.requested_from_intake.v1
+appointment_request.submitted_from_intake.v1
 ```
 
 Buduće notifikacije:

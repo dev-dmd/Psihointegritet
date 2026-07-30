@@ -1,12 +1,9 @@
-"use client";
+import Link from "next/link";
 
 import { Reveal } from "@/components/motion/reveal";
-import { useGuidance } from "@/features/guidance/guidance-context";
 
-/** „Niste sigurni koga da izaberete?" — opens the shared guided-selection drawer. */
+/** Route-level guided choice, kept consistent with the public header. */
 export function TeamCtaSection() {
-  const { openQuiz } = useGuidance();
-
   return (
     <section className="pt-[72px] pb-[72px] md:pt-24 md:pb-24">
       <div className="mx-auto max-w-[1536px] px-5 md:px-8">
@@ -21,13 +18,12 @@ export function TeamCtaSection() {
                 odgovara onome što tražite.
               </p>
             </div>
-            <button
-              type="button"
-              onClick={openQuiz}
-              className="bg-forest text-canvas hover:bg-forest-hover cursor-pointer rounded-full border-0 px-7 py-[15px] font-sans text-[15px] font-semibold whitespace-nowrap transition-colors"
+            <Link
+              href="/pronadji-podrsku"
+              className="bg-forest text-canvas hover:bg-forest-hover inline-flex min-h-11 items-center rounded-full px-7 font-sans text-[15px] font-semibold whitespace-nowrap no-underline transition-colors"
             >
               Pomozi mi da izaberem
-            </button>
+            </Link>
           </div>
         </Reveal>
       </div>

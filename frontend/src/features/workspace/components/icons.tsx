@@ -82,6 +82,26 @@ export function ChartIcon(props: IconProps) {
   );
 }
 
+export function DocumentIcon(props: IconProps) {
+  return (
+    <svg {...base(props)}>
+      <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z" />
+      <path d="M14 3v5h5" />
+      <path d="M9 13h6" />
+      <path d="M9 17h4" />
+    </svg>
+  );
+}
+
+export function LayersIcon(props: IconProps) {
+  return (
+    <svg {...base(props)}>
+      <path d="M12 3 2 8l10 5 10-5-10-5Z" />
+      <path d="M2 13l10 5 10-5" />
+    </svg>
+  );
+}
+
 export function TeamIcon(props: IconProps) {
   return (
     <svg {...base(props)}>

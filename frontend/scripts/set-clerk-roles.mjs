@@ -102,13 +102,13 @@ for (const assignment of ASSIGNMENTS) {
   }
   if (dryRun) {
     console.log(
-      `DRY   ${assignment.email} → ${JSON.stringify(assignment.publicMetadata)}`,
+      `DRY   ${assignment.email} [${user.id}] → ${JSON.stringify(assignment.publicMetadata)}`,
     );
     continue;
   }
   await patchMetadata(user.id, assignment.publicMetadata);
   console.log(
-    `OK    ${assignment.email} → ${JSON.stringify(assignment.publicMetadata)}`,
+    `OK    ${assignment.email} [${user.id}] → ${JSON.stringify(assignment.publicMetadata)}`,
   );
   applied += 1;
 }

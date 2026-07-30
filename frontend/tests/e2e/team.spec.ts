@@ -71,7 +71,7 @@ test("Savetovanje adolescenata shows no invented duration or price", async ({
     })
     .last();
 
-  await expect(adolescents).toContainText("online ili uživo");
+  await expect(adolescents).toContainText("Informacije u pripremi");
   await expect(adolescents).not.toContainText("RSD");
   await expect(adolescents).not.toContainText("minuta");
 });

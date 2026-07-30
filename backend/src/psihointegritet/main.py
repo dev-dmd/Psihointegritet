@@ -11,11 +11,12 @@ from psihointegritet.core.config import Settings, get_settings
 from psihointegritet.core.logging import configure_logging, get_logger
 from psihointegritet.core.observability import CorrelationIdMiddleware
 from psihointegritet.db.session import create_engine, create_session_factory
+from psihointegritet.infrastructure.auth.clerk.verifier import ClerkTokenVerifier
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
-    settings = get_settings()
+    settings: Settings = app.state.settings
     engine = create_engine(settings)
     app.state.engine = engine
     app.state.session_factory = create_session_factory(engine)
@@ -42,6 +43,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         version="0.1.0",
         lifespan=lifespan,
     )
+    app.state.settings = settings
+    app.state.token_verifier = ClerkTokenVerifier(settings)
 
     app.add_middleware(CorrelationIdMiddleware)
     app.add_middleware(

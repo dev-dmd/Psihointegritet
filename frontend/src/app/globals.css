@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "../features/booking-widget/styles/booking-widget.css";
 
 /*
  * Psihointegritet design tokens — extracted from the Claude Design handoff

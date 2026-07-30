@@ -24,13 +24,9 @@ interface GuidanceContextValue {
 const GuidanceContext = createContext<GuidanceContextValue | null>(null);
 
 /**
- * Owns the guided-selection drawer for the whole public area. Entry points pick
- * how it opens: „Zakaži termin" opens the chooser (returning clients skip the
- * quiz), while the hero and the „Vođeni izbor" section open the quiz directly.
- * Mounted once in the (public) layout — never per page.
- *
- * The drawer is mounted only while open, so every run starts fresh and no
- * answers survive a close (master plan T13 — answers are never persisted).
+ * Preserves the existing drawer during the route migration for any explicitly
+ * embedded legacy trigger. The canonical public flow is `/pronadji-podrsku`;
+ * answers in either surface begin fresh and do not survive a close.
  */
 export function GuidanceProvider({ children }: { children: ReactNode }) {
   const [entry, setEntry] = useState<GuidanceEntry | null>(null);
@@ -53,9 +49,7 @@ export function GuidanceProvider({ children }: { children: ReactNode }) {
   return (
     <GuidanceContext.Provider value={value}>
       {children}
-      {/* No floating launcher — matching opens from „Zakaži termin", the hero
-          and the „Vođeni izbor" section. The floating „?" now opens the
-          research survey (see ResearchProvider). */}
+      {/* No floating launcher. The floating "?" opens the research survey. */}
       {entry !== null ? <GuidanceDrawer entry={entry} onClose={close} /> : null}
     </GuidanceContext.Provider>
   );

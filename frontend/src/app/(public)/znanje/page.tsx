@@ -1,13 +1,10 @@
-import type { Metadata } from "next";
-
 import { KnowledgePage } from "@/components/sections/resources/knowledge-page";
+import { metadataForRoute } from "@/lib/content-governance/discoverability";
+import { getContentProvider } from "@/lib/content-governance/provider-resolver";
 
-export const metadata: Metadata = {
-  title: "Znanje i resursi",
-  description:
-    "Stručni tekstovi, vodiči i edukativni materijali o mentalnom zdravlju — u pripremi. Psihointegritet, digitalni centar za mentalno zdravlje.",
-  alternates: { canonical: "/znanje" },
-};
+export async function generateMetadata() {
+  return metadataForRoute("/znanje", await getContentProvider());
+}
 
 export default function KnowledgeRoute() {
   return <KnowledgePage />;

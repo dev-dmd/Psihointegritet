@@ -5,17 +5,27 @@ import { Reveal } from "@/components/motion/reveal";
 import { PageHero } from "@/components/shared/page-hero";
 import { Chip } from "@/components/ui/chip";
 import { Eyebrow } from "@/components/ui/eyebrow";
+import { groupPrograms, type GroupProgram } from "@/content/programs";
 import {
   PRICE_NOTE,
   formatRsd,
-  groupPrograms,
   serviceCatalog,
   sessionPackages,
   supportAreas,
+  type ServiceCatalogItem,
+  type SessionPackage,
 } from "@/content/services";
-import { GuidanceCtaButton } from "@/features/guidance/guidance-cta";
+import { buildBookingHref } from "@/features/booking/booking-context";
 
-export function ServicesPage() {
+export function ServicesPage({
+  services = serviceCatalog,
+  programs = groupPrograms,
+  packages = sessionPackages,
+}: {
+  services?: readonly ServiceCatalogItem[];
+  programs?: readonly GroupProgram[];
+  packages?: readonly SessionPackage[];
+}) {
   return (
     <>
       <PageHero id="usluge">
@@ -36,7 +46,7 @@ export function ServicesPage() {
         <div className="mx-auto max-w-[1536px] px-5 md:px-8">
           <Reveal>
             <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
-              {serviceCatalog.map((service) => (
+              {services.map((service) => (
                 <article
                   key={service.slug}
                   className="bg-surface border-coffee/6 flex flex-col justify-between gap-8 rounded-3xl border px-8 pt-9 pb-[30px]"
@@ -53,6 +63,25 @@ export function ServicesPage() {
                     <Chip>{service.duration}</Chip>
                     <Chip>{formatRsd(service.priceAmount)}</Chip>
                     <Chip>{service.format}</Chip>
+                  </div>
+                  <div className="mt-5 flex flex-wrap gap-4">
+                    <Link
+                      href={`/usluge/${service.slug}`}
+                      className="text-forest hover:text-sage text-[14px] font-semibold underline underline-offset-4"
+                    >
+                      Detalji usluge
+                    </Link>
+                    <Link
+                      href={
+                        buildBookingHref({
+                          service: service.slug,
+                          source: "service",
+                        }) as Route
+                      }
+                      className="text-forest hover:text-sage text-[14px] font-semibold underline underline-offset-4"
+                    >
+                      Zakaži termin
+                    </Link>
                   </div>
                 </article>
               ))}
@@ -73,7 +102,7 @@ export function ServicesPage() {
               individualnih seansi.
             </p>
             <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
-              {sessionPackages.map((pack) => (
+              {packages.map((pack) => (
                 <article
                   key={pack.sessions}
                   className="bg-meadow/24 flex flex-col justify-between gap-6 rounded-[22px] px-7 py-8"
@@ -114,7 +143,7 @@ export function ServicesPage() {
               broj susreta.
             </p>
             <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
-              {groupPrograms.map((program) => (
+              {programs.map((program) => (
                 <article
                   key={program.slug}
                   className="bg-surface border-coffee/6 flex flex-col gap-4 rounded-3xl border px-7 pt-8 pb-7"
@@ -137,6 +166,12 @@ export function ServicesPage() {
                       {program.note}
                     </p>
                   ) : null}
+                  <Link
+                    href={`/radionice/${program.slug}`}
+                    className="text-forest hover:text-sage mt-2 inline-flex min-h-11 items-center text-[14px] font-semibold underline underline-offset-4"
+                  >
+                    Pogledajte detalje
+                  </Link>
                 </article>
               ))}
             </div>
@@ -181,9 +216,12 @@ export function ServicesPage() {
                   rada koji najbliže odgovaraju onome što tražite.
                 </p>
               </div>
-              <GuidanceCtaButton entry="quiz" variant="meadow">
+              <Link
+                href="/pronadji-podrsku"
+                className="bg-meadow text-forest hover:bg-meadow-hover inline-flex min-h-11 items-center rounded-full px-7 text-[15px] font-semibold no-underline transition-colors"
+              >
                 Pomozi mi da izaberem
-              </GuidanceCtaButton>
+              </Link>
             </div>
           </Reveal>
         </div>

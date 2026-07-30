@@ -1,7 +1,7 @@
 import { Reveal } from "@/components/motion/reveal";
 import { ArrowLink } from "@/components/ui/arrow-link";
+import { ButtonLink } from "@/components/ui/button-link";
 import { Eyebrow } from "@/components/ui/eyebrow";
-import { GuidanceCtaButton } from "@/features/guidance/guidance-cta";
 
 /** Two entry paths: guided selection quiz vs. self-serve browse. */
 export function SupportPaths() {
@@ -25,9 +25,9 @@ export function SupportPaths() {
                 </p>
               </div>
               <div>
-                <GuidanceCtaButton entry="quiz" variant="meadow">
+                <ButtonLink href="/pronadji-podrsku" variant="meadow">
                   Započni kratki upitnik
-                </GuidanceCtaButton>
+                </ButtonLink>
               </div>
             </div>
             <div className="bg-meadow/32 flex flex-col justify-between gap-16 rounded-[28px] p-8 md:px-12 md:py-14">

@@ -1,8 +1,10 @@
 import Image from "next/image";
+import type { Route } from "next";
 import Link from "next/link";
 
 import { PageHero } from "@/components/shared/page-hero";
 import { Chip } from "@/components/ui/chip";
+import { buildBookingHref } from "@/features/booking/booking-context";
 import type { Therapist } from "@/types/therapist";
 
 export function TherapistHeroSection({ therapist }: { therapist: Therapist }) {
@@ -48,7 +50,12 @@ export function TherapistHeroSection({ therapist }: { therapist: Therapist }) {
           </div>
           <div className="flex flex-wrap items-center gap-3.5">
             <Link
-              href="#zakazivanje"
+              href={
+                buildBookingHref({
+                  therapist: therapist.slug,
+                  source: "therapist",
+                }) as Route
+              }
               className="bg-forest text-canvas hover:bg-forest-hover rounded-full px-7 py-[15px] text-[15px] font-semibold transition-colors"
             >
               Zakaži termin

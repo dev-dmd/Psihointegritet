@@ -24,14 +24,14 @@ Ovaj dokument odgovara na pitanje „šta menjamo u onome što već postoji". Sv
 3. **`PRODUCT_CONTEXT.md`** ažurirati:
    - §6 terminologija: „Partnersko savetovanje" → **„Bračno savjetovanje"**; „Psihološko savetovanje" → **„Psihoterapijsko savjetovanje"** (uklj. seed-data mapu §17);
    - MVP definicija (§13) meša javni sajt i naloge/booking → podeliti na **Release 1 (javni sajt + ručni zahtev)** i **Release 2 (nalozi + Booking Engine)**, kako je i Proposal postavio;
-   - kvalifikacije: sve „pod supervizijom" formulacije tretirati kao zastarele; objava tek uz pisanu potvrdu (STOP S1);
+   - kvalifikacije: sve „pod supervizijom" formulacije su zastarele i uklonjene. **D-042 (2026-07-26) zatvara S1:** sva tri terapeuta su sertifikovana i zvanja su odobrena za objavu;
    - cene 3.500/5.000/3.500 RSD upisati kao potvrđene radne (uz „okvirne").
 4. **Dodati nove dokumente:** `CLAUDE_CODE_MASTER_PLAN.md` (isporučen), `PRODUCT_DECISIONS.md`, `OPEN_DECISIONS.md` (seed iz STOP liste), `handoff/bios-2026-07.md` (verbatim nove biografije sa statusom po terapeutu), root `CLAUDE.md` sa redosledom čitanja. Kasnije po fazama: ROLE_CAPABILITY_MATRIX, BOOKING_POLICY, DATA_CLASSIFICATION_RETENTION itd. (spisak iz Proposal-a §10.1 — ne kreirati prazne unapred, već uz fazu koja ih koristi).
 
 ## 3. Obavezne izmene — frontend sadržaj (Release 0)
 
 1. `src/content/homepage.ts` → `footerServiceLinks`: „Partnersko savjetovanje" → **„Bračno savjetovanje"**, „Psihološko savjetovanje" → **„Psihoterapijsko savjetovanje"**. Zatim `grep` sweep celog `src/` (uklj. testove i e2e fixtures) za: `partnersk`, `psihološko savj`, `pod supervizijom`, `pacijent` — nula pogodaka u javnom sadržaju.
-2. Nove biografije (Anja, Marija, Marjan — primljene 15.07.) uneti kao typed `draft` sadržaj profila. **Napomena:** Marjanova nova biografija i dalje sadrži „psiholog i geštalt psihoterapeut pod supervizijom", što je u koliziji sa Anjinom porukom „svi smo sertifikovani" → ne objavljivati zvanje dok ne stigne pisana potvrda; u staging-u držati neutralno „geštalt psihoterapeut" bez statusa.
+2. Nove biografije (Anja, Marija, Marjan — primljene 15.07.) unete kao typed sadržaj profila. **Rešeno D-042 (2026-07-26):** kolizija između Marjanove biografije („psiholog i geštalt psihoterapeut pod supervizijom") i Anjine poruke „svi smo sertifikovani" razrešena je u korist Anjine verzije. Zvanja glase „sertifikovani/sertifikovana geštalt psihoterapeut(kinja)" i objavljuju se.
 3. Ime je Marjan: dokumenti koriste oba ali je Marjan jedino tačno. Blokira slug `/tim/…` — potvrditi pre produkcije (STOP S2).
 4. Kviz: bez izmena logike; odgovori ostaju client-only. Dodati kratko objašnjenje rezultata („zašto je prikazano") ako već ne postoji na nivou UI.
 

@@ -8,6 +8,7 @@ import {
   COMPANY_PRICE_ON_REQUEST,
   companySteps,
   emptyCompanyAnswers,
+  findCompanyPlan,
   recommendCompanyModel,
   type CompanyAnswers,
   type CompanyStepKey,
@@ -36,6 +37,7 @@ const emptyContact: Contact = {
 
 interface CompanyConfiguratorDrawerProps {
   onClose: () => void;
+  preselectedPlanSlug?: string | null;
 }
 
 /**
@@ -47,6 +49,7 @@ interface CompanyConfiguratorDrawerProps {
  */
 export function CompanyConfiguratorDrawer({
   onClose,
+  preselectedPlanSlug,
 }: CompanyConfiguratorDrawerProps) {
   const [screen, setScreen] = useState<Screen>("intro");
   const [stepIndex, setStepIndex] = useState(0);
@@ -77,6 +80,7 @@ export function CompanyConfiguratorDrawer({
   const safeIndex = Math.min(stepIndex, companySteps.length - 1);
   const currentStep = companySteps[safeIndex];
   const model = useMemo(() => recommendCompanyModel(answers), [answers]);
+  const preselectedPlan = findCompanyPlan(preselectedPlanSlug);
 
   // Keyboard users land on the new question instead of a stale option.
   useEffect(() => {
@@ -229,6 +233,13 @@ export function CompanyConfiguratorDrawer({
             <p className="text-coffee/70 mb-5 text-[15px] leading-[1.65]">
               {COMPANY_INTRO.description}
             </p>
+            {preselectedPlan ? (
+              <p className="bg-meadow/25 text-coffee/80 mb-5 rounded-2xl px-4 py-3 text-[13.5px] leading-[1.55]">
+                Izabrali ste početni model:{" "}
+                <strong>{preselectedPlan.title}</strong>. Kratak upitnik će
+                pomoći da preciziramo potrebe.
+              </p>
+            ) : null}
             <ul className="mb-8 flex flex-wrap gap-2">
               {COMPANY_INTRO.offer.map((item) => (
                 <li

@@ -1,0 +1,256 @@
+{
+  "fixtureSchemaVersion": "1",
+  "cases": [
+    {
+      "caseId": "APPROVALS-001",
+      "description": "therapist profile needs clinical and business",
+      "action": "required-approvals-check",
+      "input": { "contentType": "therapist", "template": "therapist_profile" },
+      "expectedRequiredCapabilities": ["business", "clinical"]
+    },
+    {
+      "caseId": "APPROVALS-002",
+      "description": "a static page on the legal_page template additionally needs legal",
+      "action": "required-approvals-check",
+      "input": { "contentType": "static_page", "template": "legal_page" },
+      "expectedRequiredCapabilities": ["business", "legal"]
+    },
+    {
+      "caseId": "APPROVALS-003",
+      "description": "the same content type on a non-legal template does not need legal",
+      "action": "required-approvals-check",
+      "input": { "contentType": "static_page", "template": "static_information" },
+      "expectedRequiredCapabilities": ["business"]
+    },
+    {
+      "caseId": "APPROVALS-004",
+      "description": "package offer needs business only",
+      "action": "required-approvals-check",
+      "input": { "contentType": "package_offer", "template": "pricing_page" },
+      "expectedRequiredCapabilities": ["business"]
+    },
+    {
+      "caseId": "APPROVALS-005",
+      "description": "service detail needs business only",
+      "action": "required-approvals-check",
+      "input": { "contentType": "service", "template": "service_detail" },
+      "expectedRequiredCapabilities": ["business"]
+    },
+    {
+      "caseId": "DYNAMIC-001",
+      "description": "an info-severity finding still adds its capability (A.3: severity and approval are independent)",
+      "action": "dynamic-approvals-check",
+      "input": {
+        "findings": [{ "severity": "info", "requiresApproval": "clinical" }]
+      },
+      "expectedCapabilities": ["clinical"]
+    },
+    {
+      "caseId": "DYNAMIC-002",
+      "description": "a finding with no requiresApproval adds nothing",
+      "action": "dynamic-approvals-check",
+      "input": {
+        "findings": [{ "severity": "error", "requiresApproval": null }]
+      },
+      "expectedCapabilities": []
+    },
+    {
+      "caseId": "DYNAMIC-003",
+      "description": "no findings at all adds nothing",
+      "action": "dynamic-approvals-check",
+      "input": { "findings": [] },
+      "expectedCapabilities": []
+    },
+    {
+      "caseId": "STRUCT-001",
+      "description": "every required slot filled produces no findings",
+      "action": "structural-findings-check",
+      "input": {
+        "template": "legal_page",
+        "slotData": { "title": "x", "legal_copy": "x", "version": "x" }
+      },
+      "expectedFindings": []
+    },
+    {
+      "caseId": "STRUCT-002",
+      "description": "MODEL-004: missing required slots are named, one finding per slot",
+      "action": "structural-findings-check",
+      "input": {
+        "template": "legal_page",
+        "slotData": { "title": "Uslovi" }
+      },
+      "expectedFindings": [
+        { "ruleId": "MODEL-004", "severity": "error", "field": "legal_copy" },
+        { "ruleId": "MODEL-004", "severity": "error", "field": "version" }
+      ]
+    },
+    {
+      "caseId": "STRUCT-003",
+      "description": "a required slot filled with only whitespace counts as missing, not present",
+      "action": "structural-findings-check",
+      "input": {
+        "template": "legal_page",
+        "slotData": { "title": "x", "legal_copy": "x", "version": "   " }
+      },
+      "expectedFindings": [{ "ruleId": "MODEL-004", "severity": "error", "field": "version" }]
+    },
+    {
+      "caseId": "STRUCT-004",
+      "description": "MODEL-003: a slot key outside the template's required+optional set is rejected",
+      "action": "structural-findings-check",
+      "input": {
+        "template": "legal_page",
+        "slotData": {
+          "title": "x",
+          "legal_copy": "x",
+          "version": "x",
+          "marketing_banner": "Kupite sada"
+        }
+      },
+      "expectedFindings": [
+        { "ruleId": "MODEL-003", "severity": "error", "field": "marketing_banner" }
+      ]
+    },
+    {
+      "caseId": "STRUCT-005",
+      "description": "a declared optional slot is allowed alongside the required ones",
+      "action": "structural-findings-check",
+      "input": {
+        "template": "support_area",
+        "slotData": { "hero": "x", "intro": "x", "related": "x", "cta": "x", "faq": "Pitanja" }
+      },
+      "expectedFindings": []
+    },
+    {
+      "caseId": "PUBLISH-001",
+      "description": "content stage wins over transition and approvals (A.4 order)",
+      "action": "publish-check",
+      "input": {
+        "contentType": "static_page",
+        "template": "legal_page",
+        "status": "draft",
+        "slotData": {},
+        "decisions": [],
+        "extraFindings": []
+      },
+      "expectedPublishAllowed": false,
+      "expectedStage": "content",
+      "expectedMissingCapabilities": []
+    },
+    {
+      "caseId": "PUBLISH-002",
+      "description": "complete content still blocks on an invalid transition before approvals are checked",
+      "action": "publish-check",
+      "input": {
+        "contentType": "static_page",
+        "template": "legal_page",
+        "status": "draft",
+        "slotData": { "title": "x", "legal_copy": "x", "version": "x" },
+        "decisions": [],
+        "extraFindings": []
+      },
+      "expectedPublishAllowed": false,
+      "expectedStage": "transition",
+      "expectedMissingCapabilities": []
+    },
+    {
+      "caseId": "PUBLISH-003",
+      "description": "a valid transition with partial approvals names exactly what is still missing",
+      "action": "publish-check",
+      "input": {
+        "contentType": "static_page",
+        "template": "legal_page",
+        "status": "approved",
+        "slotData": { "title": "x", "legal_copy": "x", "version": "x" },
+        "decisions": [{ "capability": "legal", "outcome": "approved" }],
+        "extraFindings": []
+      },
+      "expectedPublishAllowed": false,
+      "expectedStage": "approvals",
+      "expectedMissingCapabilities": ["business"]
+    },
+    {
+      "caseId": "PUBLISH-004",
+      "description": "complete content, valid transition and full approvals publish",
+      "action": "publish-check",
+      "input": {
+        "contentType": "static_page",
+        "template": "legal_page",
+        "status": "approved",
+        "slotData": { "title": "x", "legal_copy": "x", "version": "x" },
+        "decisions": [
+          { "capability": "legal", "outcome": "approved" },
+          { "capability": "business", "outcome": "approved" }
+        ],
+        "extraFindings": []
+      },
+      "expectedPublishAllowed": true,
+      "expectedStage": null,
+      "expectedMissingCapabilities": []
+    },
+    {
+      "caseId": "PUBLISH-005",
+      "description": "a warning-severity server finding does not block publication",
+      "action": "publish-check",
+      "input": {
+        "contentType": "static_page",
+        "template": "static_information",
+        "status": "approved",
+        "slotData": { "hero": "x", "intro": "x" },
+        "decisions": [{ "capability": "business", "outcome": "approved" }],
+        "extraFindings": [{ "severity": "warning", "requiresApproval": null }]
+      },
+      "expectedPublishAllowed": true,
+      "expectedStage": null,
+      "expectedMissingCapabilities": []
+    },
+    {
+      "caseId": "PUBLISH-006",
+      "description": "a warning-severity finding that also requires a capability blocks until that capability signs off, even though the warning itself never blocks on severity alone",
+      "action": "publish-check",
+      "input": {
+        "contentType": "static_page",
+        "template": "static_information",
+        "status": "approved",
+        "slotData": { "hero": "x", "intro": "x" },
+        "decisions": [{ "capability": "business", "outcome": "approved" }],
+        "extraFindings": [{ "severity": "warning", "requiresApproval": "clinical" }]
+      },
+      "expectedPublishAllowed": false,
+      "expectedStage": "approvals",
+      "expectedMissingCapabilities": ["clinical"]
+    },
+    {
+      "caseId": "PUBLISH-007",
+      "description": "an error-severity server finding blocks at the content stage even with complete slots",
+      "action": "publish-check",
+      "input": {
+        "contentType": "static_page",
+        "template": "static_information",
+        "status": "approved",
+        "slotData": { "hero": "x", "intro": "x" },
+        "decisions": [{ "capability": "business", "outcome": "approved" }],
+        "extraFindings": [{ "severity": "error", "requiresApproval": null }]
+      },
+      "expectedPublishAllowed": false,
+      "expectedStage": "content",
+      "expectedMissingCapabilities": []
+    },
+    {
+      "caseId": "PUBLISH-008",
+      "description": "a rejected decision does not satisfy its capability's requirement",
+      "action": "publish-check",
+      "input": {
+        "contentType": "static_page",
+        "template": "static_information",
+        "status": "approved",
+        "slotData": { "hero": "x", "intro": "x" },
+        "decisions": [{ "capability": "business", "outcome": "rejected" }],
+        "extraFindings": []
+      },
+      "expectedPublishAllowed": false,
+      "expectedStage": "approvals",
+      "expectedMissingCapabilities": ["business"]
+    }
+  ]
+}

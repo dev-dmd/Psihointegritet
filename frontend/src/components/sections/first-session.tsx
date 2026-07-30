@@ -20,8 +20,8 @@ export function FirstSession() {
                 To je prilika da procenite da li vam terapeut i način rada
                 odgovaraju — u svom tempu, bez pritiska.
               </p>
-              <ButtonLink href="#podrska" variant="warm">
-                Pogledajte kako izgleda prvi susret
+              <ButtonLink href="/zakazi?source=homepage" variant="warm">
+                Pošaljite zahtev za termin
               </ButtonLink>
             </div>
             <div className="flex flex-col">
