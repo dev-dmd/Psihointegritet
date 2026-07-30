@@ -104,13 +104,16 @@ async function parseOrThrow<T>(response: Response): Promise<T> {
     // (detail=X)` becomes `title: X`, not `detail` (that field is only set
     // by the 500 handler's generic message). Reading raw response text
     // directly here would show the user the whole JSON envelope instead of
-    // the actual message — same latent bug `legal-documents-api.ts` still
-    // has; fixed here since CG-C1b needs a real, readable 409 message.
+    // the actual message. Server failures are deliberately translated below
+    // while retaining their correlation ID for support.
     let message = text || `Zahtev nije uspeo (${response.status}).`;
     try {
       const parsed: unknown = text ? JSON.parse(text) : null;
       if (isApiProblem(parsed)) {
-        message = parsed.detail ?? parsed.title;
+        message =
+          parsed.status >= 500
+            ? `Server trenutno ne može da obradi zahtev. Pokušajte ponovo. Ako se greška ponovi, pošaljite podršci ID greške: ${parsed.correlationId}.`
+            : (parsed.detail ?? parsed.title);
       }
     } catch {
       // Not JSON (network failure, proxy error page…) — keep the raw text.

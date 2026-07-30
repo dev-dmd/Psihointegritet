@@ -432,6 +432,8 @@ Dokazuje `SlotSpec` registar koji pravni tok ne dokazuje (`legal_page` ima samo 
 
 **1.11 korekcija odobrenja posle trećeg stvarnog admin testa:** broj sada razlikuje obavezna i evidentirana odobrenja (npr. `1 obavezno · 3 evidentirano` za Uslove korišćenja). `Legal` je jedini uslov za tu vrstu; `Clinical` i `Business` ostaju vidljivo evidentirani, ali nisu gate za objavu. Org_admin može potvrdu i poništiti dok je revizija `draft` ili `in_review`; posle odobrenja/objave dokaz ostaje neizmenjiv i promena ide kroz novu radnu verziju. OpenAPI ugovor i klijent su regenerisani; po §0A nisu pokretani testovi/build/typecheck/lint.
 
+**1.11 lifecycle i error UX korekcija posle četvrtog živog testa:** „Objavi” se prikazuje isključivo za `approved` reviziju; objavljena verzija jasno kaže da je javna i nudi samo „Arhiviraj”, pa zatim „Nova radna verzija”. „Zatvori uređivanje” samo skuplja formular. Greške dokumenata više nemaju ručno zatvaranje koje bi ugasilo crveni podsetnik u navigaciji; nestaju tek uspešnom radnjom nad istim dokumentom. Neobrađena 5xx greška sada ima srpsku, akcioni orijentisanu poruku sa correlation ID-jem umesto internog engleskog teksta.
+
 **Redosled je odabran, ne slučajan:** 1.0 pre 1.1 jer 1.1 menja `publication.py` isti fajl na kome CG-B6 testovi nedostaju; 1.1 pre 1.2 jer editor treba stabilan payload ugovor pre nego što se piše protiv njega; CG-C4 (lifecycle dugmad) je namerno izdvojen iz CG-C1b — smoke test za draft editor ne sme da zavisi od objave, pregleda ili javnog renderera (D2/D4), to su zasebni koraci.
 
 > **Zašto CMS editor nije radio pri prvom ručnom testu (2026-07-30) — dva NEZAVISNA uzroka, oba van CG-C1b koda:**

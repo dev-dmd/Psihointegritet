@@ -112,7 +112,10 @@ async function parseOrThrow<T>(response: Response): Promise<T> {
     try {
       const parsed: unknown = text ? JSON.parse(text) : null;
       if (isApiProblem(parsed)) {
-        detail = parsed.detail ?? parsed.title;
+        detail =
+          parsed.status >= 500
+            ? `Server trenutno ne može da obradi zahtev. Pokušajte ponovo. Ako se greška ponovi, pošaljite podršci ID greške: ${parsed.correlationId}.`
+            : (parsed.detail ?? parsed.title);
         if (parsed.fieldErrors) {
           const fieldDetails = Object.entries(parsed.fieldErrors).flatMap(
             ([field, messages]) =>

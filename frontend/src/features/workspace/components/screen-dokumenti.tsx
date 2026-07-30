@@ -69,6 +69,17 @@ function resourceFor(document: LegalDocument): PanelErrorResource {
   };
 }
 
+/** A failed create has no document UUID yet, so its selected slug is its
+ * short-lived error identity. A later successful create clears only this
+ * exact reminder, not unrelated errors on the same tab. */
+function resourceForNewDocument(slug: string): PanelErrorResource {
+  return {
+    organizationId: ORGANIZATION_ID,
+    resourceType: "legal_document_creation",
+    resourceId: slug,
+  };
+}
+
 const STATUS_TONES: Record<RevisionStatus, StatusBadgeTone> = {
   draft: "neutral",
   in_review: "wait",
@@ -141,8 +152,7 @@ function describeDocxImportError(error: unknown): string {
 }
 
 export function ScreenDokumenti() {
-  const { reportError, errorsFor, clearError, clearErrorsForResource } =
-    usePanelErrors();
+  const { reportError, errorsFor, clearErrorsForResource } = usePanelErrors();
   const queryClient = useQueryClient();
   // Shares the QueryProvider already mounted in the Control Center layout
   // (same pattern as screen-klijenti.tsx's team queue) — revisiting this tab
@@ -242,6 +252,7 @@ export function ScreenDokumenti() {
         target,
       );
       replaceInList(next);
+      clearErrorsForResource(resourceFor(document));
     } catch (error) {
       reportApiError(
         document,
@@ -263,6 +274,7 @@ export function ScreenDokumenti() {
         capability,
       );
       replaceInList(next);
+      clearErrorsForResource(resourceFor(document));
     } catch (error) {
       reportApiError(
         document,
@@ -284,6 +296,7 @@ export function ScreenDokumenti() {
         capability,
       );
       replaceInList(next);
+      clearErrorsForResource(resourceFor(document));
     } catch (error) {
       reportApiError(
         document,
@@ -307,6 +320,7 @@ export function ScreenDokumenti() {
         { body },
       );
       replaceInList(next);
+      clearErrorsForResource(resourceFor(document));
       return true;
     } catch (error) {
       reportApiError(
@@ -388,7 +402,7 @@ export function ScreenDokumenti() {
         description="Pravni tekstovi i tekstovi saglasnosti koje tim uređuje sam. Objavljena verzija je ono što korisnik vidi i na šta pristaje — zato objava traži odobrenja."
       />
 
-      <ErrorBanner errors={errors} onDismiss={clearError} />
+      <ErrorBanner errors={errors} />
 
       {loadError ? (
         <div className="border-danger/45 bg-danger/8 rounded-panel mb-6 border px-5 py-4">
@@ -453,12 +467,14 @@ export function ScreenDokumenti() {
                 LEGAL_DOCUMENTS_QUERY_KEY,
                 (current) => [...(current ?? []), created],
               );
+              clearErrorsForResource(resourceForNewDocument(input.slug));
               setCreating(false);
               setSelectedId(created.documentId);
             } catch (error) {
               reportError({
                 href: HREF,
                 tabLabel: TAB_LABEL,
+                resource: resourceForNewDocument(input.slug),
                 title: "Nova stranica nije sačuvana",
                 description:
                   error instanceof LegalDocumentsApiError
@@ -525,7 +541,7 @@ export function ScreenDokumenti() {
                     aria-expanded={isSelected}
                     className="border-line-strong text-ink-70 hover:border-coffee/40 cursor-pointer rounded-full border bg-transparent px-4 py-2 text-[13px] font-semibold transition-colors"
                   >
-                    {isSelected ? "Zatvori" : "Uredi"}
+                    {isSelected ? "Zatvori uređivanje" : "Uredi"}
                   </button>
                 </div>
 
@@ -709,10 +725,16 @@ export function ScreenDokumenti() {
                         />
                       ) : null}
                       {document.status === "published" ? (
-                        <ActionButton
-                          onClick={() => void advance(document, "archived")}
-                          label="Arhiviraj"
-                        />
+                        <>
+                          <ActionButton
+                            onClick={() => void advance(document, "archived")}
+                            label="Arhiviraj"
+                          />
+                          <p className="text-ink-55 text-[12.5px]">
+                            Dokument je već javan. Za izmenu ga arhivirajte,
+                            zatim napravite novu radnu verziju.
+                          </p>
+                        </>
                       ) : null}
                       {document.status === "archived" ? (
                         <ActionButton
@@ -720,13 +742,15 @@ export function ScreenDokumenti() {
                           label="Nova radna verzija"
                         />
                       ) : null}
-                      <button
-                        type="button"
-                        onClick={() => void publish(document)}
-                        className="bg-forest text-panel-canvas hover:bg-forest-hover cursor-pointer rounded-full border-0 px-5 py-2.5 text-[13px] font-semibold transition-colors"
-                      >
-                        Objavi
-                      </button>
+                      {document.status === "approved" ? (
+                        <button
+                          type="button"
+                          onClick={() => void publish(document)}
+                          className="bg-forest text-panel-canvas hover:bg-forest-hover cursor-pointer rounded-full border-0 px-5 py-2.5 text-[13px] font-semibold transition-colors"
+                        >
+                          Objavi
+                        </button>
+                      ) : null}
                       {canDelete(document.status) ? (
                         <button
                           type="button"
