@@ -495,6 +495,10 @@ class LegalDocumentService:
         self._require_org_admin(actor)
         document = await self._document(actor, document_id)
         revision = await self._revision(actor, document_id, revision_id)
+        if revision.status not in (RevisionStatus.DRAFT, RevisionStatus.IN_REVIEW):
+            raise LegalDocumentConflictError(
+                "Approvals may be changed only while a revision is draft or in review"
+            )
 
         approver_label = request.approver_label or await self._actor_label(actor)
         entry = {
@@ -516,6 +520,37 @@ class LegalDocumentService:
         revision.approvals = [*remaining, entry]
         revision.updated_by_user_id = actor.user_id
 
+        await self._session.flush()
+        return await self._to_schema(document, revision)
+
+    async def remove_approval(
+        self,
+        actor: StaffActor,
+        document_id: UUID,
+        revision_id: UUID,
+        capability: ApprovalCapability,
+    ) -> LegalDocumentRevisionOut:
+        """Withdraw a recorded approval before publication.
+
+        Published evidence remains immutable; a correction after approval or
+        publication must use the established reissue flow instead.
+        """
+        self._require_org_admin(actor)
+        document = await self._document(actor, document_id)
+        revision = await self._revision(actor, document_id, revision_id)
+        if revision.status not in (RevisionStatus.DRAFT, RevisionStatus.IN_REVIEW):
+            raise LegalDocumentConflictError(
+                "Approvals may be changed only while a revision is draft or in review"
+            )
+
+        remaining = [
+            item for item in revision.approvals if item.get("capability") != capability.value
+        ]
+        if len(remaining) == len(revision.approvals):
+            raise LegalDocumentNotFoundError(f"Approval {capability.value} not found")
+
+        revision.approvals = remaining
+        revision.updated_by_user_id = actor.user_id
         await self._session.flush()
         return await self._to_schema(document, revision)
 

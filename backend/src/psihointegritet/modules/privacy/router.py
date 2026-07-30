@@ -41,6 +41,7 @@ from psihointegritet.modules.privacy.service import (
     LegalDocumentService,
 )
 from psihointegritet.shared.domain.content_management import ContentManagement
+from psihointegritet.shared.domain.publication import ApprovalCapability
 
 router = APIRouter(prefix="/privacy", tags=["privacy-documents"])
 public_router = APIRouter(prefix="/public/privacy", tags=["public-privacy"])
@@ -351,7 +352,39 @@ async def record_legal_document_approval(
             return await LegalDocumentService(session).record_approval(
                 actor, document_id, revision_id, request
             )
-    except (LegalDocumentNotFoundError, LegalDocumentForbiddenError) as error:
+    except (
+        LegalDocumentNotFoundError,
+        LegalDocumentForbiddenError,
+        LegalDocumentConflictError,
+    ) as error:
+        raise _handle(error) from error
+
+
+@router.delete(
+    "/documents/{document_id}/revisions/{revision_id}/approvals/{capability}",
+    response_model=LegalDocumentRevisionOut,
+    operation_id="remove_legal_document_approval",
+)
+async def remove_legal_document_approval(
+    document_id: UUID,
+    revision_id: UUID,
+    capability: ApprovalCapability,
+    identity: CurrentIdentity,
+    session: DatabaseSession,
+    settings: AppSettings,
+) -> LegalDocumentRevisionOut:
+    """Withdraw one approval while the revision is still awaiting publication."""
+    try:
+        async with session.begin():
+            actor = await _org_admin_actor(session, settings, identity)
+            return await LegalDocumentService(session).remove_approval(
+                actor, document_id, revision_id, capability
+            )
+    except (
+        LegalDocumentNotFoundError,
+        LegalDocumentForbiddenError,
+        LegalDocumentConflictError,
+    ) as error:
         raise _handle(error) from error
 
 

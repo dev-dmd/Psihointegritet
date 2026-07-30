@@ -340,6 +340,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/privacy/documents/{document_id}/revisions/{revision_id}/approvals/{capability}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Remove Legal Document Approval
+         * @description Withdraw one approval while the revision is still awaiting publication.
+         */
+        delete: operations["remove_legal_document_approval"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/privacy/documents/{document_id}/revisions/{revision_id}/publish-check": {
         parameters: {
             query?: never;
@@ -1930,6 +1950,39 @@ export interface operations {
                 "application/json": components["schemas"]["RecordApprovalRequest"];
             };
         };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LegalDocumentRevisionOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    remove_legal_document_approval: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                document_id: string;
+                revision_id: string;
+                capability: components["schemas"]["ApprovalCapability"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
         responses: {
             /** @description Successful Response */
             200: {

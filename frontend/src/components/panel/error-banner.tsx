@@ -16,14 +16,17 @@ interface ErrorBannerProps {
  */
 export function ErrorBanner({ errors, onDismiss }: ErrorBannerProps) {
   const bannerRef = useRef<HTMLDivElement>(null);
+  const errorKey = errors
+    .map((error) => `${error.id}:${error.createdAt}`)
+    .join("|");
 
   useEffect(() => {
-    if (errors.length === 0) return;
+    if (!errorKey) return;
     const animationFrame = requestAnimationFrame(() => {
-      bannerRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
     });
     return () => cancelAnimationFrame(animationFrame);
-  }, [errors]);
+  }, [errorKey]);
 
   if (errors.length === 0) return null;
 

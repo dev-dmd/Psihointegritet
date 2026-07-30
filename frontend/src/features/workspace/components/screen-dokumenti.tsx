@@ -37,6 +37,7 @@ import {
   deleteLegalDocumentRevision,
   fetchLegalDocuments,
   recordLegalDocumentApproval,
+  removeLegalDocumentApproval,
   transitionLegalDocumentRevision,
   updateLegalDocumentRevision,
   importLegalDocumentDocx,
@@ -254,9 +255,6 @@ export function ScreenDokumenti() {
     document: LegalDocument,
     capability: ApprovalCapability,
   ) => {
-    // One-way: recording an approval is a review decision, not a toggle.
-    // Withdrawing one is not modelled — reissuing the revision (A.2) is how
-    // approvals get cleared today.
     if (document.approvals.includes(capability)) return;
     try {
       const next = await recordLegalDocumentApproval(
@@ -269,6 +267,27 @@ export function ScreenDokumenti() {
       reportApiError(
         document,
         `Odobrenje nije zabeleženo za „${document.title}“`,
+        error,
+      );
+    }
+  };
+
+  const removeApproval = async (
+    document: LegalDocument,
+    capability: ApprovalCapability,
+  ) => {
+    if (!document.approvals.includes(capability)) return;
+    try {
+      const next = await removeLegalDocumentApproval(
+        document.documentId,
+        document.revisionId,
+        capability,
+      );
+      replaceInList(next);
+    } catch (error) {
+      reportApiError(
+        document,
+        `Odobrenje nije poništeno za „${document.title}“`,
         error,
       );
     }
@@ -463,6 +482,8 @@ export function ScreenDokumenti() {
             // goes through „Nova radna verzija" which issues a new revision.
             const isEditable =
               document.status === "draft" || document.status === "approved";
+            const approvalsEditable =
+              document.status === "draft" || document.status === "in_review";
 
             return (
               <div
@@ -527,7 +548,7 @@ export function ScreenDokumenti() {
                     ) : (
                       <div
                         id={`body-note-${document.documentId}`}
-                        className="border-line-strong bg-panel-canvas rounded-tile border px-3.5 py-2.5 text-sm leading-[1.6] opacity-70"
+                        className="border-line-strong bg-panel-canvas rich-text-editor-surface rounded-tile max-h-[500px] overflow-y-auto border px-3.5 py-2.5 pr-2 text-sm leading-[1.6] opacity-70"
                       >
                         <RichText doc={document.body} className="text-sm" />
                       </div>
@@ -601,7 +622,7 @@ export function ScreenDokumenti() {
                     <div className="mt-4">
                       <div className="text-ink-70 mb-2 text-[13px] font-semibold">
                         Odobrenja ({REQUIRED_APPROVALS[document.kind].length}{" "}
-                        traženo)
+                        obavezno · {document.approvals.length} evidentirano)
                       </div>
                       <div className="flex flex-wrap gap-2">
                         {CAPABILITIES.map((capability) => {
@@ -619,16 +640,22 @@ export function ScreenDokumenti() {
                               key={capability}
                               className={`flex items-center gap-2 rounded-full border px-3.5 py-2 text-[13px] font-semibold transition-colors ${
                                 granted
-                                  ? "border-badge-ok/45 bg-badge-ok-bg text-badge-ok cursor-default"
-                                  : "border-line-strong text-ink-70 cursor-pointer"
+                                  ? approvalsEditable
+                                    ? "border-badge-ok/45 bg-badge-ok-bg text-badge-ok cursor-pointer"
+                                    : "border-badge-ok/45 bg-badge-ok-bg text-badge-ok cursor-default"
+                                  : approvalsEditable
+                                    ? "border-line-strong text-ink-70 cursor-pointer"
+                                    : "border-line-strong text-ink-55 cursor-default"
                               }`}
                             >
                               <input
                                 type="checkbox"
                                 checked={granted}
-                                disabled={granted}
+                                disabled={!approvalsEditable}
                                 onChange={() =>
-                                  void grantApproval(document, capability)
+                                  void (granted
+                                    ? removeApproval(document, capability)
+                                    : grantApproval(document, capability))
                                 }
                                 className="accent-sage"
                               />

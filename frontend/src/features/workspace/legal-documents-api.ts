@@ -220,6 +220,20 @@ export async function recordLegalDocumentApproval(
   );
 }
 
+export async function removeLegalDocumentApproval(
+  documentId: string,
+  revisionId: string,
+  capability: ApprovalCapability,
+): Promise<LegalDocument> {
+  const response = await fetch(
+    `/api/privacy/documents/${encodeURIComponent(documentId)}/revisions/${encodeURIComponent(revisionId)}/approvals/${encodeURIComponent(capability)}`,
+    { method: "DELETE" },
+  );
+  return toLegalDocument(
+    await parseOrThrow<ApiLegalDocumentRevision>(response),
+  );
+}
+
 export async function deleteLegalDocumentRevision(
   documentId: string,
   revisionId: string,
