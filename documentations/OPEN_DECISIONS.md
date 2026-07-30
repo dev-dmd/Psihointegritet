@@ -183,30 +183,20 @@ Psihointegritet želi eksplicitno da prikaže da prima LGBTQIA+ osobe bez stigme
 
 ---
 
-### O-24 · Zajednička taksonomija sadržaja — unifikacija pre proširenja _(novo 2026-07-29)_
+### O-24 · Zajednička taksonomija sadržaja — unifikacija pre proširenja _(delimično rešeno D-052, 2026-07-30)_
 
 > **Gde piše:** `CONTENT_MODEL_MATRIX_v0.1.md` §8 · `content-architecture.md` §6 · **Blokira:** Kompas (O-21), filtriranje kataloga, Dnevnu sobu (O-23)
 
 **Problem 1 — tražene ose nisu u dozvoljenoj listi.** CTO traži `audience`, `topics`, `goals`, `contentType`, `supportLevel`, `ageGroup`, `format`, `accessLevel`, `estimatedTime`, `relatedServices`, `relatedTherapists`. `CONTENT_MODEL_MATRIX_v0.1.md` §8 je iscrpna dozvola šta R3 CMS sme da doda modelu — `revisionId`, `createdBy`, `updatedBy`, `publishedAt`, audit i scheduling polja — i izričito kaže da se javni field name-ovi, CTA registry, template registry i ograničenja **ne smeju menjati bez nove produktne odluke**. Nijedna tražena osa nije na toj listi. Uz to `contentType` **već postoji kao javno ime polja** (`ContentBase.type: ContentType`) i ne sme dobiti drugo značenje.
 
-**Problem 2 — postojeća taksonomija je učetvorostručena i već je driftovala.** Isti pojam `areas` postoji na četiri mesta:
-
-| Gde | Oblik | Primer |
-|---|---|---|
-| `frontend/src/content/therapists.ts` | prikazni tekst, veliko slovo | `"Anksioznost i depresija"` |
-| `frontend/src/features/guidance/matching.ts` | matching predikat, malo slovo | `"anksioznost"` |
-| `backend/.../modules/guidance/matching.py` | isto, druga kopija | `"anksioznost"` |
-| `therapist_matching_profiles.areas` (JSON kolona) | seedovano migracijom `20260722_0001` | isto |
-
-⚠️ **Drift je već nastupio:** `matching.py:160` nosi `"zavisnost"` u Anjinim `areas`, a frontend nema **nijedan** pogodak na tu reč. Migracija `20260722_0001:478` ju je upisala i u bazu. Trenutno je bezopasno samo zato što nijedan `REASON_AREAS` ključ ne mapira na nju. **Za matching ne postoji parity fixture** — `contracts/fixtures/` sadrži samo `legal-publication.v1.json`.
+**O-24a — Intake & Matching drift je rešen D-052.** Frontend, backend i postojeći DB profili koriste pet stabilnih ID-jeva; `contracts/fixtures/taxonomy.v1.json` čitaju parity provere sa obe strane. „Zavisnost" je potvrđena Anjina uža capability oznaka i stvarna opcija upitnika, uz postojeći timski handoff. Javni čipovi u `content/therapists.ts` ostaju slobodan prezentacioni tekst i namerno nisu matching izvor.
 
 **Traži se:**
 
-1. **Od tima/Anje:** mapiranje prikaznih čipova na stabilne ID-jeve. Mapiranje sme biti **više-na-jedan** — `"Anksioznost i depresija"` je jedan čip koji stoji za dve matching teme, i to je jedini način da preživi bez vidljive izmene teksta. **Ovo nije refaktor:** re-keying menja rečenice razloga koje korisnik vidi u rezultatu vođenog izbora, a te su pod D-025 (najviše 3, običan jezik, bez skorova).
-2. **Od Anje, činjenično:** da li `"zavisnost"` treba da bude u Anjinim oblastima? Ona nosi `addiction_related_support` u `serviceCapabilities` na obe strane, ali `"zavisnost"` u `areas` samo na Python strani. Jedno od to dvoje je greška.
-3. **Od CTO:** da li se nove ose uopšte uvode sada. Danas imamo šest terapeuta, devet usluga i nijedan članak — nema kolekcije dovoljno velike da traži filtriranje.
+1. ✅ **Od tima/Anje:** pet Intake oblasti i Anjina primarna stručnost za zavisnost potvrđeni su i sprovedeni kroz D-052.
+2. **O-24b — od CTO, kasnije uz Blog/Layout/Kompas odluke:** koje zajedničke CMS ose se zaista uvode (`audience`, `topics`, `goals`, `supportLevel`, `ageGroup`, `format`, `accessLevel`, `estimatedTime`, `relatedServices`, `relatedTherapists`) i koji engine je njihov vlasnik. Postojeći `ContentBase.type` ostaje jedino značenje polja `contentType`.
 
-**Dok ne stigne:** ne dodavati nijednu novu osu. Prvo unifikacija `areas` u kontrolisani rečnik sa `contracts/fixtures/taxonomy.v1.json` koji čitaju obe strane — bez toga bi svaka nova osa bila **peta** kopija, a postojeće tri nemaju nikakvu zaštitu od drifta.
+**Dok ne stigne O-24b odluka:** ne dodavati nove CMS/Kompas ose. Ovo ne vraća završeni Intake rečnik na otvorenu odluku.
 
 ---
 
@@ -275,4 +265,4 @@ Koji kalendar po terapeutu, koji scope-ovi. Free/busy only, nikad naslovi (T15).
 **Uskoro:** tekst o lokacijama (O-02) · pregled upitnika (O-04) · prva radionica (O-05)
 **Pre Faze 2:** pravila otkazivanja (O-08) · cena za studente (O-09) · Google kalendari (O-10)
 
-**Traži Anjinu potvrdu pre CMS taksonomije (O-24):** mapiranje prikaznih oblasti na stabilne ID-jeve — menja rečenice razloga u vođenom izboru, pa nije tehnička odluka · i jedno činjenično pitanje: da li „zavisnost" pripada Anjinim oblastima rada (danas stoji u bazi i na backendu, ali ne i na sajtu)
+**Intake taksonomija je potvrđena i zatvorena (D-052):** pet stabilnih oblasti + Anjina primarna stručnost za zavisnost, uz timski handoff. Buduća CMS/Kompas taksonomija ostaje O-24b i ne traži novu Anjinu potvrdu o Intake pravilima.

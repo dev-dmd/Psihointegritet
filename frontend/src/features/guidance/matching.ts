@@ -1,8 +1,13 @@
 import { therapists } from "@/content/therapists";
+import {
+  ADDICTION_RELATED_SUPPORT,
+  SUPPORT_AREA_IDS,
+  type SupportAreaId,
+} from "@/features/guidance/taxonomy";
 import type { Therapist } from "@/types/therapist";
 
 /**
- * Intake & Matching Engine v2 — deterministic, explainable, non-diagnostic.
+ * Intake & Matching Engine v3 — deterministic, explainable, non-diagnostic.
  * Questions, weights and assignment rules come from Anja's answers
  * (documentations/odgovor-za-matching-anketa.pdf, 2026-07-18).
  *
@@ -31,6 +36,7 @@ export const REASONS = {
   selfEsteem: "Samopouzdanje",
   personalGrowth: "Lični razvoj",
   trauma: "Trauma",
+  addiction: "Zavisnost",
   unsure: "Ne znam tačno, želim razgovor",
   other: "Drugo",
 } as const;
@@ -223,8 +229,8 @@ const ALL_SLUGS: readonly Slug[] = [ANJA, MARIJA, MARJAN];
 
 export interface TherapistMatchingProfile {
   slug: Slug;
-  /** Areas of work per Anja's document — matching config, not public copy. */
-  areas: readonly string[];
+  /** Stable Intake taxonomy IDs; public profile copy remains presentation-only. */
+  areas: readonly SupportAreaId[];
   serviceCapabilities: readonly string[];
   acceptedAgeBands: readonly string[];
   supportedFormats: readonly string[];
@@ -237,30 +243,19 @@ export interface TherapistMatchingProfile {
 }
 
 /**
- * Areas of work exactly as confirmed in Anja's answers — do not add areas that
- * are not listed here. Canonical public name and slug stay Marjan Janković.
+ * The five broad areas are the stable routing taxonomy shared by all profiles.
+ * Narrow expertise remains in serviceCapabilities and scoring rules.
  */
 export const therapistMatchingConfig: Record<Slug, TherapistMatchingProfile> = {
   [ANJA]: {
     slug: ANJA,
-    areas: [
-      "individualna psihoterapija",
-      "bračno savetovanje",
-      "burnout",
-      "emocionalni razvoj",
-      "lični razvoj",
-      "trauma",
-      "gubitak i žalovanje",
-      "anksioznost",
-      "roditeljsko savetovanje",
-      "samopouzdanje",
-    ],
+    areas: SUPPORT_AREA_IDS,
     serviceCapabilities: [
       "individual_therapy",
       "marital_counseling",
       "parenting_support",
       "adolescent_support_16_plus",
-      "addiction_related_support",
+      ADDICTION_RELATED_SUPPORT,
     ],
     acceptedAgeBands: ["16–17 godina", "18 i više"],
     supportedFormats: ["online", "in_person"],
@@ -272,18 +267,7 @@ export const therapistMatchingConfig: Record<Slug, TherapistMatchingProfile> = {
   },
   [MARIJA]: {
     slug: MARIJA,
-    areas: [
-      "individualna psihoterapija",
-      "razvoj dece",
-      "vaspitni izazovi",
-      "adolescenti",
-      "porodični odnosi",
-      "lični razvoj",
-      "emocionalni razvoj",
-      "anksioznost",
-      "depresivno raspoloženje",
-      "roditeljstvo",
-    ],
+    areas: SUPPORT_AREA_IDS,
     serviceCapabilities: [
       "individual_therapy",
       "parenting_support",
@@ -299,17 +283,7 @@ export const therapistMatchingConfig: Record<Slug, TherapistMatchingProfile> = {
   },
   [MARJAN]: {
     slug: MARJAN,
-    areas: [
-      "individualna psihoterapija",
-      "bračno savetovanje",
-      "podrška zaposlenima",
-      "trauma",
-      "anksioznost",
-      "depresivno raspoloženje",
-      "lični razvoj",
-      "gubitak i žalovanje",
-      "konkretne životne situacije",
-    ],
+    areas: SUPPORT_AREA_IDS,
     serviceCapabilities: [
       "individual_therapy",
       "marital_counseling",
@@ -349,6 +323,7 @@ const reasonWeights: Record<string, WeightMap> = {
   [REASONS.selfEsteem]: { [ANJA]: 5, [MARIJA]: 2, [MARJAN]: 2 },
   [REASONS.personalGrowth]: { [ANJA]: 3, [MARIJA]: 3, [MARJAN]: 3 },
   [REASONS.trauma]: { [ANJA]: 5, [MARJAN]: 5 },
+  [REASONS.addiction]: { [ANJA]: 6 },
   [REASONS.unsure]: { [ANJA]: 1, [MARIJA]: 1, [MARJAN]: 1 },
   [REASONS.other]: { [ANJA]: 1, [MARIJA]: 1, [MARJAN]: 1 },
 };
@@ -437,21 +412,26 @@ const reasonAreaSentence: Record<string, string> = {
   [REASONS.selfEsteem]: "Radi sa temama samopouzdanja.",
   [REASONS.personalGrowth]: "Radi sa temama ličnog razvoja.",
   [REASONS.trauma]: "Radi sa temom traume.",
+  [REASONS.addiction]: "Ima potvrđeno iskustvo u radu sa temom zavisnosti.",
 };
 
-/** Maps a reason answer to the config area it corresponds to, per therapist. */
-const reasonToArea: Record<string, string[]> = {
-  [REASONS.anxiety]: ["anksioznost"],
-  [REASONS.depression]: ["depresivno raspoloženje"],
-  [REASONS.partnerRelationship]: ["bračno savetovanje"],
-  [REASONS.maritalProblems]: ["bračno savetovanje"],
-  [REASONS.parenting]: ["roditeljsko savetovanje", "roditeljstvo"],
-  [REASONS.adolescent]: ["adolescenti"],
-  [REASONS.burnout]: ["burnout"],
-  [REASONS.grief]: ["gubitak i žalovanje"],
-  [REASONS.selfEsteem]: ["samopouzdanje"],
-  [REASONS.personalGrowth]: ["lični razvoj"],
-  [REASONS.trauma]: ["trauma"],
+/** Maps questionnaire language only to stable matching taxonomy IDs. */
+const reasonToArea: Record<string, readonly SupportAreaId[]> = {
+  [REASONS.anxiety]: ["anxiety_stress"],
+  [REASONS.depression]: ["anxiety_stress"],
+  [REASONS.partnerRelationship]: ["relationships"],
+  [REASONS.maritalProblems]: ["relationships"],
+  [REASONS.parenting]: ["parenting"],
+  [REASONS.adolescent]: ["parenting"],
+  [REASONS.burnout]: ["anxiety_stress"],
+  [REASONS.grief]: ["trauma_crisis"],
+  [REASONS.selfEsteem]: ["personal_growth"],
+  [REASONS.personalGrowth]: ["personal_growth"],
+  [REASONS.trauma]: ["trauma_crisis"],
+};
+
+const reasonToCapability: Record<string, string> = {
+  [REASONS.addiction]: ADDICTION_RELATED_SUPPORT,
 };
 
 const serviceSentence: Record<string, string> = {
@@ -471,7 +451,12 @@ function buildReasons(
   const reason = answers.reason;
   if (reason && reasonAreaSentence[reason]) {
     const areas = reasonToArea[reason] ?? [];
-    if (areas.some((area) => profile.areas.includes(area))) {
+    const capability = reasonToCapability[reason];
+    if (
+      areas.some((area) => profile.areas.includes(area)) ||
+      (capability !== undefined &&
+        profile.serviceCapabilities.includes(capability))
+    ) {
       sentences.push(reasonAreaSentence[reason]);
     }
   }

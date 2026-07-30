@@ -373,7 +373,7 @@
 
 ## Faza E — Odloženo (van CMS koda, redosled iz D-043/plan §3)
 
-> **Sledeći redosled, potvrđen 2026-07-30:** prvo produkcijska priprema (Clerk nalozi + primena postojećih privacy/CMS migracija uz produkcijski pristup), zatim O-24 unifikacija taksonomije oblasti podrške. `article`/blog ostaje posle ADR-019.
+> **Redosled ažuriran 2026-07-30:** produkcijska priprema je odložena dok features/staging tok ne bude prihvaćen. O-24a Intake drift je zatvoren D-052; `article`/blog ostaje posle zasebne Layout Engine odluke i ADR-019. Buduće zajedničke CMS/Kompas ose ostaju O-24b i ne uvode se ovom izmenom.
 
 - [ ] Clerk nalozi za Anju/Mariju/Marjana na produkciji (O-17/O-18).
 - [ ] Primena migracija: LD-5 (privacy) + CG-B5 (content), po mogućstvu isti dan.
@@ -385,8 +385,8 @@
 
 ### Preduslovi pre bilo kog kataloga sadržaja (D-047)
 
-- [ ] **O-24 taksonomija** — unifikovati `areas` u kontrolisani rečnik sa stabilnim ID-jevima + display labelama, `contracts/fixtures/taxonomy.v1.json` čitan sa obe strane. ⚠️ **Danas postoje četiri kopije i drift je već nastupio** (`matching.py:160` ima `"zavisnost"`, frontend nema nijedan pogodak; seed migracija `20260722_0001:478` ju je upisala u bazu). Nove ose se **ne dodaju** dok unifikacija ne prođe — inače je svaka peta kopija.
-- [ ] Re-keying menja rečenice razloga u vođenom izboru (D-025) → **traži Anjinu potvrdu, nije refaktor**.
+- [x] **O-24a — Intake & Matching taksonomija (D-052):** pet stabilnih `areas` ID-jeva + display labele, zajednički `contracts/fixtures/taxonomy.v1.json`, frontend/backend parity čitači i migracija postojećih DB profila `20260730_0010`. „Zavisnost" je Anjina potvrđena capability oznaka i opcija upitnika, uz timski handoff.
+- [ ] **O-24b — buduće CMS/Kompas ose:** odlučiti tek uz Blog/Layout/Kompas arhitekturu; ova stavka ne menja završeni Intake rečnik.
 - [ ] `ADR-019` (tip `article`) pre bilo kog koda za članke — `ContentType` ih danas namerno izostavlja (`models.py:64`).
 
 ### AI sloj nad sadržajem — **posle CMS-a, ADR-017 §12 + A1.1**

@@ -11,8 +11,13 @@ from psihointegritet.modules.guidance.models import (
     SubjectAgeBand,
     TherapistMatchingProfile,
 )
+from psihointegritet.modules.guidance.taxonomy import (
+    ADDICTION_RELATED_SUPPORT,
+    SUPPORT_AREA_IDS,
+    SupportAreaId,
+)
 
-RULE_VERSION = "intake-matching-v2"
+RULE_VERSION = "intake-matching-v3"
 
 ANJA = "anja-stamenkovic"
 MARIJA = "marija-stamenkovic"
@@ -31,6 +36,7 @@ REASONS = {
     "self_esteem": "Samopouzdanje",
     "personal_growth": "Lični razvoj",
     "trauma": "Trauma",
+    "addiction": "Zavisnost",
     "unsure": "Ne znam tačno, želim razgovor",
     "other": "Drugo",
 }
@@ -92,7 +98,7 @@ class ServiceRecommendation:
 class MatchingProfile:
     slug: str
     display_name: str
-    areas: tuple[str, ...]
+    areas: tuple[SupportAreaId, ...]
     services: tuple[str, ...]
     service_capabilities: tuple[str, ...]
     accepted_age_bands: tuple[SubjectAgeBand, ...]
@@ -151,19 +157,7 @@ DEFAULT_PROFILES = (
     MatchingProfile(
         slug=ANJA,
         display_name="Anja Stamenković",
-        areas=(
-            "individualna psihoterapija",
-            "bračno savetovanje",
-            "burnout",
-            "emocionalni razvoj",
-            "lični razvoj",
-            "zavisnost",
-            "trauma",
-            "gubitak i žalovanje",
-            "anksioznost",
-            "roditeljsko savetovanje",
-            "samopouzdanje",
-        ),
+        areas=tuple(SupportAreaId(area) for area in SUPPORT_AREA_IDS),
         services=(
             "individualna-psihoterapija",
             "bracno-savetovanje",
@@ -174,7 +168,7 @@ DEFAULT_PROFILES = (
             "marital_counseling",
             "parenting_support",
             "adolescent_support_16_plus",
-            "addiction_related_support",
+            ADDICTION_RELATED_SUPPORT,
         ),
         accepted_age_bands=(
             SubjectAgeBand.SIXTEEN_TO_SEVENTEEN,
@@ -186,18 +180,7 @@ DEFAULT_PROFILES = (
     MatchingProfile(
         slug=MARIJA,
         display_name="Marija Stamenković",
-        areas=(
-            "individualna psihoterapija",
-            "razvoj dece",
-            "vaspitni izazovi",
-            "adolescenti",
-            "porodični odnosi",
-            "lični razvoj",
-            "emocionalni razvoj",
-            "anksioznost",
-            "depresivno raspoloženje",
-            "roditeljstvo",
-        ),
+        areas=tuple(SupportAreaId(area) for area in SUPPORT_AREA_IDS),
         services=("individualna-psihoterapija", "roditeljsko-savetovanje"),
         service_capabilities=(
             "individual_therapy",
@@ -216,17 +199,7 @@ DEFAULT_PROFILES = (
     MatchingProfile(
         slug=MARJAN,
         display_name="Marjan Janković",
-        areas=(
-            "individualna psihoterapija",
-            "bračno savetovanje",
-            "podrška zaposlenima",
-            "trauma",
-            "anksioznost",
-            "depresivno raspoloženje",
-            "lični razvoj",
-            "gubitak i žalovanje",
-            "konkretne životne situacije",
-        ),
+        areas=tuple(SupportAreaId(area) for area in SUPPORT_AREA_IDS),
         services=(
             "individualna-psihoterapija",
             "bracno-savetovanje",
@@ -262,6 +235,7 @@ REASON_WEIGHTS: WeightTable = {
     REASONS["self_esteem"]: {ANJA: 5, MARIJA: 2, MARJAN: 2},
     REASONS["personal_growth"]: {ANJA: 3, MARIJA: 3, MARJAN: 3},
     REASONS["trauma"]: {ANJA: 5, MARJAN: 5},
+    REASONS["addiction"]: {ANJA: 6},
     REASONS["unsure"]: {ANJA: 1, MARIJA: 1, MARJAN: 1},
     REASONS["other"]: {ANJA: 1, MARIJA: 1, MARJAN: 1},
 }
@@ -293,20 +267,22 @@ REASON_SENTENCES: dict[str, str] = {
     REASONS["self_esteem"]: "Radi sa temama samopouzdanja.",
     REASONS["personal_growth"]: "Radi sa temama ličnog razvoja.",
     REASONS["trauma"]: "Radi sa temom traume.",
+    REASONS["addiction"]: "Ima potvrđeno iskustvo u radu sa temom zavisnosti.",
 }
-REASON_AREAS: dict[str, tuple[str, ...]] = {
-    REASONS["anxiety"]: ("anksioznost",),
-    REASONS["depression"]: ("depresivno raspoloženje",),
-    REASONS["partner_relationship"]: ("bračno savetovanje",),
-    REASONS["marital_problems"]: ("bračno savetovanje",),
-    REASONS["parenting"]: ("roditeljsko savetovanje", "roditeljstvo"),
-    REASONS["adolescent"]: ("adolescenti",),
-    REASONS["burnout"]: ("burnout",),
-    REASONS["grief"]: ("gubitak i žalovanje",),
-    REASONS["self_esteem"]: ("samopouzdanje",),
-    REASONS["personal_growth"]: ("lični razvoj",),
-    REASONS["trauma"]: ("trauma",),
+REASON_AREAS: dict[str, tuple[SupportAreaId, ...]] = {
+    REASONS["anxiety"]: (SupportAreaId.ANXIETY_STRESS,),
+    REASONS["depression"]: (SupportAreaId.ANXIETY_STRESS,),
+    REASONS["partner_relationship"]: (SupportAreaId.RELATIONSHIPS,),
+    REASONS["marital_problems"]: (SupportAreaId.RELATIONSHIPS,),
+    REASONS["parenting"]: (SupportAreaId.PARENTING,),
+    REASONS["adolescent"]: (SupportAreaId.PARENTING,),
+    REASONS["burnout"]: (SupportAreaId.ANXIETY_STRESS,),
+    REASONS["grief"]: (SupportAreaId.TRAUMA_CRISIS,),
+    REASONS["self_esteem"]: (SupportAreaId.PERSONAL_GROWTH,),
+    REASONS["personal_growth"]: (SupportAreaId.PERSONAL_GROWTH,),
+    REASONS["trauma"]: (SupportAreaId.TRAUMA_CRISIS,),
 }
+REASON_CAPABILITIES = {REASONS["addiction"]: ADDICTION_RELATED_SUPPORT}
 
 
 def profile_from_entity(entity: TherapistMatchingProfile) -> MatchingProfile:
@@ -315,7 +291,7 @@ def profile_from_entity(entity: TherapistMatchingProfile) -> MatchingProfile:
     return MatchingProfile(
         slug=entity.slug,
         display_name=entity.display_name,
-        areas=tuple(entity.areas),
+        areas=tuple(SupportAreaId(area) for area in entity.areas),
         services=tuple(entity.services),
         service_capabilities=tuple(entity.service_capabilities),
         accepted_age_bands=tuple(SubjectAgeBand(value) for value in entity.accepted_age_bands),
@@ -479,8 +455,12 @@ def _candidate(
     explanation_codes: list[str] = []
     reasons: list[str] = []
     areas = REASON_AREAS.get(input.reason or "", ())
+    capability = REASON_CAPABILITIES.get(input.reason or "")
     sentence = REASON_SENTENCES.get(input.reason or "")
-    if sentence and any(area in profile.areas for area in areas):
+    if sentence and (
+        any(area in profile.areas for area in areas)
+        or (capability is not None and capability in profile.service_capabilities)
+    ):
         explanation_codes.append(f"topic:{input.reason}")
         reasons.append(sentence)
 

@@ -441,7 +441,7 @@ Dokazuje `SlotSpec` registar koji pravni tok ne dokazuje (`legal_page` ima samo 
 > 1. **Lokalni backend kontejner nije dobijao Clerk verifier konfiguraciju.** ✅ Rešeno bez učitavanja celog secrets fajla: `start-dev.sh` izdvaja samo issuer/JWKS/audience u gitignorovani `backend/.env.compose.local` (`0600`), a Compose ga učitava kao opcioni `env_file`. Konfiguracija opstaje i posle zasebnog `docker compose up/build`; stvarni Anja i superadmin browser smoke su prošli.
 > 2. **Superadmin nije imao nikakva prava na backendu** — frontend guard-ovi ga puštaju, backend ga nije poznavao. ✅ **Rešeno kroz D-051** (`internal_users.is_superadmin`, migracija `20260730_0006`, `resolve_staff_actor` daje pun staff kapacitet). Da bi važilo za konkretan nalog, mora se pokrenuti jednom: `python scripts/provision_staff.py --external-id <clerk_sub> --superadmin`.
 
-**Faza 2 — preduslovi:** unifikacija `areas` taksonomije (**O-24**, traži Anjinu potvrdu) · **ADR-018** je napisan · **Amandman 1 na ADR-017** je napisan.
+**Faza 2 — preduslovi:** ✅ Intake `areas` taksonomija (**O-24a / D-052**, Anja potvrdila) · **ADR-018** je napisan · **Amandman 1 na ADR-017** je napisan. Buduće CMS/Kompas ose ostaju O-24b i rešavaju se uz Blog/Layout/Kompas arhitekturu.
 
 **Faza 3 — iza kapija:** ADR-019 (tip `article`) → tok članka → resource/PDF tok → **ADR-020** (AI review/patch) → **ADR-021** (layout recepti) → `VideoAsset` 🚫 · Kompas 🚫 **O-21** · Dnevna soba 🚫 **O-23**.
 
