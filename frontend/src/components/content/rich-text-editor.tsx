@@ -5,8 +5,9 @@ import { ListItem } from "@tiptap/extension-list";
 import UniqueID from "@tiptap/extension-unique-id";
 import { EditorContent, useEditor, type Editor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
+import { normalizeRichHtml } from "@/features/workspace/content-api";
 import {
   createBlockId,
   isAllowedHref,
@@ -85,6 +86,10 @@ export function RichTextEditor({
   const [linkPromptOpen, setLinkPromptOpen] = useState(false);
   const [linkValue, setLinkValue] = useState("");
   const [linkError, setLinkError] = useState<string | null>(null);
+  const [pasteStatus, setPasteStatus] = useState<
+    "idle" | "normalizing" | "normalized" | "fallback"
+  >("idle");
+  const editorRef = useRef<Editor | null>(null);
 
   const editor = useEditor({
     extensions: EXTENSIONS,
@@ -93,6 +98,37 @@ export function RichTextEditor({
     // Next.js App Router SSR-safety — Tiptap's official recommendation to
     // avoid a hydration mismatch on the initial render.
     immediatelyRender: false,
+    onCreate: ({ editor: current }) => {
+      editorRef.current = current;
+    },
+    onDestroy: () => {
+      editorRef.current = null;
+    },
+    editorProps: {
+      handlePaste: (_view, event) => {
+        const html = event.clipboardData?.getData("text/html") ?? "";
+        if (!html.trim()) return false;
+
+        const plainText = event.clipboardData?.getData("text/plain") ?? "";
+        event.preventDefault();
+        setPasteStatus("normalizing");
+        void normalizeRichHtml(html)
+          .then((result) => {
+            const current = editorRef.current;
+            if (!current) return;
+            const normalized = richDocToTiptapDoc(result.body).content ?? [];
+            current.chain().focus().insertContent(normalized).run();
+            setPasteStatus("normalized");
+          })
+          .catch(() => {
+            const current = editorRef.current;
+            if (!current) return;
+            current.chain().focus().insertContent(plainText).run();
+            setPasteStatus("fallback");
+          });
+        return true;
+      },
+    },
     onBlur: ({ editor: current }) =>
       onChange(tiptapDocToRichDoc(current.getJSON())),
   });
@@ -175,6 +211,18 @@ export function RichTextEditor({
         editor={editor}
         className="border-line-strong rounded-tile bg-panel-canvas prose-content min-h-[7rem] border px-3 py-2.5 text-sm read-only:opacity-70"
       />
+      <p
+        className="text-ink-55 mt-1.5 min-h-4 text-[11.5px]"
+        aria-live="polite"
+      >
+        {pasteStatus === "normalizing"
+          ? "Normalizujem nalepljeni sadržaj…"
+          : pasteStatus === "normalized"
+            ? "Nalepljeni sadržaj je bezbedno normalizovan."
+            : pasteStatus === "fallback"
+              ? "Normalizator nije dostupan; nalepljen je samo običan tekst."
+              : null}
+      </p>
     </div>
   );
 }

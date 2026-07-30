@@ -11,14 +11,19 @@ from __future__ import annotations
 from uuid import UUID
 
 from fastapi import APIRouter, HTTPException, status
+from sqlalchemy import select
 
 from psihointegritet.api.dependencies import AppSettings, CurrentIdentity, DatabaseSession
 from psihointegritet.modules.content.models import ContentType
 from psihointegritet.modules.content.schemas import (
     ContentRevisionOut,
     CreateContentEntryRequest,
+    NormalizeRichHtmlRequest,
+    NormalizeRichHtmlResponse,
+    PublicContentRevisionOut,
     PublishBlockOut,
     RecordReviewDecisionRequest,
+    RichDocFindingOut,
     TransitionRequest,
     UpdateContentRevisionRequest,
 )
@@ -33,8 +38,32 @@ from psihointegritet.modules.guidance.authorization import (
     StaffActor,
     resolve_staff_actor,
 )
+from psihointegritet.modules.organizations.models import Organization
+from psihointegritet.shared.domain.rich_doc import rich_doc_to_json
+from psihointegritet.shared.parsing.html_normalize import normalize_html_to_rich_doc
 
 router = APIRouter(prefix="/content", tags=["content"])
+public_router = APIRouter(prefix="/public/content", tags=["public-content"])
+
+
+@public_router.get(
+    "/published",
+    response_model=list[PublicContentRevisionOut],
+    operation_id="list_public_content",
+)
+async def list_public_content(
+    session: DatabaseSession,
+    settings: AppSettings,
+    locale: str = "sr-Latn",
+) -> list[PublicContentRevisionOut]:
+    """Only immutable published overrides for the configured public tenant."""
+    async with session.begin():
+        organization = await session.scalar(
+            select(Organization).where(Organization.slug == settings.default_organization_slug)
+        )
+        if organization is None:
+            return []
+        return await ContentService(session).list_published(organization.id, locale)
 
 
 async def _org_admin_actor(
@@ -56,6 +85,37 @@ def _handle(error: Exception) -> HTTPException:
     if isinstance(error, ValueError):
         return HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail=str(error))
     raise error
+
+
+@router.post(
+    "/rich-doc/normalize-html",
+    response_model=NormalizeRichHtmlResponse,
+    operation_id="normalize_rich_html",
+)
+async def normalize_rich_html(
+    request: NormalizeRichHtmlRequest,
+    identity: CurrentIdentity,
+    session: DatabaseSession,
+    settings: AppSettings,
+) -> NormalizeRichHtmlResponse:
+    """One allowlist normalizer for paste in every staff RichDoc editor."""
+    async with session.begin():
+        await _org_admin_actor(session, settings, identity)
+    document, findings = normalize_html_to_rich_doc(request.html)
+    return NormalizeRichHtmlResponse(
+        body=rich_doc_to_json(document),
+        findings=[
+            RichDocFindingOut(
+                rule_id=finding.rule_id,
+                rule_version=finding.rule_version,
+                severity=finding.severity,
+                message=finding.message,
+                remediation=finding.remediation,
+                field_path=finding.field_path,
+            )
+            for finding in findings
+        ],
+    )
 
 
 @router.get(
@@ -200,7 +260,7 @@ async def record_content_review_decision(
             return await ContentService(session).record_review_decision(
                 actor, entry_id, revision_id, request
             )
-    except (ContentNotFoundError, ContentForbiddenError) as error:
+    except (ContentNotFoundError, ContentForbiddenError, ContentConflictError) as error:
         raise _handle(error) from error
 
 

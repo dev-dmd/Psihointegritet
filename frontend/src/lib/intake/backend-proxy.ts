@@ -6,6 +6,10 @@ import { serverEnv } from "@/lib/validation/env";
 
 const MAX_PUBLIC_INTAKE_BYTES = 12_000;
 
+export async function forwardPublicIntakeGet(path: string): Promise<Response> {
+  return forward(path, { method: "GET" });
+}
+
 export async function forwardPublicIntake(
   path: string,
   request: Request,
@@ -47,7 +51,11 @@ async function forward(path: string, init: RequestInit): Promise<Response> {
     });
     const contentType =
       response.headers.get("Content-Type") ?? "application/json";
-    return new Response(await response.arrayBuffer(), {
+    const body =
+      response.status === 204 || response.status === 304
+        ? null
+        : await response.arrayBuffer();
+    return new Response(body, {
       status: response.status,
       headers: {
         "Cache-Control": "no-store",

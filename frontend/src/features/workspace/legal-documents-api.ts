@@ -12,6 +12,8 @@
  */
 
 import type { RichDoc } from "@/lib/content-governance/rich-doc";
+import type { ActorSummary } from "@/components/panel/actor-badge";
+import { isApiProblem } from "@/lib/errors/api-problem";
 
 import type {
   ApprovalCapability,
@@ -23,6 +25,8 @@ import type {
 export interface ApiApprovalEvidence {
   capability: ApprovalCapability;
   approver: string | null;
+  approverUserId: string | null;
+  approvedBy: ActorSummary | null;
   approvedAt: string | null;
   note: string | null;
 }
@@ -37,6 +41,8 @@ export interface ApiLegalDocumentRevision {
   status: RevisionStatus;
   versionLabel: string;
   approvals: ApiApprovalEvidence[];
+  createdBy: ActorSummary | null;
+  updatedBy: ActorSummary | null;
   updatedAt: string;
 }
 
@@ -91,6 +97,9 @@ export function toLegalDocument(
     body: revision.body,
     status: revision.status,
     approvals: revision.approvals.map((evidence) => evidence.capability),
+    approvalEvidence: revision.approvals,
+    createdBy: revision.createdBy,
+    updatedBy: revision.updatedBy,
     versionLabel: revision.versionLabel,
     updatedAt: revision.updatedAt,
   };
@@ -98,11 +107,17 @@ export function toLegalDocument(
 
 async function parseOrThrow<T>(response: Response): Promise<T> {
   if (!response.ok) {
-    const detail = await response.text().catch(() => "");
-    throw new LegalDocumentsApiError(
-      detail || `Zahtev nije uspeo (${response.status}).`,
-      response.status,
-    );
+    const text = await response.text().catch(() => "");
+    let detail = text || `Zahtev nije uspeo (${response.status}).`;
+    try {
+      const parsed: unknown = text ? JSON.parse(text) : null;
+      if (isApiProblem(parsed)) {
+        detail = parsed.detail ?? parsed.title;
+      }
+    } catch {
+      // Keep a non-JSON proxy/network response as-is.
+    }
+    throw new LegalDocumentsApiError(detail, response.status);
   }
   if (response.status === 204) return undefined as T;
   return (await response.json()) as T;

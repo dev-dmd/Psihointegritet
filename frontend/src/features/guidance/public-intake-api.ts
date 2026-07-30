@@ -20,6 +20,12 @@ export type PublicIntakeSubmissionResponse =
   components["schemas"]["PublicIntakeSubmissionResponse"];
 type PublicIntakeMatchResponse =
   components["schemas"]["PublicIntakeMatchResponse"];
+export interface PublicIntakeCapabilities {
+  matchingEnabled: boolean;
+  sensitiveSubmissionEnabled: boolean;
+  dataProcessingNoticeVersion: string | null;
+  requestAcknowledgementVersion: string | null;
+}
 
 export class PublicIntakeApiError extends Error {
   constructor(readonly status: number) {
@@ -43,6 +49,20 @@ export function toPublicIntakeAnswers(
     format: answers.format,
     location: answers.location,
   };
+}
+
+export async function fetchPublicIntakeCapabilities(
+  signal?: AbortSignal,
+): Promise<PublicIntakeCapabilities> {
+  const response = await fetch("/api/intake/capabilities", {
+    method: "GET",
+    cache: "no-store",
+    ...(signal ? { signal } : {}),
+  });
+  if (!response.ok) {
+    throw new PublicIntakeApiError(response.status);
+  }
+  return (await response.json()) as PublicIntakeCapabilities;
 }
 
 export async function fetchAuthoritativeIntakeMatch(

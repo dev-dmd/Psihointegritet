@@ -2,12 +2,18 @@ import Link from "next/link";
 
 import { PageHero } from "@/components/shared/page-hero";
 import { Chip } from "@/components/ui/chip";
-import { groupPrograms } from "@/content/programs";
 import { metadataForRoute } from "@/lib/content-governance/discoverability";
+import { getContentProvider } from "@/lib/content-governance/provider-resolver";
 
-export const metadata = metadataForRoute("/radionice");
+export async function generateMetadata() {
+  return metadataForRoute("/radionice", await getContentProvider());
+}
 
-export default function WorkshopsPage() {
+export default async function WorkshopsPage() {
+  const programs = (await getContentProvider())
+    .listAll()
+    .filter((entity) => entity.type === "program")
+    .map((entity) => entity.source);
   return (
     <>
       <PageHero id="radionice" tone="warm">
@@ -28,7 +34,7 @@ export default function WorkshopsPage() {
       <section className="pt-[64px] pb-[72px] md:pt-24 md:pb-24">
         <div className="mx-auto max-w-[1536px] px-5 md:px-8">
           <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
-            {groupPrograms.map((program) => (
+            {programs.map((program) => (
               <article
                 key={program.slug}
                 className="bg-surface border-coffee/8 flex min-h-full flex-col rounded-[22px] border p-7"

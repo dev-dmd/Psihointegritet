@@ -56,6 +56,7 @@ function finding(
   message: string,
   recommendation: string,
   field?: string,
+  requiresApproval?: ContentHealthFinding["requiresApproval"],
 ): ContentHealthFinding {
   return {
     ruleId,
@@ -65,6 +66,7 @@ function finding(
     ...(field ? { field } : {}),
     message,
     recommendation,
+    ...(requiresApproval ? { requiresApproval } : {}),
   };
 }
 
@@ -123,6 +125,7 @@ function approvalFindings(entity: ContentEntity): ContentHealthFinding[] {
           `Nedostaje ${requirement.capability} approval evidence.`,
           "Dodati obavezni approval evidence pre objave.",
           "approvalEvidence",
+          requirement.capability,
         ),
       );
       continue;
@@ -136,6 +139,7 @@ function approvalFindings(entity: ContentEntity): ContentHealthFinding[] {
           `${requirement.capability} approval nije odobren za objavu.`,
           "Završiti odgovarajući review ili vratiti sadržaj u draft.",
           "approvalEvidence",
+          requirement.capability,
         ),
       );
     }

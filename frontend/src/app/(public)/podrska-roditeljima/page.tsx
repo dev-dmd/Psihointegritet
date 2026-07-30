@@ -7,10 +7,13 @@ import { findService, formatRsd } from "@/content/services";
 import { therapists } from "@/content/therapists";
 import { buildBookingHref } from "@/features/booking/booking-context";
 import { metadataForRoute } from "@/lib/content-governance/discoverability";
+import { getContentProvider } from "@/lib/content-governance/provider-resolver";
 
 const parentService = findService("roditeljsko-savetovanje");
 
-export const metadata = metadataForRoute("/podrska-roditeljima");
+export async function generateMetadata() {
+  return metadataForRoute("/podrska-roditeljima", await getContentProvider());
+}
 
 export default function ParentSupportPage() {
   if (!parentService) return null;

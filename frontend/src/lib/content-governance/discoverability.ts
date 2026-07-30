@@ -66,12 +66,14 @@ function deploymentEnvironmentFromRuntime(): DeploymentEnvironment {
         : "development";
 }
 
-export function metadataForRoute(route: string): Metadata {
-  const entity = staticContentProvider.getPageByRoute(route);
-  if (!entity) {
-    throw new Error(`No governed content record exists for ${route}.`);
-  }
-  return createPageMetadata(entity);
+export function metadataForRoute(
+  route: string,
+  provider: ContentProvider = staticContentProvider,
+): Metadata {
+  const entity =
+    provider.getPageByRoute(route) ??
+    staticContentProvider.getPageByRoute(route);
+  return entity ? createPageMetadata(entity) : {};
 }
 
 export function metadataForEntity(entity: ContentEntity): Metadata {
@@ -194,7 +196,12 @@ export function jsonLdForEntity(
   return records;
 }
 
-export function jsonLdForRoute(route: string): JsonLdNode[] {
-  const entity = staticContentProvider.getPageByRoute(route);
+export function jsonLdForRoute(
+  route: string,
+  provider: ContentProvider = staticContentProvider,
+): JsonLdNode[] {
+  const entity =
+    provider.getPageByRoute(route) ??
+    staticContentProvider.getPageByRoute(route);
   return entity ? jsonLdForEntity(entity) : [];
 }

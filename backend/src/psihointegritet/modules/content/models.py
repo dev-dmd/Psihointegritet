@@ -168,6 +168,14 @@ class ContentRevision(Base):
     slot_data: Mapped[dict[str, object]] = mapped_column(
         JSON, default=dict, server_default="{}", nullable=False
     )
+    # Existing ContentEntity.SeoFields shape; stored with the revision so SEO
+    # preview values follow the same lifecycle/immutability as authored slots.
+    seo: Mapped[dict[str, object]] = mapped_column(
+        JSON,
+        default=lambda: {"title": "", "description": ""},
+        server_default='{"title": "", "description": ""}',
+        nullable=False,
+    )
     status: Mapped[RevisionStatus] = mapped_column(
         value_enum(RevisionStatus, length=32),
         default=RevisionStatus.DRAFT,

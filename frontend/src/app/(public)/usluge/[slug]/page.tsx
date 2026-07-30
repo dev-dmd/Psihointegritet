@@ -20,7 +20,7 @@ import {
   jsonLdForEntity,
   metadataForEntity,
 } from "@/lib/content-governance/discoverability";
-import { staticContentProvider } from "@/lib/content-governance/static-provider";
+import { getContentProvider } from "@/lib/content-governance/provider-resolver";
 
 interface ServicePageProps {
   params: Promise<{ slug: string }>;
@@ -35,7 +35,7 @@ export async function generateMetadata({
 }: ServicePageProps): Promise<Metadata> {
   const service = findService((await params).slug);
   if (!service) return {};
-  const entity = staticContentProvider.getEntity(
+  const entity = (await getContentProvider()).getEntity(
     "service",
     `service:${service.slug}`,
   );
@@ -43,17 +43,16 @@ export async function generateMetadata({
 }
 
 export default async function ServiceDetailPage({ params }: ServicePageProps) {
-  const service = findService((await params).slug);
+  const slug = (await params).slug;
+  const provider = await getContentProvider();
+  const contentEntity = provider.getEntity("service", `service:${slug}`);
+  const service = contentEntity?.source ?? findService(slug);
   if (!service) notFound();
 
   const providers = therapists.filter((therapist) =>
     therapist.bookingServiceSlugs.includes(service.slug),
   );
   const locations = [...new Set(providers.map((therapist) => therapist.city))];
-  const contentEntity = staticContentProvider.getEntity(
-    "service",
-    `service:${service.slug}`,
-  );
   const bookingHref = buildBookingHref({
     service: service.slug,
     source: "service",

@@ -4,6 +4,130 @@
  */
 
 export interface paths {
+    "/api/v1/content/entries": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Content Entries */
+        get: operations["list_content_entries"];
+        put?: never;
+        /** Create Content Entry */
+        post: operations["create_content_entry"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/content/entries/{entry_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Content Entry */
+        get: operations["get_content_entry"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/content/entries/{entry_id}/revisions/{revision_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete Content Revision */
+        delete: operations["delete_content_revision"];
+        options?: never;
+        head?: never;
+        /** Update Content Revision */
+        patch: operations["update_content_revision"];
+        trace?: never;
+    };
+    "/api/v1/content/entries/{entry_id}/revisions/{revision_id}/publish-check": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Check Content Publishable */
+        get: operations["check_content_publishable"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/content/entries/{entry_id}/revisions/{revision_id}/reviews": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Record Content Review Decision */
+        post: operations["record_content_review_decision"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/content/entries/{entry_id}/revisions/{revision_id}/transition": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Transition Content Revision */
+        post: operations["transition_content_revision"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/content/rich-doc/normalize-html": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Normalize Rich Html
+         * @description One allowlist normalizer for paste in every staff RichDoc editor.
+         */
+        post: operations["normalize_rich_html"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/health": {
         parameters: {
             query?: never;
@@ -72,6 +196,152 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/privacy/documents": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Legal Documents */
+        get: operations["list_legal_documents"];
+        put?: never;
+        /** Create Legal Document */
+        post: operations["create_legal_document"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/privacy/documents/{document_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Legal Document */
+        get: operations["get_legal_document"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/privacy/documents/{document_id}/import-docx": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Import Legal Document Docx */
+        post: operations["import_legal_document_docx"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/privacy/documents/{document_id}/revisions/{revision_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete Legal Document Revision */
+        delete: operations["delete_legal_document_revision"];
+        options?: never;
+        head?: never;
+        /** Update Legal Document Revision */
+        patch: operations["update_legal_document_revision"];
+        trace?: never;
+    };
+    "/api/v1/privacy/documents/{document_id}/revisions/{revision_id}/approvals": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Record Legal Document Approval */
+        post: operations["record_legal_document_approval"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/privacy/documents/{document_id}/revisions/{revision_id}/publish-check": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Check Legal Document Publishable
+         * @description `None` means publishable — the panel calls this before attempting a
+         *     publish transition, same order the frontend already checks locally via
+         *     `checkPublishable()`.
+         */
+        get: operations["check_legal_document_publishable"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/privacy/documents/{document_id}/revisions/{revision_id}/transition": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Transition Legal Document Revision */
+        post: operations["transition_legal_document_revision"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/public/content/published": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Public Content
+         * @description Only immutable published overrides for the configured public tenant.
+         */
+        get: operations["list_public_content"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/public/intake/capabilities": {
         parameters: {
             query?: never;
@@ -123,6 +393,29 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/public/privacy/documents/{kind}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Public Legal Document
+         * @description Unauthenticated: what `/privatnost`, `/uslovi`, `/kolacici`,
+         *     `/pravila-zakazivanja` and the Intake consent checkboxes read. 404 when
+         *     nothing is published — the caller renders its own static fallback text
+         *     (D-038), never a broken page.
+         */
+        get: operations["get_public_legal_document"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/health": {
         parameters: {
             query?: never;
@@ -147,6 +440,51 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /**
+         * ActorSummaryOut
+         * @description Stable audit identity plus the human label shown in the panel.
+         */
+        ActorSummaryOut: {
+            /** Displayname */
+            displayName: string;
+            /** Issuperadmin */
+            isSuperadmin: boolean;
+            /**
+             * Userid
+             * Format: uuid
+             */
+            userId: string;
+        };
+        /**
+         * ApprovalCapability
+         * @description Approval capabilities from D-033. These are not auth roles.
+         * @enum {string}
+         */
+        ApprovalCapability: "clinical" | "legal" | "business";
+        /**
+         * ApprovalEvidenceOut
+         * @description Field names match the stored shape verbatim (`modules/privacy/models.py`'s
+         *     `LegalDocumentRevision.approvals` comment: `capability`/`approver`/
+         *     `approved_at`/`note`) — this is a read model over that JSON, not a
+         *     redesign of it.
+         */
+        ApprovalEvidenceOut: {
+            /** Approvedat */
+            approvedAt?: string | null;
+            approvedBy?: components["schemas"]["ActorSummaryOut"] | null;
+            /** Approver */
+            approver?: string | null;
+            /** Approveruserid */
+            approverUserId?: string | null;
+            capability: components["schemas"]["ApprovalCapability"];
+            /** Note */
+            note?: string | null;
+        };
+        /** Body_import_legal_document_docx */
+        Body_import_legal_document_docx: {
+            /** File */
+            file: string;
+        };
         /** ClaimIntakeCaseResponse */
         ClaimIntakeCaseResponse: {
             /**
@@ -166,6 +504,97 @@ export interface components {
          * @enum {string}
          */
         ConsentKind: "intake_data_processing_notice" | "intake_request_acknowledgement" | "marketing" | "ai_free_text_processing";
+        /** ContentFindingOut */
+        ContentFindingOut: {
+            /** Fieldpath */
+            fieldPath?: string | null;
+            /** Message */
+            message: string;
+            /** Remediation */
+            remediation: string;
+            requiresApproval?: components["schemas"]["ApprovalCapability"] | null;
+            /** Ruleid */
+            ruleId: string;
+            /** Ruleversion */
+            ruleVersion: string;
+            /** Severity */
+            severity: string;
+        };
+        /** ContentRevisionOut */
+        ContentRevisionOut: {
+            contentType: components["schemas"]["ContentType"];
+            createdBy?: components["schemas"]["ActorSummaryOut"] | null;
+            /** Decisions */
+            decisions: components["schemas"]["ReviewDecisionOut"][];
+            /**
+             * Entryid
+             * Format: uuid
+             */
+            entryId: string;
+            /** Locale */
+            locale: string;
+            /** Lockversion */
+            lockVersion: number;
+            /**
+             * Revisionid
+             * Format: uuid
+             */
+            revisionId: string;
+            seo: components["schemas"]["SeoFields"];
+            /** Slotdata */
+            slotData: {
+                [key: string]: unknown;
+            };
+            /** Slug */
+            slug: string;
+            status: components["schemas"]["RevisionStatus"];
+            template: components["schemas"]["ContentTemplate"];
+            /**
+             * Updatedat
+             * Format: date-time
+             */
+            updatedAt: string;
+            updatedBy?: components["schemas"]["ActorSummaryOut"] | null;
+            /** Versionlabel */
+            versionLabel: string;
+        };
+        /**
+         * ContentTemplate
+         * @description Allowed templates, mirroring the frontend `ContentTemplate` registry.
+         *
+         *     The registry decides which slots a template requires; the editor may fill
+         *     slots but never invent a section type (CONTENT_MODEL_MATRIX §4).
+         * @enum {string}
+         */
+        ContentTemplate: "service_detail" | "therapist_profile" | "support_area" | "audience_page" | "program_detail" | "company_page" | "pricing_page" | "static_information" | "legal_page";
+        /**
+         * ContentType
+         * @description The six governed types from R1.4.i `ContentType`.
+         *
+         *     `article` is deliberately absent: the knowledge library is R3 (ADR-016).
+         * @enum {string}
+         */
+        ContentType: "static_page" | "service" | "therapist" | "program" | "company_plan" | "package_offer";
+        /** CreateContentEntryRequest */
+        CreateContentEntryRequest: {
+            contentType: components["schemas"]["ContentType"];
+            /**
+             * Locale
+             * @default sr-Latn
+             */
+            locale: string;
+            /** Slug */
+            slug: string;
+            template: components["schemas"]["ContentTemplate"];
+        };
+        /** CreateLegalDocumentRequest */
+        CreateLegalDocumentRequest: {
+            kind: components["schemas"]["LegalDocumentKind"];
+            /** Slug */
+            slug: string;
+            /** Title */
+            title: string;
+        };
         /**
          * GuardianConsentStatus
          * @enum {string}
@@ -182,6 +611,40 @@ export interface components {
             status: string;
             /** Version */
             version: string;
+        };
+        /**
+         * ImportDocxFinding
+         * @description Mirrors `shared.domain.rich_doc.RichDocFinding` for the wire.
+         */
+        ImportDocxFinding: {
+            /** Fieldpath */
+            fieldPath?: string | null;
+            /** Message */
+            message: string;
+            /** Remediation */
+            remediation: string;
+            /** Ruleid */
+            ruleId: string;
+            /** Ruleversion */
+            ruleVersion: string;
+            /** Severity */
+            severity: string;
+        };
+        /**
+         * ImportDocxResponse
+         * @description `ContentPatch`-shaped preview (ADR-017 Amendment 1 §A1.2): the import
+         *     is never applied directly — the panel shows this report and the author
+         *     explicitly saves it via `PATCH .../revisions/{revisionId}`.
+         */
+        ImportDocxResponse: {
+            /** Body */
+            body: {
+                [key: string]: unknown;
+            };
+            /** Findings */
+            findings: components["schemas"]["ImportDocxFinding"][];
+            /** Requiresapproval */
+            requiresApproval: boolean;
         };
         /** IntakeAcknowledgementInput */
         IntakeAcknowledgementInput: {
@@ -241,10 +704,93 @@ export interface components {
          * @enum {string}
          */
         IntakeSubmissionKind: "request" | "team_review";
+        /**
+         * LegalDocumentKind
+         * @description Document identities the registry can hold.
+         *
+         *     The first two values intentionally mirror `ConsentKind` so a published
+         *     revision maps straight onto the consent evidence written at submission.
+         * @enum {string}
+         */
+        LegalDocumentKind: "intake_data_processing_notice" | "intake_request_acknowledgement" | "privacy_policy" | "terms_of_use" | "cookie_policy" | "booking_rules";
+        /** LegalDocumentRevisionOut */
+        LegalDocumentRevisionOut: {
+            /** Approvals */
+            approvals: components["schemas"]["ApprovalEvidenceOut"][];
+            /** Body */
+            body: {
+                [key: string]: unknown;
+            };
+            createdBy?: components["schemas"]["ActorSummaryOut"] | null;
+            /**
+             * Documentid
+             * Format: uuid
+             */
+            documentId: string;
+            kind: components["schemas"]["LegalDocumentKind"];
+            /**
+             * Revisionid
+             * Format: uuid
+             */
+            revisionId: string;
+            /** Slug */
+            slug: string;
+            status: components["schemas"]["RevisionStatus"];
+            /** Title */
+            title: string;
+            /**
+             * Updatedat
+             * Format: date-time
+             */
+            updatedAt: string;
+            updatedBy?: components["schemas"]["ActorSummaryOut"] | null;
+            /** Versionlabel */
+            versionLabel: string;
+        };
+        /** NormalizeRichHtmlRequest */
+        NormalizeRichHtmlRequest: {
+            /** Html */
+            html: string;
+        };
+        /** NormalizeRichHtmlResponse */
+        NormalizeRichHtmlResponse: {
+            /** Body */
+            body: {
+                [key: string]: unknown;
+            };
+            /** Findings */
+            findings: components["schemas"]["RichDocFindingOut"][];
+        };
+        /**
+         * PublicContentRevisionOut
+         * @description Published CMS override without staff identity or edit metadata.
+         */
+        PublicContentRevisionOut: {
+            contentType: components["schemas"]["ContentType"];
+            /** Locale */
+            locale: string;
+            /**
+             * Publishedat
+             * Format: date-time
+             */
+            publishedAt: string;
+            seo: components["schemas"]["SeoFields"];
+            /** Slotdata */
+            slotData: {
+                [key: string]: unknown;
+            };
+            /** Slug */
+            slug: string;
+            template: components["schemas"]["ContentTemplate"];
+        };
         /** PublicIntakeCapabilitiesResponse */
         PublicIntakeCapabilitiesResponse: {
+            /** Dataprocessingnoticeversion */
+            dataProcessingNoticeVersion?: string | null;
             /** Matchingenabled */
             matchingEnabled: boolean;
+            /** Requestacknowledgementversion */
+            requestAcknowledgementVersion?: string | null;
             /** Sensitivesubmissionenabled */
             sensitiveSubmissionEnabled: boolean;
         };
@@ -305,6 +851,28 @@ export interface components {
             status: components["schemas"]["IntakeCaseStatus"];
             submissionKind: components["schemas"]["IntakeSubmissionKind"];
         };
+        /**
+         * PublicLegalDocumentOut
+         * @description Deliberately narrower than `LegalDocumentRevisionOut`: no approvals,
+         *     no internal `documentId`/`revisionId` — this is what an anonymous
+         *     visitor may read. `versionLabel` is kept because it is what
+         *     `ConsentRecord.document_version` records (`modules/privacy/models.py`).
+         */
+        PublicLegalDocumentOut: {
+            /** Body */
+            body: {
+                [key: string]: unknown;
+            };
+            kind: components["schemas"]["LegalDocumentKind"];
+            /** Publishedat */
+            publishedAt?: string | null;
+            /** Slug */
+            slug: string;
+            /** Title */
+            title: string;
+            /** Versionlabel */
+            versionLabel: string;
+        };
         /** PublicServiceRecommendation */
         PublicServiceRecommendation: {
             /** Currency */
@@ -342,16 +910,91 @@ export interface components {
              */
             therapistProfileId: string;
         };
+        /** RecordApprovalRequest */
+        RecordApprovalRequest: {
+            /** Approverlabel */
+            approverLabel?: string | null;
+            capability: components["schemas"]["ApprovalCapability"];
+            /** Note */
+            note?: string | null;
+        };
+        /** RecordReviewDecisionRequest */
+        RecordReviewDecisionRequest: {
+            capability: components["schemas"]["ApprovalCapability"];
+            /** Note */
+            note?: string | null;
+            outcome: components["schemas"]["ReviewOutcome"];
+        };
         /**
          * RequesterRole
          * @enum {string}
          */
         RequesterRole: "self_adult" | "guardian" | "adolescent_16_17" | "information_only";
+        /** ReviewDecisionOut */
+        ReviewDecisionOut: {
+            capability: components["schemas"]["ApprovalCapability"];
+            /**
+             * Decidedat
+             * Format: date-time
+             */
+            decidedAt: string;
+            decidedBy?: components["schemas"]["ActorSummaryOut"] | null;
+            /** Decidedbyuserid */
+            decidedByUserId?: string | null;
+            /** Note */
+            note?: string | null;
+            outcome: components["schemas"]["ReviewOutcome"];
+        };
+        /**
+         * ReviewOutcome
+         * @description A recorded review decision.
+         *
+         *     `pending` from the frontend `ApprovalStatus` has no row: a capability is
+         *     pending precisely when no decision exists for that revision.
+         * @enum {string}
+         */
+        ReviewOutcome: "approved" | "rejected";
         /**
          * ReviewPriority
          * @enum {string}
          */
         ReviewPriority: "standard" | "priority";
+        /**
+         * RevisionStatus
+         * @description Publication lifecycle fixed by D-029.
+         * @enum {string}
+         */
+        RevisionStatus: "draft" | "in_review" | "approved" | "published" | "archived";
+        /** RichDocFindingOut */
+        RichDocFindingOut: {
+            /** Fieldpath */
+            fieldPath?: string | null;
+            /** Message */
+            message: string;
+            /** Remediation */
+            remediation: string;
+            /** Ruleid */
+            ruleId: string;
+            /** Ruleversion */
+            ruleVersion: string;
+            /** Severity */
+            severity: string;
+        };
+        /** SeoFields */
+        SeoFields: {
+            /**
+             * Description
+             * @default
+             */
+            description: string;
+            /** Ogimageassetid */
+            ogImageAssetId?: string | null;
+            /**
+             * Title
+             * @default
+             */
+            title: string;
+        };
         /**
          * SubjectAgeBand
          * @enum {string}
@@ -390,6 +1033,38 @@ export interface components {
             subjectAgeBand: components["schemas"]["SubjectAgeBand"];
             submissionKind: components["schemas"]["IntakeSubmissionKind"];
         };
+        /** TransitionRequest */
+        TransitionRequest: {
+            target: components["schemas"]["RevisionStatus"];
+        };
+        /**
+         * UpdateContentRevisionRequest
+         * @description `lock_version` is required, not optional: CG-B3 has no meaningful
+         *     default — the client always edits against a specific version it fetched.
+         */
+        UpdateContentRevisionRequest: {
+            /** Lockversion */
+            lockVersion: number;
+            seo?: components["schemas"]["SeoFields"] | null;
+            /** Slotdata */
+            slotData?: {
+                [key: string]: unknown;
+            } | null;
+        };
+        /**
+         * UpdateLegalDocumentRevisionRequest
+         * @description Every field optional: the panel only sends what changed.
+         */
+        UpdateLegalDocumentRevisionRequest: {
+            /** Body */
+            body?: {
+                [key: string]: unknown;
+            } | null;
+            /** Slug */
+            slug?: string | null;
+            /** Title */
+            title?: string | null;
+        };
         /** ValidationError */
         ValidationError: {
             /** Context */
@@ -403,6 +1078,24 @@ export interface components {
             /** Error Type */
             type: string;
         };
+        /** PublishBlockOut */
+        psihointegritet__modules__content__schemas__PublishBlockOut: {
+            /** Findings */
+            findings: components["schemas"]["ContentFindingOut"][];
+            /** Missing */
+            missing: components["schemas"]["ApprovalCapability"][];
+            /** Stage */
+            stage: string;
+        };
+        /** PublishBlockOut */
+        psihointegritet__modules__privacy__schemas__PublishBlockOut: {
+            /** Contentproblems */
+            contentProblems: string[];
+            /** Missing */
+            missing: components["schemas"]["ApprovalCapability"][];
+            /** Stage */
+            stage: string;
+        };
     };
     responses: never;
     parameters: never;
@@ -412,6 +1105,304 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    list_content_entries: {
+        parameters: {
+            query?: {
+                content_type?: components["schemas"]["ContentType"] | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ContentRevisionOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_content_entry: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateContentEntryRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ContentRevisionOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_content_entry: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                entry_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ContentRevisionOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_content_revision: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                entry_id: string;
+                revision_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_content_revision: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                entry_id: string;
+                revision_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateContentRevisionRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ContentRevisionOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    check_content_publishable: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                entry_id: string;
+                revision_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["psihointegritet__modules__content__schemas__PublishBlockOut"] | null;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    record_content_review_decision: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                entry_id: string;
+                revision_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RecordReviewDecisionRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ContentRevisionOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    transition_content_revision: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                entry_id: string;
+                revision_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TransitionRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ContentRevisionOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    normalize_rich_html: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NormalizeRichHtmlRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NormalizeRichHtmlResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_api_v1_health: {
         parameters: {
             query?: never;
@@ -518,6 +1509,326 @@ export interface operations {
             };
         };
     };
+    list_legal_documents: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LegalDocumentRevisionOut"][];
+                };
+            };
+        };
+    };
+    create_legal_document: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateLegalDocumentRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LegalDocumentRevisionOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_legal_document: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                document_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LegalDocumentRevisionOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    import_legal_document_docx: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                document_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_import_legal_document_docx"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImportDocxResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_legal_document_revision: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                document_id: string;
+                revision_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_legal_document_revision: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                document_id: string;
+                revision_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateLegalDocumentRevisionRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LegalDocumentRevisionOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    record_legal_document_approval: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                document_id: string;
+                revision_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RecordApprovalRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LegalDocumentRevisionOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    check_legal_document_publishable: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                document_id: string;
+                revision_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["psihointegritet__modules__privacy__schemas__PublishBlockOut"] | null;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    transition_legal_document_revision: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                document_id: string;
+                revision_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TransitionRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LegalDocumentRevisionOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_public_content: {
+        parameters: {
+            query?: {
+                locale?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicContentRevisionOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_public_intake_capabilities: {
         parameters: {
             query?: never;
@@ -593,6 +1904,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PublicIntakeMatchResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_public_legal_document: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                kind: components["schemas"]["LegalDocumentKind"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicLegalDocumentOut"];
                 };
             };
             /** @description Validation Error */

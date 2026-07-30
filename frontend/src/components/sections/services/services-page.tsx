@@ -5,17 +5,27 @@ import { Reveal } from "@/components/motion/reveal";
 import { PageHero } from "@/components/shared/page-hero";
 import { Chip } from "@/components/ui/chip";
 import { Eyebrow } from "@/components/ui/eyebrow";
-import { groupPrograms } from "@/content/programs";
+import { groupPrograms, type GroupProgram } from "@/content/programs";
 import {
   PRICE_NOTE,
   formatRsd,
   serviceCatalog,
   sessionPackages,
   supportAreas,
+  type ServiceCatalogItem,
+  type SessionPackage,
 } from "@/content/services";
 import { buildBookingHref } from "@/features/booking/booking-context";
 
-export function ServicesPage() {
+export function ServicesPage({
+  services = serviceCatalog,
+  programs = groupPrograms,
+  packages = sessionPackages,
+}: {
+  services?: readonly ServiceCatalogItem[];
+  programs?: readonly GroupProgram[];
+  packages?: readonly SessionPackage[];
+}) {
   return (
     <>
       <PageHero id="usluge">
@@ -36,7 +46,7 @@ export function ServicesPage() {
         <div className="mx-auto max-w-[1536px] px-5 md:px-8">
           <Reveal>
             <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
-              {serviceCatalog.map((service) => (
+              {services.map((service) => (
                 <article
                   key={service.slug}
                   className="bg-surface border-coffee/6 flex flex-col justify-between gap-8 rounded-3xl border px-8 pt-9 pb-[30px]"
@@ -92,7 +102,7 @@ export function ServicesPage() {
               individualnih seansi.
             </p>
             <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
-              {sessionPackages.map((pack) => (
+              {packages.map((pack) => (
                 <article
                   key={pack.sessions}
                   className="bg-meadow/24 flex flex-col justify-between gap-6 rounded-[22px] px-7 py-8"
@@ -133,7 +143,7 @@ export function ServicesPage() {
               broj susreta.
             </p>
             <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
-              {groupPrograms.map((program) => (
+              {programs.map((program) => (
                 <article
                   key={program.slug}
                   className="bg-surface border-coffee/6 flex flex-col gap-4 rounded-3xl border px-7 pt-8 pb-7"

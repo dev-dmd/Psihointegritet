@@ -10,7 +10,7 @@ import {
   jsonLdForEntity,
   metadataForEntity,
 } from "@/lib/content-governance/discoverability";
-import { staticContentProvider } from "@/lib/content-governance/static-provider";
+import { getContentProvider } from "@/lib/content-governance/provider-resolver";
 
 interface WorkshopDetailProps {
   params: Promise<{ slug: string }>;
@@ -25,7 +25,7 @@ export async function generateMetadata({
 }: WorkshopDetailProps): Promise<Metadata> {
   const program = findGroupProgram((await params).slug);
   if (!program) return {};
-  const entity = staticContentProvider.getEntity(
+  const entity = (await getContentProvider()).getEntity(
     "program",
     `program:${program.slug}`,
   );
@@ -35,12 +35,11 @@ export async function generateMetadata({
 export default async function WorkshopDetailPage({
   params,
 }: WorkshopDetailProps) {
-  const program = findGroupProgram((await params).slug);
+  const slug = (await params).slug;
+  const provider = await getContentProvider();
+  const contentEntity = provider.getEntity("program", `program:${slug}`);
+  const program = contentEntity?.source ?? findGroupProgram(slug);
   if (!program) notFound();
-  const contentEntity = staticContentProvider.getEntity(
-    "program",
-    `program:${program.slug}`,
-  );
 
   return (
     <>

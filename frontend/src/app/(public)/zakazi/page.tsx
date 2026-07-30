@@ -5,8 +5,11 @@ import {
 } from "@/features/booking/booking-context";
 import { BookingRequestForm } from "@/features/booking/booking-request-form";
 import { metadataForRoute } from "@/lib/content-governance/discoverability";
+import { getContentProvider } from "@/lib/content-governance/provider-resolver";
 
-export const metadata = metadataForRoute("/zakazi");
+export async function generateMetadata() {
+  return metadataForRoute("/zakazi", await getContentProvider());
+}
 
 interface BookingPageProps {
   searchParams: Promise<BookingSearchParams>;

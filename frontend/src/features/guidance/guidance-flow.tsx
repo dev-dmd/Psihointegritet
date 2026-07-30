@@ -35,6 +35,8 @@ import { IntakeRequestForm } from "./intake-request-form";
 import { intakeFeatureFlags } from "./intake-feature-flags";
 import {
   fetchAuthoritativeIntakeMatch,
+  fetchPublicIntakeCapabilities,
+  type PublicIntakeCapabilities,
   type PublicIntakeSubmissionKind,
 } from "./public-intake-api";
 
@@ -75,8 +77,22 @@ export function GuidanceFlow({ entry, surface, onClose }: GuidanceFlowProps) {
   } | null>(null);
   const [matchingErrorKey, setMatchingErrorKey] = useState<string | null>(null);
   const [matchAttempt, setMatchAttempt] = useState(0);
+  const [capabilities, setCapabilities] =
+    useState<PublicIntakeCapabilities | null>(null);
   const advanceTimer = useRef<number | null>(null);
   const headingRef = useRef<HTMLHeadingElement | null>(null);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    void fetchPublicIntakeCapabilities(controller.signal)
+      .then((next) => {
+        if (!controller.signal.aborted) setCapabilities(next);
+      })
+      .catch(() => {
+        if (!controller.signal.aborted) setCapabilities(null);
+      });
+    return () => controller.abort();
+  }, []);
 
   useEffect(() => {
     return () => {
@@ -97,7 +113,14 @@ export function GuidanceFlow({ entry, surface, onClose }: GuidanceFlowProps) {
     () => JSON.stringify({ answers, matchAttempt }),
     [answers, matchAttempt],
   );
-  const result = intakeFeatureFlags.publicFlowEnabled
+  const productionIntakeEnabled =
+    intakeFeatureFlags.matchingEnabled &&
+    intakeFeatureFlags.sensitiveSubmissionEnabled &&
+    capabilities?.matchingEnabled === true &&
+    capabilities.sensitiveSubmissionEnabled &&
+    Boolean(capabilities.dataProcessingNoticeVersion) &&
+    Boolean(capabilities.requestAcknowledgementVersion);
+  const result = productionIntakeEnabled
     ? authoritativeMatch?.key === matchingRequestKey
       ? authoritativeMatch.result
       : null
@@ -105,7 +128,7 @@ export function GuidanceFlow({ entry, surface, onClose }: GuidanceFlowProps) {
   const matchingError = matchingErrorKey === matchingRequestKey;
 
   useEffect(() => {
-    if (!intakeFeatureFlags.publicFlowEnabled || screen !== "result") return;
+    if (!productionIntakeEnabled || screen !== "result") return;
 
     const controller = new AbortController();
     void fetchAuthoritativeIntakeMatch(answers, controller.signal)
@@ -120,7 +143,7 @@ export function GuidanceFlow({ entry, surface, onClose }: GuidanceFlowProps) {
         }
       });
     return () => controller.abort();
-  }, [answers, matchingRequestKey, screen]);
+  }, [answers, matchingRequestKey, productionIntakeEnabled, screen]);
 
   useEffect(() => {
     headingRef.current?.focus();
@@ -277,7 +300,7 @@ export function GuidanceFlow({ entry, surface, onClose }: GuidanceFlowProps) {
                 setScreen("questions");
               }}
               onChooseTherapist={
-                intakeFeatureFlags.publicFlowEnabled
+                productionIntakeEnabled
                   ? (therapistSlug) => {
                       setSubmissionIntent({
                         kind: "team_review",
@@ -311,7 +334,7 @@ export function GuidanceFlow({ entry, surface, onClose }: GuidanceFlowProps) {
               headingRef={headingRef}
               result={result}
               answers={answers}
-              useProductionIntake={intakeFeatureFlags.publicFlowEnabled}
+              useProductionIntake={productionIntakeEnabled}
               onStartSubmission={(intent) => {
                 setSubmissionIntent(intent);
                 setScreen("submit");
@@ -320,9 +343,7 @@ export function GuidanceFlow({ entry, surface, onClose }: GuidanceFlowProps) {
             />
           ) : null}
 
-          {screen === "result" &&
-          intakeFeatureFlags.publicFlowEnabled &&
-          !result ? (
+          {screen === "result" && productionIntakeEnabled && !result ? (
             <MatchingStatus
               hasError={matchingError}
               onRetry={() => setMatchAttempt((value) => value + 1)}
@@ -334,6 +355,12 @@ export function GuidanceFlow({ entry, surface, onClose }: GuidanceFlowProps) {
               answers={answers}
               submissionKind={submissionIntent.kind}
               preferredTherapistSlug={submissionIntent.preferredTherapistSlug}
+              dataProcessingNoticeVersion={
+                capabilities?.dataProcessingNoticeVersion ?? ""
+              }
+              requestAcknowledgementVersion={
+                capabilities?.requestAcknowledgementVersion ?? ""
+              }
               onBack={() => setScreen(submissionIntent.returnScreen)}
             />
           ) : null}

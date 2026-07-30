@@ -28,19 +28,26 @@ from psihointegritet.modules.content.publication import (
     ContentPublishCheck,
     ReviewDecisionRecord,
     check_publishable,
+    effective_required_approvals,
+    granted_capabilities,
     require_deletable,
+    structural_findings,
 )
 from psihointegritet.modules.content.schemas import (
     ContentFindingOut,
     ContentRevisionOut,
     CreateContentEntryRequest,
+    PublicContentRevisionOut,
     PublishBlockOut,
     RecordReviewDecisionRequest,
     ReviewDecisionOut,
+    SeoFields,
     TransitionRequest,
     UpdateContentRevisionRequest,
 )
 from psihointegritet.modules.guidance.authorization import StaffActor
+from psihointegritet.modules.identity.models import InternalUser
+from psihointegritet.modules.identity.schemas import ActorSummaryOut
 from psihointegritet.shared.domain.publication import (
     CannotDeleteRevisionError,
     RevisionStatus,
@@ -122,9 +129,23 @@ class ContentService:
             ).all()
         )
 
-    def _to_schema(
+    async def _actor_summary(self, user_id: UUID | None) -> ActorSummaryOut | None:
+        if user_id is None:
+            return None
+        user = await self._session.get(InternalUser, user_id)
+        if user is None:
+            return None
+        return ActorSummaryOut(
+            user_id=user.id,
+            display_name=user.display_name or user.email or str(user.id),
+            is_superadmin=user.is_superadmin,
+        )
+
+    async def _to_schema(
         self, entry: ContentEntry, revision: ContentRevision, decisions: list[ContentReviewDecision]
     ) -> ContentRevisionOut:
+        created_by = await self._actor_summary(revision.created_by_user_id)
+        updated_by = await self._actor_summary(revision.updated_by_user_id)
         return ContentRevisionOut(
             entry_id=entry.id,
             revision_id=revision.id,
@@ -133,6 +154,7 @@ class ContentService:
             locale=entry.locale,
             template=revision.template,
             slot_data=revision.slot_data,
+            seo=SeoFields.model_validate(revision.seo),
             status=revision.status,
             version_label=revision.version_label,
             lock_version=revision.lock_version,
@@ -141,18 +163,26 @@ class ContentService:
                     capability=decision.capability,
                     outcome=decision.outcome,
                     decided_by_user_id=decision.decided_by_user_id,
+                    decided_by=await self._actor_summary(decision.decided_by_user_id),
                     decided_at=decision.decided_at,
                     note=decision.note,
                 )
                 for decision in decisions
             ],
+            created_by=created_by,
+            updated_by=updated_by,
             updated_at=revision.updated_at,
         )
 
     async def _to_schema_loaded(
         self, entry: ContentEntry, revision: ContentRevision
     ) -> ContentRevisionOut:
-        return self._to_schema(entry, revision, await self._decisions(revision.id))
+        # `updated_at` is server/onupdate-owned. After a flush SQLAlchemy
+        # expires it; reading that attribute implicitly is forbidden in an
+        # AsyncSession and raises MissingGreenlet. Refresh explicitly before
+        # serializing the response (caught by the real signed-in save smoke).
+        await self._session.refresh(revision)
+        return await self._to_schema(entry, revision, await self._decisions(revision.id))
 
     async def list_entries(
         self, actor: StaffActor, content_type: ContentType | None = None
@@ -167,6 +197,40 @@ class ContentService:
             if revision is not None:
                 results.append(await self._to_schema_loaded(entry, revision))
         return results
+
+    async def list_published(
+        self, organization_id: UUID, locale: str = "sr-Latn"
+    ) -> list[PublicContentRevisionOut]:
+        """Read model for the unauthenticated public provider.
+
+        Deliberately excludes actor IDs, lock versions, review notes and
+        non-published revisions. The public site only needs the immutable
+        payload selected by the publication lifecycle.
+        """
+        rows = (
+            await self._session.execute(
+                select(ContentEntry, ContentRevision)
+                .join(ContentRevision, ContentRevision.entry_id == ContentEntry.id)
+                .where(
+                    ContentEntry.organization_id == organization_id,
+                    ContentEntry.locale == locale,
+                    ContentRevision.status == RevisionStatus.PUBLISHED,
+                )
+                .order_by(ContentEntry.content_type, ContentEntry.slug)
+            )
+        ).all()
+        return [
+            PublicContentRevisionOut(
+                content_type=entry.content_type,
+                slug=entry.slug,
+                locale=entry.locale,
+                template=revision.template,
+                slot_data=revision.slot_data,
+                seo=SeoFields.model_validate(revision.seo),
+                published_at=revision.published_at or revision.updated_at,
+            )
+            for entry, revision in rows
+        ]
 
     async def get_entry(self, actor: StaffActor, entry_id: UUID) -> ContentRevisionOut:
         entry = await self._entry(actor, entry_id)
@@ -206,8 +270,10 @@ class ContentService:
             version_label="v1",
             template=request.template,
             slot_data=dict(_EMPTY_SLOT_DATA),
+            seo={"title": "", "description": ""},
             status=RevisionStatus.DRAFT,
             created_by_user_id=actor.user_id,
+            updated_by_user_id=actor.user_id,
         )
         self._session.add(revision)
         await self._session.flush()
@@ -233,8 +299,10 @@ class ContentService:
             version_label=next_label,
             template=revision.template,
             slot_data=revision.slot_data,
+            seo=revision.seo,
             status=RevisionStatus.DRAFT,
             created_by_user_id=actor.user_id,
+            updated_by_user_id=actor.user_id,
         )
         self._session.add(reissued)
         await self._session.flush()
@@ -264,6 +332,11 @@ class ContentService:
         revision = await self._reissue_if_needed(revision, actor)
         if request.slot_data is not None:
             revision.slot_data = request.slot_data
+        if request.seo is not None:
+            revision.seo = request.seo.model_dump(
+                by_alias=False,
+                exclude_none=True,
+            )
         revision.updated_by_user_id = actor.user_id
 
         try:
@@ -327,14 +400,32 @@ class ContentService:
             await self._archive_other_published(entry.id, revision.id, actor)
             revision.status = RevisionStatus.PUBLISHED
             revision.published_at = datetime.now(UTC)
+            revision.updated_by_user_id = actor.user_id
             await self._log_event(revision.id, from_status, revision.status, actor)
         elif reissues_revision(revision.status, request.target):
             require_transition(revision.status, request.target)
             revision = await self._reissue_if_needed(revision, actor)
         else:
+            if request.target is RevisionStatus.APPROVED:
+                decisions = [
+                    ReviewDecisionRecord(capability=item.capability, outcome=item.outcome)
+                    for item in await self._decisions(revision.id)
+                ]
+                required = effective_required_approvals(
+                    entry.content_type,
+                    revision.template,
+                    structural_findings(revision.template, revision.slot_data),
+                )
+                missing = required - granted_capabilities(decisions)
+                if missing:
+                    labels = ", ".join(sorted(item.value for item in missing))
+                    raise ContentConflictError(
+                        f"Revision cannot be approved; missing decisions: {labels}"
+                    )
             require_transition(revision.status, request.target)
             from_status = revision.status
             revision.status = request.target
+            revision.updated_by_user_id = actor.user_id
             if request.target is RevisionStatus.ARCHIVED:
                 revision.archived_at = datetime.now(UTC)
             await self._log_event(revision.id, from_status, revision.status, actor)
@@ -357,6 +448,7 @@ class ContentService:
             return
         currently_published.status = RevisionStatus.ARCHIVED
         currently_published.archived_at = datetime.now(UTC)
+        currently_published.updated_by_user_id = actor.user_id
         await self._log_event(
             currently_published.id, RevisionStatus.PUBLISHED, RevisionStatus.ARCHIVED, actor
         )
@@ -371,6 +463,10 @@ class ContentService:
         self._require_org_admin(actor)
         entry = await self._entry(actor, entry_id)
         revision = await self._revision(actor, entry_id, revision_id)
+        if revision.status is not RevisionStatus.IN_REVIEW:
+            raise ContentConflictError(
+                "Review decisions may be recorded only while a revision is in review"
+            )
 
         existing = await self._session.scalar(
             select(ContentReviewDecision).where(
@@ -394,6 +490,7 @@ class ContentService:
                 )
             )
 
+        revision.updated_by_user_id = actor.user_id
         await self._session.flush()
         return await self._to_schema_loaded(entry, revision)
 

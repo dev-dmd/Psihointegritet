@@ -16,17 +16,20 @@
  */
 
 import { isApiProblem } from "@/lib/errors/api-problem";
+import type { ActorSummary } from "@/components/panel/actor-badge";
 import type {
   ApprovalCapability,
   ContentTemplate,
   ContentType,
   PublicationStatus,
+  SeoFields,
 } from "@/lib/content-governance/types";
 
 export interface ApiReviewDecision {
   capability: ApprovalCapability;
   outcome: "approved" | "rejected";
   decidedByUserId: string | null;
+  decidedBy: ActorSummary | null;
   decidedAt: string;
   note: string | null;
 }
@@ -39,11 +42,44 @@ export interface ApiContentRevision {
   locale: string;
   template: ContentTemplate;
   slotData: Record<string, unknown>;
+  seo: SeoFields;
   status: PublicationStatus;
   versionLabel: string;
   lockVersion: number;
   decisions: ApiReviewDecision[];
+  createdBy: ActorSummary | null;
+  updatedBy: ActorSummary | null;
   updatedAt: string;
+}
+
+export interface RichDocNormalizationFinding {
+  ruleId: string;
+  ruleVersion: string;
+  severity: string;
+  message: string;
+  remediation: string;
+  fieldPath: string | null;
+}
+
+export interface RichDocNormalizationResult {
+  body: import("@/lib/content-governance/rich-doc").RichDoc;
+  findings: RichDocNormalizationFinding[];
+}
+
+export interface ApiContentFinding {
+  ruleId: string;
+  ruleVersion: string;
+  severity: string;
+  message: string;
+  remediation: string;
+  fieldPath: string | null;
+  requiresApproval: ApprovalCapability | null;
+}
+
+export interface ApiContentPublishBlock {
+  stage: "content" | "transition" | "approvals";
+  findings: ApiContentFinding[];
+  missing: ApprovalCapability[];
 }
 
 export class ContentApiError extends Error {
@@ -110,7 +146,11 @@ export async function createContentEntry(input: {
 export async function updateContentRevision(
   entryId: string,
   revisionId: string,
-  patch: { lockVersion: number; slotData?: Record<string, unknown> },
+  patch: {
+    lockVersion: number;
+    slotData?: Record<string, unknown>;
+    seo?: SeoFields;
+  },
 ): Promise<ApiContentRevision> {
   const response = await fetch(
     `/api/content/entries/${encodeURIComponent(entryId)}/revisions/${encodeURIComponent(revisionId)}`,
@@ -132,4 +172,59 @@ export async function deleteContentRevision(
     { method: "DELETE" },
   );
   await parseOrThrow<void>(response);
+}
+
+export async function normalizeRichHtml(
+  html: string,
+): Promise<RichDocNormalizationResult> {
+  const response = await fetch("/api/content/rich-doc/normalize-html", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ html }),
+  });
+  return parseOrThrow<RichDocNormalizationResult>(response);
+}
+
+export async function checkContentPublishable(
+  entryId: string,
+  revisionId: string,
+): Promise<ApiContentPublishBlock | null> {
+  const response = await fetch(
+    `/api/content/entries/${encodeURIComponent(entryId)}/revisions/${encodeURIComponent(revisionId)}/publish-check`,
+    { cache: "no-store" },
+  );
+  return parseOrThrow<ApiContentPublishBlock | null>(response);
+}
+
+export async function transitionContentRevision(
+  entryId: string,
+  revisionId: string,
+  target: PublicationStatus,
+): Promise<ApiContentRevision> {
+  const response = await fetch(
+    `/api/content/entries/${encodeURIComponent(entryId)}/revisions/${encodeURIComponent(revisionId)}/transition`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ target }),
+    },
+  );
+  return parseOrThrow<ApiContentRevision>(response);
+}
+
+export async function recordContentReviewDecision(
+  entryId: string,
+  revisionId: string,
+  capability: ApprovalCapability,
+  outcome: "approved" | "rejected" = "approved",
+): Promise<ApiContentRevision> {
+  const response = await fetch(
+    `/api/content/entries/${encodeURIComponent(entryId)}/revisions/${encodeURIComponent(revisionId)}/reviews`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ capability, outcome }),
+    },
+  );
+  return parseOrThrow<ApiContentRevision>(response);
 }

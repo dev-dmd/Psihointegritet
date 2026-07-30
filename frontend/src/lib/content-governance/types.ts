@@ -252,6 +252,7 @@ export interface ContentHealthFinding {
   field?: string;
   message: string;
   recommendation: string;
+  requiresApproval?: ApprovalCapability;
 }
 
 export interface PublishGateResult {

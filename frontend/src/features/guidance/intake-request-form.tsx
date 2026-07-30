@@ -5,7 +5,6 @@ import { useRef, useState } from "react";
 import { findTherapist } from "@/content/therapists";
 
 import { ConsentDocumentDisclosure } from "./consent-document-disclosure";
-import { intakeFeatureFlags } from "./intake-feature-flags";
 import {
   submitPublicIntakeCase,
   toPublicIntakeAnswers,
@@ -18,6 +17,8 @@ interface IntakeRequestFormProps {
   answers: IntakeAnswers;
   submissionKind: PublicIntakeSubmissionKind;
   preferredTherapistSlug: string | null;
+  dataProcessingNoticeVersion: string;
+  requestAcknowledgementVersion: string;
   onBack: () => void;
 }
 
@@ -32,6 +33,8 @@ export function IntakeRequestForm({
   answers,
   submissionKind,
   preferredTherapistSlug,
+  dataProcessingNoticeVersion,
+  requestAcknowledgementVersion,
   onBack,
 }: IntakeRequestFormProps) {
   const idempotencyKey = useRef<string>(createIdempotencyKey());
@@ -89,12 +92,12 @@ export function IntakeRequestForm({
           acknowledgements: [
             {
               kind: "intake_data_processing_notice",
-              documentVersion: intakeFeatureFlags.dataProcessingNoticeVersion,
+              documentVersion: dataProcessingNoticeVersion,
               locale: "sr-Latn",
             },
             {
               kind: "intake_request_acknowledgement",
-              documentVersion: intakeFeatureFlags.requestAcknowledgementVersion,
+              documentVersion: requestAcknowledgementVersion,
               locale: "sr-Latn",
             },
           ],

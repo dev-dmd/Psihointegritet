@@ -14,14 +14,18 @@ import {
   jsonLdForRoute,
   metadataForRoute,
 } from "@/lib/content-governance/discoverability";
+import { getContentProvider } from "@/lib/content-governance/provider-resolver";
 
-export const metadata = metadataForRoute("/");
+export async function generateMetadata() {
+  return metadataForRoute("/", await getContentProvider());
+}
 
 /** Public homepage — Server Component composition of the Claude Design handoff. */
-export default function HomePage() {
+export default async function HomePage() {
+  const provider = await getContentProvider();
   return (
     <>
-      <JsonLd data={jsonLdForRoute("/")} />
+      <JsonLd data={jsonLdForRoute("/", provider)} />
       <Hero />
       <TrustStrip />
       <Reasons />

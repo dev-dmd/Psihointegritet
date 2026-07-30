@@ -16,7 +16,7 @@
 - [ ] Ne pisati pravni/klinički tekst umesto Anje/tima — CMS nosi strukturu i pravila, ne sadržaj.
 - [ ] Fallback sadržaj (`content/*.ts`) se nikad ne briše niti prepravlja da bi CMS "radio" — samo se nadjačava po polju (D-038).
 - [ ] **Nigde `dangerouslySetInnerHTML` u renderu sadržaja** (ADR-017 §1). Tekst se čuva kao `RichDoc` JSON i renderuje iscrpnim `switch`-om — XSS je nemoguć po konstrukciji, ne filtriran.
-- [ ] Uvoz i paste dele **jedan** normalizator (ADR-017 §7). Dve implementacije znače da nalepljeno i uploadovano tiho daju različit rezultat.
+- [x] Uvoz i paste dele **jedan** backend HTML→RichDoc normalizator (ADR-017 §7); Tiptap paste koristi `/content/rich-doc/normalize-html`, a `.docx` ide kroz isti `normalize_html_to_rich_doc`.
 - [ ] Limiti sekcija (koliko teksta/pasusa/slika) žive **samo** u registru šema slotova — nikad duplirani u UI komponenti.
 
 ---
@@ -26,11 +26,13 @@
 ### CG-A1 — Archive-only za objavljene dokumente
 
 **Backend (`backend/src/psihointegritet/modules/privacy/publication.py`)**
+
 - [x] Nova greška `CannotDeleteRevisionError(ValueError)`.
 - [x] Nova funkcija `require_deletable(status: RevisionStatus) -> None` — prolazi samo za `DRAFT`, inače baca `CannotDeleteRevisionError` sa porukom koja imenuje trenutni status.
 - [x] Test: `draft` prolazi; `in_review`/`approved`/`published`/`archived` bacaju grešku (5 test case-ova, jedan po statusu).
 
 **Frontend model — VAŽAN NALAZ, popraviti pre ostatka CG-A1**
+
 - [x] Trenutni `LegalDocument` u `legal-documents.ts` je **ravan objekat** — nema odvojenog `documentId` i `revisionId`. `advance(document, "draft")` u `screen-dokumenti.tsx` samo menja `versionLabel` na istom `id`-ju. Ovo krši A.2 („svaka nova draft revizija dobija novi `revisionId`") i blokira A.6 (`PanelErrorResource.revisionId` nema šta stvarno da identifikuje).
 - [x] Razdvojiti tip: `LegalDocument` dobija `documentId` (stabilan identitet: kind+slug) i `revisionId` (menja se pri svakom `approved→draft`/`archived→draft`; ostaje isti pri `in_review→draft`).
 - [x] `advance()`: kad cilj nije `draft`, isti `revisionId`; kad je cilj `draft` iz `approved` ili `archived`, generiše se **nov** `revisionId` (npr. `crypto.randomUUID()` ili inkrementalni test-friendly generator), `approvals` se prazne, `versionLabel` raste.
@@ -38,16 +40,19 @@
 - [x] `legal-documents.ts`: `canDelete(status: RevisionStatus): boolean` — mirror backend pravila (`status === "draft"`).
 
 **UI (`screen-dokumenti.tsx`)**
+
 - [x] Dugme „Obriši" prikazuje se **samo** za `draft` reviziju.
 - [x] Za `published` reviziju, akcija je „Arhiviraj" (poziva postojeći `advance(document, "archived")`), ne brisanje.
 - [x] Za `in_review`/`approved`/`archived` nema dugmeta za brisanje (moraju prvo na `draft` kroz postojeći tok).
 - [x] Potvrda-modal za brisanje (`pendingDeleteId`) se ne prikazuje van `draft` statusa — ukloniti granu koja danas dozvoljava brisanje `published` uz upozorenje.
 
 **Testovi**
+
 - [x] `legal-documents.test.ts`: `canDelete` — true samo za draft; nov test da `advance` iz `approved→draft` menja `revisionId`, a `in_review→draft` ga **ne** menja.
 - [x] `test_legal_document_publication.py`: `require_deletable` testovi (5 statusa).
 
 **Intake gate efekat (deo A.1)**
+
 - [x] Test: arhiviranje objavljene revizije jednog od dva Intake teksta → `intakeGateOpen()` vraća `false` (frontend) i odgovarajuća backend provera (kad LD-6 poveže `intake_submission_ready` na bazu — za sada test na nivou čistih funkcija sa listom dokumenata koja simulira arhiviranje).
 
 ---
@@ -84,6 +89,7 @@
 - [x] Uspešna ponovna provera (uspešan `publish()`) poziva `clearErrorsForResource` za taj resurs umesto `clearErrorsFor(href)` (užа briše, ne ceo tab).
 
 **Testovi**
+
 - [x] `panel-errors.test.ts`: isti resource-ključ radi upsert; različit `revisionId` ne pregazi drugi nalaz; različit `fieldPath` ne pregazi drugi nalaz istog `ruleId`; `clearErrorsForResource` briše samo taj resurs, ne ceo tab; greške bez `resource` i dalje rade na `href+title` ključu (regresioni test za postojeće ponašanje).
 
 ---
@@ -115,30 +121,30 @@
 - [x] `check_publishable()` sa etapama sadržaj → tranzicija → odobrenja i `ContentPublishCheck` rezultatom; `require_publishable()` za servisni sloj.
 - [x] `structural_findings()` — nezavisna serverska provera obaveznih slotova po template-u (`MODEL-004` novo pod postojećim prefiksom, `MODEL-003` za nedozvoljen slot).
 
-> **Nalaz 1 — odobrenja imaju dve ose, ne jednu.** `CONTENT_GOVERNANCE_CONTRACT` §6 daje matricu po *vrsti sadržaja*, ali `CONTENT_PUBLISH_GATES` §4 pokazuje da `LegalPage` traži `legal` + `business` — a legal stranica je `static_page` tip na `legal_page` template-u. Zato je matrica razdvojena na `BASE_REQUIRED_APPROVALS` (po `ContentType`) + `TEMPLATE_REQUIRED_APPROVALS` (additivno po template-u). Isti tip na drugom template-u traži drugačije potpise.
+> **Nalaz 1 — odobrenja imaju dve ose, ne jednu.** `CONTENT_GOVERNANCE_CONTRACT` §6 daje matricu po _vrsti sadržaja_, ali `CONTENT_PUBLISH_GATES` §4 pokazuje da `LegalPage` traži `legal` + `business` — a legal stranica je `static_page` tip na `legal_page` template-u. Zato je matrica razdvojena na `BASE_REQUIRED_APPROVALS` (po `ContentType`) + `TEMPLATE_REQUIRED_APPROVALS` (additivno po template-u). Isti tip na drugom template-u traži drugačije potpise.
 >
 > **Nalaz 2 — `business` je pod (floor) za sve tipove.** Nijedan izvorni dokument ne navodi javni tip koji se objavljuje bez ijednog odobrenja, a Engines §9.3 stavlja „brend, CTA, cenu i objavu" na org admina. Traženje jednog potpisa je konzervativno čitanje, ne izmišljeno pravilo. **Ako tim želi da obične informativne stranice idu bez odobrenja, to je proizvodna odluka — ne izmena u kodu usput.**
 >
-> **Nalaz 3 — `LIMIT-002` se namerno NE sprovodi ovde.** `maxOptionalSections` broji ponovljive iteme *unutar* slota, ne različite ključeve slotova; nijedan template u registriju nema više opcionih slotova od sopstvenog maksimuma, pa provera po ključu nikad ne bi mogla da se aktivira. Sprovođenje traži oblik slot payload-a koji definiše **CG-C1**. Test `test_no_template_has_more_optional_slots_than_its_maximum` čuva tu pretpostavku.
+> **Nalaz 3 — `LIMIT-002` se namerno NE sprovodi ovde.** `maxOptionalSections` broji ponovljive iteme _unutar_ slota, ne različite ključeve slotova; nijedan template u registriju nema više opcionih slotova od sopstvenog maksimuma, pa provera po ključu nikad ne bi mogla da se aktivira. Sprovođenje traži oblik slot payload-a koji definiše **CG-C1**. Test `test_no_template_has_more_optional_slots_than_its_maximum` čuva tu pretpostavku.
 >
 > **Bezbednosna granica (upisana u docstring modula):** `extra_findings` moraju biti izračunati na serveru. Klijent ne sme da pošalje „nema nalaza" i objavi nepregledan sadržaj — ruter (CG-B4) ih računa, nikad request body. Port punog rule engine-a (SEO, CTA, limiti) je **CG-D4**; do tada backend ima samo strukturnu proveru kao sopstveni pod.
 
-### CG-B3 — Konkurentnost · **spojen sa CG-B4 (D-047)** — 🟡 backend gotov, editor UX bez potrošača
+### CG-B3 — Konkurentnost · **spojen sa CG-B4 (D-047)** — ✅ backend + browser 409 UX
 
 > ⚠️ **Ne isporučuje se sam.** Ovo je poštovano — oba zadatka su implementirana i isporučena zajedno.
 
 - [x] `ContentRevision.lock_version: int` — postojao od `20260726_0004`; sada mu je dodat pisac.
 - [x] **Optimistic locking — odluka: SQLAlchemy `version_id_col`, ne ručni `UPDATE...WHERE`.** `ContentRevision.__mapper_args__ = {"version_id_col": lock_version}` (`models.py`) — SQLAlchemy sam dodaje `WHERE lock_version=:trenutno` na svaki UPDATE i uvećava ga, bacajući `StaleDataError` (uhvaćeno u `service.py::update_revision` → 409) kad 0 redova pogodi. Isti ishod kao ručna `UPDATE...WHERE` provera, manje koda, standardan SQLAlchemy 2.0 obrazac dokumentovan tačno za ovu namenu. **Dodatno**, servis eksplicitno proverava `request.lockVersion == revision.lockVersion` PRE mutacije (jasna poruka „izmenjeno u međuvremenu" bez čekanja na flush) — ORM mehanizam ostaje odbrana za usku trku između SELECT-a i UPDATE-a unutar iste transakcije.
 - [x] Objava (status→published) + `ContentPublicationEvent` u istoj transakciji, uz arhiviranje prethodne objavljene revizije istog unosa (`_archive_other_published`, isti obrazac kao pravni registar).
-- [ ] **Editor na 409 prikazuje „neko drugi je izmenio"** — **nema frontend potrošača** ovog API-ja u ovom prolazu (nijedan UI ga ne poziva), pa ova UX stavka ostaje otvorena do Faze 1/CG-C4.
+- [x] **Editor na 409 prikazuje čistu poruku „Revizija je izmenjena u međuvremenu…"** kroz RFC7807 parser i `usePanelErrors`; stvarni browser smoke je namerno poslao dva PATCH-a sa istim `lockVersion` i dobio 200/409.
 
-### CG-B4 — Router · **nosi i CG-B3** — 🟡 backend gotov, bez TS klijenta; putanje odstupaju od originalnog nacrta
+### CG-B4 — Router · **nosi i CG-B3** — ✅ backend, frontend klijent i OpenAPI
 
 - [x] `backend/src/psihointegritet/modules/content/router.py` — obrazac `modules/guidance/router.py` team_router: Clerk JWT + `resolve_staff_actor` + eksplicitna `org_admin` provera (isti `_org_admin_actor` obrazac kao `modules/privacy/router.py`).
 - [x] Endpoints — **stvarne putanje se razlikuju od originalnog nacrta ispod** (usklađene sa LD-7 obrascem umesto sa ranije zamišljenim `/content/revisions/{id}/...`, jer revizija bez svog `entry_id`-a u putanji ne može tenant-scope-ovati lookup bez dodatnog upita): `GET/POST /content/entries`, `GET /content/entries/{id}`, `PATCH /content/entries/{id}/revisions/{id}`, `GET .../revisions/{id}/publish-check`, `POST .../revisions/{id}/transition` (nosi i „objavi" i „arhiviraj" — cilj je u `target`, nema zasebnog `/publish`/`/archive`), `POST .../revisions/{id}/reviews` (ne `/review`), `DELETE .../revisions/{id}`. Nema zasebnog `POST /content/entries/{id}/revisions` — nova draft revizija nastaje samo kroz A.2 reissue (`update`/`transition` na `approved`/`archived` reviziju), nikad eksplicitnim pozivom.
 - [x] `schemas.py` — Pydantic modeli (`ApiSchema` sa `to_camel` alias generatorom, isti obrazac kao `modules/privacy/schemas.py`). `slot_data` je namerno sirov `dict[str, object]` na wire-u, ne tipizovana unija devet template oblika — ista odluka i isto obrazloženje kao RichDoc na LD-7 API-ju (CG-C1 registar šema slotova još ne postoji).
-- [ ] **`npm run api:generate` nije pokretan** — nema ni ručno pisanog TS klijenta, jer CG-B3+B4 nema frontend potrošača (CG-C1/CG-C4 dolaze u Fazi 1). Registrovan u `api/v1/router.py` kao `content_router`.
-- [ ] **`ContentReviewDecision` je prava tabela** (za razliku od pravnog registra koji odobrenja drži kao JSON listu) — `record_review_decision` upisuje/ažurira red po `(revision_id, capability)`, uz `decided_by_user_id`/`decided_at`/`note` (D-033 evidencija).
+- [x] `backend/openapi.json` ponovo izvezen i `npm run api:generate` pokrenut posle content lifecycle/SEO/public API izmena; generisani tipovi prolaze typecheck.
+- [x] **`ContentReviewDecision` je prava tabela**; `record_review_decision` upisuje/ažurira red po `(revision_id, capability)`, sa actor prikazom u panelu.
 - [ ] `check_publish` poziva `check_publishable()` iz CG-B2 sa `extra_findings=()` — **puni rule engine (SEO/CTA/limiti) još ne postoji** (CG-C1/CG-D4); danas radi samo strukturna provera obaveznih/dozvoljenih slotova nasleđena iz `structural_findings`.
 
 ### CG-B5 — Migracija (napisana, primena čeka Clerk)
@@ -176,7 +182,7 @@
 
 **Validacija**
 
-- [x] `href` allowlist: `https://`, `mailto:` i interne rute (regex isti kao `validateRedirectRegistry`). `javascript:`/`data:` odbijeni kao **error** (`RICH-003`). *(Napomena: ne ide kroz `cta.ts` registry kao što je prvobitno pisalo — to bi vezalo RichDoc validaciju za CTA akcije, koje su nešto drugačije od slobodnih editorskih linkova u telu teksta; umesto toga koristi se isti path-regex kao redirect registry.)*
+- [x] `href` allowlist: `https://`, `mailto:` i interne rute (regex isti kao `validateRedirectRegistry`). `javascript:`/`data:` odbijeni kao **error** (`RICH-003`). _(Napomena: ne ide kroz `cta.ts` registry kao što je prvobitno pisalo — to bi vezalo RichDoc validaciju za CTA akcije, koje su nešto drugačije od slobodnih editorskih linkova u telu teksta; umesto toga koristi se isti path-regex kao redirect registry.)_
 - [x] Brojanje znakova ide po **tekstu** (`richDocText`/`rich_doc_text`), marks se ne broje.
 - [x] `RICH-0xx` prefiks, aditivno: `RICH-001` nedozvoljen/neparsibilan/nepoznat blok · `RICH-002` nedozvoljen/neparsibilan mark · `RICH-003` nevalidan `href` · `RICH-004` warning (underline+URL) · `RICH-005` prekoračen `maxBlocks` · **`RICH-006` dodat van originalne liste** (dupliran/nedostajući `blockId`) — dokumentovano u `CONTENT_HEALTH_RULES_v0.1.md` §4 kao aditivno proširenje istim obrascem kao `MODEL-004` u CG-B2.
 - [x] `H1` se ne prihvata u telu (`level: 2 | 3 | 4` tipski, `Literal[2,3,4]` na Python strani).
@@ -242,7 +248,7 @@
 
 ## Faza C — Frontend CMS editor — ne počinjati pre Faze B (bar CG-B1/B2/B4)
 
-### CG-C1 — Tab „Sadržaj" — **ADR-017 §9 + Amandman 2 (D-050)** — 🟡 C1a zatvoreno 2026-07-30, C1b (editor) sledeće
+### CG-C1 — Tab „Sadržaj" — **ADR-017 §9 + Amandman 2 (D-050)** — ✅ C1a+C1b zatvoreni 2026-07-30
 
 > **Prvi nacrt ovog odeljka (§9 originalnog ADR-017) je bio placeholder — ime i grubo obeležje, nikad proveren protiv stvarnog sadržaja stranica.** Review implementacionog plana je proverio ga protiv `static-provider.ts`, stvarno renderovanih stranica i postojećih registry-ja (`cta.ts`, `AssetReference`) i našao sedam problema koji bi, da su izgrađeni kako je prvobitno pisalo, tražili migraciju `slot_data` oblika posle prve iteracije. **Amandman 2 na ADR-017 (D-050) je ispravio ugovor pre koda** — ovaj odeljak sada odražava ispravljen dizajn. Puno obrazloženje svake ispravke: ADR-017 Amandman 2.
 >
@@ -263,8 +269,8 @@
 - [x] Python ogledalo — **deviacija od plana**: `backend/.../modules/content/slot_schema.py`, ne `shared/domain/`. `SLOT_SPEC_REGISTRY` je indeksiran po `ContentTemplate` i `cta` polja referenciraju `ContentType` — oba žive u `modules/content/models.py`, ne u `shared/`; uvoz `modules/content` tipova u `shared/` bi obrnuo smer zavisnosti koji svaki drugi modul prati. Razlog upisan u docstring fajla.
 - [x] `contracts/fixtures/slot-schema.v1.json` parity — generisan iz Python registra (izbegnuta treća ručna kopija), TS i Python loaderi oba zelena **na prvom pravom pokretanju** — dve nezavisno pisane registre (TS i Python) su se poklopile bez ijedne razlike.
 - [x] **Pravi `LIMIT-002`** (Amandman 2 §A2.2) — za svako `imageList`/`ctaList`/`repeater` polje u `slot_data[slot].fields`, broj stavki mora biti u `[min, max]` iz registra. **Ne** broji ključeve opcionih slotova (odbačena interpretacija, CG-B2 Nalaz 3). `test_no_template_has_more_optional_slots_than_its_maximum` obrisan, zamenjen sa 8 novih testova (`TestStructuralFindings` u `test_content_publication.py`) nad stvarnim `slot_data` primerima — min/max granice, `computed`-izuzetak, `unmodeled`-i-dalje-proveren, `inherit`-nema-šta-da-proveri, ne-mapping vrednost se ignoriše.
-- [ ] **Editor se crta generički iz registra** — CG-C1b, sledeće.
-- [ ] Brojači uz svako polje — CG-C1b, sledeće.
+- [x] **Editor se crta generički iz registra** (`SlotEditor`/`SlotFieldEditor`).
+- [x] Brojači uz tekst, RichDoc blokove/znakove i kolekcije.
 
 **Verifikacija (2026-07-30):** backend `ruff`/`ruff format`/`pyright`/`pytest` (255 passed, 1 skipped, +10 novih testova) · frontend `tsc`/`eslint`/`prettier`/`vitest` (214 passed, 1 skipped, +2 nova) /`next build` — sve zeleno.
 
@@ -282,28 +288,32 @@
 **Nalaz tokom C1b, ispravljen pre nego što je sklopljen ijedan field editor:** `ctaList` (jedina stvarna upotreba, `static_information.cta`) nije imao `allowedActions` — isti propust kao pojedinačni `cta` pre Amandmana 2 §A2.6. Generički editor koji bi renderovao listu CTA-ova bez ograničenja dozvolio bi bilo koju akciju. Dodato u C1a registar (`CtaListFieldSpec`), fixture regenerisan, parity ponovo proveren zelen — beleženo i u C1a odeljku iznad.
 
 **Drugi nalaz, stvaran i pre-postojeći bag van C1b obima:** `content-api.ts` je isprva verno kopirao `legal-documents-api.ts`'s `parseOrThrow` (čita `response.text()` direktno kao poruku greške). Provera protiv živog backend-a (curl na `/api/v1/content/entries` bez tokena) je pokazala da backend **ne** vraća FastAPI-jev default `{"detail": "..."}` oblik, nego sopstveni RFC 7807 `ApiProblem` omotač (`api/errors.py::_handle_http_exception`) — `HTTPException(detail=X)` postaje `title: X`, ne `detail`. Postojao je već izgrađen i **testiran, ali nikad iskorišćen** `frontend/src/lib/errors/api-problem.ts` (`isApiProblem`) baš za ovaj slučaj. **`content-api.ts` je ispravljen** da koristi `isApiProblem`/`problem.detail ?? problem.title` — 409 poruka „Revizija je izmenjena u međuvremenu — osvežite i pokušajte ponovo." sada stvarno stiže čista, ne kao sirov JSON blob.
-> ⚠️ **`legal-documents-api.ts` ima IDENTIČAN bag i NIJE ispravljen u ovom prolazu** (van obima CG-C1b) — `screen-dokumenti.tsx`-ovi error banneri danas prikazuju sirov JSON umesto čiste poruke za svaku grešku sa backend-a (uklj. 409 na konkurentnu izmenu). Ostaje otvorena stavka — kandidat za brz, izolovan fix pre nego što se registar dokumenata smatra produkcijski gotovim.
 
-**Poznato ograničenje verifikacije:** puna interaktivna provera kroz browser (kreiraj unos → uredi slotove → sačuvaj → izazovi 409 → obriši) **nije urađena** — okruženje nema Clerk kredencijale za prijavu kao `org_admin`. Urađeno umesto toga: (1) pun `tsc`/`eslint`/`prettier`/`vitest`/`next build` prolaz, (2) `curl` provera da `/radni-prostor/sadrzaj` ispravno preusmerava neulogovanog korisnika na `/prijava` (307, ne 500) i da `/api/v1/content/entries` ispravno vraća 401 bez tokena, (3) ručno, pažljivo praćenje koda kroz sve glavne tokove (create→select→mode toggle→field edit→save→409→delete→repeater/list add-remove) red po red. Ostaje otvoreno: neko sa pristupom treba da uradi pravi klik-kroz test pre nego što se ovo smatra produkcijski potvrđenim.
+> `legal-documents-api.ts` je zatim prebačen na isti `isApiProblem` parser; content i legal panel sada prikazuju čistu backend poruku umesto JSON omotača.
+
+**Browser verifikacija:** `scripts/smoke-cms-authenticated.mjs` koristi jednokratni development Clerk ticket i pravi UI. Prošao je kao Anja i kao superadmin Milan: create → override H1 → save → dva stale PATCH-a (200/409) → delete. Tok je otkrio i zatvorio tri realna baga: `MissingGreenlet` pri serializaciji `updated_at`, nedozvoljen body na 204 proxy odgovoru i nedostajući pristupačan label za H1.
 
 ### CG-C2 — Živa validacija
 
-- [ ] Editor poziva **isti** `validateEntity`/`evaluatePublishGate` iz `lib/content-governance/validation.ts` — bez novog rule engine-a u workspace kodu.
-- [ ] Prikaz nalaza po polju/sekciji sa `message`/`recommendation`; izvedene klase (A.3): `error`→BLOCK crveno, nalaz sa `requiresApproval`→REVIEW_REQUIRED žuto sa imenom capability-ja, `warning`→žuto bez blokiranja, bez nalaza→PASSED (zeleno/bez oznake).
+- [x] Editor projektuje API reviziju u postojeći `ContentEntity` i poziva **isti** `evaluatePublishGate` iz `lib/content-governance/validation.ts`.
+- [x] Prikaz nalaza po polju/sekciji sa `message`/`recommendation` i klasama BLOCK/REVIEW_REQUIRED/WARNING/PASSED.
 
 ### CG-C3 — Field-level override
 
 - [ ] Prazno polje u CMS revizji prikazuje fallback vrednost iz `content/*.ts` sa vizuelnom oznakom „(fallback iz koda)" — isti princip kao registar dokumenata gde prazan tekst drži gate zatvorenim, ovde prazno polje = fallback se koristi.
-- [ ] `content/*.ts` fajlovi se ne menjaju niti brišu.
+- [x] `inherit`/`override`/`hidden` je vidljiv, a public provider radi fallback po pojedinačnom polju.
+- [x] `content/*.ts` fajlovi se ne menjaju niti brišu.
 
 ### CG-C4 — Review/approve/publish tok
 
 > **2026-07-30 — nadovezuje se direktno na CG-C1b, ne na in-memory seed.** CG-B4 već postoji i testiran je, i CG-C1b (draft editor) već koristi pravi API od prvog dana (Amandman 2) — ova stavka samo dodaje lifecycle dugmad (pošalji na pregled/odobri/objavi/arhiviraj) na već postojeći draft editor. „In-memory seed prvo" ispod je zastarela napomena iz vremena pre nego što je CG-B4 završen — zadržana precrtano radi istorije, ne kao uputstvo.
 
-- [ ] Isti obrazac kao `screen-dokumenti.tsx`: dugmad po tranziciji, `usePanelErrors` sa strukturisanim `resource` (CG-A3 tip, sada sa pravim `resourceType`/`fieldPath` po CMS nalazu).
+- [x] Isti obrazac kao `screen-dokumenti.tsx`: dugmad po tranziciji, pravi review endpoint i `usePanelErrors` sa strukturisanim `resource`/`ruleId`/`fieldPath`.
+- [x] Backend ne dozvoljava `approved` bez svih efektivnih odluka; review odluke su dozvoljene samo u `in_review`.
+- [x] Status se ne menja dok editor ima nesačuvane izmene.
 - [x] ~~In-memory seed prvo (isti put kao registar dokumenata pre LD-5/7) — API wiring dolazi kad CG-B4 postoji i kad je testiran.~~ Zastarelo — CG-B4 već postoji, CG-C1b već koristi pravi API.
 
-### CG-C5 — Tiptap editor — **ADR-017 §10** — 🟡 zatvoreno 2026-07-30, dve stavke namerno odložene (vidi ispod)
+### CG-C5 — Tiptap editor — **ADR-017 §10** — ✅ zatvoreno 2026-07-30
 
 - [x] **Zavisnosti — deviacija od plana**: `@tiptap/react`, `@tiptap/starter-kit`, `@tiptap/extension-unique-id`, `@tiptap/extension-blockquote`, `@tiptap/extension-list`. Plan je predviđao zasebne `@tiptap/extension-underline`/`@tiptap/extension-link` pakete (Tiptap v2-era pretpostavka) — u Tiptap v3.29.2, `StarterKit` već uključuje `underline`/`link` kao podesive pod-ekstenzije, pa ta dva paketa nisu ni potrebna kao zasebne zavisnosti. Svih pet paketa potvrđeno **MIT** pre instalacije (ADR-017 A1.4 — nijedan `@tiptap-pro`).
 - [x] **Šema ograničena tačno na `RichDoc` čvorove i marks** — `codeBlock`/`code`/`horizontalRule`/`strike`/`hardBreak` isključeni u `StarterKit.configure()`; `heading` ograničen na `levels: [2,3,4]`; `blockquote`/`listItem` zamenjeni sopstvenim `.extend({content: "paragraph"})` varijantama (StarterKit default dozvoljava `block+`, RichDoc-ov `QuoteBlock`/`ListItem` drže spans direktno — ograničenje na tačno jedan pasus čini `rich-doc-adapter.ts`-ovo mapiranje uvek 1:1, nikad dvosmisleno).
@@ -315,19 +325,15 @@
 - [x] Autosave — commit na blur (isti obrazac kao textarea stopgap koji zamenjuje), objava ostaje eksplicitna. 409 iz CG-B3 već ide kroz postojeći `reportApiError`/`usePanelErrors` mehanizam.
 - [x] Ožičeno na oba mesta koja su koristila textarea stopgap: `slot-field-editor.tsx` (CG-C1b, `rich` kind) i `screen-dokumenti.tsx` (LD-7).
 
-**Namerno odloženo, sa razlogom (ne tiha praznina):**
-
-- [ ] **Paste handler → isti backend normalizator.** Plan traži da paste ide kroz `normalize_html_to_rich_doc` (isti kod kao `.docx` uvoz), da bi paste i upload nikad tiho ne divergirali (guardrail iz vrha ovog fajla). Ovaj prolaz umesto toga oslanja se na Tiptap-ovu **sopstvenu** šema-ograničenu obradu paste-a (ProseMirror mapira nalepljeni HTML isključivo na dozvoljene čvorove/marks preko `parseHTML()` pravila svakog tipa) — ista KRAJNJA garancija (nedozvoljen sadržaj ne može preživeti), ali **druga implementacija** od Python normalizatora, tačno ono što guardrail upozorava da izbegne. Razlog odlaganja: backend endpoint za "normalizuj nalepljen HTML" ne postoji još, a ugrađivanje network round-trip-a u live-typing paste tok je netrivijalna promena UX-a. **Preostala stavka pre nego što se ovo smatra bezbednosno usklađenim sa guardrail-om.**
-- [ ] **Dugme „Uvezi `.docx`" u panelu.** I dalje ista praznina zabeležena od kraja Faze 0 — backend endpoint (`import-docx`) postoji, UI dugme ne. Ne rešeno u ovom prolazu.
-
-**Poznato ograničenje verifikacije:** ista napomena kao CG-C1b — nema pune interaktivne browser provere (nema Clerk kredencijala u ovom okruženju za pravi klik-kroz test kucanja/formatiranja/paste-a u editoru). Urađeno: pun `tsc`/`eslint`/`prettier`/`vitest`/`next build`, 9 round-trip testova za adapter, pažljivo čitanje Tiptap v3 tipova (`StarterKitOptions`, `LinkOptions`, `UniqueIDOptions`) pre pisanja konfiguracije umesto nagađanja.
+- [x] **Paste handler → isti backend normalizator.** HTML clipboard se šalje na `/content/rich-doc/normalize-html`; normalizovani RichDoc se ubacuje na kursor. Ako servis nije dostupan, fallback je isključivo plain text.
+- [x] **Dugme „Uvezi `.docx`" u panelu.** Prikazuje preview i nalaze; ništa ne piše dok autor ne klikne „Primeni uvezeni sadržaj".
 
 ### CG-C6 — SEO panel sa živim pregledom — **ADR-017 §11**
 
-- [ ] Sekcija „SEO i deljenje" u editoru: `title`, `description`, `ogImageAssetId` — **model se ne menja**, `SeoFields` i `seoTitle`/`seoDescription` limiti su već tu.
-- [ ] **Živi pregled Google rezultata** (naslov/URL/opis kako se stvarno prikazuje, sa presecanjem na limitu) i **OG kartica**.
-- [ ] Upozorenje kad je `description` prazan ili identičan naslovu.
-- [ ] Bez izmena u `discoverability.ts` — panel samo prikazuje ono što taj generator ionako proizvodi.
+- [x] Sekcija „SEO i deljenje": `title`, `description`, `ogImageAssetId`, verzionisani uz reviziju kroz migraciju `20260730_0008`.
+- [x] **Živi pregled Google rezultata** i **OG kartica**, uz postojeće limite.
+- [x] Upozorenje kad je `description` prazan ili identičan naslovu.
+- [x] Panel ne uvodi novi discoverability model; koristi postojeći `SeoFields`.
 
 ---
 
@@ -335,15 +341,15 @@
 
 ### CG-D1 — Provider resolver
 
-- [ ] Nova funkcija `getContentProvider(): ContentProvider` u `lib/content-governance/` (npr. `provider-resolver.ts`) — vraća CMS-backed provider ako postoji objavljen sadržaj, inače `staticContentProvider`.
-- [ ] Zameniti direktan import `staticContentProvider` na svih ~18 mesta (15 `(public)` stranica + `robots.ts` + `sitemap.ts` + `zakazivanje/page.tsx` + `json-ld.tsx`) pozivom `getContentProvider()`.
-- [ ] `discoverability.ts`: `metadataForRoute`/`jsonLdForRoute` prestaju da hard-wire-uju singleton direktno; primaju provider kroz `getContentProvider()`. `metadataForRoute` prestaje da baca na promašaj — pada na statički fallback umesto `throw`.
-- [ ] Raditi u izolovanom PR-u zbog broja dodirnutih fajlova (najrizičniji korak plana).
+- [x] `getContentProvider(): Promise<ContentProvider>` vraća CMS-backed provider kad javni read-model ima objavu, inače `staticContentProvider`.
+- [x] Javni call-site-ovi, metadata/JSON-LD, sitemap i legacy booking redirect koriste resolver; raw singleton ostaje samo u statičkoj implementaciji i browser editor validaciji.
+- [x] `metadataForRoute`/`jsonLdForRoute` primaju provider i padaju na statički fallback umesto `throw`.
 
 ### CG-D2 — CMS provider implementacija
 
-- [ ] `CmsContentProvider implements ContentProvider` — `getEntity`/`getPageByRoute`/`listPublished`/itd. čitaju objavljenu `ContentRevision` i **nadjačavaju statički entitet polje-po-polje** (D-038); nedostajuće polje → vrednost iz `staticContentProvider`.
-- [ ] Test koji eksplicitno tvrdi: prva objava menja `listPublished()` iz praznog niza u neprazan → sitemap/robots izlaz se menja (ne slučajna regresija — nameravana promena, dokumentovana u testu).
+- [x] `CmsContentProvider implements ContentProvider`; backend javni endpoint vraća samo objavljene payload-e bez actor/lock/review podataka, a provider nadjačava postojeći statički entitet polje-po-polje.
+- [x] Test eksplicitno tvrdi da prva objava menja `listPublished()` i produkcijski sitemap.
+- [ ] **Odluka za net-new stranice:** trenutni `ContentEntity` union zahteva tipizovan statički `source`, pa objavljena revizija bez postojećeg statičkog identiteta nema bezbedan renderer i provider je ne izmišlja. Potvrditi da je pre-R3 CMS samo override postojećih ruta ili definisati poseban model/rutu za nove stranice.
 
 ### CG-D3 — Cache i preview
 

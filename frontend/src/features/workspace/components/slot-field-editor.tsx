@@ -44,6 +44,7 @@ export function SlotFieldEditor({
         counter={`${text.length}/${limit}`}
       >
         <input
+          aria-label={label}
           value={text}
           onChange={(event) => onChange(event.target.value)}
           className={inputClass}
@@ -81,6 +82,7 @@ export function SlotFieldEditor({
         counter={`${spec.min}–${spec.max}${spec.unit ? ` ${unitLabel(spec.unit)}` : ""}`}
       >
         <input
+          aria-label={label}
           type="number"
           value={num}
           min={spec.min}
@@ -108,6 +110,7 @@ export function SlotFieldEditor({
         counter={`${spec.min}–${spec.max} ${spec.currency}`}
       >
         <input
+          aria-label={label}
           type="number"
           value={num}
           min={spec.min}

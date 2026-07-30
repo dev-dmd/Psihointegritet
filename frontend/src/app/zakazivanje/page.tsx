@@ -1,9 +1,9 @@
 import type { Route } from "next";
 import { permanentRedirect } from "next/navigation";
 
-import { staticContentProvider } from "@/lib/content-governance/static-provider";
+import { getContentProvider } from "@/lib/content-governance/provider-resolver";
 
-export default function LegacyBookingRoute() {
-  const redirect = staticContentProvider.getRedirect("/zakazivanje");
+export default async function LegacyBookingRoute() {
+  const redirect = (await getContentProvider()).getRedirect("/zakazivanje");
   permanentRedirect((redirect?.targetPath ?? "/zakazi") as Route);
 }

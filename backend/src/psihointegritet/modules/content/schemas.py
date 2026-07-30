@@ -16,6 +16,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from pydantic.alias_generators import to_camel
 
 from psihointegritet.modules.content.models import ContentTemplate, ContentType, ReviewOutcome
+from psihointegritet.modules.identity.schemas import ActorSummaryOut
 from psihointegritet.shared.domain.publication import ApprovalCapability, RevisionStatus
 
 
@@ -27,8 +28,15 @@ class ReviewDecisionOut(ApiSchema):
     capability: ApprovalCapability
     outcome: ReviewOutcome
     decided_by_user_id: UUID | None = None
+    decided_by: ActorSummaryOut | None = None
     decided_at: datetime
     note: str | None = None
+
+
+class SeoFields(ApiSchema):
+    title: str = Field(default="", max_length=65)
+    description: str = Field(default="", max_length=170)
+    og_image_asset_id: str | None = Field(default=None, max_length=191)
 
 
 class ContentRevisionOut(ApiSchema):
@@ -39,11 +47,26 @@ class ContentRevisionOut(ApiSchema):
     locale: str
     template: ContentTemplate
     slot_data: dict[str, object]
+    seo: SeoFields
     status: RevisionStatus
     version_label: str
     lock_version: int
     decisions: list[ReviewDecisionOut]
+    created_by: ActorSummaryOut | None = None
+    updated_by: ActorSummaryOut | None = None
     updated_at: datetime
+
+
+class PublicContentRevisionOut(ApiSchema):
+    """Published CMS override without staff identity or edit metadata."""
+
+    content_type: ContentType
+    slug: str
+    locale: str
+    template: ContentTemplate
+    slot_data: dict[str, object]
+    seo: SeoFields
+    published_at: datetime
 
 
 class CreateContentEntryRequest(ApiSchema):
@@ -59,6 +82,7 @@ class UpdateContentRevisionRequest(ApiSchema):
 
     lock_version: int
     slot_data: dict[str, object] | None = None
+    seo: SeoFields | None = None
 
 
 class TransitionRequest(ApiSchema):
@@ -85,3 +109,21 @@ class PublishBlockOut(ApiSchema):
     stage: str
     findings: list[ContentFindingOut]
     missing: list[ApprovalCapability]
+
+
+class NormalizeRichHtmlRequest(ApiSchema):
+    html: str = Field(max_length=200_000)
+
+
+class RichDocFindingOut(ApiSchema):
+    rule_id: str
+    rule_version: str
+    severity: str
+    message: str
+    remediation: str
+    field_path: str | None = None
+
+
+class NormalizeRichHtmlResponse(ApiSchema):
+    body: dict[str, object]
+    findings: list[RichDocFindingOut]

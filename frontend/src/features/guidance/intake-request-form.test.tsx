@@ -60,6 +60,8 @@ describe("IntakeRequestForm", () => {
         }}
         submissionKind="request"
         preferredTherapistSlug="anja-stamenkovic"
+        dataProcessingNoticeVersion="notice-v1"
+        requestAcknowledgementVersion="request-v1"
         onBack={vi.fn()}
       />,
     );
@@ -117,6 +119,8 @@ describe("IntakeRequestForm", () => {
         }}
         submissionKind="team_review"
         preferredTherapistSlug={null}
+        dataProcessingNoticeVersion="notice-v1"
+        requestAcknowledgementVersion="request-v1"
         onBack={vi.fn()}
       />,
     );
@@ -163,6 +167,8 @@ describe("IntakeRequestForm", () => {
         }}
         submissionKind="team_review"
         preferredTherapistSlug={null}
+        dataProcessingNoticeVersion="notice-v1"
+        requestAcknowledgementVersion="request-v1"
         onBack={vi.fn()}
       />,
     );
@@ -193,6 +199,8 @@ describe("IntakeRequestForm", () => {
         }}
         submissionKind="request"
         preferredTherapistSlug={null}
+        dataProcessingNoticeVersion="notice-v1"
+        requestAcknowledgementVersion="request-v1"
         onBack={vi.fn()}
       />,
     );

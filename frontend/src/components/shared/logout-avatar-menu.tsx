@@ -66,7 +66,7 @@ export function LogoutAvatarMenu({
 
       <MenuItems
         transition
-        className="ease-soft border-coffee/10 bg-surface absolute top-[calc(100%+10px)] right-0 z-[70] w-44 origin-top-right rounded-2xl border p-1.5 shadow-xl outline-none transition duration-200 data-[closed]:-translate-y-2 data-[closed]:scale-95 data-[closed]:opacity-0"
+        className="ease-soft border-coffee/10 bg-surface absolute top-[calc(100%+10px)] right-0 z-[70] w-44 origin-top-right rounded-2xl border p-1.5 shadow-xl transition duration-200 outline-none data-[closed]:-translate-y-2 data-[closed]:scale-95 data-[closed]:opacity-0"
       >
         {children ? (
           <>

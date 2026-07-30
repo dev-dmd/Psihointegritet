@@ -2,17 +2,24 @@ import Link from "next/link";
 
 import { PageHero } from "@/components/shared/page-hero";
 import { metadataForRoute } from "@/lib/content-governance/discoverability";
-import { groupPrograms } from "@/content/programs";
-import {
-  formatRsd,
-  PRICE_NOTE,
-  serviceCatalog,
-  sessionPackages,
-} from "@/content/services";
+import { getContentProvider } from "@/lib/content-governance/provider-resolver";
+import { formatRsd, PRICE_NOTE } from "@/content/services";
 
-export const metadata = metadataForRoute("/cene");
+export async function generateMetadata() {
+  return metadataForRoute("/cene", await getContentProvider());
+}
 
-export default function PricesPage() {
+export default async function PricesPage() {
+  const entities = (await getContentProvider()).listAll();
+  const services = entities
+    .filter((entity) => entity.type === "service")
+    .map((entity) => entity.source);
+  const packages = entities
+    .filter((entity) => entity.type === "package_offer")
+    .map((entity) => entity.source);
+  const programs = entities
+    .filter((entity) => entity.type === "program")
+    .map((entity) => entity.source);
   return (
     <>
       <PageHero id="cene">
@@ -34,7 +41,7 @@ export default function PricesPage() {
             Individualne usluge
           </h2>
           <div className="mt-6 grid gap-4 md:grid-cols-3">
-            {serviceCatalog.map((service) => (
+            {services.map((service) => (
               <Link
                 key={service.slug}
                 href={`/usluge/${service.slug}`}
@@ -59,7 +66,7 @@ export default function PricesPage() {
             Paketi
           </h2>
           <div className="mt-6 grid gap-4 sm:grid-cols-2">
-            {sessionPackages.map((pack) => (
+            {packages.map((pack) => (
               <article
                 key={pack.sessions}
                 className="bg-meadow/22 rounded-[20px] p-6"
@@ -81,7 +88,7 @@ export default function PricesPage() {
             Grupni programi
           </h2>
           <div className="mt-6 grid gap-3">
-            {groupPrograms.map((program) => (
+            {programs.map((program) => (
               <Link
                 key={program.slug}
                 href={`/radionice/${program.slug}`}

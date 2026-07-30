@@ -3,8 +3,11 @@ import Link from "next/link";
 import { PageHero } from "@/components/shared/page-hero";
 import { siteSettings } from "@/content/site-settings";
 import { metadataForRoute } from "@/lib/content-governance/discoverability";
+import { getContentProvider } from "@/lib/content-governance/provider-resolver";
 
-export const metadata = metadataForRoute("/kontakt");
+export async function generateMetadata() {
+  return metadataForRoute("/kontakt", await getContentProvider());
+}
 
 export default function ContactPage() {
   return (

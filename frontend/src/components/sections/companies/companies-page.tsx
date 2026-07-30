@@ -7,6 +7,7 @@ import {
   companyDeliveryFacts,
   companyFaqItems,
   companyPlanCards,
+  type CompanyPlanCard,
 } from "@/content/company";
 
 const offerings = [
@@ -34,7 +35,11 @@ const steps = [
 ];
 
 /** B2B presentation page with the existing structured configurator drawer. */
-export function CompaniesPage() {
+export function CompaniesPage({
+  plans = companyPlanCards,
+}: {
+  plans?: readonly CompanyPlanCard[];
+}) {
   return (
     <>
       <PageHero tone="warm">
@@ -91,7 +96,7 @@ export function CompaniesPage() {
               </p>
             </div>
             <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-4">
-              {companyPlanCards.map((plan) => (
+              {plans.map((plan) => (
                 <article
                   key={plan.slug}
                   className="bg-meadow/22 flex min-h-[260px] flex-col justify-between rounded-[20px] p-6"

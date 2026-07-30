@@ -16,7 +16,7 @@ import {
   jsonLdForEntity,
   metadataForEntity,
 } from "@/lib/content-governance/discoverability";
-import { staticContentProvider } from "@/lib/content-governance/static-provider";
+import { getContentProvider } from "@/lib/content-governance/provider-resolver";
 
 interface TherapistPageProps {
   params: Promise<{ slug: string }>;
@@ -35,7 +35,7 @@ export async function generateMetadata({
   if (!therapist) {
     return {};
   }
-  const entity = staticContentProvider.getEntity(
+  const entity = (await getContentProvider()).getEntity(
     "therapist",
     `therapist:${therapist.slug}`,
   );
@@ -44,16 +44,13 @@ export async function generateMetadata({
 
 export default async function TherapistPage({ params }: TherapistPageProps) {
   const { slug } = await params;
-  const therapist = findTherapist(slug);
+  const provider = await getContentProvider();
+  const contentEntity = provider.getEntity("therapist", `therapist:${slug}`);
+  const therapist = contentEntity?.source ?? findTherapist(slug);
 
   if (!therapist) {
     notFound();
   }
-  const contentEntity = staticContentProvider.getEntity(
-    "therapist",
-    `therapist:${therapist.slug}`,
-  );
-
   return (
     <>
       {contentEntity ? <JsonLd data={jsonLdForEntity(contentEntity)} /> : null}

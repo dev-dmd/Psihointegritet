@@ -4,6 +4,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 
 import { ErrorBanner } from "@/components/panel/error-banner";
+import { ActorBadge } from "@/components/panel/actor-badge";
 import {
   StatusBadge,
   type StatusBadgeTone,
@@ -41,6 +42,8 @@ import {
   recordLegalDocumentApproval,
   transitionLegalDocumentRevision,
   updateLegalDocumentRevision,
+  importLegalDocumentDocx,
+  type ApiImportDocxResult,
   type ApiPublishBlock,
 } from "../legal-documents-api";
 import { usePanelErrors, type PanelErrorResource } from "../panel-errors";
@@ -138,6 +141,12 @@ export function ScreenDokumenti() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
+  const [docxPreview, setDocxPreview] = useState<{
+    documentId: string;
+    fileName: string;
+    result: ApiImportDocxResult;
+  } | null>(null);
+  const [docxImportingId, setDocxImportingId] = useState<string | null>(null);
 
   const errors = errorsFor(HREF);
   const gateOpen = intakeGateOpen(documents);
@@ -245,7 +254,10 @@ export function ScreenDokumenti() {
     }
   };
 
-  const saveBody = async (document: LegalDocument, body: RichDoc) => {
+  const saveBody = async (
+    document: LegalDocument,
+    body: RichDoc,
+  ): Promise<boolean> => {
     try {
       // The backend reissues internally (A.2) when the current status is
       // `approved`/`archived` — the panel does not predict that locally
@@ -256,12 +268,31 @@ export function ScreenDokumenti() {
         { body },
       );
       replaceInList(next);
+      return true;
     } catch (error) {
       reportApiError(
         document,
         `Izmena nije sačuvana za „${document.title}“`,
         error,
       );
+      return false;
+    }
+  };
+
+  const previewDocx = async (document: LegalDocument, file: File) => {
+    setDocxImportingId(document.documentId);
+    setDocxPreview(null);
+    try {
+      const result = await importLegalDocumentDocx(document.documentId, file);
+      setDocxPreview({
+        documentId: document.documentId,
+        fileName: file.name,
+        result,
+      });
+    } catch (error) {
+      reportApiError(document, `DOCX „${file.name}” nije uvezen`, error);
+    } finally {
+      setDocxImportingId(null);
     }
   };
 
@@ -432,6 +463,16 @@ export function ScreenDokumenti() {
                     <div className="text-ink-55 mt-1 text-[12.5px]">
                       /{document.slug} · {KIND_LABELS[document.kind]}
                     </div>
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      <ActorBadge
+                        action="Kreirao/la"
+                        actor={document.createdBy ?? null}
+                      />
+                      <ActorBadge
+                        action="Poslednja izmena"
+                        actor={document.updatedBy ?? null}
+                      />
+                    </div>
                   </div>
                   <button
                     type="button"
@@ -469,6 +510,67 @@ export function ScreenDokumenti() {
                         <RichText doc={document.body} className="text-sm" />
                       </div>
                     )}
+                    {isEditable ? (
+                      <div className="mt-3">
+                        <label className="border-line-strong text-ink-70 hover:border-coffee/40 inline-flex cursor-pointer rounded-full border bg-transparent px-4 py-2 text-[13px] font-semibold transition-colors">
+                          {docxImportingId === document.documentId
+                            ? "Uvoz DOCX-a…"
+                            : "Uvezi .docx"}
+                          <input
+                            type="file"
+                            accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                            disabled={docxImportingId === document.documentId}
+                            className="sr-only"
+                            onChange={(event) => {
+                              const file = event.target.files?.[0];
+                              event.currentTarget.value = "";
+                              if (file) void previewDocx(document, file);
+                            }}
+                          />
+                        </label>
+                        <p className="text-ink-55 mt-1.5 text-[12px]">
+                          Uvoz prvo pravi pregled; postojeći tekst se ne menja
+                          dok izričito ne primenite rezultat.
+                        </p>
+                      </div>
+                    ) : null}
+                    {docxPreview?.documentId === document.documentId ? (
+                      <div className="border-line bg-panel-canvas rounded-tile mt-3 border px-4 py-3">
+                        <p className="text-coffee text-[13.5px] font-semibold">
+                          Pregled uvoza: {docxPreview.fileName}
+                        </p>
+                        {docxPreview.result.findings.length > 0 ? (
+                          <ul className="text-ink-70 mt-2 list-disc pl-5 text-[12.5px] leading-[1.55]">
+                            {docxPreview.result.findings.map((finding) => (
+                              <li key={`${finding.ruleId}-${finding.message}`}>
+                                {finding.message} {finding.remediation}
+                              </li>
+                            ))}
+                          </ul>
+                        ) : (
+                          <p className="text-ink-55 mt-1 text-[12.5px]">
+                            Dokument je normalizovan bez upozorenja.
+                          </p>
+                        )}
+                        <div className="mt-3 flex flex-wrap gap-2">
+                          <ActionButton
+                            label="Primeni uvezeni sadržaj"
+                            onClick={() => {
+                              void saveBody(
+                                document,
+                                docxPreview.result.body,
+                              ).then((saved) => {
+                                if (saved) setDocxPreview(null);
+                              });
+                            }}
+                          />
+                          <ActionButton
+                            label="Odustani"
+                            onClick={() => setDocxPreview(null)}
+                          />
+                        </div>
+                      </div>
+                    ) : null}
                     {isEditable ? null : (
                       <p
                         id={`body-note-${document.documentId}`}
@@ -493,6 +595,9 @@ export function ScreenDokumenti() {
                             );
                           const granted =
                             document.approvals.includes(capability);
+                          const evidence = document.approvalEvidence?.find(
+                            (item) => item.capability === capability,
+                          );
                           return (
                             <label
                               key={capability}
@@ -512,6 +617,9 @@ export function ScreenDokumenti() {
                                 className="accent-sage"
                               />
                               {CAPABILITY_LABELS[capability]}
+                              {evidence?.approvedBy
+                                ? ` · ${evidence.approvedBy.displayName}`
+                                : ""}
                               {required ? null : (
                                 <span className="text-ink-55 font-normal">
                                   (nije obavezno)

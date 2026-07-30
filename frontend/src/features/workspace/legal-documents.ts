@@ -14,6 +14,8 @@ import {
   richDocTextLength,
   type RichDoc,
 } from "@/lib/content-governance/rich-doc";
+import type { ActorSummary } from "@/components/panel/actor-badge";
+import type { ApiApprovalEvidence } from "./legal-documents-api";
 
 export type LegalDocumentKind =
   | "intake_data_processing_notice"
@@ -44,6 +46,9 @@ export interface LegalDocument {
   body: RichDoc;
   status: RevisionStatus;
   approvals: ApprovalCapability[];
+  approvalEvidence?: ApiApprovalEvidence[];
+  createdBy?: ActorSummary | null;
+  updatedBy?: ActorSummary | null;
   versionLabel: string;
   updatedAt: string;
 }
