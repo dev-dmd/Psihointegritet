@@ -373,6 +373,8 @@
 
 ## Faza E — Odloženo (van CMS koda, redosled iz D-043/plan §3)
 
+> **Sledeći redosled, potvrđen 2026-07-30:** prvo produkcijska priprema (Clerk nalozi + primena postojećih privacy/CMS migracija uz produkcijski pristup), zatim O-24 unifikacija taksonomije oblasti podrške. `article`/blog ostaje posle ADR-019.
+
 - [ ] Clerk nalozi za Anju/Mariju/Marjana na produkciji (O-17/O-18).
 - [ ] Primena migracija: LD-5 (privacy) + CG-B5 (content), po mogućstvu isti dan.
 - [x] LD-6 — `intake_submission_ready` čita objavljenu reviziju iz baze.
