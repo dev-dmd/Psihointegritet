@@ -50,6 +50,10 @@ from psihointegritet.modules.content.schemas import (
     TransitionRequest,
     UpdateContentRevisionRequest,
 )
+from psihointegritet.modules.content.system_catalog import (
+    is_system_content_definition,
+    require_system_content_definition,
+)
 from psihointegritet.modules.guidance.authorization import StaffActor
 from psihointegritet.modules.identity.models import InternalUser
 from psihointegritet.modules.identity.schemas import ActorSummaryOut
@@ -237,6 +241,12 @@ class ContentService:
                 published_at=revision.published_at or revision.updated_at,
             )
             for entry, revision in rows
+            if is_system_content_definition(
+                entry.content_type,
+                entry.slug,
+                revision.template,
+                entry.locale,
+            )
         ]
 
     async def get_entry(self, actor: StaffActor, entry_id: UUID) -> ContentRevisionOut:
@@ -265,6 +275,12 @@ class ContentService:
         self, actor: StaffActor, request: CreateContentEntryRequest
     ) -> ContentRevisionOut:
         self._require_org_admin(actor)
+        require_system_content_definition(
+            request.content_type,
+            request.slug,
+            request.template,
+            request.locale,
+        )
         existing = await self._session.scalar(
             select(ContentEntry).where(
                 ContentEntry.organization_id == actor.organization_id,
@@ -274,18 +290,23 @@ class ContentService:
             )
         )
         if existing is not None:
-            raise ContentConflictError(
-                f"An entry with slug {request.slug!r} already exists for this type and locale"
+            # Older delete behavior could leave an entry with no revisions.
+            # Reuse that stable identity so a protected page never gets stuck
+            # behind a permanent 409.
+            if await self._latest_revision(existing.id) is not None:
+                raise ContentConflictError(
+                    f"An entry with slug {request.slug!r} already exists for this type and locale"
+                )
+            entry = existing
+        else:
+            entry = ContentEntry(
+                organization_id=actor.organization_id,
+                content_type=request.content_type,
+                slug=request.slug,
+                locale=request.locale,
             )
-
-        entry = ContentEntry(
-            organization_id=actor.organization_id,
-            content_type=request.content_type,
-            slug=request.slug,
-            locale=request.locale,
-        )
-        self._session.add(entry)
-        await self._session.flush()
+            self._session.add(entry)
+            await self._session.flush()
 
         revision = ContentRevision(
             entry_id=entry.id,
@@ -560,6 +581,7 @@ class ContentService:
 
     async def delete_revision(self, actor: StaffActor, entry_id: UUID, revision_id: UUID) -> None:
         self._require_org_admin(actor)
+        entry = await self._entry(actor, entry_id)
         revision = await self._revision(actor, entry_id, revision_id)
         try:
             require_deletable(revision.status)
@@ -567,6 +589,12 @@ class ContentService:
             raise ContentConflictError(str(error)) from error
         await self._session.delete(revision)
         await self._session.flush()
+        remaining_revision_id = await self._session.scalar(
+            select(ContentRevision.id).where(ContentRevision.entry_id == entry.id).limit(1)
+        )
+        if remaining_revision_id is None:
+            await self._session.delete(entry)
+            await self._session.flush()
 
     async def _log_event(
         self,

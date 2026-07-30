@@ -47,14 +47,6 @@ const TAB_LABEL = "Sadržaj";
  * (same pattern as `screen-dokumenti.tsx`'s `ORGANIZATION_ID`). */
 const ORGANIZATION_ID = "psihointegritet";
 const RESOURCE_TYPE = "content_entry";
-const ROUTE_PREFIX: Record<ApiContentRevision["contentType"], string> = {
-  static_page: "",
-  service: "/usluge",
-  therapist: "/tim",
-  program: "/programi",
-  company_plan: "/rad-sa-kompanijama",
-  package_offer: "/cene",
-};
 
 function resourceFor(entry: ApiContentRevision): PanelErrorResource {
   return {
@@ -84,9 +76,13 @@ function initialSlotData(entry: ApiContentRevision): Record<string, unknown> {
  */
 export function ContentRevisionEditor({
   entry,
+  displayTitle,
+  publicRoute,
   onDeleted,
 }: {
   entry: ApiContentRevision;
+  displayTitle: string;
+  publicRoute: string;
   onDeleted: () => void;
 }) {
   const queryClient = useQueryClient();
@@ -165,7 +161,7 @@ export function ContentRevisionEditor({
       replaceEntry(next);
     },
     onError: (error: unknown) =>
-      reportApiError(`Izmena nije sačuvana za „/${entry.slug}”`, error),
+      reportApiError(`Izmena nije sačuvana za „${publicRoute}”`, error),
   });
 
   const transition = async (target: ApiContentRevision["status"]) => {
@@ -225,7 +221,7 @@ export function ContentRevisionEditor({
         ),
       );
     } catch (error) {
-      reportApiError(`Promena statusa za „/${entry.slug}” nije uspela`, error);
+      reportApiError(`Promena statusa za „${publicRoute}” nije uspela`, error);
     } finally {
       setLifecyclePending(false);
     }
@@ -242,7 +238,7 @@ export function ContentRevisionEditor({
         ),
       );
     } catch (error) {
-      reportApiError(`Odobrenje za „/${entry.slug}” nije sačuvano`, error);
+      reportApiError(`Odobrenje za „${publicRoute}” nije sačuvano`, error);
     } finally {
       setLifecyclePending(false);
     }
@@ -261,7 +257,7 @@ export function ContentRevisionEditor({
     },
     onError: (error: unknown) => {
       setPendingDelete(false);
-      reportApiError(`Stranica „/${entry.slug}” nije obrisana`, error);
+      reportApiError(`CMS verzija za „${publicRoute}” nije uklonjena`, error);
     },
   });
 
@@ -270,10 +266,10 @@ export function ContentRevisionEditor({
       <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
         <div>
           <div className="text-coffee text-[15px] font-semibold">
-            /{entry.slug}
+            {displayTitle}
           </div>
           <div className="text-ink-55 mt-0.5 text-[12.5px]">
-            {entry.template} · {entry.versionLabel}
+            {publicRoute} · {entry.template} · {entry.versionLabel}
           </div>
         </div>
         <StatusBadge tone={STATUS_TONES[entry.status] ?? "neutral"}>
@@ -433,10 +429,7 @@ export function ContentRevisionEditor({
       </div>
 
       <SeoPreviewPanel
-        route={`${ROUTE_PREFIX[entry.contentType]}/${entry.slug}`.replace(
-          /^\/\//,
-          "/",
-        )}
+        route={publicRoute}
         value={seo}
         onChange={setSeo}
         disabled={!isEditable}
@@ -576,7 +569,7 @@ export function ContentRevisionEditor({
             onClick={() => setPendingDelete(true)}
             className="border-danger/45 text-danger hover:bg-danger/8 cursor-pointer rounded-full border bg-transparent px-5 py-2.5 text-[13px] font-semibold transition-colors"
           >
-            Obriši
+            Ukloni CMS radnu verziju
           </button>
         ) : null}
       </div>
@@ -590,7 +583,10 @@ export function ContentRevisionEditor({
       {pendingDelete ? (
         <div className="border-danger/45 bg-danger/8 rounded-tile mt-3 px-4 py-3">
           <p className="text-coffee text-[13.5px] font-semibold">
-            Obrisati „/{entry.slug}”?
+            Ukloniti CMS radnu verziju za „{displayTitle}”?
+          </p>
+          <p className="text-ink-70 mt-1 text-[12px]">
+            Sistemska stranica i postojeći tekst iz koda ostaju dostupni.
           </p>
           <div className="mt-2.5 flex gap-2.5">
             <button
@@ -598,7 +594,7 @@ export function ContentRevisionEditor({
               onClick={() => deleteMutation.mutate()}
               className="bg-danger text-panel-canvas cursor-pointer rounded-full border-0 px-4 py-2 text-[13px] font-semibold"
             >
-              Obriši
+              Ukloni radnu verziju
             </button>
             <button
               type="button"

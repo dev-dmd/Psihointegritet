@@ -349,7 +349,9 @@
 
 - [x] `CmsContentProvider implements ContentProvider`; backend javni endpoint vraća samo objavljene payload-e bez actor/lock/review podataka, a provider nadjačava postojeći statički entitet polje-po-polje.
 - [x] Test eksplicitno tvrdi da prva objava menja `listPublished()` i produkcijski sitemap.
-- [x] **Odluka za net-new stranice (2026-07-30):** sistemske rute se ne kreiraju ponovo; biraju se iz registra i menjaju isključivo kroz unapred definisanu strukturu sekcija/polja/limita/slika. Slobodne stranice su samo „Dokumenti i saglasnosti", sa minimalnim javnim layoutom (header + hero + strukturirani RichDoc/Wiki sadržaj + footer). Učitavanje svih sistemskih stranica u tab „Stranice" i uklanjanje generičkog „Nova stranica" toka je neposredno sledeći zadatak posle CG-D3/D4.
+- [x] **Odluka za net-new stranice (2026-07-30):** sistemske rute se ne kreiraju ponovo; biraju se iz registra i menjaju isključivo kroz unapred definisanu strukturu sekcija/polja/limita/slika. Slobodne stranice su samo „Dokumenti i saglasnosti", sa minimalnim javnim layoutom (header + hero + strukturirani RichDoc/Wiki sadržaj + footer).
+- [x] **Sistemski katalog učitan (2026-07-30):** svih 31 postojećih identiteta iz javnog fallback registra prikazuje se svakom tenantu u tabovima Stranice/Usluge/Terapeuti/Programi/Kompanije/Paketi; bez revizije ostaju označeni kao fallback iz koda, a prvim izborom nastaje prazna tenant revizija. Backend dozvoljava kreiranje samo tačnog registrovanog `contentType + slug + template + sr-Latn` spoja. Pravne rute nisu duplirane (ostaju u registru dokumenata), `/booking-widget` nije sadržaj već razvojni UI preview, a sistemski editor nema `.docx` uvoz. Blog/article i eventualne Kompas edukativne stranice ostaju odložena zasebna odluka.
+- [x] **Delete/orphan korekcija:** kada se obriše poslednja dozvoljena draft revizija briše se i prazan entry, pa sledeće otvaranje ponovo može da napravi tenant override; raniji orphan entry bez revizija create tok oporavlja ponovnim korišćenjem identiteta umesto trajnog 409.
 
 ### CG-D3 — Cache i preview
 
