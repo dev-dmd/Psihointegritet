@@ -370,21 +370,16 @@ export function validateEntity(
       );
     }
   }
-  const optionalSlotCount = entity.slots.filter((slot) =>
-    template.optionalSlots.includes(slot),
-  ).length;
-  if (optionalSlotCount > template.maxOptionalSections) {
-    findings.push(
-      finding(
-        entity,
-        "LIMIT-002",
-        "error",
-        "Broj opcionih sekcija prelazi ograničenje template-a.",
-        "Ukloniti ili podeliti opcionu sekciju u odobrenom modelu.",
-        "slots",
-      ),
-    );
-  }
+  // LIMIT-002 (removed here 2026-07-30, ADR-017 Amendment 2 §A2.2, D-050):
+  // this used to count optional slot *keys* against `maxOptionalSections`,
+  // which was always unreachable — a key-based count can't see how many
+  // repeatable items live inside a slot, which is what the limit actually
+  // meant. `ContentEntity.slots` (this validator's input) only carries slot
+  // *presence*, never field-level item counts, so this validator has no data
+  // to enforce the real rule against. The real LIMIT-002 now lives in
+  // `modules/content/publication.py::structural_findings`, which reads the
+  // CMS backend's `slot_data` directly against `slotSpecRegistry`'s
+  // `imageList`/`ctaList`/`repeater` `min`/`max`.
 
   for (const textField of entity.textFields) {
     if (

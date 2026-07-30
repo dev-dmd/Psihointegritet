@@ -1,0 +1,448 @@
+{
+  "fixtureSchemaVersion": "1",
+  "cases": [
+    {
+      "caseId": "HREF-001",
+      "description": "https absolute URL is allowed",
+      "action": "href-check",
+      "input": { "href": "https://psihointegritet.com/o-nama" },
+      "expectedAllowed": true
+    },
+    {
+      "caseId": "HREF-002",
+      "description": "plain http (not https) is rejected",
+      "action": "href-check",
+      "input": { "href": "http://psihointegritet.com" },
+      "expectedAllowed": false
+    },
+    {
+      "caseId": "HREF-003",
+      "description": "mailto: with an address is allowed",
+      "action": "href-check",
+      "input": { "href": "mailto:tim@psihointegritet.com" },
+      "expectedAllowed": true
+    },
+    {
+      "caseId": "HREF-004",
+      "description": "bare mailto: with nothing after the colon is rejected",
+      "action": "href-check",
+      "input": { "href": "mailto:" },
+      "expectedAllowed": false
+    },
+    {
+      "caseId": "HREF-005",
+      "description": "javascript: scheme is rejected (RICH-003 XSS surface)",
+      "action": "href-check",
+      "input": { "href": "javascript:alert(1)" },
+      "expectedAllowed": false
+    },
+    {
+      "caseId": "HREF-006",
+      "description": "data: scheme is rejected",
+      "action": "href-check",
+      "input": { "href": "data:text/html,<script>alert(1)</script>" },
+      "expectedAllowed": false
+    },
+    {
+      "caseId": "HREF-007",
+      "description": "internal route is allowed",
+      "action": "href-check",
+      "input": { "href": "/usluge/individualna-psihoterapija" },
+      "expectedAllowed": true
+    },
+    {
+      "caseId": "HREF-008",
+      "description": "internal route with a query string is allowed (query is stripped before matching)",
+      "action": "href-check",
+      "input": { "href": "/cene?ref=newsletter" },
+      "expectedAllowed": true
+    },
+    {
+      "caseId": "HREF-009",
+      "description": "internal route with disallowed characters (uppercase, punctuation) is rejected",
+      "action": "href-check",
+      "input": { "href": "/Usluge/Test!" },
+      "expectedAllowed": false
+    },
+    {
+      "caseId": "HREF-010",
+      "description": "relative path without a leading slash is rejected (not internal, not a valid absolute URL)",
+      "action": "href-check",
+      "input": { "href": "usluge/individualna-psihoterapija" },
+      "expectedAllowed": false
+    },
+    {
+      "caseId": "HREF-011",
+      "description": "malformed string is rejected",
+      "action": "href-check",
+      "input": { "href": "not a url" },
+      "expectedAllowed": false
+    },
+    {
+      "caseId": "TEXT-001",
+      "description": "empty document extracts to empty text and zero length",
+      "action": "text-extract",
+      "input": {
+        "doc": { "schemaVersion": 1, "blocks": [] }
+      },
+      "expectedText": "",
+      "expectedLength": 0
+    },
+    {
+      "caseId": "TEXT-002",
+      "description": "single paragraph extracts its own text",
+      "action": "text-extract",
+      "input": {
+        "doc": {
+          "schemaVersion": 1,
+          "blocks": [
+            { "id": "b1", "type": "paragraph", "spans": [{ "text": "Zdravo svete" }] }
+          ]
+        }
+      },
+      "expectedText": "Zdravo svete",
+      "expectedLength": 12
+    },
+    {
+      "caseId": "TEXT-003",
+      "description": "heading, paragraph, list and quote join with a single space between blocks",
+      "action": "text-extract",
+      "input": {
+        "doc": {
+          "schemaVersion": 1,
+          "blocks": [
+            { "id": "b1", "type": "heading", "level": 2, "spans": [{ "text": "Naslov" }] },
+            { "id": "b2", "type": "paragraph", "spans": [{ "text": "Pasus." }] },
+            {
+              "id": "b3",
+              "type": "list",
+              "ordered": false,
+              "items": [
+                { "id": "i1", "spans": [{ "text": "Stavka jedan" }] },
+                { "id": "i2", "spans": [{ "text": "Stavka dva" }] }
+              ]
+            },
+            { "id": "b4", "type": "quote", "spans": [{ "text": "Citat." }] }
+          ]
+        }
+      },
+      "expectedText": "Naslov Pasus. Stavka jedan Stavka dva Citat.",
+      "expectedLength": 44
+    },
+    {
+      "caseId": "TEXT-004",
+      "description": "marks (bold/italic/link) do not affect extracted plain text; each span contributes its own text joined with a single space, same as across blocks",
+      "action": "text-extract",
+      "input": {
+        "doc": {
+          "schemaVersion": 1,
+          "blocks": [
+            {
+              "id": "b1",
+              "type": "paragraph",
+              "spans": [
+                { "text": "Pola" },
+                { "text": "podebljano", "marks": ["bold"] },
+                { "text": "i", "marks": [] },
+                { "text": "link", "marks": [{ "type": "link", "href": "https://psihointegritet.com" }] }
+              ]
+            }
+          ]
+        }
+      },
+      "expectedText": "Pola podebljano i link",
+      "expectedLength": 22
+    },
+    {
+      "caseId": "TEXT-005",
+      "description": "an empty list item contributes no text but does not break extraction",
+      "action": "text-extract",
+      "input": {
+        "doc": {
+          "schemaVersion": 1,
+          "blocks": [
+            {
+              "id": "b1",
+              "type": "list",
+              "ordered": true,
+              "items": [
+                { "id": "i1", "spans": [{ "text": "Prva" }] },
+                { "id": "i2", "spans": [] }
+              ]
+            }
+          ]
+        }
+      },
+      "expectedText": "Prva",
+      "expectedLength": 4
+    },
+    {
+      "caseId": "VALIDATE-001",
+      "description": "a well-formed simple document with no limits produces no findings",
+      "action": "validate-check",
+      "input": {
+        "doc": {
+          "schemaVersion": 1,
+          "blocks": [
+            { "id": "b1", "type": "paragraph", "spans": [{ "text": "U redu je." }] }
+          ]
+        },
+        "limits": {}
+      },
+      "expectedFindings": []
+    },
+    {
+      "caseId": "VALIDATE-002",
+      "description": "a document using every block/mark type with no limit violations still produces no findings",
+      "action": "validate-check",
+      "input": {
+        "doc": {
+          "schemaVersion": 1,
+          "blocks": [
+            { "id": "b1", "type": "heading", "level": 3, "spans": [{ "text": "Naslov" }] },
+            {
+              "id": "b2",
+              "type": "paragraph",
+              "spans": [
+                { "text": "Tekst sa ", "marks": ["bold"] },
+                { "text": "italic", "marks": ["italic"] },
+                { "text": " i ", "marks": [] },
+                { "text": "linkom", "marks": [{ "type": "link", "href": "https://psihointegritet.com" }] }
+              ]
+            },
+            {
+              "id": "b3",
+              "type": "list",
+              "ordered": false,
+              "items": [{ "id": "i1", "spans": [{ "text": "Stavka" }] }]
+            },
+            { "id": "b4", "type": "quote", "spans": [{ "text": "Citat." }] }
+          ]
+        },
+        "limits": {}
+      },
+      "expectedFindings": []
+    },
+    {
+      "caseId": "VALIDATE-003",
+      "description": "RICH-006: two blocks sharing the same id are flagged as a duplicate",
+      "action": "validate-check",
+      "input": {
+        "doc": {
+          "schemaVersion": 1,
+          "blocks": [
+            { "id": "dup", "type": "paragraph", "spans": [{ "text": "Prvi." }] },
+            { "id": "dup", "type": "paragraph", "spans": [{ "text": "Drugi." }] }
+          ]
+        },
+        "limits": {}
+      },
+      "expectedFindings": [
+        {
+          "ruleId": "RICH-006",
+          "severity": "error",
+          "field": "blocks[1]",
+          "message": "Blok id „dup” je dupliran.",
+          "recommendation": "Generisati nov, jedinstven id za svaki blok i stavku liste."
+        }
+      ]
+    },
+    {
+      "caseId": "VALIDATE-004",
+      "description": "RICH-006: a duplicate list item id (against another list item) is flagged the same way",
+      "action": "validate-check",
+      "input": {
+        "doc": {
+          "schemaVersion": 1,
+          "blocks": [
+            {
+              "id": "b1",
+              "type": "list",
+              "ordered": false,
+              "items": [
+                { "id": "dup-item", "spans": [{ "text": "Prva" }] },
+                { "id": "dup-item", "spans": [{ "text": "Druga" }] }
+              ]
+            }
+          ]
+        },
+        "limits": {}
+      },
+      "expectedFindings": [
+        {
+          "ruleId": "RICH-006",
+          "severity": "error",
+          "field": "blocks[0].items[1]",
+          "message": "Blok id „dup-item” je dupliran.",
+          "recommendation": "Generisati nov, jedinstven id za svaki blok i stavku liste."
+        }
+      ]
+    },
+    {
+      "caseId": "VALIDATE-005",
+      "description": "RICH-001: a slot restricted to paragraph-only rejects a heading block",
+      "action": "validate-check",
+      "input": {
+        "doc": {
+          "schemaVersion": 1,
+          "blocks": [
+            { "id": "b1", "type": "heading", "level": 2, "spans": [{ "text": "Nije dozvoljeno ovde" }] }
+          ]
+        },
+        "limits": { "allowedBlocks": ["paragraph"] }
+      },
+      "expectedFindings": [
+        {
+          "ruleId": "RICH-001",
+          "severity": "error",
+          "field": "blocks[0]",
+          "message": "Tip bloka „heading” nije dozvoljen u ovoj sekciji.",
+          "recommendation": "Koristiti samo blokove dozvoljene za ovaj slot."
+        }
+      ]
+    },
+    {
+      "caseId": "VALIDATE-006",
+      "description": "RICH-003: a javascript: link href is rejected inside a validated document",
+      "action": "validate-check",
+      "input": {
+        "doc": {
+          "schemaVersion": 1,
+          "blocks": [
+            {
+              "id": "b1",
+              "type": "paragraph",
+              "spans": [
+                { "text": "Klikni", "marks": [{ "type": "link", "href": "javascript:alert(1)" }] }
+              ]
+            }
+          ]
+        },
+        "limits": {}
+      },
+      "expectedFindings": [
+        {
+          "ruleId": "RICH-003",
+          "severity": "error",
+          "field": "blocks[0].spans[0]",
+          "message": "Link „javascript:alert(1)” nije dozvoljen.",
+          "recommendation": "Koristiti https:// adresu, mailto: ili internu rutu."
+        }
+      ]
+    },
+    {
+      "caseId": "VALIDATE-007",
+      "description": "RICH-004: underlined text that looks like a URL is a warning, not an error",
+      "action": "validate-check",
+      "input": {
+        "doc": {
+          "schemaVersion": 1,
+          "blocks": [
+            {
+              "id": "b1",
+              "type": "paragraph",
+              "spans": [
+                { "text": "https://psihointegritet.com", "marks": ["underline"] }
+              ]
+            }
+          ]
+        },
+        "limits": {}
+      },
+      "expectedFindings": [
+        {
+          "ruleId": "RICH-004",
+          "severity": "warning",
+          "field": "blocks[0].spans[0]",
+          "message": "Podvučen tekst izgleda kao URL.",
+          "recommendation": "Pretvoriti u pravi link umesto podvlačenja."
+        }
+      ]
+    },
+    {
+      "caseId": "VALIDATE-008",
+      "description": "RICH-005: block count exceeding maxBlocks is flagged once at the document level",
+      "action": "validate-check",
+      "input": {
+        "doc": {
+          "schemaVersion": 1,
+          "blocks": [
+            { "id": "b1", "type": "paragraph", "spans": [{ "text": "Jedan." }] },
+            { "id": "b2", "type": "paragraph", "spans": [{ "text": "Dva." }] },
+            { "id": "b3", "type": "paragraph", "spans": [{ "text": "Tri." }] }
+          ]
+        },
+        "limits": { "maxBlocks": 2 }
+      },
+      "expectedFindings": [
+        {
+          "ruleId": "RICH-005",
+          "severity": "error",
+          "field": "blocks",
+          "message": "Broj blokova (3) prelazi dozvoljenih 2.",
+          "recommendation": "Skratiti tekst ili podeliti u više sekcija."
+        }
+      ]
+    },
+    {
+      "caseId": "VALIDATE-009",
+      "description": "LIMIT-001: text length exceeding maxChars is flagged at the document level, reusing the shared character-limit rule id",
+      "action": "validate-check",
+      "input": {
+        "doc": {
+          "schemaVersion": 1,
+          "blocks": [
+            { "id": "b1", "type": "paragraph", "spans": [{ "text": "1234567890" }] }
+          ]
+        },
+        "limits": { "maxChars": 5 }
+      },
+      "expectedFindings": [
+        {
+          "ruleId": "LIMIT-001",
+          "severity": "error",
+          "field": "blocks",
+          "message": "Tekst (10 znakova) prelazi limit od 5 znakova.",
+          "recommendation": "Skratiti sadržaj bez promene formatiranja."
+        }
+      ]
+    },
+    {
+      "caseId": "VALIDATE-010",
+      "description": "two independent violations in one document both surface, order matches block order",
+      "action": "validate-check",
+      "input": {
+        "doc": {
+          "schemaVersion": 1,
+          "blocks": [
+            {
+              "id": "dup",
+              "type": "paragraph",
+              "spans": [
+                { "text": "Loš link", "marks": [{ "type": "link", "href": "javascript:alert(1)" }] }
+              ]
+            },
+            { "id": "dup", "type": "paragraph", "spans": [{ "text": "Duplikat." }] }
+          ]
+        },
+        "limits": {}
+      },
+      "expectedFindings": [
+        {
+          "ruleId": "RICH-003",
+          "severity": "error",
+          "field": "blocks[0].spans[0]",
+          "message": "Link „javascript:alert(1)” nije dozvoljen.",
+          "recommendation": "Koristiti https:// adresu, mailto: ili internu rutu."
+        },
+        {
+          "ruleId": "RICH-006",
+          "severity": "error",
+          "field": "blocks[1]",
+          "message": "Blok id „dup” je dupliran.",
+          "recommendation": "Generisati nov, jedinstven id za svaki blok i stavku liste."
+        }
+      ]
+    }
+  ]
+}

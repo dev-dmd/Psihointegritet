@@ -1,0 +1,779 @@
+{
+  "fixtureSchemaVersion": "1",
+  "templates": {
+    "service_detail": {
+      "hero": {
+        "editability": "editable",
+        "required": true,
+        "visibility": "fixed",
+        "fields": {
+          "eyebrow": {
+            "kind": "text",
+            "limit": "eyebrow",
+            "required": false
+          },
+          "title": {
+            "kind": "text",
+            "limit": "pageH1",
+            "required": true
+          },
+          "lead": {
+            "kind": "text",
+            "limit": "heroLead",
+            "required": false
+          }
+        }
+      },
+      "facts": {
+        "editability": "editable",
+        "required": true,
+        "visibility": "fixed",
+        "fields": {
+          "duration": {
+            "kind": "text",
+            "limit": "shortFact",
+            "required": true
+          },
+          "format": {
+            "kind": "text",
+            "limit": "shortFact",
+            "required": true
+          }
+        }
+      },
+      "description": {
+        "editability": "editable",
+        "required": true,
+        "visibility": "fixed",
+        "fields": {
+          "body": {
+            "kind": "rich",
+            "maxBlocks": 6,
+            "maxChars": "richParagraph",
+            "required": true
+          }
+        }
+      },
+      "first_step": {
+        "editability": "editable",
+        "required": true,
+        "visibility": "fixed",
+        "fields": {
+          "body": {
+            "kind": "rich",
+            "maxBlocks": 3,
+            "maxChars": "richParagraph",
+            "required": true
+          }
+        }
+      },
+      "related": {
+        "editability": "computed",
+        "reason": "Terapeuti filtrirani po ServiceCatalogItem.therapistIds/bookingServiceSlugs i izvedene lokacije — nema autorskog polja."
+      },
+      "cta": {
+        "editability": "editable",
+        "required": true,
+        "visibility": "fixed",
+        "fields": {
+          "primary": {
+            "kind": "cta",
+            "allowedActions": [
+              "BOOK_SERVICE"
+            ],
+            "targetType": "service",
+            "required": true
+          }
+        }
+      },
+      "packages": {
+        "editability": "editable",
+        "required": false,
+        "visibility": "toggleable",
+        "fields": {
+          "items": {
+            "kind": "repeater",
+            "min": 0,
+            "max": 6,
+            "item": {
+              "title": {
+                "kind": "text",
+                "limit": "cardTitle",
+                "required": true
+              },
+              "deadline": {
+                "kind": "text",
+                "limit": "cardDescription",
+                "required": true
+              },
+              "priceAmount": {
+                "kind": "money",
+                "currency": "RSD",
+                "min": 0,
+                "max": 500000,
+                "required": true
+              },
+              "fullPriceAmount": {
+                "kind": "money",
+                "currency": "RSD",
+                "min": 0,
+                "max": 500000,
+                "required": false
+              }
+            }
+          }
+        }
+      },
+      "faq": {
+        "editability": "editable",
+        "required": false,
+        "visibility": "toggleable",
+        "fields": {
+          "items": {
+            "kind": "repeater",
+            "min": 0,
+            "max": 10,
+            "item": {
+              "question": {
+                "kind": "text",
+                "limit": "faqQuestion",
+                "required": true
+              },
+              "answer": {
+                "kind": "text",
+                "limit": "faqAnswer",
+                "required": true
+              }
+            }
+          }
+        }
+      }
+    },
+    "therapist_profile": {
+      "hero": {
+        "editability": "editable",
+        "required": true,
+        "visibility": "fixed",
+        "fields": {
+          "badge": {
+            "kind": "text",
+            "limit": "shortFact",
+            "required": false
+          },
+          "name": {
+            "kind": "text",
+            "limit": "cardTitle",
+            "required": true
+          },
+          "title": {
+            "kind": "text",
+            "limit": "therapistPublicTitle",
+            "required": true
+          },
+          "quote": {
+            "kind": "text",
+            "limit": "therapistQuote",
+            "required": false
+          },
+          "formats": {
+            "kind": "text",
+            "limit": "shortFact",
+            "required": false
+          },
+          "image": {
+            "kind": "image",
+            "required": true
+          }
+        }
+      },
+      "approach": {
+        "editability": "editable",
+        "required": true,
+        "visibility": "fixed",
+        "fields": {
+          "intro": {
+            "kind": "rich",
+            "maxBlocks": 4,
+            "maxChars": "therapistBioParagraph",
+            "required": false
+          }
+        }
+      },
+      "areas": {
+        "editability": "editable",
+        "required": true,
+        "visibility": "fixed",
+        "fields": {
+          "items": {
+            "kind": "repeater",
+            "min": 1,
+            "max": 12,
+            "item": {
+              "label": {
+                "kind": "text",
+                "limit": "shortFact",
+                "required": true
+              }
+            }
+          }
+        }
+      },
+      "services": {
+        "editability": "editable",
+        "required": true,
+        "visibility": "fixed",
+        "fields": {
+          "additionalServices": {
+            "kind": "repeater",
+            "min": 0,
+            "max": 8,
+            "item": {
+              "title": {
+                "kind": "text",
+                "limit": "cardTitle",
+                "required": true
+              },
+              "duration": {
+                "kind": "text",
+                "limit": "shortFact",
+                "required": false
+              },
+              "price": {
+                "kind": "text",
+                "limit": "shortFact",
+                "required": false
+              }
+            }
+          }
+        }
+      },
+      "bio": {
+        "editability": "editable",
+        "required": true,
+        "visibility": "fixed",
+        "fields": {
+          "body": {
+            "kind": "rich",
+            "maxBlocks": 10,
+            "maxChars": "therapistFullBio",
+            "required": true
+          },
+          "cardExcerpt": {
+            "kind": "text",
+            "limit": "therapistCardExcerpt",
+            "required": false
+          }
+        }
+      },
+      "cta": {
+        "editability": "editable",
+        "required": true,
+        "visibility": "fixed",
+        "fields": {
+          "primary": {
+            "kind": "cta",
+            "allowedActions": [
+              "BOOK_THERAPIST"
+            ],
+            "targetType": "therapist",
+            "required": true
+          }
+        }
+      },
+      "faq": {
+        "editability": "editable",
+        "required": false,
+        "visibility": "toggleable",
+        "fields": {
+          "items": {
+            "kind": "repeater",
+            "min": 0,
+            "max": 10,
+            "item": {
+              "question": {
+                "kind": "text",
+                "limit": "faqQuestion",
+                "required": true
+              },
+              "answer": {
+                "kind": "text",
+                "limit": "faqAnswer",
+                "required": true
+              }
+            }
+          }
+        }
+      },
+      "media": {
+        "editability": "unmodeled",
+        "reason": "Therapist tip ima samo pojedinačan portret (već u hero.image) — nema galerije/video polja, nema dokaza o obliku."
+      }
+    },
+    "support_area": {
+      "hero": {
+        "editability": "unmodeled",
+        "reason": "Nema dokaza — nijedna stranica ne koristi support_area template."
+      },
+      "intro": {
+        "editability": "unmodeled",
+        "reason": "Nema dokaza — nijedna stranica ne koristi support_area template."
+      },
+      "related": {
+        "editability": "unmodeled",
+        "reason": "Nema dokaza — nijedna stranica ne koristi support_area template."
+      },
+      "cta": {
+        "editability": "unmodeled",
+        "reason": "Nema dokaza — nijedna stranica ne koristi support_area template."
+      },
+      "faq": {
+        "editability": "unmodeled",
+        "reason": "Nema dokaza — nijedna stranica ne koristi support_area template."
+      }
+    },
+    "audience_page": {
+      "hero": {
+        "editability": "editable",
+        "required": true,
+        "visibility": "fixed",
+        "fields": {
+          "h1": {
+            "kind": "text",
+            "limit": "pageH1",
+            "required": true
+          }
+        }
+      },
+      "audience": {
+        "editability": "unmodeled",
+        "reason": "podrska-roditeljima/page.tsx nije pročitan u istraživanju; static-provider nema audience textField za ovaj entitet."
+      },
+      "first_step": {
+        "editability": "unmodeled",
+        "reason": "Isti razlog kao audience — nema zabeleženog textField-a za ovu stranicu."
+      },
+      "related": {
+        "editability": "computed",
+        "reason": "parentPrograms() filtrirano po audienceTags — izvedeno, ne autorsko."
+      },
+      "cta": {
+        "editability": "editable",
+        "required": true,
+        "visibility": "fixed",
+        "fields": {
+          "primary": {
+            "kind": "cta",
+            "allowedActions": [
+              "BOOK_SERVICE"
+            ],
+            "targetType": "service",
+            "required": true
+          }
+        }
+      },
+      "program_cards": {
+        "editability": "computed",
+        "reason": "Isti computed repeater kao related — parentPrograms() filter."
+      },
+      "faq": {
+        "editability": "unmodeled",
+        "reason": "Nema FAQ podataka vezanih za ovu specifičnu stranicu."
+      }
+    },
+    "program_detail": {
+      "hero": {
+        "editability": "editable",
+        "required": true,
+        "visibility": "fixed",
+        "fields": {
+          "title": {
+            "kind": "text",
+            "limit": "cardTitle",
+            "required": true
+          }
+        }
+      },
+      "facts": {
+        "editability": "editable",
+        "required": true,
+        "visibility": "fixed",
+        "fields": {
+          "sessions": {
+            "kind": "text",
+            "limit": "shortFact",
+            "required": true
+          },
+          "details": {
+            "kind": "text",
+            "limit": "shortFact",
+            "required": false
+          },
+          "priceLine": {
+            "kind": "text",
+            "limit": "cardDescription",
+            "required": true
+          },
+          "note": {
+            "kind": "text",
+            "limit": "richParagraph",
+            "required": false
+          }
+        }
+      },
+      "audience": {
+        "editability": "editable",
+        "required": true,
+        "visibility": "fixed",
+        "fields": {
+          "body": {
+            "kind": "text",
+            "limit": "cardDescription",
+            "required": true
+          }
+        }
+      },
+      "format": {
+        "editability": "unmodeled",
+        "reason": "Nema posebne format sekcije u renderovanoj stranici — online/uživo info je deo details teksta."
+      },
+      "status": {
+        "editability": "unmodeled",
+        "reason": "Status enum vrednost pokreće prikaz, ali vidljiv tekst je deljena globalna poruka — nema dokazanog autorskog polja."
+      },
+      "facilitators": {
+        "editability": "unmodeled",
+        "reason": "GroupProgram tip eksplicitno nema facilitator polje."
+      },
+      "faq": {
+        "editability": "unmodeled",
+        "reason": "Nema FAQ podataka vezanih za programe."
+      },
+      "registration": {
+        "editability": "unmodeled",
+        "reason": "GroupProgram tip nema registration podatke — aside prikazuje samo hardkodovanu globalnu poruku."
+      }
+    },
+    "company_page": {
+      "hero": {
+        "editability": "editable",
+        "required": true,
+        "visibility": "fixed",
+        "fields": {
+          "title": {
+            "kind": "text",
+            "limit": "pageH1",
+            "required": true
+          },
+          "lead": {
+            "kind": "text",
+            "limit": "heroLead",
+            "required": false
+          }
+        }
+      },
+      "support_types": {
+        "editability": "editable",
+        "required": true,
+        "visibility": "fixed",
+        "fields": {
+          "items": {
+            "kind": "repeater",
+            "min": 0,
+            "max": 6,
+            "item": {
+              "title": {
+                "kind": "text",
+                "limit": "cardTitle",
+                "required": true
+              },
+              "description": {
+                "kind": "text",
+                "limit": "cardDescription",
+                "required": true
+              }
+            }
+          }
+        }
+      },
+      "plans": {
+        "editability": "editable",
+        "required": true,
+        "visibility": "fixed",
+        "fields": {
+          "items": {
+            "kind": "repeater",
+            "min": 0,
+            "max": 8,
+            "item": {
+              "title": {
+                "kind": "text",
+                "limit": "cardTitle",
+                "required": true
+              },
+              "description": {
+                "kind": "text",
+                "limit": "cardDescription",
+                "required": true
+              }
+            }
+          }
+        }
+      },
+      "privacy": {
+        "editability": "editable",
+        "required": true,
+        "visibility": "fixed",
+        "fields": {
+          "title": {
+            "kind": "text",
+            "limit": "cardTitle",
+            "required": false
+          },
+          "description": {
+            "kind": "text",
+            "limit": "cardDescription",
+            "required": false
+          }
+        }
+      },
+      "configurator_cta": {
+        "editability": "editable",
+        "required": true,
+        "visibility": "fixed",
+        "fields": {
+          "primary": {
+            "kind": "cta",
+            "allowedActions": [
+              "OPEN_COMPANY_CONFIGURATOR"
+            ],
+            "targetType": null,
+            "required": true
+          },
+          "bannerHeading": {
+            "kind": "text",
+            "limit": "cardTitle",
+            "required": false
+          },
+          "bannerBody": {
+            "kind": "text",
+            "limit": "cardDescription",
+            "required": false
+          }
+        }
+      },
+      "faq": {
+        "editability": "editable",
+        "required": false,
+        "visibility": "toggleable",
+        "fields": {
+          "items": {
+            "kind": "repeater",
+            "min": 0,
+            "max": 10,
+            "item": {
+              "question": {
+                "kind": "text",
+                "limit": "faqQuestion",
+                "required": true
+              },
+              "answer": {
+                "kind": "text",
+                "limit": "faqAnswer",
+                "required": true
+              }
+            }
+          }
+        }
+      }
+    },
+    "pricing_page": {
+      "service_prices": {
+        "editability": "computed",
+        "reason": "Mapira direktno preko serviceCatalog (naziv/trajanje/cena/format) — nema sopstvenih autorskih podataka."
+      },
+      "packages": {
+        "editability": "editable",
+        "required": true,
+        "visibility": "fixed",
+        "fields": {
+          "items": {
+            "kind": "repeater",
+            "min": 0,
+            "max": 6,
+            "item": {
+              "title": {
+                "kind": "text",
+                "limit": "cardTitle",
+                "required": true
+              },
+              "deadline": {
+                "kind": "text",
+                "limit": "cardDescription",
+                "required": true
+              },
+              "priceAmount": {
+                "kind": "money",
+                "currency": "RSD",
+                "min": 0,
+                "max": 500000,
+                "required": true
+              },
+              "fullPriceAmount": {
+                "kind": "money",
+                "currency": "RSD",
+                "min": 0,
+                "max": 500000,
+                "required": false
+              }
+            }
+          }
+        }
+      },
+      "notice": {
+        "editability": "editable",
+        "required": false,
+        "visibility": "fixed",
+        "fields": {
+          "body": {
+            "kind": "text",
+            "limit": "richParagraph",
+            "required": false
+          }
+        }
+      },
+      "cta": {
+        "editability": "editable",
+        "required": true,
+        "visibility": "fixed",
+        "fields": {
+          "primary": {
+            "kind": "cta",
+            "allowedActions": [
+              "BOOK_SERVICE"
+            ],
+            "targetType": "service",
+            "required": true
+          }
+        }
+      },
+      "program_references": {
+        "editability": "computed",
+        "reason": "Mapira direktno preko groupPrograms — nema autorskih podataka."
+      }
+    },
+    "static_information": {
+      "hero": {
+        "editability": "editable",
+        "required": true,
+        "visibility": "fixed",
+        "fields": {
+          "h1": {
+            "kind": "text",
+            "limit": "pageH1",
+            "required": true
+          },
+          "heroLead": {
+            "kind": "text",
+            "limit": "heroLead",
+            "required": false
+          }
+        }
+      },
+      "intro": {
+        "editability": "unmodeled",
+        "reason": "Nijedna static_information stranica nema intro textField u static-provider-u — čist JSX, nedokazano."
+      },
+      "prose": {
+        "editability": "unmodeled",
+        "reason": "Isto — nema strukturiranih podataka za prose, čist JSX."
+      },
+      "cta": {
+        "editability": "editable",
+        "required": false,
+        "visibility": "toggleable",
+        "fields": {
+          "items": {
+            "kind": "ctaList",
+            "min": 0,
+            "max": 3,
+            "allowedActions": [
+              "START_MATCHING",
+              "BOOK_SERVICE",
+              "OPEN_COMPANY_CONFIGURATOR",
+              "VIEW_PRICING",
+              "GENERAL_CONTACT"
+            ],
+            "targetType": null
+          }
+        }
+      },
+      "faq": {
+        "editability": "editable",
+        "required": false,
+        "visibility": "toggleable",
+        "fields": {
+          "items": {
+            "kind": "repeater",
+            "min": 0,
+            "max": 10,
+            "item": {
+              "question": {
+                "kind": "text",
+                "limit": "faqQuestion",
+                "required": true
+              },
+              "answer": {
+                "kind": "text",
+                "limit": "faqAnswer",
+                "required": true
+              }
+            }
+          }
+        }
+      }
+    },
+    "legal_page": {
+      "title": {
+        "editability": "editable",
+        "required": true,
+        "visibility": "fixed",
+        "fields": {
+          "title": {
+            "kind": "text",
+            "limit": "pageH1",
+            "required": true
+          }
+        }
+      },
+      "legal_copy": {
+        "editability": "editable",
+        "required": true,
+        "visibility": "fixed",
+        "fields": {
+          "body": {
+            "kind": "rich",
+            "maxBlocks": 500,
+            "maxChars": null,
+            "required": true
+          }
+        }
+      },
+      "version": {
+        "editability": "editable",
+        "required": true,
+        "visibility": "fixed",
+        "fields": {
+          "versionLabel": {
+            "kind": "text",
+            "limit": "shortFact",
+            "required": true
+          }
+        }
+      },
+      "links": {
+        "editability": "unmodeled",
+        "reason": "LegalDocumentPage komponenta ne renderuje links sekciju — nema dokaza o obliku."
+      }
+    }
+  }
+}

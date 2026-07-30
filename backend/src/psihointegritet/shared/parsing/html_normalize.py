@@ -50,6 +50,14 @@ _MARK_TAGS: dict[str, Literal["bold", "italic", "underline"]] = {
     "u": "underline",
 }
 _IGNORED_INLINE = {"br"}
+# Unlike a generic unknown wrapper (div, span, font…), whose children are real
+# authored content and must survive when the tag itself is unwrapped, these
+# two carry non-authored payload (code, CSS) that must never leak into a
+# paragraph as visible text — found by CG-B8's security test pass: without
+# this, "<script>alert(1)</script>" produced no executable structure (there
+# is no script RichBlock to reach it), but its literal source text still
+# survived as an ordinary, visible paragraph.
+_DROP_ENTIRELY = {"script", "style"}
 
 
 @dataclass
@@ -185,6 +193,8 @@ def _inline_to_spans(
                     "Uneti podatke ručno kroz dozvoljene blokove.",
                 )
             )
+        elif tag in _DROP_ENTIRELY:
+            counters.unknown_dropped += 1
         else:
             counters.unknown_dropped += 1
             spans.extend(_inline_to_spans(node.children, marks, findings, counters))
@@ -245,6 +255,11 @@ def _blocks_from_nodes(
 
         if tag in _LOOSE_INLINE_TAGS:
             loose_text_run.append(node)
+            continue
+
+        if tag in _DROP_ENTIRELY:
+            flush_loose_text()
+            counters.unknown_dropped += 1
             continue
 
         if tag not in _BLOCK_TAGS and tag != "table":

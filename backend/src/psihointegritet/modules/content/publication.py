@@ -19,12 +19,19 @@ may not hand in "no findings" and publish unreviewed content — the router
 
 from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass
-from typing import Literal
+from typing import Literal, cast
 
 from psihointegritet.modules.content.models import (
     ContentTemplate,
     ContentType,
     ReviewOutcome,
+)
+from psihointegritet.modules.content.slot_schema import (
+    SLOT_SPEC_REGISTRY,
+    CollectionFieldSpec,
+    CtaListFieldSpec,
+    EditableSlot,
+    RepeaterFieldSpec,
 )
 from psihointegritet.shared.domain.publication import (
     ALLOWED_TRANSITIONS,
@@ -112,7 +119,6 @@ class ReviewDecisionRecord:
 class TemplateDefinition:
     required_slots: tuple[str, ...]
     optional_slots: tuple[str, ...]
-    max_optional_sections: int
 
 
 @dataclass(frozen=True)
@@ -134,51 +140,48 @@ class ContentPublishCheck:
 # Mirrors `templateRegistry` in frontend/src/lib/content-governance/limits.ts.
 # The editor may fill a slot or add an allowed repeatable item up to the
 # maximum; it may never introduce a new section type (CONTENT_MODEL_MATRIX §4).
+#
+# `max_optional_sections` (a template-level cap on how many optional slot
+# *keys* may be present) was removed here 2026-07-30 (ADR-017 Amendment 2
+# §A2.2, D-050) — it counted the wrong thing. See `structural_findings`
+# below for where that authority now lives (`slot_schema.SLOT_SPEC_REGISTRY`
+# collection field `min`/`max`).
 TEMPLATE_REGISTRY: Mapping[ContentTemplate, TemplateDefinition] = {
     ContentTemplate.SERVICE_DETAIL: TemplateDefinition(
         required_slots=("hero", "facts", "description", "first_step", "related", "cta"),
         optional_slots=("packages", "faq"),
-        max_optional_sections=2,
     ),
     ContentTemplate.THERAPIST_PROFILE: TemplateDefinition(
         required_slots=("hero", "approach", "areas", "services", "bio", "cta"),
         optional_slots=("faq", "media"),
-        max_optional_sections=2,
     ),
     ContentTemplate.SUPPORT_AREA: TemplateDefinition(
         required_slots=("hero", "intro", "related", "cta"),
         optional_slots=("faq",),
-        max_optional_sections=1,
     ),
     ContentTemplate.AUDIENCE_PAGE: TemplateDefinition(
         required_slots=("hero", "audience", "first_step", "related", "cta"),
         optional_slots=("program_cards", "faq"),
-        max_optional_sections=2,
     ),
     ContentTemplate.PROGRAM_DETAIL: TemplateDefinition(
         required_slots=("hero", "facts", "audience", "format", "status"),
         optional_slots=("facilitators", "faq", "registration"),
-        max_optional_sections=3,
     ),
     ContentTemplate.COMPANY_PAGE: TemplateDefinition(
         required_slots=("hero", "support_types", "plans", "privacy", "configurator_cta"),
         optional_slots=("faq",),
-        max_optional_sections=1,
     ),
     ContentTemplate.PRICING_PAGE: TemplateDefinition(
         required_slots=("service_prices", "packages", "notice", "cta"),
         optional_slots=("program_references",),
-        max_optional_sections=1,
     ),
     ContentTemplate.STATIC_INFORMATION: TemplateDefinition(
         required_slots=("hero", "intro"),
         optional_slots=("prose", "cta", "faq"),
-        max_optional_sections=6,
     ),
     ContentTemplate.LEGAL_PAGE: TemplateDefinition(
         required_slots=("title", "legal_copy", "version"),
         optional_slots=("links",),
-        max_optional_sections=1,
     ),
 }
 
@@ -259,18 +262,35 @@ def structural_findings(
     This is the independent server-side floor, not the whole rule set: SEO,
     CTA, character limits and discoverability rules stay with the shared rule
     engine and arrive with CG-D4. `MODEL-004` is an additive rule ID for a
-    missing required slot, which `MODEL-003` (a disallowed slot) does not cover.
+    missing required slot, which `MODEL-003` (a disallowed slot) does not
+    cover. A required slot whose `SLOT_SPEC_REGISTRY` entry is `computed` is
+    exempt from `MODEL-004` — it is derived at render time and is never
+    expected to appear in `slot_data` at all.
 
-    `LIMIT-002` (too many sections) is deliberately not enforced here.
-    `max_optional_sections` counts repeatable items inside a slot, not distinct
-    slot keys — and no template in the registry has more optional slots than
-    its own maximum, so a key-counting check could never fire. Enforcing it
-    needs the slot payload shape, which CG-C1 defines.
+    **`LIMIT-002` (ADR-017 Amendment 2 §A2.2, D-050).** The original design
+    counted optional slot *keys* against a template-level maximum
+    (`max_optional_sections`) — always unreachable, since it counted the
+    wrong thing: an editor can pre-initialize every optional slot as an
+    empty object (key present, section inert), and a single FAQ slot with
+    nine items was always the real problem regardless of how many slot keys
+    existed. The real rule: an `editable` slot's stored value is the
+    `SlotOverride` wrapper (`{mode, fields?}`, Amendment 2 §A2.3) — for every
+    `imageList`/`ctaList`/`repeater` field declared in
+    `slot_schema.SLOT_SPEC_REGISTRY`, if `fields` is present and is a
+    mapping, that field's array length must fall within the field's own
+    `min`/`max`. A slot whose stored value is not (yet) shaped as
+    `SlotOverride` — e.g. the plain strings this module's own tests use as
+    placeholder content, or a `mode: "inherit"`/`"hidden"` value with no
+    `fields` at all — has nothing to check here; that is `MODEL-004`'s
+    concern, not this one's.
     """
     definition = TEMPLATE_REGISTRY[template]
+    slot_specs = SLOT_SPEC_REGISTRY[template]
     findings: list[ContentFinding] = []
 
     for slot in definition.required_slots:
+        if slot_specs[slot].editability == "computed":
+            continue
         value = slot_data.get(slot)
         if value is None or (isinstance(value, str) and not value.strip()):
             findings.append(
@@ -296,6 +316,48 @@ def structural_findings(
                 field_path=slot,
             )
         )
+
+    for slot in sorted(allowed & set(slot_data)):
+        spec = slot_specs[slot]
+        if not isinstance(spec, EditableSlot):
+            continue
+        raw_slot_value = slot_data[slot]
+        if not isinstance(raw_slot_value, Mapping):
+            continue
+        # `isinstance(raw_slot_value, Mapping)` alone narrows to
+        # `Mapping[Unknown, Unknown]` under strict pyright — same gap as
+        # `_as_dict` in `shared/domain/rich_doc.py`. `slot_data` is trusted
+        # JSON-column content, so `.get()` returning `object` is what every
+        # call site here already assumes.
+        slot_override = cast("Mapping[str, object]", raw_slot_value)
+        raw_fields = slot_override.get("fields")
+        if not isinstance(raw_fields, Mapping):
+            # `mode: "inherit"`/`"hidden"` carries no `fields` at all —
+            # nothing to check against the collection limits below.
+            continue
+        slot_value = cast("Mapping[str, object]", raw_fields)
+        for field_name, field_spec in spec.fields.items():
+            if not isinstance(
+                field_spec, CollectionFieldSpec | CtaListFieldSpec | RepeaterFieldSpec
+            ):
+                continue
+            field_value = slot_value.get(field_name)
+            # Same `list[Unknown]` narrowing gap as above.
+            count = len(cast("list[object]", field_value)) if isinstance(field_value, list) else 0
+            if not (field_spec.min <= count <= field_spec.max):
+                findings.append(
+                    ContentFinding(
+                        rule_id="LIMIT-002",
+                        rule_version="1",
+                        severity="error",
+                        message=(
+                            f"Broj stavki u „{slot}.{field_name}” ({count}) je van "
+                            f"dozvoljenog opsega [{field_spec.min}, {field_spec.max}]."
+                        ),
+                        remediation="Dodati ili ukloniti stavke do dozvoljenog broja.",
+                        field_path=f"{slot}.{field_name}",
+                    )
+                )
 
     return tuple(findings)
 

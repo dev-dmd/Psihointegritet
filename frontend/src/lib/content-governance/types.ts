@@ -72,6 +72,7 @@ export type ContentCharacterLimitKey =
   | "navigationLabel"
   | "ctaLabel"
   | "eyebrow"
+  | "shortFact"
   | "pageH1"
   | "sectionH2"
   | "cardTitle"

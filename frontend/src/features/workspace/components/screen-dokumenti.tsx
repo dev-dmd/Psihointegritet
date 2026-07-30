@@ -9,9 +9,9 @@ import {
   type StatusBadgeTone,
 } from "@/components/panel/status-badge";
 import { RichText } from "@/components/content/rich-text";
+import { RichTextEditor } from "@/components/content/rich-text-editor";
 import {
   richDocFromPlainText,
-  richDocText,
   type RichDoc,
 } from "@/lib/content-governance/rich-doc";
 
@@ -447,57 +447,28 @@ export function ScreenDokumenti() {
 
                 {isSelected ? (
                   <div className="border-line mt-4 border-t pt-4">
-                    <label
-                      htmlFor={`body-${document.documentId}`}
-                      className="text-ink-70 mb-1.5 block text-[13px] font-semibold"
-                    >
+                    <label className="text-ink-70 mb-1.5 block text-[13px] font-semibold">
                       Sadržaj
                     </label>
-                    {/*
-                     * Phase-0 stopgap (D-047): a plain-text textarea that
-                     * round-trips through `richDocFromPlainText`/`richDocText`
-                     * so the document body stays a real RichDoc end to end.
-                     * The Tiptap editor (CG-C5) and „Uvezi .docx" (CG-B8 UI
-                     * wiring) land in Phase 1 — see TODO.md §5D. This textarea
-                     * only ever produces plain paragraphs; headings, lists,
-                     * bold/italic/underline and links on an existing document
-                     * survive display (the preview below) but not this input.
-                     */}
-                    <textarea
-                      // Uncontrolled (commits on blur, see comment above) —
+                    {isEditable ? (
+                      // Real Tiptap editor (CG-C5) — schema-restricted to
+                      // RichDoc's node/mark set. Uncontrolled after mount,
                       // keyed on revisionId so a reissue (A.2) or a fetched
                       // update remounts it with the new body instead of
-                      // showing stale text.
-                      key={document.revisionId}
-                      id={`body-${document.documentId}`}
-                      defaultValue={richDocText(document.body)}
-                      rows={6}
-                      readOnly={!isEditable}
-                      aria-describedby={
-                        isEditable
-                          ? undefined
-                          : `body-note-${document.documentId}`
-                      }
-                      onBlur={(event) => {
-                        if (!isEditable) return;
-                        void saveBody(
-                          document,
-                          richDocFromPlainText(event.target.value),
-                        );
-                      }}
-                      className="border-line-strong rounded-tile bg-panel-canvas text-coffee focus:border-sage w-full border px-3.5 py-2.5 text-sm leading-[1.6] outline-none read-only:opacity-70"
-                    />
-                    {isEditable && richDocText(document.body) ? (
-                      <div className="border-line-strong bg-panel-canvas/50 rounded-tile mt-3 border border-dashed px-3.5 py-3">
-                        <p className="text-ink-55 mb-2 text-[11.5px] font-semibold tracking-wide uppercase">
-                          Pregled objave
-                        </p>
-                        <RichText
-                          doc={document.body}
-                          className="text-[13.5px]"
-                        />
+                      // showing stale content.
+                      <RichTextEditor
+                        key={document.revisionId}
+                        value={document.body}
+                        onChange={(next) => void saveBody(document, next)}
+                      />
+                    ) : (
+                      <div
+                        id={`body-note-${document.documentId}`}
+                        className="border-line-strong bg-panel-canvas rounded-tile border px-3.5 py-2.5 text-sm leading-[1.6] opacity-70"
+                      >
+                        <RichText doc={document.body} className="text-sm" />
                       </div>
-                    ) : null}
+                    )}
                     {isEditable ? null : (
                       <p
                         id={`body-note-${document.documentId}`}

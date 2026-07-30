@@ -14,17 +14,21 @@ from psihointegritet.modules.content.models import (
 from psihointegritet.modules.content.publication import (
     BASE_REQUIRED_APPROVALS,
     TEMPLATE_REGISTRY,
+    CannotDeleteRevisionError,
     ContentFinding,
     MissingApprovalError,
     ReviewDecisionRecord,
+    can_delete,
     check_publishable,
     dynamic_approvals,
     effective_required_approvals,
     granted_capabilities,
+    require_deletable,
     require_publishable,
     required_approvals,
     structural_findings,
 )
+from psihointegritet.modules.content.slot_schema import SLOT_SPEC_REGISTRY
 from psihointegritet.shared.domain.publication import (
     ApprovalCapability,
     InvalidRevisionTransitionError,
@@ -165,11 +169,81 @@ class TestStructuralFindings:
         slots["faq"] = "Pitanja"
         assert structural_findings(template, slots) == ()
 
-    def test_no_template_has_more_optional_slots_than_its_maximum(self) -> None:
-        # Why LIMIT-002 is not enforced by slot key: the maximum counts
-        # repeatable items inside a slot, so a key-based check is unreachable.
-        for template, definition in TEMPLATE_REGISTRY.items():
-            assert len(definition.optional_slots) <= definition.max_optional_sections, template
+    def test_computed_required_slot_is_exempt_from_the_missing_slot_check(self) -> None:
+        # service_detail.related is computed (filtered therapist list) — it
+        # is never expected in slot_data at all (Amendment 2 §A2.1).
+        template = ContentTemplate.SERVICE_DETAIL
+        slots = complete_slots(template)
+        del slots["related"]
+        assert structural_findings(template, slots) == ()
+
+    def test_unmodeled_required_slot_is_still_checked_for_presence(self) -> None:
+        # support_area.hero is unmodeled (no evidence of its shape yet), but
+        # unmodeled is not computed — it still needs a non-blank value, same
+        # as before Amendment 2, until a real schema exists for it.
+        template = ContentTemplate.SUPPORT_AREA
+        slots = complete_slots(template)
+        del slots["hero"]
+        findings = structural_findings(template, slots)
+        assert [item.rule_id for item in findings] == ["MODEL-004"]
+        assert [item.field_path for item in findings] == ["hero"]
+
+    def test_a_non_mapping_slot_value_is_not_checked_for_collection_limits(self) -> None:
+        # complete_slots() fills every required slot with a bare string.
+        # therapist_profile has real repeater fields (areas, services) —
+        # LIMIT-002 must have nothing to introspect on a plain string and
+        # must not error out trying.
+        template = ContentTemplate.THERAPIST_PROFILE
+        assert structural_findings(template, complete_slots(template)) == ()
+
+    def test_repeater_field_within_range_produces_no_limit_002(self) -> None:
+        template = ContentTemplate.THERAPIST_PROFILE
+        slots = complete_slots(template)
+        slots["areas"] = {
+            "mode": "override",
+            "fields": {"items": [{"label": "Anksioznost"}, {"label": "Depresija"}]},
+        }
+        assert structural_findings(template, slots) == ()
+
+    def test_repeater_field_below_minimum_is_limit_002(self) -> None:
+        # therapist_profile.areas.items has min=1 — zero items is a real
+        # violation the old key-counting LIMIT-002 could never have caught.
+        template = ContentTemplate.THERAPIST_PROFILE
+        slots = complete_slots(template)
+        slots["areas"] = {"mode": "override", "fields": {"items": []}}
+        findings = structural_findings(template, slots)
+        assert [item.rule_id for item in findings] == ["LIMIT-002"]
+        assert [item.field_path for item in findings] == ["areas.items"]
+
+    def test_repeater_field_above_maximum_is_limit_002(self) -> None:
+        # therapist_profile.areas.items has max=12.
+        template = ContentTemplate.THERAPIST_PROFILE
+        slots = complete_slots(template)
+        slots["areas"] = {
+            "mode": "override",
+            "fields": {"items": [{"label": f"Oblast {i}"} for i in range(13)]},
+        }
+        findings = structural_findings(template, slots)
+        assert [item.rule_id for item in findings] == ["LIMIT-002"]
+        assert [item.field_path for item in findings] == ["areas.items"]
+
+    def test_cta_list_field_above_maximum_is_limit_002(self) -> None:
+        # static_information.cta.items is a ctaList with max=3 — proves the
+        # check covers imageList/ctaList, not only repeater.
+        template = ContentTemplate.STATIC_INFORMATION
+        slots = complete_slots(template)
+        slots["cta"] = {"mode": "override", "fields": {"items": [{}, {}, {}, {}]}}
+        findings = structural_findings(template, slots)
+        assert [item.rule_id for item in findings] == ["LIMIT-002"]
+        assert [item.field_path for item in findings] == ["cta.items"]
+
+    def test_inherit_mode_has_nothing_to_check_for_collection_limits(self) -> None:
+        # A slot deliberately left on `inherit` (Amendment 2 §A2.3) has no
+        # `fields` at all — LIMIT-002 must not require one.
+        template = ContentTemplate.THERAPIST_PROFILE
+        slots = complete_slots(template)
+        slots["areas"] = {"mode": "inherit"}
+        assert structural_findings(template, slots) == ()
 
     def test_registry_matches_the_frontend_slot_counts(self) -> None:
         # Guards a silent drift from limits.ts; a template change must be
@@ -182,7 +256,13 @@ class TestStructuralFindings:
             "related",
             "cta",
         )
-        assert TEMPLATE_REGISTRY[ContentTemplate.STATIC_INFORMATION].max_optional_sections == 6
+
+    def test_every_template_slot_has_a_slot_spec_entry(self) -> None:
+        # SLOT_SPEC_REGISTRY (slot_schema.py) must cover exactly the slots
+        # TEMPLATE_REGISTRY declares — a template change must update both.
+        for template, definition in TEMPLATE_REGISTRY.items():
+            declared = set(definition.required_slots) | set(definition.optional_slots)
+            assert set(SLOT_SPEC_REGISTRY[template]) == declared, template
 
 
 class TestCheckPublishableStageOrder:
@@ -298,6 +378,31 @@ class TestCheckPublishableStageOrder:
         assert check.ok is False
         assert check.stage == "approvals"
         assert check.missing == frozenset({ApprovalCapability.BUSINESS})
+
+
+class TestDeletability:
+    # A.1: only a draft revision may be hard-deleted; every other status is
+    # archived instead. Same shared `shared/domain/publication.py` guard the
+    # legal registry exercises in `test_legal_document_publication.py` — kept
+    # here too so the content module has its own explicit coverage of an
+    # invariant CG-C4's delete action will depend on directly.
+    @pytest.mark.parametrize(
+        "status",
+        [
+            RevisionStatus.IN_REVIEW,
+            RevisionStatus.APPROVED,
+            RevisionStatus.PUBLISHED,
+            RevisionStatus.ARCHIVED,
+        ],
+    )
+    def test_only_drafts_are_deletable(self, status: RevisionStatus) -> None:
+        assert can_delete(status) is False
+        with pytest.raises(CannotDeleteRevisionError):
+            require_deletable(status)
+
+    def test_draft_revision_can_be_deleted(self) -> None:
+        assert can_delete(RevisionStatus.DRAFT) is True
+        require_deletable(RevisionStatus.DRAFT)
 
 
 class TestRequirePublishable:

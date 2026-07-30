@@ -187,3 +187,72 @@ The Consequences section says `LegalDocumentRevision.body` migrates from `Text` 
 ## What Amendment 1 does NOT change
 
 Decisions §1–§9 and §11 stand as written: `RichDoc` v1 as canonical format, stable block ids, no authored `H1`, `underline` allowed, no tables in v1, no images in prose, backend-only `.docx` import with a shared normalizer, the `IMPORT-0xx` finding model, the slot schema registry, and SEO fields unchanged. The negative scope in "What this ADR does NOT open" is unchanged — in particular, **no AI implementation**: this amendment fixes the shape of the seam, it does not open the layer.
+
+---
+
+# Amendment 2 — 2026-07-30
+
+**Recorded through D-050.** §9's `SlotFieldSpec` sketch was a placeholder — a name and a rough shape, written before any template's actual field content had been checked against the real pages. CG-C1 implementation planning checked it against `static-provider.ts`, the rendered pages and the existing `cta.ts`/`AssetReference`/`CtaReference` contracts, and found seven problems that would have become a breaking `slot_data` migration if built as originally sketched. This amendment replaces §9 in full; nothing else in this ADR changes.
+
+## A2.1 — A slot needs a state above its fields: `editable | computed | unmodeled`
+
+§9 implied every slot has fields. It does not. Filtered/derived content (`service_detail.related`'s therapist list, formatted prices, `pricing_page.service_prices`) has no authored field at all — it is computed at render time. Other slots (`support_area` — no page, no `ContentEntity`, no data anywhere in the repository; parts of `static_information.intro`/`prose`) have no evidence of a shape yet. Collapsing both into an empty `fields: {}` under §9's original `SlotFieldSpec` is a real defect: the backend cannot tell "reject any payload, this is derived" from "we don't know yet, don't reject, don't invent" from the same empty object, and the editor cannot show the right message for either.
+
+```ts
+type SlotSpec =
+  | { editability: "editable"; required: boolean; visibility: "fixed" | "toggleable"; fields: Record<string, SlotFieldSpec> }
+  | { editability: "computed"; reason: string; fields: Record<string, never> }
+  | { editability: "unmodeled"; reason: string; fields: Record<string, never> };
+```
+
+The backend rejects any `slot_data` payload targeting a `computed` slot. The editor renders three different states, not one blank form.
+
+## A2.2 — LIMIT-002's enforcement point was mis-specified in the original CG-B2 handoff, and CG-C1 planning repeated the same mistake before catching it
+
+CG-B2's own Nalaz 3 (`documentations/CMS_TODO.md`) already states the correct rule: `maxOptionalSections` counts repeatable items **inside** a slot, not distinct optional slot **keys**. A draft of the CG-C1 implementation plan proposed counting keys present in `slot_data` against `maxOptionalSections` anyway — exactly the interpretation Nalaz 3 had already ruled out, because an editor can pre-initialize every optional slot as an empty object (key present, section inert), and a single FAQ slot with nine items is the real problem regardless of how many slot keys exist.
+
+`maxOptionalSections` is removed from `TemplateDefinition`/`TEMPLATE_REGISTRY` — it has no field-shape-aware meaning to check. Authority moves to `min`/`max` on each `imageList`/`ctaList`/`repeater` field. `LIMIT-002` becomes: for every collection field present in a revision's `slot_data`, its item count must fall within that field's declared `[min, max]`.
+
+## A2.3 — `inherit | override | hidden` is part of the slot payload contract, not deferred to CG-C3
+
+D-038's field-level fallback needs three distinguishable author intents per slot, not the binary "empty means fallback" the original text assumed:
+
+```ts
+type SlotOverride = { mode: "inherit" | "override" | "hidden"; fields?: Record<string, unknown> };
+```
+
+A `required` slot cannot be `hidden`; a `toggleable` (optional) slot can. `inherit` uses the full static fallback. `override` uses the authored fields, and a field missing *within* an override still falls back to its static counterpart where one exists — `override` is not all-or-nothing per slot. An empty string normalizes to absent at save time rather than persisting as a hollow override. Fixing this now, before any `slot_data` exists in the database, avoids a payload migration; CG-C3 becomes a display concern (show the state) rather than a contract-design task.
+
+## A2.4 — `number` did not exist in §9 and cannot be one generic kind
+
+§9 had no numeric kind at all — price, session count, participant count and duration all needed one, and a single `{ kind: "number" }` would accept negative prices or fractional session counts with no domain guard. Split in two:
+
+```ts
+type NumericFieldSpec =
+  | { kind: "integer"; min: number; max: number; step?: number; unit?: "minute" | "session" | "participant"; required?: boolean }
+  | { kind: "money"; currency: "RSD"; min: number; max: number; required?: boolean };
+```
+
+Price is stored as a raw number; `formatRsd()` remains a render-time concern, never a stored string.
+
+## A2.5 — `repeater.item` cannot itself contain `repeater`, `imageList` or `ctaList`
+
+§9's `item: Record<string, SlotFieldSpec>` is recursive by construction, which technically permits `repeater → repeater → repeater`. That is the first step toward a free page builder — exactly what `CONTENT_MODEL_MATRIX_v0.1.md` and D-047 ("ne razvijati CMS, Layout Engine i AI Engine paralelno") rule out. No slot evidenced in `static-provider.ts` (FAQ items, packages, a therapist's additional services) needs more than one level. `repeater.item` is typed as `Record<string, NonRepeaterFieldSpec>` — the three collection kinds are excluded from appearing inside a repeater's item shape.
+
+## A2.6 — `cta` addresses the existing CTA action registry; it is not a free label+href form
+
+§9 listed `{ kind: "cta" }` with no further shape, which reads as an open label/URL pair. `CtaReference`/`CtaAction` (`content-governance/types.ts`) and `cta.ts`'s `CTA-001`/`CTA-002`/`CTA-003` validation already govern every CTA on the site. A generic href field would let an editor bypass that registry and hand-type a broken or arbitrary URL.
+
+```ts
+type CtaFieldSpec = { kind: "cta"; allowedActions: CtaAction[]; targetType?: ContentType; required?: boolean };
+```
+
+The stored payload is `{ action, label, targetId? }`; the URL is generated by the existing registry, same as every other CTA on the site.
+
+## A2.7 — `image` is `{ assetId, alt, decorative? }`, matching `AssetReference`, not a bare string
+
+§9's `{ kind: "image"; required: boolean }` said nothing about the value's shape. `AssetReference` already exists in `content-governance/types.ts` with `alt` and `decorative`, and `ASSET-003` already requires `alt` on any non-decorative image. A bare `assetId: string` field would silently drop the alt-text requirement the validator already enforces elsewhere. Until an asset library exists (ADR-018, Faza 2), the editor's stopgap is two text inputs (`assetId`, `alt`) plus a `decorative` checkbox — not a single field.
+
+## What Amendment 2 does NOT change
+
+§1–§8, §10–§12 of the original decision stand: `RichDoc` v1, stable block ids, no authored `H1`, underline, no tables/inline images in v1, backend-only `.docx` import sharing one normalizer with paste, the `IMPORT-0xx` finding model, Tiptap with `RichDoc` as the storage format, unchanged `SeoFields`, and the AI-layer seam. This amendment corrects only §9's slot schema shape, before any code or stored `slot_data` existed against it.
