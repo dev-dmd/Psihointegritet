@@ -172,6 +172,31 @@ body {
   outline: none;
 }
 
+.rich-text-editor-surface {
+  scrollbar-color: var(--color-sage) var(--color-panel-canvas);
+  scrollbar-width: thin;
+}
+
+.rich-text-editor-surface::-webkit-scrollbar {
+  width: 0.7rem;
+}
+
+.rich-text-editor-surface::-webkit-scrollbar-track {
+  margin: 0.5rem 0;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--color-meadow) 28%, transparent);
+}
+
+.rich-text-editor-surface::-webkit-scrollbar-thumb {
+  border: 3px solid var(--color-panel-canvas);
+  border-radius: 999px;
+  background: var(--color-sage);
+}
+
+.rich-text-editor-surface::-webkit-scrollbar-thumb:hover {
+  background: var(--color-forest-soft);
+}
+
 .rich-text-editor-surface .rich-text-editor-document > *:first-child {
   margin-top: 0;
 }

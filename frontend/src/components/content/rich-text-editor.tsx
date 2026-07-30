@@ -226,7 +226,7 @@ export function RichTextEditor({
           event.preventDefault();
           editor.chain().focus("end").run();
         }}
-        className={`rich-text-editor-surface border-line-strong focus-within:border-sage focus-within:ring-sage/20 rounded-tile bg-panel-canvas min-h-[12rem] cursor-text border px-4 py-3 transition-shadow focus-within:ring-2 ${
+        className={`rich-text-editor-surface border-line-strong focus-within:border-sage focus-within:ring-sage/20 rounded-tile bg-panel-canvas max-h-[500px] min-h-[12rem] cursor-text overflow-y-auto border px-4 py-3 pr-2 transition-shadow focus-within:ring-2 ${
           readOnly ? "cursor-default opacity-70" : ""
         }`}
       />

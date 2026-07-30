@@ -428,6 +428,8 @@ Dokazuje `SlotSpec` registar koji pravni tok ne dokazuje (`legal_page` ima samo 
 
 **1.11 UX korekcija posle stvarnog admin testa:** aktivni Next manifest nije registrovao novu sibling `/api/privacy/documents/import-docx` rutu, pa je POST završavao sa 405 pre backend provere. Create `.docx` preview zato prolazi kroz već postojeći `/api/privacy/documents?action=import-docx` Route Handler. Tiptap sada koristi celu visinu vizuelnog textarea polja kao klikabilnu površinu, ima jasnu P/H2/H3/H4/lista/citat tipografiju i reaktivno označava aktivne alate. Upload prikazuje precizan status, rule ID, poruku i korak za ispravku. Approval matrica ne blokira unos, parsiranje ni čuvanje drafta — proverava se u publication toku. Po §0A posle korekcije nisu pokretani testovi/build/typecheck/lint.
 
+**1.11 save korekcija posle drugog stvarnog admin testa:** backend log je potvrdio `UndefinedColumnError: legal_documents.slug does not exist`; uzrok nije bio sadržaj dokumenta nego neprimenjena lokalna migracija `20260730_0009`. Ona je primenjena na development bazu. Editor je ograničen na 500 px sa internim Sage/Forest scrollom, a svaki novi panel error banner se automatski skroluje u vidljivo polje.
+
 **Redosled je odabran, ne slučajan:** 1.0 pre 1.1 jer 1.1 menja `publication.py` isti fajl na kome CG-B6 testovi nedostaju; 1.1 pre 1.2 jer editor treba stabilan payload ugovor pre nego što se piše protiv njega; CG-C4 (lifecycle dugmad) je namerno izdvojen iz CG-C1b — smoke test za draft editor ne sme da zavisi od objave, pregleda ili javnog renderera (D2/D4), to su zasebni koraci.
 
 > **Zašto CMS editor nije radio pri prvom ručnom testu (2026-07-30) — dva NEZAVISNA uzroka, oba van CG-C1b koda:**
