@@ -44,6 +44,7 @@ from psihointegritet.modules.privacy.schemas import (
     TransitionRequest,
     UpdateLegalDocumentRevisionRequest,
 )
+from psihointegritet.shared.domain.content_management import ContentManagement
 from psihointegritet.shared.domain.publication import (
     ApprovalCapability,
     CannotDeleteRevisionError,
@@ -60,6 +61,26 @@ from psihointegritet.shared.parsing.docx_import import (
 
 _EMPTY_BODY: dict[str, object] = {"schemaVersion": 1, "blocks": []}
 _DOCX_CONVERSION_TIMEOUT_SECONDS = 20
+_RESERVED_CUSTOM_DOCUMENT_SLUGS = frozenset(
+    {
+        "booking-widget",
+        "cene",
+        "kolacici",
+        "kontakt",
+        "o-nama",
+        "podrska-roditeljima",
+        "pravila-zakazivanja",
+        "privatnost",
+        "pronadji-podrsku",
+        "rad-sa-kompanijama",
+        "radionice",
+        "tim",
+        "uslovi",
+        "usluge",
+        "zakazi",
+        "znanje",
+    }
+)
 
 
 class LegalDocumentNotFoundError(LookupError):
@@ -166,8 +187,9 @@ class LegalDocumentService:
             document_id=document.id,
             revision_id=revision.id,
             kind=document.kind,
+            management=ContentManagement.DOCUMENT,
             title=revision.title,
-            slug=revision.slug,
+            slug=document.slug,
             body=revision.body,
             status=revision.status,
             version_label=revision.version_label,
@@ -204,16 +226,42 @@ class LegalDocumentService:
         if not is_valid_slug(request.slug):
             raise ValueError("Slug is not valid")
 
-        existing = await self._session.scalar(
+        if (
+            request.kind is LegalDocumentKind.CUSTOM_DOCUMENT
+            and request.slug in _RESERVED_CUSTOM_DOCUMENT_SLUGS
+        ):
+            raise LegalDocumentConflictError(
+                "Slug is reserved by an existing system or internal page"
+            )
+
+        existing_slug = await self._session.scalar(
             select(LegalDocument).where(
                 LegalDocument.organization_id == actor.organization_id,
-                LegalDocument.kind == request.kind,
+                LegalDocument.slug == request.slug,
             )
         )
-        if existing is not None:
+        if existing_slug is not None:
+            raise LegalDocumentConflictError(f"A document with slug {request.slug} already exists")
+
+        existing_kind = None
+        if request.kind is not LegalDocumentKind.CUSTOM_DOCUMENT:
+            existing_kind = await self._session.scalar(
+                select(LegalDocument).where(
+                    LegalDocument.organization_id == actor.organization_id,
+                    LegalDocument.kind == request.kind,
+                )
+            )
+        if existing_kind is not None:
             raise LegalDocumentConflictError(f"A document of kind {request.kind} already exists")
 
-        document = LegalDocument(organization_id=actor.organization_id, kind=request.kind)
+        body = request.body if request.body is not None else dict(_EMPTY_BODY)
+        parse_rich_doc(body)
+
+        document = LegalDocument(
+            organization_id=actor.organization_id,
+            kind=request.kind,
+            slug=request.slug,
+        )
         self._session.add(document)
         await self._session.flush()
 
@@ -222,7 +270,7 @@ class LegalDocumentService:
             version_label="v1",
             title=request.title,
             slug=request.slug,
-            body=dict(_EMPTY_BODY),
+            body=body,
             status=RevisionStatus.DRAFT,
             approvals=[],
             created_by_user_id=actor.user_id,
@@ -241,7 +289,15 @@ class LegalDocumentService:
         (ADR-017 §8 — an import never silently discards or auto-saves)."""
         self._require_org_admin(actor)
         await self._document(actor, document_id)  # tenant check; 404s before we touch the file
+        return await self._convert_docx(data)
 
+    async def preview_docx(self, actor: StaffActor, data: bytes) -> ImportDocxResponse:
+        """Convert a file for the create form without requiring or creating
+        a document. Applying the preview remains an explicit user action."""
+        self._require_org_admin(actor)
+        return await self._convert_docx(data)
+
+    async def _convert_docx(self, data: bytes) -> ImportDocxResponse:
         try:
             # `convert_docx_bytes` is synchronous, CPU-bound work (mammoth +
             # the zip/HTML parsing) — never call it directly on the event
@@ -334,7 +390,10 @@ class LegalDocumentService:
         if patch.slug is not None:
             if not is_valid_slug(patch.slug):
                 raise ValueError("Slug is not valid")
-            revision.slug = patch.slug
+            if patch.slug != document.slug:
+                raise LegalDocumentConflictError(
+                    "A document slug is stable after creation and cannot be changed"
+                )
         if patch.body is not None:
             # Structural well-formedness only — a body with RICH-0xx
             # findings is still saved (they matter at publish time via
@@ -475,12 +534,22 @@ class LegalDocumentService:
         self, actor: StaffActor, document_id: UUID, revision_id: UUID
     ) -> None:
         self._require_org_admin(actor)
+        document = await self._document(actor, document_id)
         revision = await self._revision(actor, document_id, revision_id)
         try:
             require_deletable(revision.status)
         except CannotDeleteRevisionError as error:
             raise LegalDocumentConflictError(str(error)) from error
-        await self._session.delete(revision)
+        other_revision = await self._session.scalar(
+            select(LegalDocumentRevision.id).where(
+                LegalDocumentRevision.document_id == document_id,
+                LegalDocumentRevision.id != revision_id,
+            )
+        )
+        if other_revision is None:
+            await self._session.delete(document)
+        else:
+            await self._session.delete(revision)
         await self._session.flush()
 
     async def _log_event(
@@ -507,6 +576,8 @@ class LegalDocumentService:
         """Unauthenticated read path (public router): the one published
         revision for this kind, or None. No tenant actor here — the caller
         already resolved `organization_id` from the public default slug."""
+        if kind is LegalDocumentKind.CUSTOM_DOCUMENT:
+            return None
         return await self._session.scalar(
             select(LegalDocumentRevision)
             .join(LegalDocument, LegalDocument.id == LegalDocumentRevision.document_id)
@@ -516,6 +587,29 @@ class LegalDocumentService:
                 LegalDocumentRevision.status == RevisionStatus.PUBLISHED,
             )
         )
+
+    async def get_published_custom_by_slug(
+        self, organization_id: UUID, slug: str
+    ) -> tuple[LegalDocument, LegalDocumentRevision] | None:
+        """Unauthenticated custom-document read path keyed by stable slug."""
+        row = (
+            await self._session.execute(
+                select(LegalDocument, LegalDocumentRevision)
+                .join(
+                    LegalDocumentRevision,
+                    LegalDocumentRevision.document_id == LegalDocument.id,
+                )
+                .where(
+                    LegalDocument.organization_id == organization_id,
+                    LegalDocument.kind == LegalDocumentKind.CUSTOM_DOCUMENT,
+                    LegalDocument.slug == slug,
+                    LegalDocumentRevision.status == RevisionStatus.PUBLISHED,
+                )
+            )
+        ).one_or_none()
+        if row is None:
+            return None
+        return row[0], row[1]
 
     async def intake_gate_open(self, organization_id: UUID) -> bool:
         """LD-6: reads published revisions directly rather than env strings."""

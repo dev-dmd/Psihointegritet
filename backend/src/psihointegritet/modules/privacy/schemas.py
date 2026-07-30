@@ -22,6 +22,7 @@ from pydantic.alias_generators import to_camel
 
 from psihointegritet.modules.identity.schemas import ActorSummaryOut
 from psihointegritet.modules.privacy.models import LegalDocumentKind
+from psihointegritet.shared.domain.content_management import ContentManagement
 from psihointegritet.shared.domain.publication import ApprovalCapability, RevisionStatus
 
 
@@ -47,6 +48,7 @@ class LegalDocumentRevisionOut(ApiSchema):
     document_id: UUID
     revision_id: UUID
     kind: LegalDocumentKind
+    management: ContentManagement
     title: str
     slug: str
     body: dict[str, object]
@@ -62,6 +64,7 @@ class CreateLegalDocumentRequest(ApiSchema):
     kind: LegalDocumentKind
     title: str = Field(min_length=1, max_length=200)
     slug: str = Field(min_length=1, max_length=80)
+    body: dict[str, object] | None = None
 
 
 class UpdateLegalDocumentRevisionRequest(ApiSchema):
@@ -119,6 +122,7 @@ class PublicLegalDocumentOut(ApiSchema):
     `ConsentRecord.document_version` records (`modules/privacy/models.py`)."""
 
     kind: LegalDocumentKind
+    management: ContentManagement
     title: str
     slug: str
     body: dict[str, object]

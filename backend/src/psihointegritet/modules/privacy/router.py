@@ -40,9 +40,19 @@ from psihointegritet.modules.privacy.service import (
     LegalDocumentNotFoundError,
     LegalDocumentService,
 )
+from psihointegritet.shared.domain.content_management import ContentManagement
 
 router = APIRouter(prefix="/privacy", tags=["privacy-documents"])
 public_router = APIRouter(prefix="/public/privacy", tags=["public-privacy"])
+
+
+async def _default_organization(session: DatabaseSession, settings: AppSettings) -> Organization:
+    organization = await session.scalar(
+        select(Organization).where(Organization.slug == settings.default_organization_slug)
+    )
+    if organization is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not published")
+    return organization
 
 
 @public_router.get(
@@ -57,19 +67,46 @@ async def get_public_legal_document(
     `/pravila-zakazivanja` and the Intake consent checkboxes read. 404 when
     nothing is published — the caller renders its own static fallback text
     (D-038), never a broken page."""
+    if kind is LegalDocumentKind.CUSTOM_DOCUMENT:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not published")
     async with session.begin():
-        organization = await session.scalar(
-            select(Organization).where(Organization.slug == settings.default_organization_slug)
-        )
-        if organization is None:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not published")
+        organization = await _default_organization(session, settings)
         revision = await LegalDocumentService(session).get_published_by_kind(organization.id, kind)
     if revision is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not published")
     return PublicLegalDocumentOut(
         kind=kind,
+        management=ContentManagement.DOCUMENT,
         title=revision.title,
         slug=revision.slug,
+        body=revision.body,
+        version_label=revision.version_label,
+        published_at=revision.published_at,
+    )
+
+
+@public_router.get(
+    "/custom-documents/{slug}",
+    response_model=PublicLegalDocumentOut,
+    operation_id="get_public_custom_document",
+)
+async def get_public_custom_document(
+    slug: str, session: DatabaseSession, settings: AppSettings
+) -> PublicLegalDocumentOut:
+    """Published custom documents are resolved by their stable public slug."""
+    async with session.begin():
+        organization = await _default_organization(session, settings)
+        result = await LegalDocumentService(session).get_published_custom_by_slug(
+            organization.id, slug
+        )
+    if result is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not published")
+    document, revision = result
+    return PublicLegalDocumentOut(
+        kind=document.kind,
+        management=ContentManagement.DOCUMENT,
+        title=revision.title,
+        slug=document.slug,
         body=revision.body,
         version_label=revision.version_label,
         published_at=revision.published_at,
@@ -79,6 +116,23 @@ async def get_public_legal_document(
 # Multipart uploads for `.docx` are capped well below the 15 MB backend limit
 # at the ASGI/proxy layer in production; this is the last line of defense.
 _MAX_UPLOAD_BYTES = 15 * 1024 * 1024
+
+
+async def _read_docx(file: UploadFile) -> bytes:
+    if file.filename and not file.filename.lower().endswith(".docx"):
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail=(
+                "Samo .docx fajlovi su podržani. Sačuvajte dokument kao .docx i pokušajte ponovo."
+            ),
+        )
+    data = await file.read(_MAX_UPLOAD_BYTES + 1)
+    if len(data) > _MAX_UPLOAD_BYTES:
+        raise HTTPException(
+            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            detail="Fajl je odbijen: prevelik.",
+        )
+    return data
 
 
 async def _org_admin_actor(
@@ -135,6 +189,26 @@ async def create_legal_document(
         raise _handle(error) from error
 
 
+@router.post(
+    "/documents/import-docx",
+    response_model=ImportDocxResponse,
+    operation_id="preview_new_legal_document_docx",
+)
+async def preview_new_legal_document_docx(
+    identity: CurrentIdentity,
+    session: DatabaseSession,
+    settings: AppSettings,
+    file: Annotated[UploadFile, File()],
+) -> ImportDocxResponse:
+    data = await _read_docx(file)
+    try:
+        async with session.begin():
+            actor = await _org_admin_actor(session, settings, identity)
+            return await LegalDocumentService(session).preview_docx(actor, data)
+    except (LegalDocumentForbiddenError, LegalDocumentImportError) as error:
+        raise _handle(error) from error
+
+
 @router.get(
     "/documents/{document_id}",
     response_model=LegalDocumentRevisionOut,
@@ -163,19 +237,7 @@ async def import_legal_document_docx(
     settings: AppSettings,
     file: Annotated[UploadFile, File()],
 ) -> ImportDocxResponse:
-    if file.filename and not file.filename.lower().endswith(".docx"):
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
-            detail=(
-                "Samo .docx fajlovi su podržani. Sačuvajte dokument kao .docx i pokušajte ponovo."
-            ),
-        )
-    data = await file.read(_MAX_UPLOAD_BYTES + 1)
-    if len(data) > _MAX_UPLOAD_BYTES:
-        raise HTTPException(
-            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
-            detail="Fajl je odbijen: prevelik.",
-        )
+    data = await _read_docx(file)
     try:
         async with session.begin():
             actor = await _org_admin_actor(session, settings, identity)

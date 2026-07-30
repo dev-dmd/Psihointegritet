@@ -28,6 +28,7 @@ function makeDocument(overrides: Partial<LegalDocument> = {}): LegalDocument {
     documentId: "doc-1",
     revisionId: "doc-1-r1",
     kind: "intake_data_processing_notice",
+    management: "document",
     title: "Obaveštenje o obradi podataka",
     slug: "obavestenje-o-obradi-podataka",
     body: richDocFromPlainText(

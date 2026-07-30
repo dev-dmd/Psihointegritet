@@ -32,6 +32,7 @@ export interface ApiContentRevision {
   entryId: string;
   revisionId: string;
   contentType: ContentType;
+  management: "system";
   slug: string;
   locale: string;
   template: ContentTemplate;

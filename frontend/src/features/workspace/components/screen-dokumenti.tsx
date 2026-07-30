@@ -11,10 +11,7 @@ import {
 } from "@/components/panel/status-badge";
 import { RichText } from "@/components/content/rich-text";
 import { RichTextEditor } from "@/components/content/rich-text-editor";
-import {
-  richDocFromPlainText,
-  type RichDoc,
-} from "@/lib/content-governance/rich-doc";
+import { emptyRichDoc, type RichDoc } from "@/lib/content-governance/rich-doc";
 
 import {
   CAPABILITY_LABELS,
@@ -43,6 +40,7 @@ import {
   transitionLegalDocumentRevision,
   updateLegalDocumentRevision,
   importLegalDocumentDocx,
+  previewNewLegalDocumentDocx,
   type ApiImportDocxResult,
   type ApiPublishBlock,
 } from "../legal-documents-api";
@@ -393,21 +391,16 @@ export function ScreenDokumenti() {
       {creating ? (
         <NewDocumentForm
           existingSlugs={documents.map((document) => document.slug)}
+          existingKinds={documents.map((document) => document.kind)}
           onCancel={() => setCreating(false)}
           onCreate={async (input) => {
             try {
-              let created = await createLegalDocument({
+              const created = await createLegalDocument({
                 kind: input.kind,
                 title: input.title,
                 slug: input.slug,
+                body: input.body,
               });
-              if (input.bodyText.trim()) {
-                created = await updateLegalDocumentRevision(
-                  created.documentId,
-                  created.revisionId,
-                  { body: richDocFromPlainText(input.bodyText) },
-                );
-              }
               queryClient.setQueryData<LegalDocument[]>(
                 LEGAL_DOCUMENTS_QUERY_KEY,
                 (current) => [...(current ?? []), created],
@@ -756,6 +749,7 @@ function ActionButton({
 }
 
 const CREATABLE_KINDS: LegalDocumentKind[] = [
+  "custom_document",
   "privacy_policy",
   "terms_of_use",
   "cookie_policy",
@@ -763,38 +757,72 @@ const CREATABLE_KINDS: LegalDocumentKind[] = [
   "intake_data_processing_notice",
   "intake_request_acknowledgement",
 ];
+const RESERVED_CUSTOM_DOCUMENT_SLUGS = new Set([
+  "booking-widget",
+  "cene",
+  "kolacici",
+  "kontakt",
+  "o-nama",
+  "podrska-roditeljima",
+  "pravila-zakazivanja",
+  "privatnost",
+  "pronadji-podrsku",
+  "rad-sa-kompanijama",
+  "radionice",
+  "tim",
+  "uslovi",
+  "usluge",
+  "zakazi",
+  "znanje",
+]);
 
 interface NewDocumentInput {
   kind: LegalDocumentKind;
   title: string;
   slug: string;
-  bodyText: string;
+  body: RichDoc;
 }
 
 function NewDocumentForm({
   existingSlugs,
+  existingKinds,
   onCancel,
   onCreate,
 }: {
   existingSlugs: string[];
+  existingKinds: LegalDocumentKind[];
   onCancel: () => void;
   onCreate: (input: NewDocumentInput) => void | Promise<void>;
 }) {
   const [title, setTitle] = useState("");
   const [slug, setSlug] = useState("");
   const [slugTouched, setSlugTouched] = useState(false);
-  const [body, setBody] = useState("");
-  const [kind, setKind] = useState<LegalDocumentKind>("privacy_policy");
+  const [body, setBody] = useState<RichDoc>(() => emptyRichDoc());
+  const [kind, setKind] = useState<LegalDocumentKind>("custom_document");
   const [submitting, setSubmitting] = useState(false);
+  const [editorRevision, setEditorRevision] = useState(0);
+  const [docxImporting, setDocxImporting] = useState(false);
+  const [docxPreview, setDocxPreview] = useState<{
+    fileName: string;
+    result: ApiImportDocxResult;
+  } | null>(null);
+  const [docxError, setDocxError] = useState<string | null>(null);
 
   const effectiveSlug = slugTouched ? slug : slugify(title);
   const slugTaken = existingSlugs.includes(effectiveSlug);
   const slugInvalid = effectiveSlug.length > 0 && !isValidSlug(effectiveSlug);
+  const slugReserved =
+    kind === "custom_document" &&
+    RESERVED_CUSTOM_DOCUMENT_SLUGS.has(effectiveSlug);
+  const availableKinds = CREATABLE_KINDS.filter(
+    (value) => value === "custom_document" || !existingKinds.includes(value),
+  );
   const canSubmit =
     title.trim().length > 0 &&
     effectiveSlug.length > 0 &&
     !slugTaken &&
     !slugInvalid &&
+    !slugReserved &&
     !submitting;
 
   return (
@@ -808,7 +836,7 @@ function NewDocumentForm({
             kind,
             title: title.trim(),
             slug: effectiveSlug,
-            bodyText: body,
+            body,
           }),
         ).finally(() => setSubmitting(false));
       }}
@@ -854,9 +882,11 @@ function NewDocumentForm({
           <p id="new-doc-slug-hint" className="text-ink-55 mt-1.5 text-[12px]">
             {slugTaken
               ? "Ovaj slug već postoji."
-              : slugInvalid
-                ? "Dozvoljena su mala slova, brojevi i crtica."
-                : "Popunjava se automatski iz naziva; možete ga izmeniti."}
+              : slugReserved
+                ? "Ovaj slug pripada postojećoj sistemskoj stranici."
+                : slugInvalid
+                  ? "Dozvoljena su mala slova, brojevi i crtica."
+                  : "Popunjava se automatski iz naziva; možete ga izmeniti."}
           </p>
         </div>
       </div>
@@ -874,7 +904,7 @@ function NewDocumentForm({
           onChange={(event) => setKind(event.target.value as LegalDocumentKind)}
           className="border-line-strong rounded-tile bg-panel-canvas text-coffee focus:border-sage w-full border px-3.5 py-2.5 text-sm outline-none md:w-[340px]"
         >
-          {CREATABLE_KINDS.map((value) => (
+          {availableKinds.map((value) => (
             <option key={value} value={value}>
               {KIND_LABELS[value]}
             </option>
@@ -890,20 +920,82 @@ function NewDocumentForm({
       </div>
 
       <div className="mt-4">
-        <label
-          htmlFor="new-doc-body"
-          className="text-ink-70 mb-1.5 block text-[13px] font-semibold"
-        >
+        <div className="text-ink-70 mb-1.5 text-[13px] font-semibold">
           Sadržaj
-        </label>
-        <textarea
-          id="new-doc-body"
-          value={body}
-          rows={6}
-          onChange={(event) => setBody(event.target.value)}
-          placeholder="Tekst dokumenta…"
-          className="border-line-strong rounded-tile bg-panel-canvas text-coffee focus:border-sage w-full border px-3.5 py-2.5 text-sm leading-[1.6] outline-none"
-        />
+        </div>
+        <RichTextEditor key={editorRevision} value={body} onChange={setBody} />
+        <div className="mt-3">
+          <label className="border-line-strong text-ink-70 hover:border-coffee/40 inline-flex cursor-pointer rounded-full border bg-transparent px-4 py-2 text-[13px] font-semibold transition-colors">
+            {docxImporting ? "Uvoz DOCX-a…" : "Uvezi .docx"}
+            <input
+              type="file"
+              accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+              disabled={docxImporting}
+              className="sr-only"
+              onChange={(event) => {
+                const file = event.target.files?.[0];
+                event.currentTarget.value = "";
+                if (!file) return;
+                setDocxImporting(true);
+                setDocxError(null);
+                setDocxPreview(null);
+                void previewNewLegalDocumentDocx(file)
+                  .then((result) =>
+                    setDocxPreview({ fileName: file.name, result }),
+                  )
+                  .catch((error: unknown) =>
+                    setDocxError(
+                      error instanceof LegalDocumentsApiError
+                        ? error.message
+                        : "DOCX nije moguće obraditi. Pokušajte ponovo.",
+                    ),
+                  )
+                  .finally(() => setDocxImporting(false));
+              }}
+            />
+          </label>
+          <p className="text-ink-55 mt-1.5 text-[12px]">
+            Uvoz prvo pravi pregled. Sadržaj se primenjuje tek kada ga potvrdite
+            i čuva zajedno sa novom radnom verzijom.
+          </p>
+        </div>
+        {docxError ? (
+          <p className="text-danger mt-2 text-[12.5px]">{docxError}</p>
+        ) : null}
+        {docxPreview ? (
+          <div className="border-line bg-panel-canvas rounded-tile mt-3 border px-4 py-3">
+            <p className="text-coffee text-[13.5px] font-semibold">
+              Pregled uvoza: {docxPreview.fileName}
+            </p>
+            {docxPreview.result.findings.length > 0 ? (
+              <ul className="text-ink-70 mt-2 list-disc pl-5 text-[12.5px] leading-[1.55]">
+                {docxPreview.result.findings.map((finding) => (
+                  <li key={`${finding.ruleId}-${finding.message}`}>
+                    {finding.message} {finding.remediation}
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-ink-55 mt-1 text-[12.5px]">
+                Dokument je normalizovan bez upozorenja.
+              </p>
+            )}
+            <div className="mt-3 flex flex-wrap gap-2">
+              <ActionButton
+                label="Primeni uvezeni sadržaj"
+                onClick={() => {
+                  setBody(docxPreview.result.body);
+                  setEditorRevision((current) => current + 1);
+                  setDocxPreview(null);
+                }}
+              />
+              <ActionButton
+                label="Odustani"
+                onClick={() => setDocxPreview(null)}
+              />
+            </div>
+          </div>
+        ) : null}
       </div>
 
       <div className="mt-5 flex items-center gap-2.5">

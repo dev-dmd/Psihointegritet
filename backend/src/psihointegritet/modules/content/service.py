@@ -57,6 +57,7 @@ from psihointegritet.modules.content.system_catalog import (
 from psihointegritet.modules.guidance.authorization import StaffActor
 from psihointegritet.modules.identity.models import InternalUser
 from psihointegritet.modules.identity.schemas import ActorSummaryOut
+from psihointegritet.shared.domain.content_management import ContentManagement
 from psihointegritet.shared.domain.publication import (
     CannotDeleteRevisionError,
     RevisionStatus,
@@ -160,6 +161,7 @@ class ContentService:
             entry_id=entry.id,
             revision_id=revision.id,
             content_type=entry.content_type,
+            management=ContentManagement.SYSTEM,
             slug=entry.slug,
             locale=entry.locale,
             template=revision.template,
@@ -233,6 +235,7 @@ class ContentService:
         return [
             PublicContentRevisionOut(
                 content_type=entry.content_type,
+                management=ContentManagement.SYSTEM,
                 slug=entry.slug,
                 locale=entry.locale,
                 template=revision.template,

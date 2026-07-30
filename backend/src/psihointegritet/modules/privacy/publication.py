@@ -69,6 +69,9 @@ REQUIRED_APPROVALS: Mapping[LegalDocumentKind, frozenset[ApprovalCapability]] = 
     LegalDocumentKind.BOOKING_RULES: frozenset(
         {ApprovalCapability.LEGAL, ApprovalCapability.BUSINESS}
     ),
+    LegalDocumentKind.CUSTOM_DOCUMENT: frozenset(
+        {ApprovalCapability.LEGAL, ApprovalCapability.BUSINESS}
+    ),
 }
 
 # Kinds whose published revision opens an Intake consent gate. Used by the

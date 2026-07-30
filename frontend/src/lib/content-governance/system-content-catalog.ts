@@ -46,7 +46,7 @@ export function systemContentIdentity(
 
 export const systemContentCatalog: readonly SystemContentDefinition[] =
   staticContentEntities
-    .filter((entity) => entity.template !== "legal_page")
+    .filter((entity) => entity.management === "system")
     .map((entity) => ({
       id: entity.id,
       contentType: entity.type,

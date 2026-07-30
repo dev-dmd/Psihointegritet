@@ -19,12 +19,28 @@ export type PublicLegalDocumentKind =
   | "intake_request_acknowledgement";
 
 export interface PublicLegalDocument {
-  kind: PublicLegalDocumentKind;
+  kind: PublicLegalDocumentKind | "custom_document";
+  management: "document";
   title: string;
   slug: string;
   body: RichDoc;
   versionLabel: string;
   publishedAt: string | null;
+}
+
+export async function fetchPublicCustomDocument(
+  slug: string,
+): Promise<PublicLegalDocument | null> {
+  try {
+    const response = await fetch(
+      `${serverEnv.NEXT_PUBLIC_API_URL}/api/v1/public/privacy/custom-documents/${encodeURIComponent(slug)}`,
+      { cache: "no-store" },
+    );
+    if (!response.ok) return null;
+    return (await response.json()) as PublicLegalDocument;
+  } catch {
+    return null;
+  }
 }
 
 /**

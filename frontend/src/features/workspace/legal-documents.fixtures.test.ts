@@ -73,6 +73,7 @@ function documentFrom(input: FixtureCase["input"]): LegalDocument {
     documentId: "fixture-doc",
     revisionId: "fixture-doc-r1",
     kind: input.kind ?? "intake_data_processing_notice",
+    management: "document",
     title: input.title ?? "",
     slug: input.slug ?? "",
     body: input.body ?? emptyRichDoc(),

@@ -18,6 +18,7 @@ from pydantic.alias_generators import to_camel
 from psihointegritet.modules.content.models import ContentTemplate, ContentType, ReviewOutcome
 from psihointegritet.modules.content.publication import PublishStage, Severity
 from psihointegritet.modules.identity.schemas import ActorSummaryOut
+from psihointegritet.shared.domain.content_management import ContentManagement
 from psihointegritet.shared.domain.publication import ApprovalCapability, RevisionStatus
 
 
@@ -44,6 +45,7 @@ class ContentRevisionOut(ApiSchema):
     entry_id: UUID
     revision_id: UUID
     content_type: ContentType
+    management: ContentManagement
     slug: str
     locale: str
     template: ContentTemplate
@@ -62,6 +64,7 @@ class PublicContentRevisionOut(ApiSchema):
     """Published CMS override without staff identity or edit metadata."""
 
     content_type: ContentType
+    management: ContentManagement
     slug: str
     locale: str
     template: ContentTemplate

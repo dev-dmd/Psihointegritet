@@ -208,6 +208,7 @@ export function ContentRevisionPreview({
 
   const override: PublishedContentOverride = {
     contentType: revision.contentType,
+    management: revision.management,
     slug: revision.slug,
     locale: revision.locale,
     template: revision.template,

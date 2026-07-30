@@ -19,6 +19,7 @@ import type {
 
 export interface PublishedContentOverride {
   contentType: ContentType;
+  management: "system";
   slug: string;
   locale: string;
   template: ContentEntity["template"];
@@ -60,6 +61,7 @@ export function parsePublishedContentOverrides(
     const seo = revision.seo;
     if (
       !contentTypes.has(revision.contentType as ContentType) ||
+      revision.management !== "system" ||
       typeof revision.slug !== "string" ||
       typeof revision.locale !== "string" ||
       !contentTemplates.has(revision.template as ContentEntity["template"]) ||

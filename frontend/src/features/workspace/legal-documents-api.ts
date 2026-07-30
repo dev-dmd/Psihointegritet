@@ -3,12 +3,10 @@
  * `app/api/privacy/**` Next Route Handlers (same pattern as
  * `intake-team-queue-api.ts` → `app/api/intake/**`).
  *
- * **Hand-typed, not generated.** `npm run api:generate` was not run for this
- * pass (D-047 — no verification gates until the CMS + Booking testing pass),
- * so these types are written to match `modules/privacy/schemas.py` field for
- * field rather than sourced from `@/types/api.generated`. `ApiSchema`'s
- * `alias_generator=to_camel` on the backend means the wire shape is already
- * camelCase — no case conversion happens here.
+ * The panel keeps a small hand-shaped adapter over the generated OpenAPI
+ * contract so its domain names stay stable. The generated client is refreshed
+ * whenever this wire contract changes. `ApiSchema`'s `alias_generator=to_camel`
+ * means no case conversion happens here.
  */
 
 import type { RichDoc } from "@/lib/content-governance/rich-doc";
@@ -35,6 +33,7 @@ export interface ApiLegalDocumentRevision {
   documentId: string;
   revisionId: string;
   kind: LegalDocumentKind;
+  management: "document";
   title: string;
   slug: string;
   body: RichDoc;
@@ -92,6 +91,7 @@ export function toLegalDocument(
     documentId: revision.documentId,
     revisionId: revision.revisionId,
     kind: revision.kind,
+    management: revision.management,
     title: revision.title,
     slug: revision.slug,
     body: revision.body,
@@ -133,6 +133,7 @@ export async function createLegalDocument(input: {
   kind: LegalDocumentKind;
   title: string;
   slug: string;
+  body: RichDoc;
 }): Promise<LegalDocument> {
   const response = await fetch("/api/privacy/documents", {
     method: "POST",
@@ -233,5 +234,19 @@ export async function importLegalDocumentDocx(
     `/api/privacy/documents/${encodeURIComponent(documentId)}/import-docx`,
     { method: "POST", body: formData },
   );
+  return parseOrThrow<ApiImportDocxResult>(response);
+}
+
+/** Preview-only import for the create form. It does not create a document or
+ * persist the converted content. */
+export async function previewNewLegalDocumentDocx(
+  file: File,
+): Promise<ApiImportDocxResult> {
+  const formData = new FormData();
+  formData.set("file", file);
+  const response = await fetch("/api/privacy/documents/import-docx", {
+    method: "POST",
+    body: formData,
+  });
   return parseOrThrow<ApiImportDocxResult>(response);
 }

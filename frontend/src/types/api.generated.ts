@@ -254,6 +254,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/privacy/documents/import-docx": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Preview New Legal Document Docx */
+        post: operations["preview_new_legal_document_docx"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/privacy/documents/{document_id}": {
         parameters: {
             query?: never;
@@ -433,6 +450,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/public/privacy/custom-documents/{slug}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Public Custom Document
+         * @description Published custom documents are resolved by their stable public slug.
+         */
+        get: operations["get_public_custom_document"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/public/privacy/documents/{kind}": {
         parameters: {
             query?: never;
@@ -525,6 +562,11 @@ export interface components {
             /** File */
             file: string;
         };
+        /** Body_preview_new_legal_document_docx */
+        Body_preview_new_legal_document_docx: {
+            /** File */
+            file: string;
+        };
         /** ClaimIntakeCaseResponse */
         ClaimIntakeCaseResponse: {
             /**
@@ -586,6 +628,11 @@ export interface components {
                 [key: string]: number;
             };
         };
+        /**
+         * ContentManagement
+         * @enum {string}
+         */
+        ContentManagement: "system" | "document" | "article" | "internal";
         /** ContentRevisionOut */
         ContentRevisionOut: {
             contentType: components["schemas"]["ContentType"];
@@ -601,6 +648,7 @@ export interface components {
             locale: string;
             /** Lockversion */
             lockVersion: number;
+            management: components["schemas"]["ContentManagement"];
             /**
              * Revisionid
              * Format: uuid
@@ -655,6 +703,10 @@ export interface components {
         };
         /** CreateLegalDocumentRequest */
         CreateLegalDocumentRequest: {
+            /** Body */
+            body?: {
+                [key: string]: unknown;
+            } | null;
             kind: components["schemas"]["LegalDocumentKind"];
             /** Slug */
             slug: string;
@@ -778,7 +830,7 @@ export interface components {
          *     revision maps straight onto the consent evidence written at submission.
          * @enum {string}
          */
-        LegalDocumentKind: "intake_data_processing_notice" | "intake_request_acknowledgement" | "privacy_policy" | "terms_of_use" | "cookie_policy" | "booking_rules";
+        LegalDocumentKind: "intake_data_processing_notice" | "intake_request_acknowledgement" | "privacy_policy" | "terms_of_use" | "cookie_policy" | "booking_rules" | "custom_document";
         /** LegalDocumentRevisionOut */
         LegalDocumentRevisionOut: {
             /** Approvals */
@@ -794,6 +846,7 @@ export interface components {
              */
             documentId: string;
             kind: components["schemas"]["LegalDocumentKind"];
+            management: components["schemas"]["ContentManagement"];
             /**
              * Revisionid
              * Format: uuid
@@ -835,6 +888,7 @@ export interface components {
             contentType: components["schemas"]["ContentType"];
             /** Locale */
             locale: string;
+            management: components["schemas"]["ContentManagement"];
             /**
              * Publishedat
              * Format: date-time
@@ -930,6 +984,7 @@ export interface components {
                 [key: string]: unknown;
             };
             kind: components["schemas"]["LegalDocumentKind"];
+            management: components["schemas"]["ContentManagement"];
             /** Publishedat */
             publishedAt?: string | null;
             /** Slug */
@@ -1695,6 +1750,39 @@ export interface operations {
             };
         };
     };
+    preview_new_legal_document_docx: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_preview_new_legal_document_docx"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImportDocxResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_legal_document: {
         parameters: {
             query?: never;
@@ -2037,6 +2125,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PublicIntakeMatchResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_public_custom_document: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicLegalDocumentOut"];
                 };
             };
             /** @description Validation Error */
