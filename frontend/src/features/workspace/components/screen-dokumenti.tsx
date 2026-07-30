@@ -1045,9 +1045,9 @@ const IMPORT_FINDING_LABELS = {
 function DocxImportFindings({ result }: { result: ApiImportDocxResult }) {
   return (
     <ul className="mt-2 space-y-2 text-[12.5px] leading-[1.5]">
-      {result.findings.map((finding) => (
+      {result.findings.map((finding, index) => (
         <li
-          key={`${finding.ruleId}-${finding.fieldPath ?? ""}-${finding.message}`}
+          key={`${finding.ruleId}-${finding.fieldPath ?? ""}-${finding.message}-${index}`}
           className="border-line-strong rounded-tile border px-3 py-2"
         >
           <div className="flex flex-wrap items-center gap-2">
