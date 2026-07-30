@@ -386,7 +386,7 @@
 ### Preduslovi pre bilo kog kataloga sadržaja (D-047)
 
 - [x] **O-24a — Intake & Matching taksonomija (D-052):** pet stabilnih `areas` ID-jeva + display labele, zajednički `contracts/fixtures/taxonomy.v1.json`, frontend/backend parity čitači i migracija postojećih DB profila `20260730_0010`. „Zavisnost" je Anjina potvrđena capability oznaka i opcija upitnika, uz timski handoff.
-- [ ] **O-24b — buduće CMS/Kompas ose:** odlučiti tek uz Blog/Layout/Kompas arhitekturu; ova stavka ne menja završeni Intake rečnik.
+- [ ] **O-24b — CMS/Kompas ose:** detaljan plan je u `KOMPAS_TODO.md`; pre koda traži D-053 + ADR-022, zatim Anjin DB seed/import. Kompas topic grupe/teme povezuju se sa D-052 Intake oblastima eksplicitnim mostom, ne zamenjuju ih.
 - [ ] `ADR-019` (tip `article`) pre bilo kog koda za članke — `ContentType` ih danas namerno izostavlja (`models.py:64`).
 
 ### AI sloj nad sadržajem — **posle CMS-a, ADR-017 §12 + A1.1**

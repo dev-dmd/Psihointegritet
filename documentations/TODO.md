@@ -60,6 +60,7 @@
 | `technical-documentation-architecture-v0.3.md`         | Autoritet #4. Širi model podataka (§6), granice modula (§4.2) i ADR lista (§16). **Gde se sudara sa master planom, master plan pobeđuje**; R1.6 Booking ugovor je u zasebnom Pre-R2 dokumentu.                                                                                      |
 | `PSIHOINTEGRITET_PRODUCT_ENGINES_ARCHITECTURE_v1_0.md` | Autoritet #6, **vodič a ne propis**. Master plan ga citira normativno iz M2.3 (§7.3) i M2.7 (§18)                                                                                                                                                                                   |
 | `PSIHOINTEGRITET_INTAKE_MATCHING_ENGINE_v0.1.md`       | Spec za Intake & Matching demo (24 sekcije). Formalizuje R1.2 v1 u v0.1: feature flag `intake_matching_preview` (samo staging, mock adapteri, bez pravih upisa), timski panel, claim/reassignment, booking/notification integracione tačke. **Demo, ne produkcija** — vidi §5A ovde |
+| `KOMPAS_TODO.md`                                      | Operativni plan za Kompas discovery/recommendation sloj: DB taksonomija, content metadata, deterministički recommendation, dvosmerni Intake handoff i fazne kapije. Bez Kompas koda pre D-053/ADR-022.                                                                            |
 
 ### Arhiva — `archive/`, ne uzimati odluke odatle
 
@@ -443,7 +444,7 @@ Dokazuje `SlotSpec` registar koji pravni tok ne dokazuje (`legal_page` ima samo 
 
 **Faza 2 — preduslovi:** ✅ Intake `areas` taksonomija (**O-24a / D-052**, Anja potvrdila) · **ADR-018** je napisan · **Amandman 1 na ADR-017** je napisan. Buduće CMS/Kompas ose ostaju O-24b i rešavaju se uz Blog/Layout/Kompas arhitekturu.
 
-**Faza 3 — iza kapija:** ADR-019 (tip `article`) → tok članka → resource/PDF tok → **ADR-020** (AI review/patch) → **ADR-021** (layout recepti) → `VideoAsset` 🚫 · Kompas 🚫 **O-21** · Dnevna soba 🚫 **O-23**.
+**Faza 3 — iza kapija:** Kompas prati zaseban `KOMPAS_TODO.md` (K0 prvo; bez UI-ja pre DB kataloga i stvarnog objavljenog sadržaja). Article/Layout preduslovi: ADR-019 (tip `article`) + minimalni ADR-021 layout recept → stvarni tok članka → resource/PDF tok. **ADR-020** AI review/patch nije preduslov za osnovni Kompas. `VideoAsset` 🚫 · Dnevna soba 🚫 **O-23**.
 
 > **Interfejsi:** od pet traženih piše se **samo `ContentPatch`** (uvoz ga stvarno troši). `ApprovalDecision` postoji 3× pod drugim imenima, `AIReviewFinding` koristi postojeći finding model pod `AI-0xx`, a `LayoutProposal` i `AssetPlacementSuggestion` ostaju proza — nemaju potrošača (§25). Detalji: ADR-017 Amandman 1 §A1.2.
 > _(CG-B6 je zauzet — „Testovi bez DB" u `CMS_TODO.md`.)_

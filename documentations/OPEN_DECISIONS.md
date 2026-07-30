@@ -153,7 +153,9 @@ Psihointegritet želi eksplicitno da prikaže da prima LGBTQIA+ osobe bez stigme
 >
 > **Time je tačka 1 suštinski odgovorena, ali O-21 ostaje otvoren** na tačkama 2 i 3, i na jednoj novoj: Kompas pretpostavlja **zajedničku taksonomiju** preko svih tipova sadržaja (`audience`, `topics`, `goals`, `contentType`, `supportLevel`, `ageGroup`, `format`, `accessLevel`, `estimatedTime`, `relatedServices`, `relatedTherapists`) — a to je zasebna otvorena stavka, **O-24**. Bez nje Kompas nema po čemu da pretražuje.
 
-**Dok ne stigne:** nikakav placeholder kod, ruta, model ni javna najava sa rokom (anti-placeholder pravila iz master plana §3 i PRODUCT_CONTEXT §11.5). Pominjanje u access-tier listi ostaje kakvo jeste.
+> **Plan 2026-07-31:** `KOMPAS_TODO.md` ugrađuje novi handoff i razdvaja Kompas topic grupe/teme od D-052 Intake routing oblasti. Predložene v1 ose su `topicGroupId`, `topicIds`, `journeyIntentIds`, `goalIds`, `audienceIds`, izvedeni `contentFormat` i postojeći `accessPolicy`; tagovi/sinonimi ostaju samo pretraga. Kompas je u v1 deterministički content recommendation servis, bez novog therapist scoring-a i bez obaveznog AI-ja. O-21 ostaje otvoren samo za basic/advanced granicu, release/vlasništvo i formalno usvajanje D-053/ADR-022.
+
+**Do K0 gate-a iz `KOMPAS_TODO.md`:** nikakav placeholder kod, ruta, model ni javna najava sa rokom. Tačne Anjine kategorije su podaci registra i mogu stići posle arhitektonske odluke, ali pre javnog UI-ja.
 
 ---
 
@@ -194,9 +196,9 @@ Psihointegritet želi eksplicitno da prikaže da prima LGBTQIA+ osobe bez stigme
 **Traži se:**
 
 1. ✅ **Od tima/Anje:** pet Intake oblasti i Anjina primarna stručnost za zavisnost potvrđeni su i sprovedeni kroz D-052.
-2. **O-24b — od CTO, kasnije uz Blog/Layout/Kompas odluke:** koje zajedničke CMS ose se zaista uvode (`audience`, `topics`, `goals`, `supportLevel`, `ageGroup`, `format`, `accessLevel`, `estimatedTime`, `relatedServices`, `relatedTherapists`) i koji engine je njihov vlasnik. Postojeći `ContentBase.type` ostaje jedino značenje polja `contentType`.
+2. **O-24b — planiran kroz `KOMPAS_TODO.md`:** handoff je definisao odvojene topic group/topic/journey/goal/audience ose, uz format i access iz postojećih domena. Pre koda još treba formalno usvojiti D-053/ADR-022, potvrditi tenant/ownership model i uneti Anjine konačne kategorije. Postojeći `ContentBase.type` ostaje jedino značenje polja `contentType`.
 
-**Dok ne stigne O-24b odluka:** ne dodavati nove CMS/Kompas ose. Ovo ne vraća završeni Intake rečnik na otvorenu odluku.
+**Do O-24b K0 gate-a:** ne dodavati nove CMS/Kompas modele. Ovo ne vraća završeni Intake rečnik na otvorenu odluku.
 
 ---
 
