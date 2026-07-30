@@ -9,52 +9,36 @@
 
 - **Ovde se prati samo status.** Obim se menja u četiri obavezujuća dokumenta — nikada ovde.
 - Kolona **„Gde piše"** je poenta: svaki red vodi na `DOKUMENT §sekcija`. Ako reda nema u dokumentaciji, ne radi se.
-- Red postaje ✅ tek kad prođu gates iz master plana §12 i completion report iz `ARCHITECTURAL_RULES_REVISED.md` §24.
+- Red postaje ✅ kada je dogovoreni kod implementiran i pregledan. Automatski gates i completion report rade se **samo** u izričito zatraženoj, zasebnoj fazi testiranja (§0A).
 - Jedan milestone = jedan plan = jedan PR (master plan §0, tačke 2–3). Nikad ne počinjati kasniji milestone jer „deluje spremno".
 - Ako se udari u STOP stavku (§8 ovde) — **stati i pitati**. Ne pogađati proizvodne, pravne, cenovne ni kliničke odluke.
 
 ---
 
-## 0A. Tok razvoja — OBAVEZNO PROČITATI PRE SVAKOG NOVOG RADA U KODU
+## 0A. Tok razvoja — EKSTREMNO VAŽNO, OBAVEZNO PRE SVAKOG NOVOG RADA U KODU
 
-> **Pre svakog novog rada u kodu obavezno prvo pročitati `ARCHITECTURAL_RULES_REVISED.md`.**
+> **CTO odluka, važi odmah:** posle urađene izmene koda se **ne pokreće automatski kompletno testiranje** — ni `pytest`, ni Vitest, ni E2E, ni build, ni typecheck/lint kao rutinski završni korak. Broj zelenih testova (npr. „226 tests passed") sam po sebi **nije dokaz** da stvarna funkcija radi i nepotrebno troši vreme i resurse.
+>
+> **Testiranje se pokreće samo na Milanov izričit zahtev kao posebna faza.** Jedini izuzetak tokom rada: Milan prijavi konkretnu grešku iz stvarnog živog korišćenja (npr. Anjin CMS 404 ili superadmin 401). Tada se **pre izmene** ispituje stvarni UI/backend tok da se nađe uzrok, pa se radi samo uska provera tog konkretnog slučaja.
 
-**Redosled rada:**
+**Obavezni redosled rada:**
 
-1. Implementirati funkcionalnu celinu.
-2. Proveriti je **ručno kroz stvarni UI i stvarni backend**.
-3. Završiti ceo korisnički tok.
-4. Tek tada napisati nekoliko testova koji zaključavaju ono što se pokazalo kritičnim.
-5. Na kraju faze uraditi acceptance, performance i integracionu proveru.
+1. Kada Milan prijavi grešku: reprodukovati je kroz stvarni UI i stvarni backend **pre izmene**; ne nagađati iz test output-a.
+2. Pronaći stvarni uzrok i implementirati potrebnu izmenu.
+3. Ne pokretati automatske testove, build ni E2E posle izmene.
+4. Acceptance, regresija, performance i kompletni suite rade se samo kada Milan izričito otvori posebnu fazu testiranja.
 
-**Za trenutnu fazu merodavan rezultat nije:**
+**Nije merodavan rezultat:**
 
 ```
 172 tests passed
 ```
 
-**nego:**
+**Merodavno je:**
 
 > Administrator otvara Sadržaj, kreira zapis, unosi podatke, čuva ih, dobija razumljivu validaciju, šalje na pregled, odobrava i objavljuje, a javna stranica prikazuje tačan sadržaj bez rušenja fallback-a.
 
-**Testovi posle toga treba da zaštite samo ono što već radi:**
-
-- autorizaciju;
-- tenant izolaciju;
-- optimistic locking;
-- lifecycle i immutable revizije;
-- TS/Python ugovore;
-- CMS override i statički fallback;
-- sitemap i cache invalidaciju;
-- migracije;
-- kritične validatore.
-
-Nema potrebe da ceo paket testova prolazi posle svake male izmene. Dovoljno je:
-
-- **tokom rada:** typecheck, lint i konkretno ručno testiranje;
-- **na kraju zadatka:** relevantni kritični testovi.
-
-**Odluka:** automatizovani testovi se ograničavaju na kritične domenske invarijante, ugovornu parity proveru, autorizaciju, konkurentne izmene, migracije i provider fallback. UI implementacioni, snapshot i redundantni testovi se ukidaju. Potpuni funkcionalni, E2E i performance acceptance sprovodi se **na kraju svake faze u staging okruženju sa stvarnim servisima**.
+**Automatski testovi nisu ukinuti, ali su isključeni iz redovnog razvojnog toka.** Čuvaju se za posebnu, Milanom zatraženu test-fazu; tada se unapred dogovaraju tačan obim, okruženje i kriterijum prihvatanja. Istorijski zapisi o ranije pokrenutim testovima ostaju samo kao istorija, ne kao dozvola da se taj obrazac automatski ponovi.
 
 ---
 
