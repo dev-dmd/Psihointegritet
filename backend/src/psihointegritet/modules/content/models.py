@@ -52,6 +52,7 @@ __all__ = [
     "ContentPublicationEvent",
     "ContentReviewDecision",
     "ContentRevisionDiscovery",
+    "ContentRevisionRelation",
     "ContentRevisionTaxonomyTerm",
     "ContentTemplate",
     "ContentTaxonomyRole",
@@ -280,6 +281,28 @@ class ContentRevisionDiscovery(Base):
     )
     access_level_term_id: Mapped[UUID | None] = mapped_column(
         Uuid(as_uuid=True), ForeignKey("taxonomy_terms.id", ondelete="RESTRICT"), nullable=True
+    )
+
+
+class ContentRevisionRelation(Base):
+    """A reviewed relation from authored content to a published service/program.
+
+    A target is an existing CMS entry rather than a therapist, arbitrary URL or
+    affiliate target. The service checks its current published revision before
+    accepting the relation.
+    """
+
+    __tablename__ = "content_revision_relations"
+    __table_args__ = (
+        UniqueConstraint("revision_id", "target_entry_id", name="uq_content_revision_relation"),
+    )
+
+    id: Mapped[UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid4)
+    revision_id: Mapped[UUID] = mapped_column(
+        Uuid(as_uuid=True), ForeignKey("content_revisions.id", ondelete="CASCADE"), index=True
+    )
+    target_entry_id: Mapped[UUID] = mapped_column(
+        Uuid(as_uuid=True), ForeignKey("content_entries.id", ondelete="RESTRICT"), index=True
     )
 
 

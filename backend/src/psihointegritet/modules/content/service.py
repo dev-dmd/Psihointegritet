@@ -26,6 +26,7 @@ from psihointegritet.modules.content.models import (
     ContentReviewDecision,
     ContentRevision,
     ContentRevisionDiscovery,
+    ContentRevisionRelation,
     ContentRevisionTaxonomyTerm,
     ContentTaxonomyRole,
     ContentType,
@@ -176,6 +177,13 @@ class ContentService:
             )
         ).all()
         discovery = await self._session.get(ContentRevisionDiscovery, revision_id)
+        relations = (
+            await self._session.scalars(
+                select(ContentRevisionRelation.target_entry_id).where(
+                    ContentRevisionRelation.revision_id == revision_id
+                )
+            )
+        ).all()
         by_role: dict[ContentTaxonomyRole, list[UUID]] = {}
         for reference in references:
             by_role.setdefault(reference.role, []).append(reference.term_id)
@@ -193,6 +201,7 @@ class ContentService:
             access_level_term_id=(
                 discovery.access_level_term_id if discovery is not None else None
             ),
+            related_content_entry_ids=relations,
         )
 
     async def _require_taxonomy_term(
@@ -263,10 +272,36 @@ class ContentService:
             access_term = await self._session.get(TaxonomyTerm, access.term_id)
             if access_term is None or access_term.stable_id != "public":
                 raise ValueError("Za postojeće CMS stranice trenutno je dostupan samo javni pristup.")
+        related_entry_ids = list(dict.fromkeys(metadata.related_content_entry_ids))
+        for target_entry_id in related_entry_ids:
+            if target_entry_id == revision.entry_id:
+                raise ValueError("Sadržaj ne može preporučiti samog sebe.")
+            target = await self._session.scalar(
+                select(ContentEntry).where(
+                    ContentEntry.id == target_entry_id,
+                    ContentEntry.organization_id == actor.organization_id,
+                    ContentEntry.content_type.in_((ContentType.SERVICE, ContentType.PROGRAM)),
+                )
+            )
+            if target is None:
+                raise ValueError("Možete povezati samo postojeću uslugu ili program svoje organizacije.")
+            published = await self._session.scalar(
+                select(ContentRevision.id).where(
+                    ContentRevision.entry_id == target.id,
+                    ContentRevision.status == RevisionStatus.PUBLISHED,
+                )
+            )
+            if published is None:
+                raise ValueError("Povezana usluga ili program prvo mora biti objavljen.")
 
         await self._session.execute(
             delete(ContentRevisionTaxonomyTerm).where(
                 ContentRevisionTaxonomyTerm.revision_id == revision.id
+            )
+        )
+        await self._session.execute(
+            delete(ContentRevisionRelation).where(
+                ContentRevisionRelation.revision_id == revision.id
             )
         )
         role_values = (
@@ -278,6 +313,13 @@ class ContentService:
         for role, term_ids in role_values:
             for term_id in term_ids:
                 self._session.add(ContentRevisionTaxonomyTerm(revision_id=revision.id, term_id=term_id, role=role))
+        for target_entry_id in related_entry_ids:
+            self._session.add(
+                ContentRevisionRelation(
+                    revision_id=revision.id,
+                    target_entry_id=target_entry_id,
+                )
+            )
         row = await self._session.get(ContentRevisionDiscovery, revision.id)
         if row is None:
             row = ContentRevisionDiscovery(revision_id=revision.id)

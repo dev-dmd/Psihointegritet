@@ -763,7 +763,7 @@ Preporuka za v1:
 - [x] **K3.3** UI pitanja koriste jezik terapeuta: „Kojim oblastima pripada…?”, „Kome je namenjen…?”, „Šta korisnik dobija…?”, „Istraživanje, stručna podrška ili oba?”, „Ko može da pristupi?”.
 - [x] **K3.4** Nema `journeyIntent`, `topicGroupId` ili `accessLevel` kao glavnih UI labela niti slobodnog taxonomy stringa.
 - [x] **K3.5** Samo objavljene registry vrednosti mogu se izabrati. Pristup je trenutno ograničen na javni, jer renderer još nema entitlement handler za registrovan/pretplata/kupljeno; estimated time ostaje za resource/article ugovor.
-- [ ] **K3.6** Dodati potvrđene veze ka uslugama/programima; isključiti therapist recommendation metadata.
+- [x] **K3.6** Dodate su kontrolisane veze sa objavljenim CMS uslugama/programima. Server prihvata samo isti tenant, `service` ili `program` sa objavljenom revizijom; therapist, slobodan URL i affiliate target nisu deo modela.
 - [x] **K3.7** Serverski Content Health daje srpski eligibility nalaz i remediation za nepotpune Kompas metapodatke.
 - [x] **K3.8** Metadata izmena ulazi u postojeći actor audit (`updated_by`); izmena odobrene revizije reissue-uje draft i počinje bez odluka pregleda.
 - [x] **K3.9** Sadržaj bez kompletnog metadata ostaje objavljiv na svojoj ruti, uz jasan eligibility nalaz da nije za Kompas katalog.

@@ -56,6 +56,7 @@ export interface ApiContentDiscovery {
   journeyIntentTermId: string | null;
   contentFormatTermId: string | null;
   accessLevelTermId: string | null;
+  relatedContentEntryIds: string[];
 }
 
 export interface RichDocNormalizationFinding {

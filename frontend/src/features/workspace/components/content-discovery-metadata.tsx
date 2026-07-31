@@ -9,6 +9,7 @@ import {
   type TaxonomyTerm,
 } from "../taxonomy-api";
 import type { ApiContentDiscovery } from "../content-api";
+import { fetchContentEntries } from "../content-api";
 
 function selectedTerms(terms: TaxonomyTerm[], axis: TaxonomyAxis) {
   return terms.filter((term) => term.axis === axis && term.status === "published");
@@ -58,14 +59,22 @@ export function ContentDiscoveryMetadataEditor({
   value,
   onChange,
   disabled,
+  entryId,
 }: {
   value: ApiContentDiscovery;
   onChange: (value: ApiContentDiscovery) => void;
   disabled: boolean;
+  entryId: string;
 }) {
   const registry = useQuery({
     queryKey: TAXONOMY_REGISTRY_QUERY_KEY,
     queryFn: () => fetchTaxonomyRegistry(),
+    staleTime: 30_000,
+    retry: false,
+  });
+  const contentRelations = useQuery({
+    queryKey: ["published-service-program-relations"],
+    queryFn: () => fetchContentEntries(),
     staleTime: 30_000,
     retry: false,
   });
@@ -103,6 +112,22 @@ export function ContentDiscoveryMetadataEditor({
         <SelectQuestion label="Da li je koristan nekome ko istražuje, traži stručnu podršku ili oboma?" terms={selectedTerms(terms, "journey_intent")} value={value.journeyIntentTermId} disabled={disabled} onChange={(journeyIntentTermId) => set({ journeyIntentTermId })} />
         <SelectQuestion label="U kom je formatu sadržaj?" terms={selectedTerms(terms, "content_format")} value={value.contentFormatTermId} disabled={disabled} onChange={(contentFormatTermId) => set({ contentFormatTermId })} />
         <SelectQuestion label="Ko može da mu pristupi?" terms={selectedTerms(terms, "access_level").filter((term) => term.stableId === "public")} value={value.accessLevelTermId} disabled={disabled} onChange={(accessLevelTermId) => set({ accessLevelTermId })} help="Trenutne CMS stranice imaju bezbedno sproveden samo javni pristup." />
+        <fieldset className="mt-4">
+          <legend className="text-coffee text-[13.5px] font-semibold">Koju objavljenu uslugu ili program može da preporuči?</legend>
+          <p className="text-ink-55 mt-1 text-[12px]">Prikazuju se samo objavljene CMS usluge i programi. Terapeuti, spoljne veze i affiliate preporuke nisu dozvoljeni u ovom koraku.</p>
+          {contentRelations.isLoading ? <p className="text-ink-55 mt-2 text-[12.5px]">Učitavanje objavljenih usluga i programa…</p> : null}
+          {contentRelations.isError ? <p className="text-danger mt-2 text-[12.5px]">Lista usluga i programa trenutno nije dostupna.</p> : null}
+          {contentRelations.data ? <div className="mt-2 flex flex-wrap gap-2">
+            {contentRelations.data.filter((item) => item.entryId !== entryId && item.status === "published" && (item.contentType === "service" || item.contentType === "program")).map((item) => {
+              const checked = value.relatedContentEntryIds.includes(item.entryId);
+              const label = `${item.contentType === "service" ? "Usluga" : "Program"}: /${item.slug}`;
+              return <label key={item.entryId} className="border-line-strong has-[:checked]:border-forest has-[:checked]:bg-forest/8 flex cursor-pointer items-center gap-2 rounded-full border px-3 py-2 text-[12.5px] text-ink-70">
+                <input type="checkbox" checked={checked} disabled={disabled} onChange={() => set({ relatedContentEntryIds: checked ? value.relatedContentEntryIds.filter((id) => id !== item.entryId) : [...value.relatedContentEntryIds, item.entryId] })} />
+                {label}
+              </label>;
+            })}
+          </div> : null}
+        </fieldset>
       </> : null}
     </section>
   );

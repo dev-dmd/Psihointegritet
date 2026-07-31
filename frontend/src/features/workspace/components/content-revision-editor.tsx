@@ -443,6 +443,7 @@ export function ContentRevisionEditor({
         value={discovery}
         onChange={setDiscovery}
         disabled={!isEditable}
+        entryId={entry.entryId}
       />
 
       <div>

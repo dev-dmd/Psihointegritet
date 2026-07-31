@@ -51,6 +51,7 @@ class ContentDiscoveryMetadata(ApiSchema):
     journey_intent_term_id: UUID | None = None
     content_format_term_id: UUID | None = None
     access_level_term_id: UUID | None = None
+    related_content_entry_ids: list[UUID] = Field(default_factory=list)
 
 
 class ContentRevisionOut(ApiSchema):
