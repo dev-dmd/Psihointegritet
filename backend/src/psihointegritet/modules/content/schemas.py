@@ -41,6 +41,18 @@ class SeoFields(ApiSchema):
     og_image_asset_id: str | None = Field(default=None, max_length=191)
 
 
+class ContentDiscoveryMetadata(ApiSchema):
+    """Controlled Kompas metadata attached to exactly one CMS revision."""
+
+    topic_group_term_id: UUID | None = None
+    topic_term_ids: list[UUID] = Field(default_factory=list)
+    audience_term_ids: list[UUID] = Field(default_factory=list)
+    content_goal_term_ids: list[UUID] = Field(default_factory=list)
+    journey_intent_term_id: UUID | None = None
+    content_format_term_id: UUID | None = None
+    access_level_term_id: UUID | None = None
+
+
 class ContentRevisionOut(ApiSchema):
     entry_id: UUID
     revision_id: UUID
@@ -51,6 +63,7 @@ class ContentRevisionOut(ApiSchema):
     template: ContentTemplate
     slot_data: dict[str, object]
     seo: SeoFields
+    discovery: ContentDiscoveryMetadata
     status: RevisionStatus
     version_label: str
     lock_version: int
@@ -87,6 +100,7 @@ class UpdateContentRevisionRequest(ApiSchema):
     lock_version: int
     slot_data: dict[str, object] | None = None
     seo: SeoFields | None = None
+    discovery: ContentDiscoveryMetadata | None = None
 
 
 class TransitionRequest(ApiSchema):

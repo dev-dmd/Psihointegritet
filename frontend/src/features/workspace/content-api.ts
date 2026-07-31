@@ -38,6 +38,7 @@ export interface ApiContentRevision {
   template: ContentTemplate;
   slotData: Record<string, unknown>;
   seo: SeoFields;
+  discovery: ApiContentDiscovery;
   status: PublicationStatus;
   versionLabel: string;
   lockVersion: number;
@@ -45,6 +46,16 @@ export interface ApiContentRevision {
   createdBy: ActorSummary | null;
   updatedBy: ActorSummary | null;
   updatedAt: string;
+}
+
+export interface ApiContentDiscovery {
+  topicGroupTermId: string | null;
+  topicTermIds: string[];
+  audienceTermIds: string[];
+  contentGoalTermIds: string[];
+  journeyIntentTermId: string | null;
+  contentFormatTermId: string | null;
+  accessLevelTermId: string | null;
 }
 
 export interface RichDocNormalizationFinding {
@@ -157,6 +168,7 @@ export async function updateContentRevision(
     lockVersion: number;
     slotData?: Record<string, unknown>;
     seo?: SeoFields;
+    discovery?: ApiContentDiscovery;
   },
 ): Promise<ApiContentRevision> {
   const response = await fetch(

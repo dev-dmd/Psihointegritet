@@ -758,16 +758,16 @@ Preporuka za v1:
 
 ### K3 — neposredna CMS integracija
 
-- [ ] **K3.1** Vezati taxonomy reference za `ContentRevision`, ne `ContentEntry`.
-- [ ] **K3.2** U CMS formama koristiti DB-backed kontrolisana polja za oblast, teme, put, cilj, publiku, format i nivo pristupa.
-- [ ] **K3.3** UI pitanja pisati jezikom terapeuta: „Kojim oblastima pripada…?”, „Kome je namenjen…?”, „Šta korisnik dobija…?”, „Istraživanje, stručna podrška ili oba?”, „Ko može da pristupi?”.
-- [ ] **K3.4** Ne prikazivati `journeyIntent`, `topicGroupId` ili `accessLevel` kao glavne labele i ne dozvoliti slobodan taxonomy string.
-- [ ] **K3.5** Format i estimated time izvoditi kada god je moguće; onemogućiti vrednost za koju nema stvarnog entiteta/handlera.
+- [x] **K3.1** Taxonomy reference su vezane za tačnu `ContentRevision`, ne `ContentEntry`.
+- [x] **K3.2** CMS forme čitaju DB-backed kontrolisana polja za oblast, teme, put, cilj, publiku, format i nivo pristupa.
+- [x] **K3.3** UI pitanja koriste jezik terapeuta: „Kojim oblastima pripada…?”, „Kome je namenjen…?”, „Šta korisnik dobija…?”, „Istraživanje, stručna podrška ili oba?”, „Ko može da pristupi?”.
+- [x] **K3.4** Nema `journeyIntent`, `topicGroupId` ili `accessLevel` kao glavnih UI labela niti slobodnog taxonomy stringa.
+- [x] **K3.5** Samo objavljene registry vrednosti mogu se izabrati. Pristup je trenutno ograničen na javni, jer renderer još nema entitlement handler za registrovan/pretplata/kupljeno; estimated time ostaje za resource/article ugovor.
 - [ ] **K3.6** Dodati potvrđene veze ka uslugama/programima; isključiti therapist recommendation metadata.
-- [ ] **K3.7** Dodati server Content Health pravila i jasne srpske remediation poruke.
-- [ ] **K3.8** Metadata izmena mora da se vidi u actor audit-u i da poništi odobrenja nove revizije.
-- [ ] **K3.9** Content bez kompletnog metadata može ostati objavljen na svojoj ruti, ali ne ulazi u Kompas katalog dok ne prođe eligibility gate.
-- [ ] **K3.10** Pravne saglasnosti i `custom_document` ne uključivati automatski; Kompas PDF/radni list je budući odobren `ResourceAsset`.
+- [x] **K3.7** Serverski Content Health daje srpski eligibility nalaz i remediation za nepotpune Kompas metapodatke.
+- [x] **K3.8** Metadata izmena ulazi u postojeći actor audit (`updated_by`); izmena odobrene revizije reissue-uje draft i počinje bez odluka pregleda.
+- [x] **K3.9** Sadržaj bez kompletnog metadata ostaje objavljiv na svojoj ruti, uz jasan eligibility nalaz da nije za Kompas katalog.
+- [x] **K3.10** Pravne saglasnosti i `custom_document` nisu CMS `ContentRevision` metapodaci; PDF/radni list ostaju za budući odobren `ResourceAsset` ugovor.
 
 **Gate K3:** admin uređuje stvarni podržani sadržaj, bira ID-jeve iz DB registra, čuva, dobija precizne nalaze, odobrava i objavljuje bez slobodnog taxonomy stringa.
 

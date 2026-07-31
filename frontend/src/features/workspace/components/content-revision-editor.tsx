@@ -32,6 +32,7 @@ import { CONTENT_ENTRIES_QUERY_KEY } from "../content-entries-query";
 import { usePanelErrors, type PanelErrorResource } from "../panel-errors";
 import { SlotEditor } from "./slot-editor";
 import { SeoPreviewPanel } from "./seo-preview-panel";
+import { ContentDiscoveryMetadataEditor } from "./content-discovery-metadata";
 
 const STATUS_TONES: Record<string, StatusBadgeTone> = {
   draft: "neutral",
@@ -91,6 +92,7 @@ export function ContentRevisionEditor({
     initialSlotData(entry),
   );
   const [seo, setSeo] = useState(entry.seo);
+  const [discovery, setDiscovery] = useState(entry.discovery);
   const [pendingDelete, setPendingDelete] = useState(false);
   const [lifecyclePending, setLifecyclePending] = useState(false);
 
@@ -123,7 +125,8 @@ export function ContentRevisionEditor({
   const isEditable = entry.status === "draft" || entry.status === "approved";
   const isDirty =
     JSON.stringify(slotData) !== JSON.stringify(entry.slotData) ||
-    JSON.stringify(seo) !== JSON.stringify(entry.seo);
+    JSON.stringify(seo) !== JSON.stringify(entry.seo) ||
+    JSON.stringify(discovery) !== JSON.stringify(entry.discovery);
 
   const reportApiError = (title: string, error: unknown) => {
     reportError({
@@ -156,6 +159,7 @@ export function ContentRevisionEditor({
         lockVersion: entry.lockVersion,
         slotData,
         seo,
+        discovery,
       }),
     onSuccess: (next) => {
       replaceEntry(next);
@@ -432,6 +436,12 @@ export function ContentRevisionEditor({
         route={publicRoute}
         value={seo}
         onChange={setSeo}
+        disabled={!isEditable}
+      />
+
+      <ContentDiscoveryMetadataEditor
+        value={discovery}
+        onChange={setDiscovery}
         disabled={!isEditable}
       />
 
