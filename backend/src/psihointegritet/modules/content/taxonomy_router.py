@@ -286,6 +286,27 @@ async def review_taxonomy_revision(
         raise _http_error(error) from error
 
 
+@router.delete(
+    "/terms/{term_id}/revisions/{revision_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    responses=_ERROR_RESPONSES,
+    operation_id="delete_taxonomy_revision",
+)
+async def delete_taxonomy_revision(
+    term_id: UUID,
+    revision_id: UUID,
+    identity: CurrentIdentity,
+    session: DatabaseSession,
+    settings: AppSettings,
+) -> None:
+    try:
+        async with session.begin():
+            actor = await _actor(session, settings, identity)
+            await TaxonomyService(session).delete_revision(actor, term_id, revision_id)
+    except (TaxonomyError, ValueError) as error:
+        raise _http_error(error) from error
+
+
 @router.post(
     "/terms/{term_id}/revisions/{revision_id}/transition",
     response_model=TaxonomyTermOut,

@@ -21,6 +21,7 @@ import {
 import {
   confirmTaxonomyRoute,
   createTaxonomyIntakeLink,
+  deleteTaxonomyRevision,
   fetchTaxonomyRegistry,
   recordTaxonomyIntakeLinkReview,
   recordTaxonomyReviewDecision,
@@ -937,12 +938,18 @@ function TermCard({
   registryTerms,
   onEdit,
   onChanged,
+  onDeleted,
 }: {
   term: TaxonomyTerm;
   registryTerms: TaxonomyTerm[];
   onEdit?: () => void;
   onChanged?: (term: TaxonomyTerm) => void;
+  onDeleted?: () => void;
 }) {
+  const deleteMutation = useMutation({
+    mutationFn: () => deleteTaxonomyRevision(term.termId, term.revisionId),
+    onSuccess: onDeleted,
+  });
   const status = STATUS_META[term.status];
   const isRouteTerm = term.axis === "topic_group" || term.axis === "topic";
   const parentLabel = publicLabelFor(
@@ -1090,16 +1097,39 @@ function TermCard({
             {term.versionLabel} · {formatDate(term.updatedAt)}
           </span>
         </div>
-        {onEdit ? (
-          <button
-            type="button"
-            onClick={onEdit}
-            className="border-line-strong text-ink-70 hover:border-coffee/40 cursor-pointer rounded-full border bg-transparent px-3.5 py-2 text-[12.5px] font-semibold transition-colors"
-          >
-            Uredi
-          </button>
-        ) : null}
+        <div className="flex flex-wrap gap-2">
+          {onEdit ? (
+            <button
+              type="button"
+              onClick={onEdit}
+              className="border-line-strong text-ink-70 hover:border-coffee/40 cursor-pointer rounded-full border bg-transparent px-3.5 py-2 text-[12.5px] font-semibold transition-colors"
+            >
+              Uredi
+            </button>
+          ) : null}
+          {!term.systemDefined && term.status === "draft" && onDeleted ? (
+            <button
+              type="button"
+              disabled={deleteMutation.isPending}
+              onClick={() => {
+                if (window.confirm("Obrisati ovu sačuvanu radnu verziju? Ova radnja se ne može poništiti.")) {
+                  deleteMutation.mutate();
+                }
+              }}
+              className="border-danger/40 text-danger hover:bg-danger/8 cursor-pointer rounded-full border bg-transparent px-3.5 py-2 text-[12.5px] font-semibold disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {deleteMutation.isPending ? "Brisanje…" : "Obriši radnu verziju"}
+            </button>
+          ) : null}
+        </div>
       </div>
+      {deleteMutation.isError ? (
+        <p className="text-danger mt-2 text-right text-[12px]">
+          {deleteMutation.error instanceof TaxonomyApiError
+            ? deleteMutation.error.message
+            : "Radna verzija nije obrisana. Pokušajte ponovo."}
+        </p>
+      ) : null}
       {!term.systemDefined && onChanged ? (
         <TermGovernanceControls term={term} onChanged={onChanged} />
       ) : null}
@@ -1116,6 +1146,7 @@ function TermList({
   onCreate,
   onEdit,
   onChanged,
+  onDeleted,
 }: {
   terms: TaxonomyTerm[];
   registryTerms: TaxonomyTerm[];
@@ -1125,6 +1156,7 @@ function TermList({
   onCreate: () => void;
   onEdit: (term: TaxonomyTerm) => void;
   onChanged: (term: TaxonomyTerm) => void;
+  onDeleted: () => void;
 }) {
   const copy = TAB_COPY[tab];
   return (
@@ -1158,6 +1190,7 @@ function TermList({
               term={term}
               registryTerms={registryTerms}
               onChanged={onChanged}
+              onDeleted={onDeleted}
               {...(isEditableManagedTerm(term, axis)
                 ? { onEdit: () => onEdit(term) }
                 : {})}
@@ -1724,6 +1757,12 @@ export function ScreenKompas() {
                   })
                 }
                 onChanged={handleSaved}
+                onDeleted={() => {
+                  setEditorState(null);
+                  void queryClient.invalidateQueries({
+                    queryKey: TAXONOMY_REGISTRY_QUERY_KEY,
+                  });
+                }}
               />
             ) : null}
             {activeTab === "links" ? (

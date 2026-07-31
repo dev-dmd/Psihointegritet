@@ -224,6 +224,17 @@ export async function transitionTaxonomyRevision(
   return parseOrThrow<TaxonomyTerm>(response);
 }
 
+export async function deleteTaxonomyRevision(
+  termId: string,
+  revisionId: string,
+): Promise<void> {
+  const response = await fetch(
+    `/api/content/taxonomy/terms/${encodeURIComponent(termId)}/revisions/${encodeURIComponent(revisionId)}`,
+    { method: "DELETE" },
+  );
+  await parseOrThrow<void>(response);
+}
+
 export async function recordTaxonomyReviewDecision(
   termId: string,
   revisionId: string,

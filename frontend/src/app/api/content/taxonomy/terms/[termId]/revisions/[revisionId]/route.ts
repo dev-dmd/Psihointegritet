@@ -19,3 +19,14 @@ export async function PATCH(
     },
   );
 }
+
+export async function DELETE(
+  _: Request,
+  context: RouteContext,
+): Promise<Response> {
+  const { termId, revisionId } = await context.params;
+  return forwardStaffIntake(
+    `/api/v1/content/taxonomy/terms/${encodeURIComponent(termId)}/revisions/${encodeURIComponent(revisionId)}`,
+    { method: "DELETE" },
+  );
+}
