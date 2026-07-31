@@ -1,6 +1,6 @@
 # KOMPAS TODO — discovery i recommendation sloj
 
-**Status:** K1 backend foundation i K2.0 route registry implementirani; sledeći korak je K2 panel „Kompas” sa tabom „Oblasti”
+**Status:** K1 backend foundation, K2.0 route registry i K2.1 panel površina implementirani; sledeći korak je K2.2 generički editor registra
 **Datum:** 2026-07-31  
 **Vlasnik tehničkih odluka:** Milan Dražić (CTO)  
 **Vlasnik stručne kategorizacije i javnih naziva:** Anja Stamenković i stručni tim  
@@ -729,7 +729,7 @@ Preporuka za v1:
 - [x] **K2.0a** Dodati su migracija `20260731_0012` i model route registry-ja samo za `topic_group`/`topic`: tenant + locale + route kind + lowercase ASCII kebab slug, jedan kanonski route i sačuvana alias istorija sa actor evidence-om.
 - [x] **K2.0b** Staff API daje predlog/potvrdu/korekciju sluga, koristi optimistic lock i publication guard; stari alias javno vraća `308` samo ka aktuelnom objavljenom terminu. Stable ID ostaje odvojen i ne menja se.
 - [x] **K2.0c** Staff/public read-model nose `canonicalPath`; route istorija ostaje samo u zaštićenom staff odgovoru, a javni taxonomy odgovor ne izlaže draft ni alias podatke. OpenAPI klijent je regenerisan.
-- [ ] **K2.1** Dodati jednu panel površinu sa tabovima: **Oblasti · Teme · Publike · Ciljevi sadržaja · Povezivanja · Pregled i odobrenja**. „Oblasti” uređuju postojeću osu `topic_group`; ne uvoditi novu osu/tabelu.
+- [x] **K2.1** Dodata je admin-only panel površina `/radni-prostor/kompas` sa tabovima **Oblasti · Teme · Publike · Ciljevi sadržaja · Povezivanja · Pregled i odobrenja**. Čita stvarni staff API kroz Clerk proxy i TanStack Query, ima loading/error/empty stanja, statusne preglede i actor evidence. „Oblasti” koriste `topic_group`; `support_area` se prikazuje samo kao „Intake oblast podrške” u Povezivanjima.
 - [ ] **K2.2** Napraviti generički editor registra sa različitim pravilima po osi, ne poseban ekran za svaki mali registar. Tehničko `topic_group` prikazati kao „Oblast”, a system `support_area` isključivo kao „Intake oblast podrške” u Povezivanjima.
 - [ ] **K2.3** Omogućiti javni naziv/opis, sinonime, hijerarhiju, redosled, ikonu/asset, vidljivost, aktivnost u Kompasu, povezane teme i internu stručnu napomenu.
 - [ ] **K2.4** Stable ID prikazati zaključano nakon kreiranja; system ID/semantiku nikad ne ponuditi kao slobodno polje.
@@ -741,6 +741,8 @@ Preporuka za v1:
 - [ ] **K2.10** Pre prve objave predložiti i potvrditi javni slug, a zatim prikazati preview buduće kanonske rute `/kompas/oblast/[slug]` ili `/kompas/tema/[slug]`. Promena labele ne menja slug; korekcija objavljenog sluga koristi novi kanonski route i čuva stari redirect. K2 još ne implementira javne stranice.
 
 **K2.0 napomena:** implementacija je završena bez primene migracije i bez stvarnog ulogovanog browser toka. To ostaje za posebno zatraženu test fazu po `TODO.md` §0A.
+
+**K2.1 granica:** završena je jedna read-only upravljačka površina nad stvarnim registrom. Create/edit, lifecycle komande, odobrenja i potvrda sluga nisu privremeno simulirani u browseru; uvode se redom kroz K2.2–K2.10 nad postojećim backend ugovorom.
 
 **Gate K2:** Anja ili ovlašćeni org admin može napraviti draft oblasti/teme, jasno razlikuje oblast Kompasa od Intake oblasti podrške, šalje na pregled, odobrava/objavljuje po dozvoli, menja labelu bez promene ID-ja/rute i vidi ko je izvršio svaku radnju.
 
@@ -942,7 +944,7 @@ Mali broj contract/parity testova može se dodati uz vertikalni tok, ali se izvr
 
 D-053, D-054 i ADR-022 Amandman 1 su usvojeni. Sledeće:
 
-1. izraditi **K2 panel „Kompas”** sa svih šest tabova i stvarnim governance tokom nad završenim K1/K2.0 API-jem;
+1. nastaviti **K2.2 generičkim editorom registra**, zatim K2.3–K2.10 stvarnim governance tokom na već postavljenoj K2.1 površini;
 2. povezati registar sa **K3 CMS formama**;
 3. Anjinu konačnu tabelu uneti kao stručne podatke čim stigne, bez menjanja arhitekture;
 4. završiti K3A katalog i K3B kanonske stranice/`CompassGuide` ugovor, zatim K4/K5 i tek tada javni K6;

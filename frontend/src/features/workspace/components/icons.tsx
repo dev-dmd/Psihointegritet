@@ -102,6 +102,15 @@ export function LayersIcon(props: IconProps) {
   );
 }
 
+export function CompassIcon(props: IconProps) {
+  return (
+    <svg {...base(props)}>
+      <circle cx="12" cy="12" r="9" />
+      <path d="m15.5 8.5-2.1 4.9-4.9 2.1 2.1-4.9 4.9-2.1Z" />
+    </svg>
+  );
+}
+
 export function TeamIcon(props: IconProps) {
   return (
     <svg {...base(props)}>

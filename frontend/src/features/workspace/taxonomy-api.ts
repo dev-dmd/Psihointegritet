@@ -1,0 +1,64 @@
+import { isApiProblem } from "@/lib/errors/api-problem";
+import type { components } from "@/types/api.generated";
+
+export type TaxonomyTerm = components["schemas"]["TaxonomyTermOut"];
+export type TaxonomyIntakeLink = components["schemas"]["TaxonomyIntakeLinkOut"];
+export type TaxonomyAxis = components["schemas"]["TaxonomyAxis"];
+export type TaxonomyStatus = components["schemas"]["RevisionStatus"];
+
+export interface TaxonomyRegistrySnapshot {
+  terms: TaxonomyTerm[];
+  intakeLinks: TaxonomyIntakeLink[];
+}
+
+export class TaxonomyApiError extends Error {
+  constructor(
+    message: string,
+    public readonly status: number,
+  ) {
+    super(message);
+    this.name = "TaxonomyApiError";
+  }
+}
+
+async function parseOrThrow<T>(response: Response): Promise<T> {
+  if (!response.ok) {
+    const text = await response.text().catch(() => "");
+    let message = text || `Zahtev nije uspeo (${response.status}).`;
+    try {
+      const parsed: unknown = text ? JSON.parse(text) : null;
+      if (isApiProblem(parsed)) {
+        message =
+          parsed.status >= 500
+            ? `Kompas registar trenutno nije dostupan. Pokušajte ponovo. Ako se greška ponovi, pošaljite podršci ID greške: ${parsed.correlationId}.`
+            : (parsed.detail ?? parsed.title);
+      } else if (
+        typeof parsed === "object" &&
+        parsed !== null &&
+        "error" in parsed &&
+        typeof parsed.error === "string"
+      ) {
+        message = parsed.error;
+      }
+    } catch {
+      // Proxy/network responses need not use the API problem envelope.
+    }
+    throw new TaxonomyApiError(message, response.status);
+  }
+  return (await response.json()) as T;
+}
+
+export async function fetchTaxonomyRegistry(
+  locale = "sr-Latn",
+): Promise<TaxonomyRegistrySnapshot> {
+  const query = `?locale=${encodeURIComponent(locale)}`;
+  const [termsResponse, intakeLinksResponse] = await Promise.all([
+    fetch(`/api/content/taxonomy/terms${query}`, { cache: "no-store" }),
+    fetch("/api/content/taxonomy/intake-links", { cache: "no-store" }),
+  ]);
+  const [terms, intakeLinks] = await Promise.all([
+    parseOrThrow<TaxonomyTerm[]>(termsResponse),
+    parseOrThrow<TaxonomyIntakeLink[]>(intakeLinksResponse),
+  ]);
+  return { terms, intakeLinks };
+}
