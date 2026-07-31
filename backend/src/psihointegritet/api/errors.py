@@ -21,6 +21,7 @@ class ApiProblem(BaseModel):
     code: str
     detail: str | None = None
     correlation_id: str = Field(serialization_alias="correlationId")
+    field_path: str | None = Field(default=None, serialization_alias="fieldPath")
     field_errors: dict[str, list[str]] | None = Field(
         default=None, serialization_alias="fieldErrors"
     )
@@ -36,12 +37,27 @@ def _problem_response(problem: ApiProblem) -> JSONResponse:
 
 async def _handle_http_exception(_: Request, exc: Exception) -> JSONResponse:
     assert isinstance(exc, StarletteHTTPException)  # noqa: S101 — guarded by registration
+    detail = exc.detail
+    if isinstance(detail, dict):
+        title = str(detail.get("message") or detail.get("title") or "Zahtev nije uspeo.")
+        code = str(detail.get("code") or "http_error")
+        field_path_value = detail.get("fieldPath") or detail.get("field_path")
+        field_path = str(field_path_value) if field_path_value is not None else None
+        detail_value = detail.get("detail")
+        problem_detail = str(detail_value) if detail_value is not None else None
+    else:
+        title = str(detail)
+        code = "http_error"
+        field_path = None
+        problem_detail = None
     return _problem_response(
         ApiProblem(
-            title=str(exc.detail),
+            title=title,
             status=exc.status_code,
-            code="http_error",
+            code=code,
+            detail=problem_detail,
             correlation_id=get_correlation_id(),
+            field_path=field_path,
         )
     )
 

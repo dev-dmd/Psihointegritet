@@ -1,6 +1,6 @@
 # KOMPAS TODO — discovery i recommendation sloj
 
-**Status:** D-053 i ADR-022 usvojeni; sledeći korak je backend foundation
+**Status:** K1 backend foundation implementiran; sledeći korak je K2 panel „Kompas”
 **Datum:** 2026-07-31  
 **Vlasnik tehničkih odluka:** Milan Dražić (CTO)  
 **Vlasnik stručne kategorizacije i javnih naziva:** Anja Stamenković i stručni tim  
@@ -657,18 +657,18 @@ Preporuka za v1:
 
 ### K1 — backend registry foundation
 
-- [ ] **K1.1** Implementirati `taxonomy_terms` identitete: org-scoped managed ose i globalne system ose; stable ID je immutable.
-- [ ] **K1.2** Implementirati revision model sa javnom labelom/opisom, internom napomenom, parent vezom, redosledom, ikonom/asset-om, `public_visible`, `compass_enabled`, lifecycle-om i actor evidence-om.
-- [ ] **K1.3** Implementirati sinonime/search terms i revision-bound `related_topic` veze bez recommendation autoriteta.
-- [ ] **K1.4** Seedovati zaključane system vrednosti: pet D-052 `support_area`, `journey_intent`, `content_format` i trenutno izvršive access vrednosti.
-- [ ] **K1.5** Migrirati `therapist_matching_profiles.areas` kroz backfill + dual-read/parity + cutover bez promene matching rezultata.
-- [ ] **K1.6** Implementirati `topic -> support_area` most sa Clinical review evidence-om, bez score/therapist kolone.
-- [ ] **K1.7** Implementirati lifecycle, optimistic locking, approval tok, archive/replacement i zaštitu postojećih referenci.
-- [ ] **K1.8** Implementirati staff CRUD/review/publish/archive API i javni taxonomy read-model sa tenant/locale zaštitom.
-- [ ] **K1.9** Vraćati stabilne reason kodove, `fieldPath` i jasne srpske poruke; internal note/audit nikad ne vraćati javno.
-- [ ] **K1.10** Regenerisati OpenAPI klijent tek kada backend ugovor bude završen.
+- [x] **K1.1** `taxonomy_terms`: org-scoped managed ose + globalne system ose; stable ID nema update putanju i DB identitet je zaštićen parcijalnim unique indeksima.
+- [x] **K1.2** `taxonomy_term_revisions`: labela/opis, interna napomena, parent/journey reference, redosled, ikona/asset, odvojeni visibility/Compass flagovi, shared lifecycle, optimistic lock i actor evidence.
+- [x] **K1.3** Revision-bound sinonimi/search terms i kontrolisane `related_topic`/`replacement` veze; sinonimi nisu recommendation autoritet.
+- [x] **K1.4** Migracija `20260731_0011` seeduje pet D-052 `support_area`, tri `journey_intent`, šest `content_format` i samo izvršive D-048 access vrednosti. `subscriber`/`purchased` nisu DB redovi.
+- [x] **K1.5** Ista migracija backfill-uje FK join tabelu iz JSON `areas`; Guidance čita reference kao autoritet, upozorava na parity drift i pada na legacy JSON samo kada reference još ne postoje.
+- [x] **K1.6** `taxonomy_intake_links` ima tenant scope, lifecycle, lock, Clinical decision evidence i audit; nema score/therapist kolonu.
+- [x] **K1.7** Draft/review/approve/publish/archive, reissue, Clinical+Business odluke, archive/replacement i RESTRICT guard-ovi implementirani su nad postojećim shared lifecycle-om. Term nema hard-delete putanju, pa se stable ID nikada ne reciklira.
+- [x] **K1.8** Staff create/read/update/review/publish/archive API je pod `/api/v1/content/taxonomy`; javni read-model je `/api/v1/public/compass/taxonomy` i vraća samo published + public + Compass-enabled podatke tenant-a/locale-a.
+- [x] **K1.9** Taxonomy greške vraćaju stabilan `TAX-*` code, `fieldPath` i srpsku poruku; public schema nema internal note, review ni actor podatke.
+- [x] **K1.10** OpenAPI šema i `frontend/src/types/api.generated.ts` regenerisani su posle završetka backend ugovora.
 
-**Gate K1:** stable ID preživi promenu labele; cross-tenant referenca i brisanje korišćenog termina su odbijeni; D-052 matching ostaje nepromenjen; API nosi stvarnog actor-a.
+**Gate K1:** ✅ Implementaciono zatvoren. Stable ID nema mutation ni hard-delete, cross-tenant/reference guard-ovi su u servisu i DB-u, D-052 read ima kontrolisani dual-read cutover, a API nosi actor događaje. Izvršavanje migracije i stvarni ulogovani tok ostaju za posebno zatraženu test fazu po `TODO.md` §0A.
 
 ### K2 — panel „Kompas”
 
@@ -865,9 +865,8 @@ Mali broj contract/parity testova može se dodati uz vertikalni tok, ali se izvr
 
 D-053 i ADR-022 su usvojeni. Sledeće:
 
-1. sprovesti **K1 backend registry foundation**, uključujući migraciju D-052 `areas`;
-2. odmah zatim **K2 panel „Kompas”** sa svih šest tabova i stvarnim governance tokom;
-3. povezati registar sa **K3 CMS formama**;
-4. Anjinu konačnu tabelu uneti kao stručne podatke čim stigne, bez menjanja arhitekture;
-5. završiti K3A/K4/K5 i tek tada javni K6;
-6. širiti formate i AI tek posle stvarnog osnovnog toka.
+1. sprovesti **K2 panel „Kompas”** sa svih šest tabova i stvarnim governance tokom;
+2. povezati registar sa **K3 CMS formama**;
+3. Anjinu konačnu tabelu uneti kao stručne podatke čim stigne, bez menjanja arhitekture;
+4. završiti K3A/K4/K5 i tek tada javni K6;
+5. širiti formate i AI tek posle stvarnog osnovnog toka.

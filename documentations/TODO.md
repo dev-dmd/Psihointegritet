@@ -444,7 +444,7 @@ Dokazuje `SlotSpec` registar koji pravni tok ne dokazuje (`legal_page` ima samo 
 
 **Faza 2 — preduslovi:** ✅ Intake `areas` taksonomija (**O-24a / D-052**, Anja potvrdila) · ✅ CMS/Kompas registar (**O-24b / D-053 / ADR-022**) · **ADR-018** je napisan · **Amandman 1 na ADR-017** je napisan.
 
-**Faza 3 — iza kapija:** Kompas prati zaseban `KOMPAS_TODO.md`; K0 je završen, slede K1 backend registry foundation → K2 panel → K3 CMS. Javni Kompas čeka stvarne reference i objavljen katalog. Article/Layout preduslovi ostaju ADR-019 (tip `article`) + minimalni ADR-021 layout recept → stvarni tok članka → resource/PDF tok, ali ne blokiraju registar/panel. **ADR-020** AI review/patch nije preduslov za osnovni Kompas. `VideoAsset` 🚫 · Dnevna soba 🚫 **O-23**.
+**Faza 3 — iza kapija:** Kompas prati zaseban `KOMPAS_TODO.md`; K0 i **K1 backend registry foundation** su završeni 2026-07-31 (`20260731_0011`, staff/public API, D-052 dual-read cutover, regenerisan OpenAPI klijent). Slede K2 panel → K3 CMS. Javni Kompas čeka stvarne reference i objavljen katalog. Article/Layout preduslovi ostaju ADR-019 (tip `article`) + minimalni ADR-021 layout recept → stvarni tok članka → resource/PDF tok, ali ne blokiraju registar/panel. **ADR-020** AI review/patch nije preduslov za osnovni Kompas. `VideoAsset` 🚫 · Dnevna soba 🚫 **O-23**.
 
 > **Interfejsi:** od pet traženih piše se **samo `ContentPatch`** (uvoz ga stvarno troši). `ApprovalDecision` postoji 3× pod drugim imenima, `AIReviewFinding` koristi postojeći finding model pod `AI-0xx`, a `LayoutProposal` i `AssetPlacementSuggestion` ostaju proza — nemaju potrošača (§25). Detalji: ADR-017 Amandman 1 §A1.2.
 > _(CG-B6 je zauzet — „Testovi bez DB" u `CMS_TODO.md`.)_

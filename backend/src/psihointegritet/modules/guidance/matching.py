@@ -285,13 +285,18 @@ REASON_AREAS: dict[str, tuple[SupportAreaId, ...]] = {
 REASON_CAPABILITIES = {REASONS["addiction"]: ADDICTION_RELATED_SUPPORT}
 
 
-def profile_from_entity(entity: TherapistMatchingProfile) -> MatchingProfile:
+def profile_from_entity(
+    entity: TherapistMatchingProfile, support_area_ids: Sequence[str] | None = None
+) -> MatchingProfile:
     """Translate persistence settings into the stable MatchingAdapter input."""
 
     return MatchingProfile(
         slug=entity.slug,
         display_name=entity.display_name,
-        areas=tuple(SupportAreaId(area) for area in entity.areas),
+        areas=tuple(
+            SupportAreaId(area)
+            for area in (support_area_ids if support_area_ids is not None else entity.areas)
+        ),
         services=tuple(entity.services),
         service_capabilities=tuple(entity.service_capabilities),
         accepted_age_bands=tuple(SubjectAgeBand(value) for value in entity.accepted_age_bands),

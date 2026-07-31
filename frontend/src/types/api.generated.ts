@@ -168,6 +168,161 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/content/taxonomy/intake-links": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Taxonomy Intake Links */
+        get: operations["list_taxonomy_intake_links"];
+        put?: never;
+        /** Create Taxonomy Intake Link */
+        post: operations["create_taxonomy_intake_link"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/content/taxonomy/intake-links/{link_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete Taxonomy Intake Link */
+        delete: operations["delete_taxonomy_intake_link"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/content/taxonomy/intake-links/{link_id}/reviews": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Review Taxonomy Intake Link */
+        post: operations["review_taxonomy_intake_link"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/content/taxonomy/intake-links/{link_id}/transition": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Transition Taxonomy Intake Link */
+        post: operations["transition_taxonomy_intake_link"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/content/taxonomy/terms": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Taxonomy Terms */
+        get: operations["list_taxonomy_terms"];
+        put?: never;
+        /** Create Taxonomy Term */
+        post: operations["create_taxonomy_term"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/content/taxonomy/terms/{term_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Taxonomy Term */
+        get: operations["get_taxonomy_term"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/content/taxonomy/terms/{term_id}/revisions/{revision_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update Taxonomy Revision */
+        patch: operations["update_taxonomy_revision"];
+        trace?: never;
+    };
+    "/api/v1/content/taxonomy/terms/{term_id}/revisions/{revision_id}/reviews": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Review Taxonomy Revision */
+        post: operations["review_taxonomy_revision"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/content/taxonomy/terms/{term_id}/revisions/{revision_id}/transition": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Transition Taxonomy Revision */
+        post: operations["transition_taxonomy_revision"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/health": {
         parameters: {
             query?: never;
@@ -399,6 +554,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/public/compass/taxonomy": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Public Taxonomy */
+        get: operations["get_public_taxonomy"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/public/content/published": {
         parameters: {
             query?: never;
@@ -551,6 +723,33 @@ export interface components {
              * Format: uuid
              */
             userId: string;
+        };
+        /**
+         * ApiProblem
+         * @description Stable problem-details envelope; mirrored by the frontend contract.
+         */
+        ApiProblem: {
+            /** Code */
+            code: string;
+            /** Correlationid */
+            correlationId: string;
+            /** Detail */
+            detail?: string | null;
+            /** Fielderrors */
+            fieldErrors?: {
+                [key: string]: string[];
+            } | null;
+            /** Fieldpath */
+            fieldPath?: string | null;
+            /** Status */
+            status: number;
+            /** Title */
+            title: string;
+            /**
+             * Type
+             * @default about:blank
+             */
+            type: string;
         };
         /**
          * ApprovalCapability
@@ -732,6 +931,66 @@ export interface components {
             slug: string;
             /** Title */
             title: string;
+        };
+        /** CreateTaxonomyIntakeLinkRequest */
+        CreateTaxonomyIntakeLinkRequest: {
+            /**
+             * Supportareatermid
+             * Format: uuid
+             */
+            supportAreaTermId: string;
+            /**
+             * Topictermid
+             * Format: uuid
+             */
+            topicTermId: string;
+        };
+        /** CreateTaxonomyTermRequest */
+        CreateTaxonomyTermRequest: {
+            /** Assetid */
+            assetId?: string | null;
+            axis: components["schemas"]["TaxonomyAxis"];
+            /**
+             * Compassenabled
+             * @default true
+             */
+            compassEnabled: boolean;
+            /** Iconkey */
+            iconKey?: string | null;
+            /** Internalexpertnote */
+            internalExpertNote?: string | null;
+            /** Journeyintenttermid */
+            journeyIntentTermId?: string | null;
+            /**
+             * Locale
+             * @default sr-Latn
+             */
+            locale: string;
+            /** Primaryparenttermid */
+            primaryParentTermId?: string | null;
+            /** Publiclabel */
+            publicLabel: string;
+            /**
+             * Publicvisible
+             * @default true
+             */
+            publicVisible: boolean;
+            /** Relatedtopicids */
+            relatedTopicIds?: string[];
+            /** Searchterms */
+            searchTerms?: string[];
+            /**
+             * Shortdescription
+             * @default
+             */
+            shortDescription: string;
+            /**
+             * Sortorder
+             * @default 0
+             */
+            sortOrder: number;
+            /** Stableid */
+            stableId: string;
         };
         /**
          * GuardianConsentStatus
@@ -1027,6 +1286,47 @@ export interface components {
             /** Slug */
             slug: string;
         };
+        /** PublicTaxonomyOut */
+        PublicTaxonomyOut: {
+            /** Locale */
+            locale: string;
+            /**
+             * Taxonomyversion
+             * @default kompas-taxonomy-v1
+             */
+            taxonomyVersion: string;
+            /** Terms */
+            terms: components["schemas"]["PublicTaxonomyTermOut"][];
+        };
+        /** PublicTaxonomyTermOut */
+        PublicTaxonomyTermOut: {
+            /** Assetid */
+            assetId?: string | null;
+            axis: components["schemas"]["TaxonomyAxis"];
+            /** Iconkey */
+            iconKey?: string | null;
+            /** Journeyintent */
+            journeyIntent?: string | null;
+            /** Parentstableid */
+            parentStableId?: string | null;
+            /** Publiclabel */
+            publicLabel: string;
+            /** Relatedstableids */
+            relatedStableIds: string[];
+            /** Searchterms */
+            searchTerms: string[];
+            /** Shortdescription */
+            shortDescription: string;
+            /** Sortorder */
+            sortOrder: number;
+            /** Stableid */
+            stableId: string;
+            /**
+             * Termid
+             * Format: uuid
+             */
+            termId: string;
+        };
         /** PublicTherapistRecommendation */
         PublicTherapistRecommendation: {
             /** Displayname */
@@ -1141,6 +1441,195 @@ export interface components {
          * @enum {string}
          */
         SubjectAgeBand: "under_12" | "12_15" | "16_17" | "adult";
+        /**
+         * TaxonomyAxis
+         * @enum {string}
+         */
+        TaxonomyAxis: "topic_group" | "topic" | "audience" | "content_goal" | "support_area" | "journey_intent" | "content_format" | "access_level";
+        /** TaxonomyEventOut */
+        TaxonomyEventOut: {
+            actor?: components["schemas"]["ActorSummaryOut"] | null;
+            /**
+             * Createdat
+             * Format: date-time
+             */
+            createdAt: string;
+            fromStatus?: components["schemas"]["RevisionStatus"] | null;
+            /** Reason */
+            reason?: string | null;
+            toStatus: components["schemas"]["RevisionStatus"];
+        };
+        /** TaxonomyIntakeLinkOut */
+        TaxonomyIntakeLinkOut: {
+            /**
+             * Createdat
+             * Format: date-time
+             */
+            createdAt: string;
+            createdBy?: components["schemas"]["ActorSummaryOut"] | null;
+            /** Decisions */
+            decisions: components["schemas"]["TaxonomyReviewDecisionOut"][];
+            /** Events */
+            events: components["schemas"]["TaxonomyEventOut"][];
+            /**
+             * Linkid
+             * Format: uuid
+             */
+            linkId: string;
+            /** Lockversion */
+            lockVersion: number;
+            status: components["schemas"]["RevisionStatus"];
+            /** Supportarealabel */
+            supportAreaLabel: string;
+            /** Supportareastableid */
+            supportAreaStableId: string;
+            /**
+             * Supportareatermid
+             * Format: uuid
+             */
+            supportAreaTermId: string;
+            /** Topiclabel */
+            topicLabel: string;
+            /** Topicstableid */
+            topicStableId: string;
+            /**
+             * Topictermid
+             * Format: uuid
+             */
+            topicTermId: string;
+            /**
+             * Updatedat
+             * Format: date-time
+             */
+            updatedAt: string;
+            updatedBy?: components["schemas"]["ActorSummaryOut"] | null;
+        };
+        /** TaxonomyIntakeLinkReviewRequest */
+        TaxonomyIntakeLinkReviewRequest: {
+            capability: components["schemas"]["ApprovalCapability"];
+            /** Note */
+            note?: string | null;
+            outcome: components["schemas"]["ReviewOutcome"];
+        };
+        /** TaxonomyIntakeLinkTransitionRequest */
+        TaxonomyIntakeLinkTransitionRequest: {
+            /** Lockversion */
+            lockVersion: number;
+            target: components["schemas"]["RevisionStatus"];
+        };
+        /**
+         * TaxonomyRelationKind
+         * @enum {string}
+         */
+        TaxonomyRelationKind: "related_topic" | "replacement";
+        /** TaxonomyRelationOut */
+        TaxonomyRelationOut: {
+            kind: components["schemas"]["TaxonomyRelationKind"];
+            /** Targetstableid */
+            targetStableId: string;
+            /**
+             * Targettermid
+             * Format: uuid
+             */
+            targetTermId: string;
+        };
+        /** TaxonomyReviewDecisionOut */
+        TaxonomyReviewDecisionOut: {
+            capability: components["schemas"]["ApprovalCapability"];
+            /**
+             * Decidedat
+             * Format: date-time
+             */
+            decidedAt: string;
+            decidedBy?: components["schemas"]["ActorSummaryOut"] | null;
+            /** Note */
+            note?: string | null;
+            outcome: components["schemas"]["ReviewOutcome"];
+        };
+        /** TaxonomyReviewDecisionRequest */
+        TaxonomyReviewDecisionRequest: {
+            capability: components["schemas"]["ApprovalCapability"];
+            /** Note */
+            note?: string | null;
+            outcome: components["schemas"]["ReviewOutcome"];
+        };
+        /** TaxonomyTermOut */
+        TaxonomyTermOut: {
+            /** Assetid */
+            assetId?: string | null;
+            axis: components["schemas"]["TaxonomyAxis"];
+            /** Compassenabled */
+            compassEnabled: boolean;
+            /**
+             * Createdat
+             * Format: date-time
+             */
+            createdAt: string;
+            createdBy?: components["schemas"]["ActorSummaryOut"] | null;
+            /** Decisions */
+            decisions: components["schemas"]["TaxonomyReviewDecisionOut"][];
+            /** Events */
+            events: components["schemas"]["TaxonomyEventOut"][];
+            /** Iconkey */
+            iconKey?: string | null;
+            /** Internalexpertnote */
+            internalExpertNote?: string | null;
+            /** Journeyintent */
+            journeyIntent?: string | null;
+            /** Journeyintenttermid */
+            journeyIntentTermId?: string | null;
+            /** Locale */
+            locale: string;
+            /** Lockversion */
+            lockVersion: number;
+            /** Organizationid */
+            organizationId: string | null;
+            /** Primaryparentstableid */
+            primaryParentStableId?: string | null;
+            /** Primaryparenttermid */
+            primaryParentTermId?: string | null;
+            /** Publiclabel */
+            publicLabel: string;
+            /** Publicvisible */
+            publicVisible: boolean;
+            /** Relations */
+            relations: components["schemas"]["TaxonomyRelationOut"][];
+            /**
+             * Revisionid
+             * Format: uuid
+             */
+            revisionId: string;
+            /** Searchterms */
+            searchTerms: string[];
+            /** Shortdescription */
+            shortDescription: string;
+            /** Sortorder */
+            sortOrder: number;
+            /** Stableid */
+            stableId: string;
+            status: components["schemas"]["RevisionStatus"];
+            /** Systemdefined */
+            systemDefined: boolean;
+            /**
+             * Termid
+             * Format: uuid
+             */
+            termId: string;
+            /**
+             * Updatedat
+             * Format: date-time
+             */
+            updatedAt: string;
+            updatedBy?: components["schemas"]["ActorSummaryOut"] | null;
+            /** Versionlabel */
+            versionLabel: string;
+        };
+        /** TaxonomyTransitionRequest */
+        TaxonomyTransitionRequest: {
+            /** Lockversion */
+            lockVersion: number;
+            target: components["schemas"]["RevisionStatus"];
+        };
         /** TeamQueueItem */
         TeamQueueItem: {
             /**
@@ -1205,6 +1694,37 @@ export interface components {
             slug?: string | null;
             /** Title */
             title?: string | null;
+        };
+        /** UpdateTaxonomyRevisionRequest */
+        UpdateTaxonomyRevisionRequest: {
+            /** Assetid */
+            assetId?: string | null;
+            /** Compassenabled */
+            compassEnabled?: boolean | null;
+            /** Iconkey */
+            iconKey?: string | null;
+            /** Internalexpertnote */
+            internalExpertNote?: string | null;
+            /** Journeyintenttermid */
+            journeyIntentTermId?: string | null;
+            /** Lockversion */
+            lockVersion: number;
+            /** Primaryparenttermid */
+            primaryParentTermId?: string | null;
+            /** Publiclabel */
+            publicLabel?: string | null;
+            /** Publicvisible */
+            publicVisible?: boolean | null;
+            /** Relatedtopicids */
+            relatedTopicIds?: string[] | null;
+            /** Replacementtermid */
+            replacementTermId?: string | null;
+            /** Searchterms */
+            searchTerms?: string[] | null;
+            /** Shortdescription */
+            shortDescription?: string | null;
+            /** Sortorder */
+            sortOrder?: number | null;
         };
         /** ValidationError */
         ValidationError: {
@@ -1607,6 +2127,672 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_taxonomy_intake_links: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaxonomyIntakeLinkOut"][];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+        };
+    };
+    create_taxonomy_intake_link: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateTaxonomyIntakeLinkRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaxonomyIntakeLinkOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+        };
+    };
+    delete_taxonomy_intake_link: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                link_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+        };
+    };
+    review_taxonomy_intake_link: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                link_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TaxonomyIntakeLinkReviewRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaxonomyIntakeLinkOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+        };
+    };
+    transition_taxonomy_intake_link: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                link_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TaxonomyIntakeLinkTransitionRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaxonomyIntakeLinkOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+        };
+    };
+    list_taxonomy_terms: {
+        parameters: {
+            query?: {
+                axis?: components["schemas"]["TaxonomyAxis"] | null;
+                status?: components["schemas"]["RevisionStatus"] | null;
+                query?: string | null;
+                locale?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaxonomyTermOut"][];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+        };
+    };
+    create_taxonomy_term: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateTaxonomyTermRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaxonomyTermOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+        };
+    };
+    get_taxonomy_term: {
+        parameters: {
+            query?: {
+                locale?: string;
+            };
+            header?: never;
+            path: {
+                term_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaxonomyTermOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+        };
+    };
+    update_taxonomy_revision: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                term_id: string;
+                revision_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateTaxonomyRevisionRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaxonomyTermOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+        };
+    };
+    review_taxonomy_revision: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                term_id: string;
+                revision_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TaxonomyReviewDecisionRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaxonomyTermOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+        };
+    };
+    transition_taxonomy_revision: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                term_id: string;
+                revision_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TaxonomyTransitionRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaxonomyTermOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
                 };
             };
         };
@@ -2059,6 +3245,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["LegalDocumentRevisionOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_public_taxonomy: {
+        parameters: {
+            query?: {
+                locale?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicTaxonomyOut"];
                 };
             };
             /** @description Validation Error */
