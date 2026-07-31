@@ -95,6 +95,11 @@ export function TaxonomyTermEditor({
   onCancel,
 }: TaxonomyTermEditorProps) {
   const config = AXIS_EDITOR_CONFIG[axis];
+  const protectedTargetReason = term?.systemDefined
+    ? "Sistemska vrednost se ne uređuje kroz ovaj formular. Njeni ID i semantika ostaju zaštićeni."
+    : term && term.axis !== axis
+      ? "Ova stavka pripada drugom registru i ne može se uređivati iz otvorenog taba."
+      : null;
   const [stableId, setStableId] = useState(term?.stableId ?? "");
   const [publicLabel, setPublicLabel] = useState(term?.publicLabel ?? "");
   const [shortDescription, setShortDescription] = useState(
@@ -150,6 +155,9 @@ export function TaxonomyTermEditor({
 
   const saveMutation = useMutation({
     mutationFn: async () => {
+      if (protectedTargetReason) {
+        throw new TaxonomyApiError(protectedTargetReason, 403);
+      }
       const normalizedStableId = stableId.trim();
       const normalizedLabel = publicLabel.trim();
       const normalizedDescription = shortDescription.trim();
@@ -218,6 +226,30 @@ export function TaxonomyTermEditor({
   const error = validationError ?? mutationError;
   const editorId = `taxonomy-${axis}-${term?.termId ?? "new"}`;
   const searchTermCount = parseSearchTerms(searchTermsText).length;
+
+  if (protectedTargetReason) {
+    return (
+      <section
+        className="border-danger/45 bg-danger/8 rounded-panel mb-5 border px-5 py-4"
+        role="alert"
+      >
+        <div className="text-coffee flex items-center gap-2 text-[14px] font-semibold">
+          <LockIcon size={16} aria-hidden />
+          Zaštićen registar
+        </div>
+        <p className="text-ink-70 mt-1 text-[13px] leading-[1.5]">
+          {protectedTargetReason}
+        </p>
+        <button
+          type="button"
+          onClick={onCancel}
+          className="border-line-strong text-ink-70 hover:border-coffee/35 mt-4 cursor-pointer rounded-full border bg-transparent px-4 py-2 text-[12.5px] font-semibold transition-colors"
+        >
+          Zatvori
+        </button>
+      </section>
+    );
+  }
 
   const submit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -368,7 +400,7 @@ export function TaxonomyTermEditor({
           <p className="text-ink-55 mt-1.5 text-[12px]">
             {term
               ? "Zaključan je nakon kreiranja i koristi se za veze i preporuke."
-              : "Postavlja se jednom i kasnije se ne menja. Ne koristi javni URL."}
+              : "Postavlja se jednom za ovu upravljanu vrednost i kasnije se ne menja. Sistemske vrednosti se ne kreiraju ovde."}
           </p>
         </div>
       </div>

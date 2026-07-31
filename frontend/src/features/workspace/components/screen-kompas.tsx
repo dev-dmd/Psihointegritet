@@ -133,6 +133,13 @@ function isManagedAxis(
   );
 }
 
+function isEditableManagedTerm(
+  term: TaxonomyTerm,
+  axis: ManagedTaxonomyAxis,
+): boolean {
+  return term.axis === axis && !term.systemDefined && term.status === "draft";
+}
+
 function RegistryFlag({
   active,
   children,
@@ -360,7 +367,7 @@ function TermList({
               key={term.revisionId}
               term={term}
               registryTerms={registryTerms}
-              {...(term.status === "draft" && !term.systemDefined
+              {...(isEditableManagedTerm(term, axis)
                 ? { onEdit: () => onEdit(term) }
                 : {})}
             />
@@ -552,6 +559,12 @@ export function ScreenKompas() {
   const editorTerm = editorState?.termId
     ? (terms.find((term) => term.termId === editorState.termId) ?? null)
     : null;
+  const editableEditorTerm =
+    editorTerm && editorState && isManagedAxis(editorState.axis)
+      ? isEditableManagedTerm(editorTerm, editorState.axis)
+        ? editorTerm
+        : null
+      : null;
 
   const handleSaved = (saved: TaxonomyTerm) => {
     queryClient.setQueryData<TaxonomyRegistrySnapshot>(
@@ -591,6 +604,24 @@ export function ScreenKompas() {
         <p className="text-ink-55 text-[13.5px]">Učitavanje registra…</p>
       ) : loadError ? null : (
         <>
+          <aside className="border-line bg-sage/8 rounded-panel mb-6 flex gap-3 border px-5 py-4">
+            <LockIcon
+              size={17}
+              aria-hidden
+              className="text-forest mt-0.5 shrink-0"
+            />
+            <div>
+              <h2 className="text-forest text-[13.5px] font-semibold">
+                Zaštićen identitet registra
+              </h2>
+              <p className="text-ink-55 mt-1 text-[12.5px] leading-[1.5]">
+                Stabilni ID se postavlja samo pri kreiranju i zatim ostaje
+                zaključan. Sistemske vrednosti i njihova semantika nisu slobodna
+                polja ovog panela; koriste se samo kroz kontrolisane izbore.
+              </p>
+            </div>
+          </aside>
+
           <div className="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
             <StatCard value={String(areas.length)} label="Oblasti" />
             <StatCard value={String(topics.length)} label="Konkretne teme" />
@@ -626,11 +657,11 @@ export function ScreenKompas() {
                 axis={activeManagedAxis}
                 editor={
                   editorState?.axis === activeManagedAxis &&
-                  (!editorState.termId || editorTerm) ? (
+                  (!editorState.termId || editableEditorTerm) ? (
                     <TaxonomyTermEditor
-                      key={`${activeManagedAxis}:${editorTerm?.revisionId ?? "new"}`}
+                      key={`${activeManagedAxis}:${editableEditorTerm?.revisionId ?? "new"}`}
                       axis={activeManagedAxis}
-                      term={editorTerm}
+                      term={editableEditorTerm}
                       registryTerms={terms}
                       onSaved={handleSaved}
                       onCancel={() => setEditorState(null)}
