@@ -75,9 +75,19 @@ const FIELD_DOM_SUFFIX: Record<string, string> = {
   internalExpertNote: "internal-note",
 };
 
-function FieldError({ message, id }: { message?: string; id: string }) {
+function FieldError({
+  message,
+  id,
+}: {
+  message: string | undefined;
+  id: string;
+}) {
   return message ? (
-    <p id={id} role="alert" className="text-danger mt-1.5 text-[12px] leading-[1.4]">
+    <p
+      id={id}
+      role="alert"
+      className="text-danger mt-1.5 text-[12px] leading-[1.4]"
+    >
       {message}
     </p>
   ) : null;
@@ -184,7 +194,8 @@ export function TaxonomyTermEditor({
       return next;
     });
   };
-  const errorId = (field: string) => `${editorId}-${FIELD_DOM_SUFFIX[field]}-error`;
+  const errorId = (field: string) =>
+    `${editorId}-${FIELD_DOM_SUFFIX[field]}-error`;
   const inputClass = (field: string, base: string) =>
     cn(base, fieldErrors[field] ? "border-danger focus:border-danger" : "");
 
@@ -323,11 +334,17 @@ export function TaxonomyTermEditor({
       return;
     }
     if (config.requiresTopicContext && !primaryParentTermId) {
-      setFieldError("primaryParentTermId", "Izaberite oblast kojoj tema pripada.");
+      setFieldError(
+        "primaryParentTermId",
+        "Izaberite oblast kojoj tema pripada.",
+      );
       return;
     }
     if (config.requiresTopicContext && !journeyIntentTermId) {
-      setFieldError("journeyIntentTermId", "Izaberite put korisnika za ovu temu.");
+      setFieldError(
+        "journeyIntentTermId",
+        "Izaberite put korisnika za ovu temu.",
+      );
       return;
     }
     const normalizedSearchTerms = parseSearchTerms(searchTermsText);
@@ -352,7 +369,10 @@ export function TaxonomyTermEditor({
       normalizedSortOrder < 0 ||
       normalizedSortOrder > 100_000
     ) {
-      setFieldError("sortOrder", "Redosled mora biti ceo broj između 0 i 100000.");
+      setFieldError(
+        "sortOrder",
+        "Redosled mora biti ceo broj između 0 i 100000.",
+      );
       return;
     }
     if (relatedTopicIds.length > 100) {
@@ -424,10 +444,18 @@ export function TaxonomyTermEditor({
               clearFieldError("publicLabel");
             }}
             aria-invalid={Boolean(fieldErrors.publicLabel)}
-            aria-describedby={fieldErrors.publicLabel ? errorId("publicLabel") : undefined}
-            className={inputClass("publicLabel", "border-line-strong rounded-tile bg-panel-canvas text-coffee focus:border-sage w-full border px-3.5 py-2.5 text-sm outline-none disabled:opacity-60")}
+            aria-describedby={
+              fieldErrors.publicLabel ? errorId("publicLabel") : undefined
+            }
+            className={inputClass(
+              "publicLabel",
+              "border-line-strong rounded-tile bg-panel-canvas text-coffee focus:border-sage w-full border px-3.5 py-2.5 text-sm outline-none disabled:opacity-60",
+            )}
           />
-          <FieldError id={errorId("publicLabel")} message={fieldErrors.publicLabel} />
+          <FieldError
+            id={errorId("publicLabel")}
+            message={fieldErrors.publicLabel}
+          />
           <p className="text-ink-45 mt-1 text-right text-[11px]">
             {publicLabel.length}/160
           </p>
@@ -460,8 +488,13 @@ export function TaxonomyTermEditor({
                 clearFieldError("stableId");
               }}
               aria-invalid={Boolean(fieldErrors.stableId)}
-              aria-describedby={fieldErrors.stableId ? errorId("stableId") : undefined}
-              className={inputClass("stableId", "border-line-strong rounded-tile bg-panel-canvas text-coffee focus:border-sage w-full border px-3.5 py-2.5 font-mono text-sm outline-none disabled:opacity-60")}
+              aria-describedby={
+                fieldErrors.stableId ? errorId("stableId") : undefined
+              }
+              className={inputClass(
+                "stableId",
+                "border-line-strong rounded-tile bg-panel-canvas text-coffee focus:border-sage w-full border px-3.5 py-2.5 font-mono text-sm outline-none disabled:opacity-60",
+              )}
             />
           )}
           <FieldError id={errorId("stableId")} message={fieldErrors.stableId} />
@@ -491,8 +524,15 @@ export function TaxonomyTermEditor({
                 clearFieldError("primaryParentTermId");
               }}
               aria-invalid={Boolean(fieldErrors.primaryParentTermId)}
-              aria-describedby={fieldErrors.primaryParentTermId ? errorId("primaryParentTermId") : undefined}
-              className={inputClass("primaryParentTermId", "border-line-strong rounded-tile bg-panel-canvas text-coffee focus:border-sage w-full border px-3.5 py-2.5 text-sm outline-none disabled:opacity-60")}
+              aria-describedby={
+                fieldErrors.primaryParentTermId
+                  ? errorId("primaryParentTermId")
+                  : undefined
+              }
+              className={inputClass(
+                "primaryParentTermId",
+                "border-line-strong rounded-tile bg-panel-canvas text-coffee focus:border-sage w-full border px-3.5 py-2.5 text-sm outline-none disabled:opacity-60",
+              )}
             >
               <option value="">Izaberite oblast</option>
               {areas.map((area) => (
@@ -502,7 +542,10 @@ export function TaxonomyTermEditor({
                 </option>
               ))}
             </select>
-            <FieldError id={errorId("primaryParentTermId")} message={fieldErrors.primaryParentTermId} />
+            <FieldError
+              id={errorId("primaryParentTermId")}
+              message={fieldErrors.primaryParentTermId}
+            />
             {areas.length === 0 ? (
               <p className="text-badge-amber mt-1.5 text-[12px]">
                 Prvo napravite oblast u tabu „Oblasti”.
@@ -526,8 +569,15 @@ export function TaxonomyTermEditor({
                 clearFieldError("journeyIntentTermId");
               }}
               aria-invalid={Boolean(fieldErrors.journeyIntentTermId)}
-              aria-describedby={fieldErrors.journeyIntentTermId ? errorId("journeyIntentTermId") : undefined}
-              className={inputClass("journeyIntentTermId", "border-line-strong rounded-tile bg-panel-canvas text-coffee focus:border-sage w-full border px-3.5 py-2.5 text-sm outline-none disabled:opacity-60")}
+              aria-describedby={
+                fieldErrors.journeyIntentTermId
+                  ? errorId("journeyIntentTermId")
+                  : undefined
+              }
+              className={inputClass(
+                "journeyIntentTermId",
+                "border-line-strong rounded-tile bg-panel-canvas text-coffee focus:border-sage w-full border px-3.5 py-2.5 text-sm outline-none disabled:opacity-60",
+              )}
             >
               <option value="">Izaberite put korisnika</option>
               {journeyIntents.map((journey) => (
@@ -537,7 +587,10 @@ export function TaxonomyTermEditor({
                 </option>
               ))}
             </select>
-            <FieldError id={errorId("journeyIntentTermId")} message={fieldErrors.journeyIntentTermId} />
+            <FieldError
+              id={errorId("journeyIntentTermId")}
+              message={fieldErrors.journeyIntentTermId}
+            />
             <p className="text-ink-55 mt-1.5 text-[12px]">
               Bira se iz zaključanog sistemskog registra; ne upisuje se slobodan
               tekst niti se ovde menja njegovo značenje.
@@ -564,10 +617,20 @@ export function TaxonomyTermEditor({
             clearFieldError("shortDescription");
           }}
           aria-invalid={Boolean(fieldErrors.shortDescription)}
-          aria-describedby={fieldErrors.shortDescription ? errorId("shortDescription") : undefined}
-          className={inputClass("shortDescription", "border-line-strong rounded-tile bg-panel-canvas text-coffee focus:border-sage w-full resize-y border px-3.5 py-2.5 text-sm leading-[1.55] outline-none disabled:opacity-60")}
+          aria-describedby={
+            fieldErrors.shortDescription
+              ? errorId("shortDescription")
+              : undefined
+          }
+          className={inputClass(
+            "shortDescription",
+            "border-line-strong rounded-tile bg-panel-canvas text-coffee focus:border-sage w-full resize-y border px-3.5 py-2.5 text-sm leading-[1.55] outline-none disabled:opacity-60",
+          )}
         />
-        <FieldError id={errorId("shortDescription")} message={fieldErrors.shortDescription} />
+        <FieldError
+          id={errorId("shortDescription")}
+          message={fieldErrors.shortDescription}
+        />
         <p className="text-ink-45 mt-1 text-right text-[11px]">
           {shortDescription.length}/500
         </p>
@@ -597,10 +660,18 @@ export function TaxonomyTermEditor({
               clearFieldError("searchTerms");
             }}
             aria-invalid={Boolean(fieldErrors.searchTerms)}
-            aria-describedby={fieldErrors.searchTerms ? errorId("searchTerms") : undefined}
-            className={inputClass("searchTerms", "border-line-strong rounded-tile bg-panel-canvas text-coffee focus:border-sage w-full resize-y border px-3.5 py-2.5 text-sm leading-[1.55] outline-none disabled:opacity-60")}
+            aria-describedby={
+              fieldErrors.searchTerms ? errorId("searchTerms") : undefined
+            }
+            className={inputClass(
+              "searchTerms",
+              "border-line-strong rounded-tile bg-panel-canvas text-coffee focus:border-sage w-full resize-y border px-3.5 py-2.5 text-sm leading-[1.55] outline-none disabled:opacity-60",
+            )}
           />
-          <FieldError id={errorId("searchTerms")} message={fieldErrors.searchTerms} />
+          <FieldError
+            id={errorId("searchTerms")}
+            message={fieldErrors.searchTerms}
+          />
           <div className="text-ink-55 mt-1.5 flex flex-wrap justify-between gap-2 text-[12px]">
             <span>Jedan pojam po redu ili odvojen zarezom.</span>
             <span>{searchTermCount}/100</span>
@@ -627,10 +698,18 @@ export function TaxonomyTermEditor({
               clearFieldError("sortOrder");
             }}
             aria-invalid={Boolean(fieldErrors.sortOrder)}
-            aria-describedby={fieldErrors.sortOrder ? errorId("sortOrder") : undefined}
-            className={inputClass("sortOrder", "border-line-strong rounded-tile bg-panel-canvas text-coffee focus:border-sage w-full border px-3.5 py-2.5 text-sm outline-none disabled:opacity-60")}
+            aria-describedby={
+              fieldErrors.sortOrder ? errorId("sortOrder") : undefined
+            }
+            className={inputClass(
+              "sortOrder",
+              "border-line-strong rounded-tile bg-panel-canvas text-coffee focus:border-sage w-full border px-3.5 py-2.5 text-sm outline-none disabled:opacity-60",
+            )}
           />
-          <FieldError id={errorId("sortOrder")} message={fieldErrors.sortOrder} />
+          <FieldError
+            id={errorId("sortOrder")}
+            message={fieldErrors.sortOrder}
+          />
           <p className="text-ink-55 mt-1.5 text-[12px] leading-[1.45]">
             Manji broj se prikazuje ranije. Isti broj se razrešava po nazivu.
           </p>
@@ -642,8 +721,13 @@ export function TaxonomyTermEditor({
           id={`${editorId}-related-topics`}
           disabled={saveMutation.isPending}
           aria-invalid={Boolean(fieldErrors.relatedTopicIds)}
-          aria-describedby={fieldErrors.relatedTopicIds ? errorId("relatedTopicIds") : undefined}
-          className={inputClass("relatedTopicIds", "border-line rounded-tile mt-4 border px-4 py-4 disabled:opacity-60")}
+          aria-describedby={
+            fieldErrors.relatedTopicIds ? errorId("relatedTopicIds") : undefined
+          }
+          className={inputClass(
+            "relatedTopicIds",
+            "border-line rounded-tile mt-4 border px-4 py-4 disabled:opacity-60",
+          )}
         >
           <legend className="text-ink-70 px-1 text-[13px] font-semibold">
             Povezane teme
@@ -702,7 +786,10 @@ export function TaxonomyTermEditor({
           <p className="text-ink-45 mt-2 text-right text-[11px]">
             Izabrano: {relatedTopicIds.length}
           </p>
-          <FieldError id={errorId("relatedTopicIds")} message={fieldErrors.relatedTopicIds} />
+          <FieldError
+            id={errorId("relatedTopicIds")}
+            message={fieldErrors.relatedTopicIds}
+          />
         </fieldset>
       ) : null}
 
@@ -762,8 +849,13 @@ export function TaxonomyTermEditor({
                 clearFieldError("iconKey");
               }}
               aria-invalid={Boolean(fieldErrors.iconKey)}
-              aria-describedby={fieldErrors.iconKey ? errorId("iconKey") : undefined}
-              className={inputClass("iconKey", "border-line-strong rounded-tile bg-panel-canvas text-coffee focus:border-sage w-full border px-3.5 py-2.5 font-mono text-sm outline-none disabled:opacity-60")}
+              aria-describedby={
+                fieldErrors.iconKey ? errorId("iconKey") : undefined
+              }
+              className={inputClass(
+                "iconKey",
+                "border-line-strong rounded-tile bg-panel-canvas text-coffee focus:border-sage w-full border px-3.5 py-2.5 font-mono text-sm outline-none disabled:opacity-60",
+              )}
             />
             <FieldError id={errorId("iconKey")} message={fieldErrors.iconKey} />
             <p className="text-ink-55 mt-1.5 text-[12px]">
@@ -791,8 +883,13 @@ export function TaxonomyTermEditor({
                 clearFieldError("assetId");
               }}
               aria-invalid={Boolean(fieldErrors.assetId)}
-              aria-describedby={fieldErrors.assetId ? errorId("assetId") : undefined}
-              className={inputClass("assetId", "border-line-strong rounded-tile bg-panel-canvas text-coffee focus:border-sage w-full border px-3.5 py-2.5 font-mono text-sm outline-none disabled:opacity-60")}
+              aria-describedby={
+                fieldErrors.assetId ? errorId("assetId") : undefined
+              }
+              className={inputClass(
+                "assetId",
+                "border-line-strong rounded-tile bg-panel-canvas text-coffee focus:border-sage w-full border px-3.5 py-2.5 font-mono text-sm outline-none disabled:opacity-60",
+              )}
             />
             <FieldError id={errorId("assetId")} message={fieldErrors.assetId} />
             <p className="text-ink-55 mt-1.5 text-[12px]">
@@ -861,10 +958,20 @@ export function TaxonomyTermEditor({
             clearFieldError("internalExpertNote");
           }}
           aria-invalid={Boolean(fieldErrors.internalExpertNote)}
-          aria-describedby={fieldErrors.internalExpertNote ? errorId("internalExpertNote") : undefined}
-          className={inputClass("internalExpertNote", "border-line-strong rounded-tile bg-panel-canvas text-coffee focus:border-sage w-full resize-y border px-3.5 py-2.5 text-sm leading-[1.55] outline-none disabled:opacity-60")}
+          aria-describedby={
+            fieldErrors.internalExpertNote
+              ? errorId("internalExpertNote")
+              : undefined
+          }
+          className={inputClass(
+            "internalExpertNote",
+            "border-line-strong rounded-tile bg-panel-canvas text-coffee focus:border-sage w-full resize-y border px-3.5 py-2.5 text-sm leading-[1.55] outline-none disabled:opacity-60",
+          )}
         />
-        <FieldError id={errorId("internalExpertNote")} message={fieldErrors.internalExpertNote} />
+        <FieldError
+          id={errorId("internalExpertNote")}
+          message={fieldErrors.internalExpertNote}
+        />
         <div className="text-ink-55 mt-1.5 flex flex-wrap justify-between gap-2 text-[12px]">
           <span>Vidljiva je samo osoblju i nikada ne ulazi u javni API.</span>
           <span>{internalExpertNote.length}/4000</span>

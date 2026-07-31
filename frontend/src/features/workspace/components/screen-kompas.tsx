@@ -161,8 +161,8 @@ function ActivityActorBadges({
   updatedBy,
   events,
 }: {
-  createdBy?: ActorSummary | null;
-  updatedBy?: ActorSummary | null;
+  createdBy: ActorSummary | null | undefined;
+  updatedBy: ActorSummary | null | undefined;
   events: readonly AuditEventView[];
 }) {
   const publishedBy = latestActorForStatus(events, "published");
@@ -211,7 +211,9 @@ function ApprovalEvidence({
                 {decisionLabel}
               </span>
               <ActorBadge
-                action={decision.outcome === "approved" ? "Odobrio/la" : "Odbio/la"}
+                action={
+                  decision.outcome === "approved" ? "Odobrio/la" : "Odbio/la"
+                }
                 actor={decision.decidedBy ?? null}
               />
               {decision.decidedAt ? (
@@ -431,9 +433,19 @@ function GovernanceError({ error }: { error: string | null }) {
   ) : null;
 }
 
-function FieldError({ message, id }: { message?: string; id: string }) {
+function FieldError({
+  message,
+  id,
+}: {
+  message: string | undefined;
+  id: string;
+}) {
   return message ? (
-    <p id={id} role="alert" className="text-danger mt-1.5 text-[12px] leading-[1.4]">
+    <p
+      id={id}
+      role="alert"
+      className="text-danger mt-1.5 text-[12px] leading-[1.4]"
+    >
       {message}
     </p>
   ) : null;
@@ -542,7 +554,9 @@ function RouteGovernanceControls({
           onClick={() => suggestMutation.mutate()}
           className="border-line-strong text-ink-70 hover:border-coffee/40 mt-3 cursor-pointer rounded-full border bg-transparent px-3.5 py-2 text-[12px] font-semibold disabled:cursor-not-allowed disabled:opacity-60"
         >
-          {suggestMutation.isPending ? "Priprema predloga…" : "Predloži javnu putanju"}
+          {suggestMutation.isPending
+            ? "Priprema predloga…"
+            : "Predloži javnu putanju"}
         </button>
       ) : (
         <div className="mt-3">
@@ -553,7 +567,7 @@ function RouteGovernanceControls({
             Slug putanje
           </label>
           <div className="flex flex-wrap items-start gap-2">
-            <span className="border-line-strong bg-panel-canvas text-ink-45 rounded-tile border px-3 py-2 text-[12px] font-mono">
+            <span className="border-line-strong bg-panel-canvas text-ink-45 rounded-tile border px-3 py-2 font-mono text-[12px]">
               /kompas/{term.axis === "topic_group" ? "oblast" : "tema"}/
             </span>
             <input
@@ -566,7 +580,9 @@ function RouteGovernanceControls({
                 confirmMutation.reset();
               }}
               aria-invalid={Boolean(fieldError)}
-              aria-describedby={fieldError ? `kompas-route-${term.termId}-error` : undefined}
+              aria-describedby={
+                fieldError ? `kompas-route-${term.termId}-error` : undefined
+              }
               className={cn(
                 "border-line-strong rounded-tile bg-panel-canvas text-coffee focus:border-sage min-w-[220px] flex-1 border px-3 py-2 font-mono text-[12px] outline-none disabled:opacity-60",
                 fieldError ? "border-danger focus:border-danger" : "",
@@ -585,9 +601,15 @@ function RouteGovernanceControls({
                   : "Potvrdi putanju"}
             </button>
           </div>
-          <FieldError id={`kompas-route-${term.termId}-error`} message={fieldError} />
+          <FieldError
+            id={`kompas-route-${term.termId}-error`}
+            message={fieldError}
+          />
           <p className="text-ink-45 mt-2 text-[11.5px]">
-            Preview: <span className="font-mono">{suggestion.canonicalPath.replace(/[^/]+$/, slug.trim() || "…")}</span>
+            Preview:{" "}
+            <span className="font-mono">
+              {suggestion.canonicalPath.replace(/[^/]+$/, slug.trim() || "…")}
+            </span>
           </p>
         </div>
       )}
@@ -722,7 +744,7 @@ function TermGovernanceControls({
     }: {
       capability: ApprovalCapability;
       outcome: "approved" | "rejected";
-      note?: string;
+      note: string | undefined;
     }) =>
       recordTaxonomyReviewDecision(term.termId, term.revisionId, {
         capability,
@@ -839,7 +861,7 @@ function IntakeLinkGovernanceControls({
       note,
     }: {
       outcome: "approved" | "rejected";
-      note?: string;
+      note: string | undefined;
     }) =>
       recordTaxonomyIntakeLinkReview(link.linkId, {
         capability: "clinical",
@@ -1426,10 +1448,14 @@ function IntakeLinkCreator({
               clearFieldError("topicTermId");
             }}
             aria-invalid={Boolean(fieldErrors.topicTermId)}
-            aria-describedby={fieldErrors.topicTermId ? "kompas-intake-topic-error" : undefined}
+            aria-describedby={
+              fieldErrors.topicTermId ? "kompas-intake-topic-error" : undefined
+            }
             className={cn(
               "border-line-strong rounded-tile bg-panel-canvas text-coffee focus:border-sage w-full border px-3.5 py-2.5 text-sm outline-none disabled:opacity-60",
-              fieldErrors.topicTermId ? "border-danger focus:border-danger" : "",
+              fieldErrors.topicTermId
+                ? "border-danger focus:border-danger"
+                : "",
             )}
           >
             <option value="">Izaberite temu</option>
@@ -1439,7 +1465,10 @@ function IntakeLinkCreator({
               </option>
             ))}
           </select>
-          <FieldError id="kompas-intake-topic-error" message={fieldErrors.topicTermId} />
+          <FieldError
+            id="kompas-intake-topic-error"
+            message={fieldErrors.topicTermId}
+          />
         </div>
 
         <div>
@@ -1458,10 +1487,16 @@ function IntakeLinkCreator({
               clearFieldError("supportAreaTermId");
             }}
             aria-invalid={Boolean(fieldErrors.supportAreaTermId)}
-            aria-describedby={fieldErrors.supportAreaTermId ? "kompas-intake-support-area-error" : undefined}
+            aria-describedby={
+              fieldErrors.supportAreaTermId
+                ? "kompas-intake-support-area-error"
+                : undefined
+            }
             className={cn(
               "border-line-strong rounded-tile bg-panel-canvas text-coffee focus:border-sage w-full border px-3.5 py-2.5 text-sm outline-none disabled:opacity-60",
-              fieldErrors.supportAreaTermId ? "border-danger focus:border-danger" : "",
+              fieldErrors.supportAreaTermId
+                ? "border-danger focus:border-danger"
+                : "",
             )}
           >
             <option value="">Izaberite Intake oblast podrške</option>
@@ -1471,7 +1506,10 @@ function IntakeLinkCreator({
               </option>
             ))}
           </select>
-          <FieldError id="kompas-intake-support-area-error" message={fieldErrors.supportAreaTermId} />
+          <FieldError
+            id="kompas-intake-support-area-error"
+            message={fieldErrors.supportAreaTermId}
+          />
           <p className="text-ink-55 mt-1.5 text-[12px] leading-[1.45]">
             Zaključana sistemska vrednost iz D-052; izbor ne rangira terapeute.
           </p>
