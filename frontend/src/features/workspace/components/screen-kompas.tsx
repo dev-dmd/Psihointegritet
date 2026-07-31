@@ -1,7 +1,7 @@
 "use client";
 
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import type { ReactNode } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import type { FormEvent, ReactNode } from "react";
 import { useState } from "react";
 
 import { ActorBadge } from "@/components/panel/actor-badge";
@@ -13,8 +13,13 @@ import {
 } from "@/components/panel/status-badge";
 import { TabPills } from "@/components/panel/tab-pills";
 import { cn } from "@/helpers/cn";
+import {
+  approvalCapabilities,
+  type ApprovalCapability,
+} from "@/lib/content-governance/types";
 
 import {
+  createTaxonomyIntakeLink,
   fetchTaxonomyRegistry,
   TAXONOMY_REGISTRY_QUERY_KEY,
   TaxonomyApiError,
@@ -54,6 +59,17 @@ const STATUS_META: Record<
   published: { label: "Objavljeno", tone: "ok" },
   archived: { label: "Arhivirano", tone: "soft" },
 };
+
+const APPROVAL_LABELS: Record<ApprovalCapability, string> = {
+  clinical: "Stručno",
+  legal: "Pravno",
+  business: "Poslovno",
+};
+
+const PLANNED_ACCESS_OPTIONS = [
+  { stableId: "subscriber", label: "Pretplata" },
+  { stableId: "purchased", label: "Kupljen materijal" },
+] as const;
 
 const AXIS_BY_TAB: Partial<Record<KompasTab, TaxonomyAxis>> = {
   areas: "topic_group",
@@ -158,6 +174,140 @@ function RegistryFlag({
     >
       {children}
     </span>
+  );
+}
+
+function SystemChoiceGroup({
+  title,
+  description,
+  terms,
+  planned = [],
+  children,
+}: {
+  title: string;
+  description: string;
+  terms: TaxonomyTerm[];
+  planned?: readonly { stableId: string; label: string }[];
+  children?: ReactNode;
+}) {
+  return (
+    <section className="border-line rounded-tile border px-4 py-3.5">
+      <h3 className="text-ink-70 text-[13px] font-semibold">{title}</h3>
+      <p className="text-ink-55 mt-1 text-[12px] leading-[1.45]">
+        {description}
+      </p>
+      <div className="mt-3 flex flex-wrap gap-2">
+        {terms.map((term) => (
+          <span
+            key={term.termId}
+            className="border-line-strong text-ink-70 inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11.5px] font-semibold"
+          >
+            <LockIcon size={11} aria-hidden />
+            {term.publicLabel}
+          </span>
+        ))}
+        {planned.map((option) => (
+          <span
+            key={option.stableId}
+            aria-label={`${option.label} — u pripremi`}
+            aria-disabled="true"
+            className="border-line text-ink-45 inline-flex items-center gap-1.5 rounded-full border border-dashed px-2.5 py-1 text-[11.5px]"
+          >
+            {option.label}
+            <span className="bg-badge-neutral-bg text-badge-neutral rounded-full px-1.5 py-0.5 text-[9.5px] font-semibold">
+              U pripremi
+            </span>
+          </span>
+        ))}
+        {children}
+        {terms.length === 0 && planned.length === 0 && !children ? (
+          <span className="text-ink-45 text-[12px] italic">
+            Nema dostupnih sistemskih vrednosti.
+          </span>
+        ) : null}
+      </div>
+    </section>
+  );
+}
+
+function SystemChoices({ terms }: { terms: TaxonomyTerm[] }) {
+  const systemTerms = (axis: TaxonomyAxis) =>
+    sortTerms(
+      terms.filter(
+        (term) =>
+          term.axis === axis &&
+          term.systemDefined &&
+          term.status !== "archived",
+      ),
+    );
+
+  return (
+    <section
+      aria-labelledby="kompas-system-options-title"
+      className="rounded-panel border-line bg-surface mb-6 border px-5 py-5"
+    >
+      <div className="flex items-start gap-3">
+        <LockIcon
+          size={17}
+          aria-hidden
+          className="text-forest mt-0.5 shrink-0"
+        />
+        <div>
+          <h2
+            id="kompas-system-options-title"
+            className="text-forest text-[15px] font-semibold"
+          >
+            Kontrolisane sistemske opcije
+          </h2>
+          <p className="text-ink-55 mt-1 max-w-[780px] text-[12.5px] leading-[1.5]">
+            Ove vrednosti dolaze iz registra ili zaključanog ugovora sistema.
+            Administrator ih bira gde su relevantne, ali ne unosi slobodan tekst
+            niti menja njihovu semantiku.
+          </p>
+        </div>
+      </div>
+
+      <div className="mt-4 grid gap-3 lg:grid-cols-2">
+        <SystemChoiceGroup
+          title="Put korisnika"
+          description="Bira se pri uređivanju konkretne teme."
+          terms={systemTerms("journey_intent")}
+        />
+        <SystemChoiceGroup
+          title="Format sadržaja"
+          description="Kontrolisani izbor za CMS metapodatke u K3."
+          terms={systemTerms("content_format")}
+        />
+        <SystemChoiceGroup
+          title="Nivo pristupa"
+          description="Izvršive vrednosti su spremne za CMS; plaćeni nivoi čekaju entitlement sloj."
+          terms={systemTerms("access_level")}
+          planned={PLANNED_ACCESS_OPTIONS}
+        />
+        <SystemChoiceGroup
+          title="Tok i odobrenja"
+          description="Status i tip odobrenja su sistemski ugovor; stvarne akcije se uvode u K2.6."
+          terms={[]}
+        >
+          {(Object.keys(STATUS_META) as TaxonomyStatus[]).map((status) => (
+            <span
+              key={status}
+              className="bg-badge-neutral-bg text-badge-neutral rounded-full px-2.5 py-1 text-[11.5px] font-semibold"
+            >
+              {STATUS_META[status].label}
+            </span>
+          ))}
+          {approvalCapabilities.map((capability) => (
+            <span
+              key={capability}
+              className="border-line-strong text-ink-70 rounded-full border px-2.5 py-1 text-[11.5px] font-semibold"
+            >
+              {APPROVAL_LABELS[capability]}
+            </span>
+          ))}
+        </SystemChoiceGroup>
+      </div>
+    </section>
   );
 }
 
@@ -433,7 +583,174 @@ function IntakeLinkCards({ links }: { links: TaxonomyIntakeLink[] }) {
   );
 }
 
-function IntakeLinks({ links }: { links: TaxonomyIntakeLink[] }) {
+function IntakeLinkCreator({
+  terms,
+  links,
+  onCreated,
+}: {
+  terms: TaxonomyTerm[];
+  links: TaxonomyIntakeLink[];
+  onCreated: (link: TaxonomyIntakeLink) => void;
+}) {
+  const [topicTermId, setTopicTermId] = useState("");
+  const [supportAreaTermId, setSupportAreaTermId] = useState("");
+  const [validationError, setValidationError] = useState<string | null>(null);
+  const topics = sortTerms(
+    terms.filter((term) => term.axis === "topic" && term.status !== "archived"),
+  );
+  const supportAreas = sortTerms(
+    terms.filter(
+      (term) =>
+        term.axis === "support_area" &&
+        term.systemDefined &&
+        term.status !== "archived",
+    ),
+  );
+  const createMutation = useMutation({
+    mutationFn: () =>
+      createTaxonomyIntakeLink({ topicTermId, supportAreaTermId }),
+    onSuccess: (link) => {
+      onCreated(link);
+      setTopicTermId("");
+      setSupportAreaTermId("");
+    },
+  });
+  const mutationError = createMutation.isError
+    ? createMutation.error instanceof TaxonomyApiError
+      ? createMutation.error.message
+      : "Povezivanje nije sačuvano. Pokušajte ponovo."
+    : null;
+
+  const submit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setValidationError(null);
+    if (!topicTermId) {
+      setValidationError("Izaberite konkretnu Kompas temu.");
+      return;
+    }
+    if (!supportAreaTermId) {
+      setValidationError("Izaberite Intake oblast podrške.");
+      return;
+    }
+    if (
+      links.some(
+        (link) =>
+          link.topicTermId === topicTermId &&
+          link.supportAreaTermId === supportAreaTermId,
+      )
+    ) {
+      setValidationError("Ovo povezivanje već postoji u registru.");
+      return;
+    }
+    createMutation.mutate();
+  };
+
+  return (
+    <form
+      onSubmit={submit}
+      className="rounded-panel border-line bg-surface mb-5 border px-5 py-5"
+    >
+      <h3 className="text-forest font-serif text-[19px]">
+        Novo povezivanje ka Intake-u
+      </h3>
+      <p className="text-ink-55 mt-1 max-w-[760px] text-[12.5px] leading-[1.5]">
+        Povezujete konkretnu Kompas temu sa postojećom Intake oblasti podrške.
+        Intake oblasti su sistemske i ovde se samo biraju; ne menjaju se niti
+        stvaraju kroz Kompas.
+      </p>
+
+      {validationError || mutationError ? (
+        <div
+          role="alert"
+          className="border-danger/45 bg-danger/8 text-ink-70 rounded-tile mt-4 border px-4 py-3 text-[13px] leading-[1.5]"
+        >
+          {validationError ?? mutationError}
+        </div>
+      ) : null}
+
+      <div className="mt-4 grid gap-4 md:grid-cols-2">
+        <div>
+          <label
+            htmlFor="kompas-intake-topic"
+            className="text-ink-70 mb-1.5 block text-[13px] font-semibold"
+          >
+            Koju Kompas temu povezujete?
+          </label>
+          <select
+            id="kompas-intake-topic"
+            value={topicTermId}
+            disabled={createMutation.isPending || topics.length === 0}
+            onChange={(event) => {
+              setTopicTermId(event.target.value);
+              setValidationError(null);
+            }}
+            className="border-line-strong rounded-tile bg-panel-canvas text-coffee focus:border-sage w-full border px-3.5 py-2.5 text-sm outline-none disabled:opacity-60"
+          >
+            <option value="">Izaberite temu</option>
+            {topics.map((topic) => (
+              <option key={topic.termId} value={topic.termId}>
+                {topic.publicLabel}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <label
+            htmlFor="kompas-intake-support-area"
+            className="text-ink-70 mb-1.5 block text-[13px] font-semibold"
+          >
+            Kojoj Intake oblasti podrške odgovara?
+          </label>
+          <select
+            id="kompas-intake-support-area"
+            value={supportAreaTermId}
+            disabled={createMutation.isPending || supportAreas.length === 0}
+            onChange={(event) => {
+              setSupportAreaTermId(event.target.value);
+              setValidationError(null);
+            }}
+            className="border-line-strong rounded-tile bg-panel-canvas text-coffee focus:border-sage w-full border px-3.5 py-2.5 text-sm outline-none disabled:opacity-60"
+          >
+            <option value="">Izaberite Intake oblast podrške</option>
+            {supportAreas.map((supportArea) => (
+              <option key={supportArea.termId} value={supportArea.termId}>
+                {supportArea.publicLabel}
+              </option>
+            ))}
+          </select>
+          <p className="text-ink-55 mt-1.5 text-[12px] leading-[1.45]">
+            Zaključana sistemska vrednost iz D-052; izbor ne rangira terapeute.
+          </p>
+        </div>
+      </div>
+
+      <div className="border-line mt-5 flex flex-wrap gap-2.5 border-t pt-4">
+        <button
+          type="submit"
+          disabled={
+            createMutation.isPending ||
+            topics.length === 0 ||
+            supportAreas.length === 0
+          }
+          className="bg-forest text-panel-canvas hover:bg-forest-hover disabled:bg-ink-45 cursor-pointer rounded-full border-0 px-4 py-2.5 text-[13px] font-semibold transition-colors disabled:cursor-not-allowed"
+        >
+          {createMutation.isPending ? "Čuvanje…" : "Sačuvaj radnu verziju veze"}
+        </button>
+      </div>
+    </form>
+  );
+}
+
+function IntakeLinks({
+  links,
+  terms,
+  onCreated,
+}: {
+  links: TaxonomyIntakeLink[];
+  terms: TaxonomyTerm[];
+  onCreated: (link: TaxonomyIntakeLink) => void;
+}) {
   return (
     <div role="tabpanel" aria-label="Povezivanja">
       <div className="mb-4">
@@ -444,6 +761,7 @@ function IntakeLinks({ links }: { links: TaxonomyIntakeLink[] }) {
           potvrđena; ona ne bira niti rangira terapeuta.
         </p>
       </div>
+      <IntakeLinkCreator terms={terms} links={links} onCreated={onCreated} />
       {links.length === 0 ? (
         <EmptyDashedCard title="Još nema povezivanja">
           Kompas teme i Intake oblasti podrške ostaju odvojene dok stručni tim
@@ -582,6 +900,21 @@ export function ScreenKompas() {
     setEditorState(null);
   };
 
+  const handleIntakeLinkCreated = (saved: TaxonomyIntakeLink) => {
+    queryClient.setQueryData<TaxonomyRegistrySnapshot>(
+      TAXONOMY_REGISTRY_QUERY_KEY,
+      (current) => ({
+        terms: current?.terms ?? [],
+        intakeLinks: [
+          ...(current?.intakeLinks ?? []).filter(
+            (link) => link.linkId !== saved.linkId,
+          ),
+          saved,
+        ],
+      }),
+    );
+  };
+
   return (
     <section className="animate-fade-up">
       <PageHeader
@@ -621,6 +954,8 @@ export function ScreenKompas() {
               </p>
             </div>
           </aside>
+
+          <SystemChoices terms={terms} />
 
           <div className="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
             <StatCard value={String(areas.length)} label="Oblasti" />
@@ -679,7 +1014,13 @@ export function ScreenKompas() {
                 }
               />
             ) : null}
-            {activeTab === "links" ? <IntakeLinks links={intakeLinks} /> : null}
+            {activeTab === "links" ? (
+              <IntakeLinks
+                links={intakeLinks}
+                terms={terms}
+                onCreated={handleIntakeLinkCreated}
+              />
+            ) : null}
             {activeTab === "review" ? (
               <ReviewQueue terms={terms} links={intakeLinks} />
             ) : null}

@@ -9,6 +9,8 @@ export type CreateTaxonomyTermInput =
   components["schemas"]["CreateTaxonomyTermRequest"];
 export type UpdateTaxonomyRevisionInput =
   components["schemas"]["UpdateTaxonomyRevisionRequest"];
+export type CreateTaxonomyIntakeLinkInput =
+  components["schemas"]["CreateTaxonomyIntakeLinkRequest"];
 
 export const TAXONOMY_REGISTRY_QUERY_KEY = [
   "kompas-taxonomy-registry",
@@ -97,4 +99,15 @@ export async function updateTaxonomyRevision(
     },
   );
   return parseOrThrow<TaxonomyTerm>(response);
+}
+
+export async function createTaxonomyIntakeLink(
+  input: CreateTaxonomyIntakeLinkInput,
+): Promise<TaxonomyIntakeLink> {
+  const response = await fetch("/api/content/taxonomy/intake-links", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  });
+  return parseOrThrow<TaxonomyIntakeLink>(response);
 }

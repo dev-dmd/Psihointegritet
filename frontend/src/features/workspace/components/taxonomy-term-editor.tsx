@@ -144,6 +144,7 @@ export function TaxonomyTermEditor({
   const journeyIntents = registryTerms.filter(
     (item) =>
       item.axis === "journey_intent" &&
+      item.systemDefined &&
       (item.status !== "archived" || item.termId === journeyIntentTermId),
   );
   const availableRelatedTopics = registryTerms.filter(
@@ -465,7 +466,8 @@ export function TaxonomyTermEditor({
               ))}
             </select>
             <p className="text-ink-55 mt-1.5 text-[12px]">
-              Bira se sistemska vrednost; njeno značenje se ovde ne menja.
+              Bira se iz zaključanog sistemskog registra; ne upisuje se slobodan
+              tekst niti se ovde menja njegovo značenje.
             </p>
           </div>
         </div>
