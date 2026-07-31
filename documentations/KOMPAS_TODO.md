@@ -1,20 +1,21 @@
 # KOMPAS TODO — discovery i recommendation sloj
 
-**Status:** K1 backend foundation implementiran; sledeći korak je K2 panel „Kompas”
+**Status:** K1 backend foundation implementiran; sledeći korak je K2.0 route registry pa K2 panel „Kompas” sa tabom „Oblasti”
 **Datum:** 2026-07-31  
 **Vlasnik tehničkih odluka:** Milan Dražić (CTO)  
 **Vlasnik stručne kategorizacije i javnih naziva:** Anja Stamenković i stručni tim  
 **Ulazni dokument:** `CODEX HANDOFF — KOMPAS.docx`, primljen 2026-07-31  
-**Povezano:** O-21 · D-047 · D-048 · D-052 · **D-053 · ADR-022** · ADR-016 · ADR-018 · budući ADR-019/ADR-021
+**Povezano:** O-21 · D-047 · D-048 · D-052 · **D-053 · D-054 · ADR-022 Amandman 1** · ADR-016 · ADR-018 · budući ADR-019/ADR-021
 
 ---
 
 ## 0. Kako se koristi ovaj dokument
 
 - Ovo je jedini operativni TODO za Kompas. `TODO.md` i `CMS_TODO.md` nose samo sažetak i link ovde.
-- D-053 i ADR-022 su zaključali taksonomiju i granice. Implementacija sada počinje backend foundation-om, zatim panelom, CMS povezivanjem i tek na kraju javnim Kompasom.
+- D-053, D-054 i ADR-022 Amandman 1 zaključali su taksonomiju, kanonske stranice i dinamičku granicu. Implementacija ide backend foundation → route registry/panel → CMS → katalog/vodiči → recommendation/javni Kompas.
 - Konačna Anjina kategorizacija menja podatke registra, ne strukturu engine-a. Novi ili precizniji nazivi ne smeju zahtevati izmenu Kompas koda.
 - Ne hardkodovati stručne kategorije, sinonime ni recommendation pravila u React komponentama.
+- U korisničkom i panel jeziku `topic_group` se zove **Oblast**. Sistemski `support_area` se uvek zove **Intake oblast podrške**; to nisu ista osa.
 - Ne praviti novi višekoračni upitnik. Kompas je interaktivna površina koja reaguje odmah.
 - Ne uvoditi AI kao preduslov za v1. Prvi engine mora biti determinističan i objašnjiv.
 - `subscriber` i `purchased` postoje samo kao rezervisan ciljni ugovor. Panel ih prikazuje onemogućene kao „U pripremi” i ne sme da ih sačuva ili objavi pre stvarnog R5 entitlement sistema (D-048).
@@ -39,12 +40,22 @@
 
 Kompas korisniku omogućava da:
 
-- izabere jednu ili više tema i odmah vidi relevantan sadržaj;
+- izabere jednu ili više oblasti/tema i odmah vidi relevantan sadržaj;
 - proširi, suzi ili ukloni izbor bez obaveznog završavanja toka;
 - bira između istraživanja sadržaja i prelaska ka stručnoj podršci;
 - dobije objašnjiv razlog zašto je sadržaj prikazan;
 - pređe u postojeći Intake bez ponavljanja neutralnog konteksta koji je već izabrao;
 - iz Intake toka ode nazad na informisanje ako još nije spreman za razgovor.
+
+### Tri odvojene javne površine
+
+1. `/kompas/oblast/[slug]` je kanonska, indeksabilna stranica jedne šire oblasti (`topic_group`). Prikazuje odobren uvod, podteme i objavljene sadržaje vezane za tu oblast.
+2. `/kompas/tema/[slug]` je kanonska, indeksabilna stranica jedne konkretne teme (`topic`) i uvek pokazuje kojoj oblasti pripada.
+3. `/kompas` je dinamički istraživač koji u memoriji kombinuje više izabranih oblasti i tema. Kombinacija ne dobija novu javnu SEO stranicu ni čitljiv query URL.
+
+Kanonska stranica objašnjava jednu oblast ili temu. Dinamički Kompas bira, uklanja duplikate i raspoređuje već odobrene sadržaje za trenutni izbor, ali ne izmišlja stručnu tvrdnju o tome kako su teme povezane. Kada tim odobri takvu tvrdnju, ona pripada opcionom `CompassGuide` entitetu.
+
+Javni `[slug]` je zaseban, locale-aware route identitet. Ne koristi se kao recommendation ključ i ne izvodi se ponovo pri svakoj promeni javne labele. Pre prve objave tim potvrđuje predloženi slug; posle objave promena pravi novi kanonski route zapis, a prethodni ostaje redirect ka istom stabilnom terminu. Interni `stableId` ostaje nepromenljiv semantički autoritet.
 
 Kompas nije:
 
@@ -85,6 +96,7 @@ Kontrola mora stalno da dozvoli:
 | Intake team queue + reassign | Postoje | Ljudsko preuzimanje/handoff slučaja |
 | `sessionStorage` obrazac | Postoji za booking summary | Kandidat za jednokratni Kompas ↔ Intake handoff |
 | Access decision iz ADR-018 | Ugovor postoji, puni ResourceAsset još ne | `public/registered/staff_only` granica za v1 |
+| K1 taxonomy registry + staff/public API | Implementirano, migracija čeka posebnu rollout/test fazu | DB autoritet za oblasti (`topic_group`), teme, publike, ciljeve i sistemske vrednosti |
 
 ### 2.2 Šta još ne postoji
 
@@ -92,9 +104,11 @@ Kontrola mora stalno da dozvoli:
 | --- | --- |
 | `ContentType.article` i article model | Tri kartice u `/znanje` su fallback/„u pripremi”, nisu objavljeni katalog |
 | Article template + javna ruta + Article JSON-LD | Kompas još nema pravi stručni članak koji može da preporuči |
-| Kanonske DB tabele za topic grupe/teme/sinonime | `contracts/fixtures/taxonomy.v1.json` trenutno zaključava samo Intake rečnik |
+| Panel „Kompas” | K2 treba da omogući uređivanje oblasti, tema, publika, ciljeva i povezivanja nad K1 API-jem |
 | Revision-bound discovery metadata | CMS sadržaj nema `topicIds`, `journeyIntent`, `goalIds`, `audienceIds` |
 | Compass recommendation read-model/API | Nema autoritativnog filtriranja ni objašnjivih razloga |
+| Kanonske `/kompas/oblast/[slug]` i `/kompas/tema/[slug]` stranice | Oblast/tema još nemaju route identitet, javni agregacioni read-model i renderer |
+| Revisioned `CompassGuide` | Nema opcionog authored/approved vodiča za stručne tvrdnje o čestim kombinacijama |
 | `ResourceAsset` implementacija | PDF/radni list još nisu preporučivi asset entiteti |
 | Audio/video/knjiga katalog | Ne uvoditi placeholder modele |
 | Pretplate/kupovine | Blokirano do R5 (D-048) |
@@ -130,8 +144,8 @@ Za svaki sadržaj se odvojeno definišu:
 
 | Osa | API/ugovorno ime | Primer | Pravilo |
 | --- | --- | --- | --- |
-| Šira grupa teme | `topicGroupId` | `stress-overload` | Jedna primarna javna grupa u v1 |
-| Konkretne teme | `topicIds` | `burnout`, `difficulty-resting` | Jedna ili više tema iz izabrane grupe |
+| Šira oblast | `topicGroupId` | `stress-overload` | UI naziv za tehničku osu `topic_group`; jedna primarna oblast u v1 |
+| Konkretne teme | `topicIds` | `burnout`, `difficulty-resting` | Jedna ili više tema iz izabrane oblasti |
 | Put korisnika | `journeyIntent` | `explore`, `professional_support`, `both` | Tačno jedna zaključana sistemska vrednost |
 | Cilj sadržaja | `goalIds` | `understand`, `practical-step` | Jedan ili više kontrolisanih ciljeva |
 | Publika | `audienceIds` | `self`, `parent`, `adolescent` | Jedna ili više publika |
@@ -142,7 +156,7 @@ Za svaki sadržaj se odvojeno definišu:
 Ne koristiti:
 
 - `contentType` za format — `ContentBase.type` već ima drugo javno značenje;
-- `areas` kao novi generički pojam;
+- `areas` kao novo API/DB ime; reč „Oblast” je dozvoljena UI labela samo za `topic_group`, dok je `support_area` uvek označen kao „Intake oblast podrške”;
 - title, labelu ili slug stranice kao semantički ključ;
 - slobodan string kada postoji stabilan ID.
 
@@ -240,7 +254,7 @@ Kompas i Intake nemaju isti posao:
 
 | Kompas | Intake & Matching |
 | --- | --- |
-| Široke javne topic grupe | Pet stabilnih routing `SupportAreaId` vrednosti iz D-052 |
+| Široke javne oblasti (`topic_group`) | Pet stabilnih routing `SupportAreaId` vrednosti iz D-052 |
 | Konkretne sadržajne teme | Razlozi, usluge i terapeutski capability-ji |
 | Preporučuje sadržaj | Preporučuje uslugu/terapeuta |
 | Može raditi bez kompletnog izbora | Primenjuje hard constraints |
@@ -434,6 +448,40 @@ Labela i opis mogu da se promene bez promene stabilnog identiteta. Lifecycle, ja
 
 Pet D-052 oblasti se backfill-uje kao system `support_area` termini. `therapist_matching_profiles.areas` prelazi sa JSON autoriteta na join reference kroz create → backfill → dual-read/parity → cutover faze. Matching značenje, težine i `addiction_related_support` capability se ne menjaju.
 
+### Kanonski route identitet oblasti i teme
+
+`stable_id` ostaje interni semantički ključ i ne mora biti javni SEO slug. Pre K2 forme koja prikazuje budući URL uvodi se mali route registry za managed `topic_group`/`topic` termine:
+
+- term reference, tenant, locale, route kind (`oblast | tema`) i normalizovan javni `slug`;
+- najviše jedan kanonski route po terminu/locale-u i unique slug po tenant/locale/route-kind granici;
+- slug se potvrđuje pre prve objave i ne menja automatski sa labelom;
+- korekcija već objavljenog sluga dodaje novi kanonski zapis; stari route ostaje alias i server radi permanent redirect;
+- route istorija i actor evidence se ne brišu;
+- slug nikada ne ulazi u recommendation, CMS metadata ili Intake most kao autoritet.
+
+### Opcioni urednički `CompassGuide` — nije deo taxonomy termina
+
+Česte i stručno važne kombinacije mogu kasnije dobiti poseban, odobren vodič. Vodič je sadržajni entitet u `modules/content`, ne nova taxonomy osa i ne deo K2 generičkog registry editora.
+
+Identitet i revizija moraju biti odvojeni:
+
+- `compass_guides`: tenant-scoped stabilan identitet i nepromenljivi `slug`/ID za administraciju; ne pravi javnu kombinacionu rutu niti sitemap stavku;
+- `compass_guide_revisions`: locale, title, RichDoc summary, status, lock, actor evidence i odobrenja;
+- tipizirane match reference posebno za `topic_group` i `topic` — API koristi `matchTopicGroupIds` i `matchTopicIds`, ne dvosmisleni zajednički niz;
+- opcioni `audienceIds` i `goalIds` samo kao kontrolisane reference;
+- ograničen skup sekcija: pregled teme, stručna veza tema, preporučeni sadržaji, praktični materijali, mediji, knjige, programi i stručna podrška;
+- sekcije referenciraju objavljene entitete; nema slobodnog URL-a, therapist rangiranja ni proizvoljnog page buildera;
+- najmanje Clinical + Business review pre objave; svaka stručna tvrdnja o preplitanju tema mora biti authored i odobrena.
+
+Pravilo izbora je determinističko:
+
+1. tačan objavljeni vodič za normalizovan skup izabranih oblasti/tema;
+2. ako ga nema, jedan najkonkretniji objavljeni vodič čiji je skup podskup izbora, uz stabilan editorial/tie-break redosled;
+3. preostale oblasti/teme prikazuju se odvojeno;
+4. ako vodiča nema, generički prikaz samo grupiše i deduplikuje metadata rezultate bez tvrdnje da su teme stručno povezane.
+
+`CompassGuide` ne blokira K2 ni K3 registry/CMS metadata foundation. Uvodi se tek kada postoji stvarni objavljeni katalog koji njegove sekcije mogu da referenciraju.
+
 ---
 
 ## 7. Publication i anti-drift pravila
@@ -442,7 +490,7 @@ Sadržaj ne može biti objavljen u Kompas katalog ako:
 
 - nema tačno jednu aktivnu `topicGroupId` referencu;
 - nema najmanje jednu aktivnu `topicId` referencu;
-- topic nije dete izabrane grupe;
+- topic nije dete izabrane oblasti;
 - nema `journeyIntent`, `goalIds` ili `audienceIds`;
 - referencira nepoznat ili arhiviran termin;
 - `contentFormat` ne odgovara stvarnom tipu entiteta/asset-a;
@@ -450,6 +498,8 @@ Sadržaj ne može biti objavljen u Kompas katalog ako:
 - related service/program ne postoji ili nije objavljen;
 - metadata revision nije prošla potrebni Clinical/Business review;
 - pokušava da referencira terapeuta radi rangiranja.
+
+Managed oblast/tema ne može biti objavljena bez jednog aktivnog kanonskog route zapisa za svoj tenant i locale. Javni slug koristi lowercase ASCII kebab-case; stari alias razrešava samo objavljen termin i vraća `308` ka aktuelnoj kanonskoj putanji, bez curenja draft podataka.
 
 Za `article` je kompletan discovery metadata deo article publish gate-a. Postojeći `service`/`program` može ostati objavljen na svojoj ruti bez tog metadata, ali tada nije Kompas kandidat; uključivanje u Kompas zahteva kompletan metadata i odgovarajući review.
 
@@ -555,6 +605,8 @@ Nikada ne prikazivati nepovezan sadržaj samo da lista ne bude prazna.
 
 Administrativni API podržava list/search po osi i statusu, create managed termina, novu radnu reviziju, optimistic locking, sinonime/hijerarhiju/veze, submit/review/publish/archive i actor evidence. Zaključane system vrednosti vraća kao read-only opcije za select kontrole. Nevalidna referenca vraća stabilan reason code, `fieldPath` i jasnu poruku na srpskom.
 
+K2.0 additivno dodaje route komande samo za oblast/temu: predlog i potvrdu novog sluga, eksplicitnu korekciju sa očuvanim aliasom i read-only `canonicalPath`. Stable ID endpoint se ne menja.
+
 Panel „Kompas” koristi ovaj API kroz regenerisan OpenAPI klijent. Ne održava taxonomy fixture kao runtime autoritet.
 
 ### Public taxonomy
@@ -564,8 +616,9 @@ Panel „Kompas” koristi ovaj API kroz regenerisan OpenAPI klijent. Ne održav
 Vraća:
 
 - `taxonomyVersion`;
-- aktivne grupe, labele, opise i redosled;
+- aktivne oblasti, labele, opise i redosled;
 - podteme;
+- `canonicalPath` samo za objavljene oblasti/teme, bez alias istorije;
 - sinonime samo ako su potrebni klijentskoj pretrazi;
 - dozvoljene journey/goal/audience vrednosti;
 - ne vraća draft/arhivirane definicije.
@@ -651,9 +704,10 @@ Preporuka za v1:
 - [x] **K0.4** Usvojen **ADR-022**: vlasništvo, revision model, tenant granica, API, migracija D-052 oblasti i Kompas ↔ Intake most.
 - [ ] **K0.5** Potvrditi osnovni vs napredni Kompas i release mapu; „napredni” ne sme biti sinonim za AI bez konkretne vrednosti.
 - [x] **K0.6** ADR-022 zaključava v1 session state: React memorija + kratki `sessionStorage` TTL, bez query topic ID-jeva, DB profila i identifikovanog analytics-a; eksplicitno deljenje ostaje otvoreno.
-- [ ] **K0.7** Primiti i uneti Anjinu konačnu mapu grupa/tema/sinonima.
+- [ ] **K0.7** Primiti i uneti Anjinu konačnu mapu oblasti/tema/sinonima.
+- [x] **K0.8** Usvojen **D-054 / ADR-022 Amandman 1**: „Oblasti” su UI naziv za `topic_group`; kanonske oblast/tema stranice su odvojene od dinamičkog `/kompas`; stručne kombinacije pripadaju opcionom revisioned `CompassGuide` vodiču.
 
-**Gate K0:** ✅ D-053 + ADR-022 su accepted. Nepoznate konačne labele su podaci registra i ne blokiraju početak K1.
+**Gate K0:** ✅ D-053 + D-054 + ADR-022 Amandman 1 su accepted. Nepoznate konačne labele su podaci registra i ne blokiraju implementation redosled.
 
 ### K1 — backend registry foundation
 
@@ -672,22 +726,26 @@ Preporuka za v1:
 
 ### K2 — panel „Kompas”
 
-- [ ] **K2.1** Dodati jednu panel površinu sa tabovima: **Grupe · Teme · Publike · Ciljevi sadržaja · Povezivanja · Pregled i odobrenja**.
-- [ ] **K2.2** Napraviti generički editor registra sa različitim pravilima po osi, ne poseban ekran za svaki mali registar.
+- [ ] **K2.0a** Pre forme dodati migraciju/model route registry-ja samo za `topic_group`/`topic`: tenant + locale + route kind + lowercase ASCII kebab slug, jedan kanonski route i sačuvana alias istorija sa actor evidence-om.
+- [ ] **K2.0b** Dodati staff API za predlog/potvrdu/korekciju sluga, optimistic lock i publication guard; stari objavljeni alias javno vraća `308` samo ka aktuelnom objavljenom terminu. Stable ID ostaje odvojen i ne menja se.
+- [ ] **K2.0c** U staff/public read-model dodati `canonicalPath`, regenerisati OpenAPI klijent i ne izlagati draft route/alias istoriju javnom taxonomy odgovoru.
+- [ ] **K2.1** Dodati jednu panel površinu sa tabovima: **Oblasti · Teme · Publike · Ciljevi sadržaja · Povezivanja · Pregled i odobrenja**. „Oblasti” uređuju postojeću osu `topic_group`; ne uvoditi novu osu/tabelu.
+- [ ] **K2.2** Napraviti generički editor registra sa različitim pravilima po osi, ne poseban ekran za svaki mali registar. Tehničko `topic_group` prikazati kao „Oblast”, a system `support_area` isključivo kao „Intake oblast podrške” u Povezivanjima.
 - [ ] **K2.3** Omogućiti javni naziv/opis, sinonime, hijerarhiju, redosled, ikonu/asset, vidljivost, aktivnost u Kompasu, povezane teme i internu stručnu napomenu.
 - [ ] **K2.4** Stable ID prikazati zaključano nakon kreiranja; system ID/semantiku nikad ne ponuditi kao slobodno polje.
-- [ ] **K2.5** Journey/format/access/lifecycle/approval vrednosti učitati kao system select opcije; `subscriber`/`purchased` su disabled „U pripremi”.
+- [ ] **K2.5** Journey/format/access/lifecycle/approval vrednosti učitati kao system select opcije; D-052 `support_area` učitati samo kao read-only izbor za topic → Intake povezivanje; `subscriber`/`purchased` su disabled „U pripremi”.
 - [ ] **K2.6** Uvesti stvarni draft → in_review → approved → published → archived tok sa Clinical/Business odobrenjima.
 - [ ] **K2.7** Prikazati mali actor badge za kreiranje, izmenu, odobrenje, objavu i arhiviranje.
 - [ ] **K2.8** Implementirati razumljive srpske validation/error poruke, fokus na konkretno polje i globalni error banner bez neželjenog skrola pri običnom kliku.
 - [ ] **K2.9** Org admin i D-051 superadmin koriste postojeće role/capability-je; ne uvoditi novu Clerk rolu niti zahtevati therapist profil superadminu.
+- [ ] **K2.10** Pre prve objave predložiti i potvrditi javni slug, a zatim prikazati preview buduće kanonske rute `/kompas/oblast/[slug]` ili `/kompas/tema/[slug]`. Promena labele ne menja slug; korekcija objavljenog sluga koristi novi kanonski route i čuva stari redirect. K2 još ne implementira javne stranice.
 
-**Gate K2:** Anja ili ovlašćeni org admin može napraviti draft grupe/teme, poslati na pregled, odobriti/objaviti po dozvoli, promeniti labelu bez promene ID-ja i videti ko je izvršio svaku radnju.
+**Gate K2:** Anja ili ovlašćeni org admin može napraviti draft oblasti/teme, jasno razlikuje oblast Kompasa od Intake oblasti podrške, šalje na pregled, odobrava/objavljuje po dozvoli, menja labelu bez promene ID-ja/rute i vidi ko je izvršio svaku radnju.
 
 ### K3 — neposredna CMS integracija
 
 - [ ] **K3.1** Vezati taxonomy reference za `ContentRevision`, ne `ContentEntry`.
-- [ ] **K3.2** U CMS formama koristiti DB-backed kontrolisana polja za grupu, teme, put, cilj, publiku, format i nivo pristupa.
+- [ ] **K3.2** U CMS formama koristiti DB-backed kontrolisana polja za oblast, teme, put, cilj, publiku, format i nivo pristupa.
 - [ ] **K3.3** UI pitanja pisati jezikom terapeuta: „Kojim oblastima pripada…?”, „Kome je namenjen…?”, „Šta korisnik dobija…?”, „Istraživanje, stručna podrška ili oba?”, „Ko može da pristupi?”.
 - [ ] **K3.4** Ne prikazivati `journeyIntent`, `topicGroupId` ili `accessLevel` kao glavne labele i ne dozvoliti slobodan taxonomy string.
 - [ ] **K3.5** Format i estimated time izvoditi kada god je moguće; onemogućiti vrednost za koju nema stvarnog entiteta/handlera.
@@ -709,6 +767,16 @@ Preporuka za v1:
 
 **Gate K3A:** najmanje jedan stvarni objavljeni članak i jedan dozvoljeni postojeći entitet ulaze u isti discovery read-model. Ova kapija ne blokira K1/K2.
 
+### K3B — kanonske stranice i urednički vodiči
+
+- [ ] **K3B.1** Definisati read-model i route resolver za jednu objavljenu oblast i jednu objavljenu temu; kanonske rute su `/kompas/oblast/[slug]` i `/kompas/tema/[slug]`, a stari alias radi permanent redirect.
+- [ ] **K3B.2** Kanonska stranica automatski okuplja objavljene podteme/sadržaje iz registra i metadata; ne pravi kopiju sadržaja ni novu stranicu za kombinaciju.
+- [ ] **K3B.3** Implementirati opcioni revisioned `CompassGuide` identitet tek nad stvarnim katalogom, sa odvojenim `matchTopicGroupIds`/`matchTopicIds`, kontrolisanim sekcijama, lock-om, actor audit-om i Clinical + Business review-om.
+- [ ] **K3B.4** Reference vodiča moraju pokazivati na aktivne taxonomy termine i objavljene dozvoljene sadržaje; arhivirana/neobjavljena referenca blokira approval/publish.
+- [ ] **K3B.5** Ne dozvoliti slobodan page builder, slobodan URL, AI-authored stručnu vezu, therapist ID ni recommendation score u vodiču.
+
+**Gate K3B:** jedna oblast i jedna tema imaju kanonski read-model, a opciono odobren vodič može opisati stvarnu kombinaciju bez menjanja taxonomy registra ili pravljenja kombinacione SEO stranice.
+
 ### K4 — recommendation service
 
 - [ ] **K4.1** Verziran request/response ugovor.
@@ -718,6 +786,8 @@ Preporuka za v1:
 - [ ] **K4.5** Kontrolisano širenje rezultata i empty state.
 - [ ] **K4.6** Paginacija i stabilan tie-break.
 - [ ] **K4.7** Nema AI poziva, embeddings-a, profila korisnika ni terapeuta.
+- [ ] **K4.8** Za kombinovani prikaz birati: tačan objavljeni `CompassGuide` → najkonkretniji subset vodič → generičke odvojene sekcije; izbor vodiča ima verzirano i stabilno tie-break pravilo.
+- [ ] **K4.9** Generički prikaz deduplikuje sadržaje i može isticati zajedničke metadata pogotke, ali nikada ne generiše tekst o uzročnoj ili stručnoj povezanosti tema.
 
 **Gate K4:** isti request i ista verzija kataloga daju isti redosled i razloge.
 
@@ -734,18 +804,21 @@ Preporuka za v1:
 
 ### K6 — javni Kompas UI
 
-- [ ] **K6.1** Ruta i javna metadata tek kada K1–K5 API, panel i CMS reference rade.
-- [ ] **K6.2** Grupe dolaze iz DB read-modela; nema frontend stručnog niza.
+- [ ] **K6.1** Implementirati tri odvojene površine tek kada K1–K5 rade: `/kompas`, `/kompas/oblast/[slug]` i `/kompas/tema/[slug]`.
+- [ ] **K6.2** Oblasti (`topic_group`) i teme dolaze iz DB read-modela; nema frontend stručnog niza. D-052 Intake oblasti se ne prikazuju kao javne Kompas oblasti.
 - [ ] **K6.3** Jedna interaktivna površina, bez „korak X od Y”.
-- [ ] **K6.4** Izbor grupe odmah prikazuje sadržaj.
+- [ ] **K6.4** Izbor oblasti odmah prikazuje sadržaj.
 - [ ] **K6.5** Multi-select tema/filtera, uklanjanje i reset.
 - [ ] **K6.6** Sekcije rezultata bez beskonačnog feed-a; konačni copy dolazi iz UX/content odluke.
 - [ ] **K6.7** Razlog preporuke i access oznaka na kartici.
 - [ ] **K6.8** Stalno vidljiv nenametljiv prelaz ka stručnoj podršci.
 - [ ] **K6.9** Hero i „Razlozi dolaska” otvaraju Kompas sa potvrđenim početnim ID-jem.
 - [ ] **K6.10** Posebna kartica za „ne znam odakle da počnem”, bez lažne stručne teme.
+- [ ] **K6.11** Dinamički prikaz pokazuje čipove „Vaš trenutni izbor”, linkuje svaku oblast/temu ka njenoj kanonskoj stranici i ne koristi reč „profil”.
+- [ ] **K6.12** Ne kreirati `/kompas/tema/kombinacija` stranice niti čitljive topic query parametre; izbor ostaje na `/kompas` u React/session stanju.
+- [ ] **K6.13** `/kompas/putanja/[opaqueId]` je kasniji privatni saved-path domen i ne ulazi u v1 bez retention/access odluke.
 
-**Gate K6:** korisnik sa početne bira grupu, odmah vidi stvarno objavljen sadržaj, menja izbor, otvara članak i može u Intake bez wizard osećaja.
+**Gate K6:** korisnik sa početne bira oblast, odmah vidi stvarno objavljen sadržaj, menja izbor, otvara kanonsku oblast/temu ili članak i može u Intake bez wizard osećaja; nijedna kombinacija ne pravi novu SEO stranicu ili stručnu tvrdnju bez odobrenog vodiča.
 
 ### K7 — dodatni formati i access
 
@@ -769,7 +842,7 @@ Preporuka za v1:
 
 ## 12. Sutrašnji unos od Anje — format koji ne blokira razvoj
 
-### Grupe
+### Oblasti (`topic_group`)
 
 | Polje | Primer |
 | --- | --- |
@@ -825,6 +898,8 @@ Kada Milan otvori posebnu fazu testiranja, prioritet su:
 12. Tenant A nikada ne vidi sadržaj tenant-a B.
 13. Stari shared/session izbor sa arhiviranim terminom se oporavlja bez 500.
 14. Sirovi topic izbor ne završava u query logu, analytics payload-u ili audit event-u.
+15. `/kompas/oblast/stres-i-preopterecenost` i `/kompas/tema/burnout` ostaju kanonske pojedinačne stranice; promena labele ih ne menja, stari slug redirectuje posle eksplicitne korekcije, a izbor više termina ostaje na `/kompas` i ne proizvodi kombinacionu rutu.
+16. Bez objavljenog `CompassGuide` prikaz razdvaja oblasti/teme i ne tvrdi da su stručno povezane; objavljeni exact/subset vodič dobija prednost po verziranom pravilu.
 
 Mali broj contract/parity testova može se dodati uz vertikalni tok, ali se izvršava samo u posebno zatraženoj test-fazi po `TODO.md` §0A.
 
@@ -843,7 +918,7 @@ Mali broj contract/parity testova može se dodati uz vertikalni tok, ali se izvr
 
 ### Od Anje i stručnog tima
 
-- [ ] Konačne grupe, javni nazivi, opisi i redosled.
+- [ ] Konačne oblasti, javni nazivi, opisi i redosled.
 - [ ] Konkretne teme i sinonimi.
 - [ ] Topic → Intake support-area veze.
 - [ ] `child` i „za drugu osobu” audience odluka.
@@ -863,10 +938,10 @@ Mali broj contract/parity testova može se dodati uz vertikalni tok, ali se izvr
 
 ## 15. Sledeći konkretan korak
 
-D-053 i ADR-022 su usvojeni. Sledeće:
+D-053, D-054 i ADR-022 Amandman 1 su usvojeni. Sledeće:
 
-1. sprovesti **K2 panel „Kompas”** sa svih šest tabova i stvarnim governance tokom;
+1. sprovesti **K2.0 route registry**, pa **K2 panel „Kompas”** sa svih šest tabova i stvarnim governance tokom;
 2. povezati registar sa **K3 CMS formama**;
 3. Anjinu konačnu tabelu uneti kao stručne podatke čim stigne, bez menjanja arhitekture;
-4. završiti K3A/K4/K5 i tek tada javni K6;
+4. završiti K3A katalog i K3B kanonske stranice/`CompassGuide` ugovor, zatim K4/K5 i tek tada javni K6;
 5. širiti formate i AI tek posle stvarnog osnovnog toka.
