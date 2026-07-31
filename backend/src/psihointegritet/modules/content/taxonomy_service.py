@@ -1067,7 +1067,12 @@ class TaxonomyService:
     async def delete_revision(
         self, actor: StaffActor, term_id: UUID, revision_id: UUID
     ) -> None:
-        """Delete an unsent tenant draft; governed history stays immutable."""
+        """Delete a tenant-owned revision on explicit administrator request.
+
+        This is intentionally stronger than lifecycle archive: the caller has
+        asked to remove the saved version itself. System revisions and terms
+        referenced by another registry object remain protected.
+        """
         self._require_org_admin(actor)
         term = await self._term(actor, term_id)
         revision = await self._revision(actor, term, revision_id)
@@ -1075,32 +1080,11 @@ class TaxonomyService:
             raise TaxonomyForbiddenError(
                 "TAX-SYSTEM-003", "Globalna sistemska verzija ne može se obrisati iz tenant panela."
             )
-        if revision.status is not RevisionStatus.DRAFT:
-            raise TaxonomyConflictError(
-                "TAX-DELETE-001",
-                "Mogu se obrisati samo radne verzije koje još nisu poslate na pregled.",
-                "status",
-            )
         await self._session.delete(revision)
         await self._session.flush()
-        remaining = await self._session.scalar(
-            select(TaxonomyTermRevision.id)
-            .where(TaxonomyTermRevision.term_id == term.id)
-            .limit(1)
-        )
-        # A just-created managed term has no useful identity without its first
-        # draft. Remove that empty shell so the stable ID can be corrected and
-        # recreated; a term with history remains immutable.
-        if remaining is None and not term.system_defined:
-            await self._session.delete(term)
-            try:
-                await self._session.flush()
-            except IntegrityError as error:
-                raise TaxonomyConflictError(
-                    "TAX-DELETE-002",
-                    "Radna verzija je obrisana, ali stabilni ID nije moguće ukloniti jer ga već koristi druga referenca.",
-                    "revisionId",
-                ) from error
+        # The stable term identity is never deleted or recycled (ADR-022/K1.7),
+        # even when its last saved revision is removed. A later edit can create
+        # a new tenant revision for this same stable ID.
 
     async def record_review(
         self,

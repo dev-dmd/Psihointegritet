@@ -5,6 +5,7 @@ import type { FormEvent, ReactNode } from "react";
 import { useState } from "react";
 
 import { ActorBadge, type ActorSummary } from "@/components/panel/actor-badge";
+import { ConfirmModal } from "@/components/panel/confirm-modal";
 import { EmptyDashedCard } from "@/components/panel/empty-dashed-card";
 import { StatCard } from "@/components/panel/stat-card";
 import {
@@ -946,9 +947,13 @@ function TermCard({
   onChanged?: (term: TaxonomyTerm) => void;
   onDeleted?: () => void;
 }) {
+  const [deleteOpen, setDeleteOpen] = useState(false);
   const deleteMutation = useMutation({
     mutationFn: () => deleteTaxonomyRevision(term.termId, term.revisionId),
-    onSuccess: onDeleted,
+    onSuccess: () => {
+      setDeleteOpen(false);
+      onDeleted?.();
+    },
   });
   const status = STATUS_META[term.status];
   const isRouteTerm = term.axis === "topic_group" || term.axis === "topic";
@@ -1107,18 +1112,14 @@ function TermCard({
               Uredi
             </button>
           ) : null}
-          {!term.systemDefined && term.status === "draft" && onDeleted ? (
+          {!term.systemDefined && onDeleted ? (
             <button
               type="button"
               disabled={deleteMutation.isPending}
-              onClick={() => {
-                if (window.confirm("Obrisati ovu sačuvanu radnu verziju? Ova radnja se ne može poništiti.")) {
-                  deleteMutation.mutate();
-                }
-              }}
+              onClick={() => setDeleteOpen(true)}
               className="border-danger/40 text-danger hover:bg-danger/8 cursor-pointer rounded-full border bg-transparent px-3.5 py-2 text-[12.5px] font-semibold disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {deleteMutation.isPending ? "Brisanje…" : "Obriši radnu verziju"}
+              {deleteMutation.isPending ? "Brisanje…" : "Obriši verziju"}
             </button>
           ) : null}
         </div>
@@ -1130,6 +1131,18 @@ function TermCard({
             : "Radna verzija nije obrisana. Pokušajte ponovo."}
         </p>
       ) : null}
+      <ConfirmModal
+        open={deleteOpen}
+        eyebrow="Brisanje verzije registra"
+        title="Obrisati sačuvanu verziju?"
+        description={`Brišete „${term.publicLabel}“, ${term.versionLabel} u statusu „${STATUS_META[term.status].label}“. Ova radnja se ne može poništiti.`}
+        reasonLabel="Razlog brisanja"
+        reasonPlaceholder="Npr. duplikat ili pogrešan unos"
+        note="Brisanje objavljene verzije uklanja je iz aktivnog registra. Prethodna verzija, ako postoji, ostaje zasebna istorijska verzija."
+        confirmLabel={deleteMutation.isPending ? "Brisanje…" : "Obriši verziju"}
+        onConfirm={() => deleteMutation.mutate()}
+        onClose={() => setDeleteOpen(false)}
+      />
       {!term.systemDefined && onChanged ? (
         <TermGovernanceControls term={term} onChanged={onChanged} />
       ) : null}
