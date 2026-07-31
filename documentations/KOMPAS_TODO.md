@@ -1,6 +1,6 @@
 # KOMPAS TODO — discovery i recommendation sloj
 
-**Status:** K1 backend foundation i K2.0–K2.2 panel foundation implementirani; sledeći korak je K2.3 proširenje svih uređivih registry polja
+**Status:** K1 backend foundation i K2.0–K2.3 panel/editor implementirani; sledeći korak je K2.4 formalna zaštita stabilnih i sistemskih ID-jeva u UI toku
 **Datum:** 2026-07-31  
 **Vlasnik tehničkih odluka:** Milan Dražić (CTO)  
 **Vlasnik stručne kategorizacije i javnih naziva:** Anja Stamenković i stručni tim  
@@ -731,7 +731,7 @@ Preporuka za v1:
 - [x] **K2.0c** Staff/public read-model nose `canonicalPath`; route istorija ostaje samo u zaštićenom staff odgovoru, a javni taxonomy odgovor ne izlaže draft ni alias podatke. OpenAPI klijent je regenerisan.
 - [x] **K2.1** Dodata je admin-only panel površina `/radni-prostor/kompas` sa tabovima **Oblasti · Teme · Publike · Ciljevi sadržaja · Povezivanja · Pregled i odobrenja**. Čita stvarni staff API kroz Clerk proxy i TanStack Query, ima loading/error/empty stanja, statusne preglede i actor evidence. „Oblasti” koriste `topic_group`; `support_area` se prikazuje samo kao „Intake oblast podrške” u Povezivanjima.
 - [x] **K2.2** Napravljen je jedan generički create/edit editor sa konfiguracijom po managed osi, bez četiri kopirana formulara. Oblast, tema, publika i cilj koriste isti mutation/cache tok; tema dodatno zahteva kontrolisanu oblast i system put korisnika. Stabilni ID se unosi samo pri kreiranju i posle je zaključan. `support_area` nije dobio editor ni javni tab.
-- [ ] **K2.3** Omogućiti javni naziv/opis, sinonime, hijerarhiju, redosled, ikonu/asset, vidljivost, aktivnost u Kompasu, povezane teme i internu stručnu napomenu.
+- [x] **K2.3** Generički editor sada uređuje javni naziv/opis, deduplikovane sinonime i pojmove za pretragu, topic hijerarhiju, redosled, međusobno isključivu ikonu/asset, odvojenu javnu vidljivost i Kompas aktivnost, topic-only povezane teme i internu stručnu napomenu. Sve vrednosti ulaze u isti tipizirani create/update payload; interna napomena ostaje staff-only.
 - [ ] **K2.4** Stable ID prikazati zaključano nakon kreiranja; system ID/semantiku nikad ne ponuditi kao slobodno polje.
 - [ ] **K2.5** Journey/format/access/lifecycle/approval vrednosti učitati kao system select opcije; D-052 `support_area` učitati samo kao read-only izbor za topic → Intake povezivanje; `subscriber`/`purchased` su disabled „U pripremi”.
 - [ ] **K2.6** Uvesti stvarni draft → in_review → approved → published → archived tok sa Clinical/Business odobrenjima.
@@ -744,7 +744,9 @@ Preporuka za v1:
 
 **K2.1 granica:** ovaj korak je završio read-only upravljačku površinu nad stvarnim registrom. Create/edit je zatim dodat kroz K2.2; lifecycle komande, odobrenja i potvrda sluga i dalje se uvode redom kroz K2.3–K2.10 nad postojećim backend ugovorom.
 
-**K2.2 granica:** generički editor sada stvarno kreira i menja osnovni draft (javni naziv, kratak opis i obavezni topic kontekst) kroz staff API i `lockVersion`. Sinonimi, redosled, asset/ikona, vidljivost, Kompas aktivnost, povezane teme i interna stručna napomena ostaju objedinjeno proširenje K2.3; lifecycle i odobrenja nisu preuranjeno dodati.
+**K2.2 granica:** ovaj korak je uveo generički create/edit osnovnog drafta kroz staff API i `lockVersion`; K2.3 ga je zatim proširio ostalim managed poljima. Lifecycle i odobrenja nisu preuranjeno dodati.
+
+**K2.3 napomena:** asset biblioteka još ne postoji, pa editor transparentno prima ID već odobrenog asseta; ne simulira upload ni picker. Ikona i asset su jedan kontrolisani izbor i nikada se ne šalju istovremeno. Arhivirana postojeća referenca ostaje vidljiva u editoru samo da bi mogla bezbedno da se ukloni.
 
 **Gate K2:** Anja ili ovlašćeni org admin može napraviti draft oblasti/teme, jasno razlikuje oblast Kompasa od Intake oblasti podrške, šalje na pregled, odobrava/objavljuje po dozvoli, menja labelu bez promene ID-ja/rute i vidi ko je izvršio svaku radnju.
 
@@ -946,7 +948,7 @@ Mali broj contract/parity testova može se dodati uz vertikalni tok, ali se izvr
 
 D-053, D-054 i ADR-022 Amandman 1 su usvojeni. Sledeće:
 
-1. nastaviti **K2.3 proširenjem uređivih registry polja**, zatim K2.4–K2.10 stvarnim governance tokom na već postavljenom generičkom editoru;
+1. nastaviti **K2.4 formalnom UI zaštitom stabilnih/system ID-jeva**, zatim K2.5–K2.10 stvarnim governance tokom na već postavljenom generičkom editoru;
 2. povezati registar sa **K3 CMS formama**;
 3. Anjinu konačnu tabelu uneti kao stručne podatke čim stigne, bez menjanja arhitekture;
 4. završiti K3A katalog i K3B kanonske stranice/`CompassGuide` ugovor, zatim K4/K5 i tek tada javni K6;

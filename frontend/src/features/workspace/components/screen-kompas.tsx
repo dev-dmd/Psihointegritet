@@ -175,6 +175,14 @@ function TermCard({
     "journey_intent",
     term.journeyIntent,
   );
+  const relatedLabels = term.relations
+    .filter((relation) => relation.kind === "related_topic")
+    .map((relation) => ({
+      key: relation.targetTermId,
+      label:
+        publicLabelFor(registryTerms, "topic", relation.targetStableId) ??
+        relation.targetStableId,
+    }));
 
   return (
     <article className="rounded-card border-line bg-surface border px-5 py-[18px] md:px-6 md:py-5">
@@ -202,22 +210,62 @@ function TermCard({
         </div>
       ) : null}
 
+      <div className="text-ink-45 mt-3 flex flex-wrap gap-x-4 gap-y-1 text-[11.5px]">
+        <span>Redosled: {term.sortOrder}</span>
+        {term.iconKey ? <span>Ikona: {term.iconKey}</span> : null}
+        {term.assetId ? <span>Asset: {term.assetId}</span> : null}
+      </div>
+
       {term.searchTerms.length > 0 ? (
-        <div className="mt-3 flex flex-wrap gap-1.5">
-          {term.searchTerms.slice(0, 6).map((searchTerm) => (
-            <span
-              key={searchTerm}
-              className="border-line-strong text-ink-55 rounded-full border px-2.5 py-1 text-[11.5px]"
-            >
-              {searchTerm}
-            </span>
-          ))}
-          {term.searchTerms.length > 6 ? (
-            <span className="text-ink-45 px-1 py-1 text-[11.5px]">
-              +{term.searchTerms.length - 6}
-            </span>
-          ) : null}
+        <div className="mt-3">
+          <div className="text-ink-45 mb-1.5 text-[10.5px] font-semibold tracking-[0.1em] uppercase">
+            Sinonimi i pretraga
+          </div>
+          <div className="flex flex-wrap gap-1.5">
+            {term.searchTerms.slice(0, 6).map((searchTerm) => (
+              <span
+                key={searchTerm}
+                className="border-line-strong text-ink-55 rounded-full border px-2.5 py-1 text-[11.5px]"
+              >
+                {searchTerm}
+              </span>
+            ))}
+            {term.searchTerms.length > 6 ? (
+              <span className="text-ink-45 px-1 py-1 text-[11.5px]">
+                +{term.searchTerms.length - 6}
+              </span>
+            ) : null}
+          </div>
         </div>
+      ) : null}
+
+      {relatedLabels.length > 0 ? (
+        <div className="mt-3">
+          <div className="text-ink-45 mb-1.5 text-[10.5px] font-semibold tracking-[0.1em] uppercase">
+            Povezane teme
+          </div>
+          <div className="flex flex-wrap gap-1.5">
+            {relatedLabels.map((related) => (
+              <span
+                key={related.key}
+                className="bg-badge-soft-bg text-badge-soft rounded-full px-2.5 py-1 text-[11.5px] font-semibold"
+              >
+                {related.label}
+              </span>
+            ))}
+          </div>
+        </div>
+      ) : null}
+
+      {term.internalExpertNote ? (
+        <details className="border-line rounded-tile mt-3 border px-3 py-2.5">
+          <summary className="text-ink-70 cursor-pointer text-[12px] font-semibold">
+            Interna stručna napomena
+          </summary>
+          <p className="text-ink-55 mt-2 text-[12.5px] leading-[1.55] whitespace-pre-wrap">
+            {term.internalExpertNote}
+          </p>
+        </details>
       ) : null}
 
       <div className="border-line mt-4 flex flex-wrap items-center gap-2 border-t pt-3">
