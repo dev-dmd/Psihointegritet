@@ -16,6 +16,22 @@ depends_on: str | None = None
 
 def upgrade() -> None:
     op.add_column("legal_documents", sa.Column("slug", sa.String(length=80), nullable=True))
+    # Some long-lived Railway databases applied the original 0005 before
+    # ``legal_document_revisions.slug`` was added to that historical file.
+    # Alembic correctly considers 0005 complete there, so 0009 must support
+    # both physical schemas. Repair the missing physical column as part of
+    # this unapplied migration so the current ORM remains valid afterwards;
+    # existing drifted rows receive an empty snapshot and use the stable-kind
+    # fallback below.
+    revision_columns = {
+        column["name"]
+        for column in sa.inspect(op.get_bind()).get_columns("legal_document_revisions")
+    }
+    if "slug" not in revision_columns:
+        op.add_column(
+            "legal_document_revisions",
+            sa.Column("slug", sa.String(80), nullable=False, server_default=""),
+        )
     op.execute(
         """
         UPDATE legal_documents AS document
