@@ -1,6 +1,6 @@
 # KOMPAS TODO — discovery i recommendation sloj
 
-**Status:** K1 backend foundation i K2.0–K2.7 panel/editor implementirani; sledeći korak je K2.8 — jasne srpske validacione i serverske poruke
+**Status:** K1 backend foundation i K2.0–K2.8 panel/editor implementirani; sledeći korak je K2.9 — potvrda postojećih ovlašćenja za org admina i superadmina
 **Datum:** 2026-07-31  
 **Vlasnik tehničkih odluka:** Milan Dražić (CTO)  
 **Vlasnik stručne kategorizacije i javnih naziva:** Anja Stamenković i stručni tim  
@@ -736,7 +736,7 @@ Preporuka za v1:
 - [x] **K2.5** Put korisnika je stvarni DB-backed select pri uređivanju teme; format i izvršivi nivo pristupa učitavaju se iz sistemskog registra kao kontrolisane CMS opcije, dok su `subscriber`/`purchased` jasno disabled „U pripremi”. Lifecycle i approval capability su prikazani kao zaključan sistemski ugovor bez slobodnog unosa. Tab Povezivanja sada kroz stvarni `POST` tok bira konkretnu temu i read-only D-052 `support_area`; ne može kreirati ili menjati Intake oblast niti rankira terapeute.
 - [x] **K2.6** Panel sada koristi stvarni staff API za `draft → in_review → approved → published → archived` i dozvoljene povratke. Managed termini traže Stručno + Poslovno odobrenje, a topic → Intake veza samo Stručno; odluka može imati napomenu i ostaje dokaz revizije. `approved/archived → draft` koristi postojeće backend pravilo nove radne revizije, a objava topic/oblasti i dalje prolazi kanonski-route guard do K2.10.
 - [x] **K2.7** Prikazati mali actor badge za kreiranje, izmenu, odobrenje, objavu i arhiviranje. Badge sada prikazuje ime i ulogu (`superadmin` ili `administrator organizacije`); objava/arhiviranje čitaju stvarni lifecycle audit događaj, a Stručno/Poslovno odobrenje konkretnu review odluku revizije.
-- [ ] **K2.8** Implementirati razumljive srpske validation/error poruke, fokus na konkretno polje i globalni error banner bez neželjenog skrola pri običnom kliku.
+- [x] **K2.8** Implementirati razumljive srpske validation/error poruke, fokus na konkretno polje i globalni error banner bez neželjenog skrola pri običnom kliku. Kompas API sada čuva `fieldPath`/`fieldErrors`, prevodi uobičajene Pydantic poruke, a editor registra i povezivanje ka Intake-u prikazuju grešku uz odgovarajuće polje, sa fokusom `preventScroll`; samo nepoljska/nepredviđena greška ostaje globalni banner.
 - [ ] **K2.9** Org admin i D-051 superadmin koriste postojeće role/capability-je; ne uvoditi novu Clerk rolu niti zahtevati therapist profil superadminu.
 - [ ] **K2.10** Pre prve objave predložiti i potvrditi javni slug, a zatim prikazati preview buduće kanonske rute `/kompas/oblast/[slug]` ili `/kompas/tema/[slug]`. Promena labele ne menja slug; korekcija objavljenog sluga koristi novi kanonski route i čuva stari redirect. K2 još ne implementira javne stranice.
 
@@ -954,7 +954,7 @@ Mali broj contract/parity testova može se dodati uz vertikalni tok, ali se izvr
 
 D-053, D-054 i ADR-022 Amandman 1 su usvojeni. Sledeće:
 
-1. nastaviti **K2.8 jasnim srpskim validation/error porukama**, zatim K2.9–K2.10 governance detaljima na već postavljenom generičkom editoru;
+1. nastaviti **K2.9 potvrdom postojećih ovlašćenja org admina i superadmina**, zatim K2.10 route governance detaljem na već postavljenom generičkom editoru;
 2. povezati registar sa **K3 CMS formama**;
 3. Anjinu konačnu tabelu uneti kao stručne podatke čim stigne, bez menjanja arhitekture;
 4. završiti K3A katalog i K3B kanonske stranice/`CompassGuide` ugovor, zatim K4/K5 i tek tada javni K6;

@@ -10,6 +10,7 @@ import { cn } from "@/helpers/cn";
 import {
   createTaxonomyTerm,
   TaxonomyApiError,
+  taxonomyFieldErrors,
   type TaxonomyAxis,
   type TaxonomyTerm,
   updateTaxonomyRevision,
@@ -59,6 +60,28 @@ export const AXIS_EDITOR_CONFIG: Record<ManagedTaxonomyAxis, AxisEditorConfig> =
 const STABLE_ID_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
 type VisualMode = "none" | "icon" | "asset";
+
+const FIELD_DOM_SUFFIX: Record<string, string> = {
+  publicLabel: "label",
+  stableId: "stable-id",
+  primaryParentTermId: "parent",
+  journeyIntentTermId: "journey",
+  shortDescription: "description",
+  searchTerms: "search-terms",
+  sortOrder: "sort-order",
+  relatedTopicIds: "related-topics",
+  iconKey: "icon-key",
+  assetId: "asset-id",
+  internalExpertNote: "internal-note",
+};
+
+function FieldError({ message, id }: { message?: string; id: string }) {
+  return message ? (
+    <p id={id} role="alert" className="text-danger mt-1.5 text-[12px] leading-[1.4]">
+      {message}
+    </p>
+  ) : null;
+}
 
 function initialVisualMode(term: TaxonomyTerm | null): VisualMode {
   if (term?.iconKey) return "icon";
@@ -134,7 +157,36 @@ export function TaxonomyTermEditor({
       .filter((relation) => relation.kind === "related_topic")
       .map((relation) => relation.targetTermId) ?? [],
   );
-  const [validationError, setValidationError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [serverError, setServerError] = useState<string | null>(null);
+  const editorId = `taxonomy-${axis}-${term?.termId ?? "new"}`;
+
+  const focusField = (field: string) => {
+    const suffix = FIELD_DOM_SUFFIX[field];
+    if (!suffix) return;
+    requestAnimationFrame(() => {
+      document.getElementById(`${editorId}-${suffix}`)?.focus({
+        preventScroll: true,
+      });
+    });
+  };
+  const setFieldError = (field: string, message: string) => {
+    setServerError(null);
+    setFieldErrors({ [field]: message });
+    focusField(field);
+  };
+  const clearFieldError = (field: string) => {
+    setServerError(null);
+    setFieldErrors((current) => {
+      if (!current[field]) return current;
+      const next = { ...current };
+      delete next[field];
+      return next;
+    });
+  };
+  const errorId = (field: string) => `${editorId}-${FIELD_DOM_SUFFIX[field]}-error`;
+  const inputClass = (field: string, base: string) =>
+    cn(base, fieldErrors[field] ? "border-danger focus:border-danger" : "");
 
   const areas = registryTerms.filter(
     (item) =>
@@ -215,17 +267,20 @@ export function TaxonomyTermEditor({
       });
     },
     onSuccess: onSaved,
+    onError: (error) => {
+      const apiFieldErrors = taxonomyFieldErrors(error);
+      const [field, message] = Object.entries(apiFieldErrors)[0] ?? [];
+      if (field && message) {
+        setFieldError(field, message);
+        return;
+      }
+      setServerError(
+        error instanceof TaxonomyApiError || error instanceof Error
+          ? error.message
+          : "Izmena nije sačuvana. Pokušajte ponovo.",
+      );
+    },
   });
-
-  const mutationError = saveMutation.isError
-    ? saveMutation.error instanceof TaxonomyApiError
-      ? saveMutation.error.message
-      : saveMutation.error instanceof Error
-        ? saveMutation.error.message
-        : "Izmena nije sačuvana. Pokušajte ponovo."
-    : null;
-  const error = validationError ?? mutationError;
-  const editorId = `taxonomy-${axis}-${term?.termId ?? "new"}`;
   const searchTermCount = parseSearchTerms(searchTermsText).length;
 
   if (protectedTargetReason) {
@@ -254,34 +309,38 @@ export function TaxonomyTermEditor({
 
   const submit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    setValidationError(null);
+    setFieldErrors({});
+    setServerError(null);
     if (!publicLabel.trim()) {
-      setValidationError(`${config.publicLabel} je obavezan.`);
+      setFieldError("publicLabel", `${config.publicLabel} je obavezan.`);
       return;
     }
     if (!term && !STABLE_ID_PATTERN.test(stableId.trim())) {
-      setValidationError(
+      setFieldError(
+        "stableId",
         `Stabilni ID koristi mala ASCII slova, brojeve i crtice, na primer ${config.stableIdExample}.`,
       );
       return;
     }
     if (config.requiresTopicContext && !primaryParentTermId) {
-      setValidationError("Izaberite oblast kojoj tema pripada.");
+      setFieldError("primaryParentTermId", "Izaberite oblast kojoj tema pripada.");
       return;
     }
     if (config.requiresTopicContext && !journeyIntentTermId) {
-      setValidationError("Izaberite put korisnika za ovu temu.");
+      setFieldError("journeyIntentTermId", "Izaberite put korisnika za ovu temu.");
       return;
     }
     const normalizedSearchTerms = parseSearchTerms(searchTermsText);
     if (normalizedSearchTerms.length > 100) {
-      setValidationError(
+      setFieldError(
+        "searchTerms",
         "Možete uneti najviše 100 sinonima i pojmova za pretragu.",
       );
       return;
     }
     if (normalizedSearchTerms.some((item) => item.length > 160)) {
-      setValidationError(
+      setFieldError(
+        "searchTerms",
         "Jedan sinonim ili pojam može imati najviše 160 karaktera.",
       );
       return;
@@ -293,21 +352,23 @@ export function TaxonomyTermEditor({
       normalizedSortOrder < 0 ||
       normalizedSortOrder > 100_000
     ) {
-      setValidationError("Redosled mora biti ceo broj između 0 i 100000.");
+      setFieldError("sortOrder", "Redosled mora biti ceo broj između 0 i 100000.");
       return;
     }
     if (relatedTopicIds.length > 100) {
-      setValidationError("Možete povezati najviše 100 tema.");
+      setFieldError("relatedTopicIds", "Možete povezati najviše 100 tema.");
       return;
     }
     if (visualMode === "icon" && !iconKey.trim()) {
-      setValidationError(
+      setFieldError(
+        "iconKey",
         "Unesite ključ ikone ili izaberite drugi vizuelni režim.",
       );
       return;
     }
     if (visualMode === "asset" && !assetId.trim()) {
-      setValidationError(
+      setFieldError(
+        "assetId",
         "Unesite ID asseta ili izaberite drugi vizuelni režim.",
       );
       return;
@@ -336,12 +397,12 @@ export function TaxonomyTermEditor({
         ) : null}
       </div>
 
-      {error ? (
+      {serverError ? (
         <div
           role="alert"
           className="border-danger/45 bg-danger/8 text-ink-70 rounded-tile mt-4 border px-4 py-3 text-[13px] leading-[1.5]"
         >
-          {error}
+          {serverError}
         </div>
       ) : null}
 
@@ -360,10 +421,13 @@ export function TaxonomyTermEditor({
             disabled={saveMutation.isPending}
             onChange={(event) => {
               setPublicLabel(event.target.value);
-              setValidationError(null);
+              clearFieldError("publicLabel");
             }}
-            className="border-line-strong rounded-tile bg-panel-canvas text-coffee focus:border-sage w-full border px-3.5 py-2.5 text-sm outline-none disabled:opacity-60"
+            aria-invalid={Boolean(fieldErrors.publicLabel)}
+            aria-describedby={fieldErrors.publicLabel ? errorId("publicLabel") : undefined}
+            className={inputClass("publicLabel", "border-line-strong rounded-tile bg-panel-canvas text-coffee focus:border-sage w-full border px-3.5 py-2.5 text-sm outline-none disabled:opacity-60")}
           />
+          <FieldError id={errorId("publicLabel")} message={fieldErrors.publicLabel} />
           <p className="text-ink-45 mt-1 text-right text-[11px]">
             {publicLabel.length}/160
           </p>
@@ -393,11 +457,14 @@ export function TaxonomyTermEditor({
               placeholder={config.stableIdExample}
               onChange={(event) => {
                 setStableId(event.target.value);
-                setValidationError(null);
+                clearFieldError("stableId");
               }}
-              className="border-line-strong rounded-tile bg-panel-canvas text-coffee focus:border-sage w-full border px-3.5 py-2.5 font-mono text-sm outline-none disabled:opacity-60"
+              aria-invalid={Boolean(fieldErrors.stableId)}
+              aria-describedby={fieldErrors.stableId ? errorId("stableId") : undefined}
+              className={inputClass("stableId", "border-line-strong rounded-tile bg-panel-canvas text-coffee focus:border-sage w-full border px-3.5 py-2.5 font-mono text-sm outline-none disabled:opacity-60")}
             />
           )}
+          <FieldError id={errorId("stableId")} message={fieldErrors.stableId} />
           <p className="text-ink-55 mt-1.5 text-[12px]">
             {term
               ? "Zaključan je nakon kreiranja i koristi se za veze i preporuke."
@@ -421,9 +488,11 @@ export function TaxonomyTermEditor({
               disabled={saveMutation.isPending || areas.length === 0}
               onChange={(event) => {
                 setPrimaryParentTermId(event.target.value);
-                setValidationError(null);
+                clearFieldError("primaryParentTermId");
               }}
-              className="border-line-strong rounded-tile bg-panel-canvas text-coffee focus:border-sage w-full border px-3.5 py-2.5 text-sm outline-none disabled:opacity-60"
+              aria-invalid={Boolean(fieldErrors.primaryParentTermId)}
+              aria-describedby={fieldErrors.primaryParentTermId ? errorId("primaryParentTermId") : undefined}
+              className={inputClass("primaryParentTermId", "border-line-strong rounded-tile bg-panel-canvas text-coffee focus:border-sage w-full border px-3.5 py-2.5 text-sm outline-none disabled:opacity-60")}
             >
               <option value="">Izaberite oblast</option>
               {areas.map((area) => (
@@ -433,6 +502,7 @@ export function TaxonomyTermEditor({
                 </option>
               ))}
             </select>
+            <FieldError id={errorId("primaryParentTermId")} message={fieldErrors.primaryParentTermId} />
             {areas.length === 0 ? (
               <p className="text-badge-amber mt-1.5 text-[12px]">
                 Prvo napravite oblast u tabu „Oblasti”.
@@ -453,9 +523,11 @@ export function TaxonomyTermEditor({
               disabled={saveMutation.isPending || journeyIntents.length === 0}
               onChange={(event) => {
                 setJourneyIntentTermId(event.target.value);
-                setValidationError(null);
+                clearFieldError("journeyIntentTermId");
               }}
-              className="border-line-strong rounded-tile bg-panel-canvas text-coffee focus:border-sage w-full border px-3.5 py-2.5 text-sm outline-none disabled:opacity-60"
+              aria-invalid={Boolean(fieldErrors.journeyIntentTermId)}
+              aria-describedby={fieldErrors.journeyIntentTermId ? errorId("journeyIntentTermId") : undefined}
+              className={inputClass("journeyIntentTermId", "border-line-strong rounded-tile bg-panel-canvas text-coffee focus:border-sage w-full border px-3.5 py-2.5 text-sm outline-none disabled:opacity-60")}
             >
               <option value="">Izaberite put korisnika</option>
               {journeyIntents.map((journey) => (
@@ -465,6 +537,7 @@ export function TaxonomyTermEditor({
                 </option>
               ))}
             </select>
+            <FieldError id={errorId("journeyIntentTermId")} message={fieldErrors.journeyIntentTermId} />
             <p className="text-ink-55 mt-1.5 text-[12px]">
               Bira se iz zaključanog sistemskog registra; ne upisuje se slobodan
               tekst niti se ovde menja njegovo značenje.
@@ -488,10 +561,13 @@ export function TaxonomyTermEditor({
           disabled={saveMutation.isPending}
           onChange={(event) => {
             setShortDescription(event.target.value);
-            setValidationError(null);
+            clearFieldError("shortDescription");
           }}
-          className="border-line-strong rounded-tile bg-panel-canvas text-coffee focus:border-sage w-full resize-y border px-3.5 py-2.5 text-sm leading-[1.55] outline-none disabled:opacity-60"
+          aria-invalid={Boolean(fieldErrors.shortDescription)}
+          aria-describedby={fieldErrors.shortDescription ? errorId("shortDescription") : undefined}
+          className={inputClass("shortDescription", "border-line-strong rounded-tile bg-panel-canvas text-coffee focus:border-sage w-full resize-y border px-3.5 py-2.5 text-sm leading-[1.55] outline-none disabled:opacity-60")}
         />
+        <FieldError id={errorId("shortDescription")} message={fieldErrors.shortDescription} />
         <p className="text-ink-45 mt-1 text-right text-[11px]">
           {shortDescription.length}/500
         </p>
@@ -518,10 +594,13 @@ export function TaxonomyTermEditor({
             }
             onChange={(event) => {
               setSearchTermsText(event.target.value);
-              setValidationError(null);
+              clearFieldError("searchTerms");
             }}
-            className="border-line-strong rounded-tile bg-panel-canvas text-coffee focus:border-sage w-full resize-y border px-3.5 py-2.5 text-sm leading-[1.55] outline-none disabled:opacity-60"
+            aria-invalid={Boolean(fieldErrors.searchTerms)}
+            aria-describedby={fieldErrors.searchTerms ? errorId("searchTerms") : undefined}
+            className={inputClass("searchTerms", "border-line-strong rounded-tile bg-panel-canvas text-coffee focus:border-sage w-full resize-y border px-3.5 py-2.5 text-sm leading-[1.55] outline-none disabled:opacity-60")}
           />
+          <FieldError id={errorId("searchTerms")} message={fieldErrors.searchTerms} />
           <div className="text-ink-55 mt-1.5 flex flex-wrap justify-between gap-2 text-[12px]">
             <span>Jedan pojam po redu ili odvojen zarezom.</span>
             <span>{searchTermCount}/100</span>
@@ -545,10 +624,13 @@ export function TaxonomyTermEditor({
             disabled={saveMutation.isPending}
             onChange={(event) => {
               setSortOrder(event.target.value);
-              setValidationError(null);
+              clearFieldError("sortOrder");
             }}
-            className="border-line-strong rounded-tile bg-panel-canvas text-coffee focus:border-sage w-full border px-3.5 py-2.5 text-sm outline-none disabled:opacity-60"
+            aria-invalid={Boolean(fieldErrors.sortOrder)}
+            aria-describedby={fieldErrors.sortOrder ? errorId("sortOrder") : undefined}
+            className={inputClass("sortOrder", "border-line-strong rounded-tile bg-panel-canvas text-coffee focus:border-sage w-full border px-3.5 py-2.5 text-sm outline-none disabled:opacity-60")}
           />
+          <FieldError id={errorId("sortOrder")} message={fieldErrors.sortOrder} />
           <p className="text-ink-55 mt-1.5 text-[12px] leading-[1.45]">
             Manji broj se prikazuje ranije. Isti broj se razrešava po nazivu.
           </p>
@@ -557,8 +639,11 @@ export function TaxonomyTermEditor({
 
       {config.requiresTopicContext ? (
         <fieldset
+          id={`${editorId}-related-topics`}
           disabled={saveMutation.isPending}
-          className="border-line rounded-tile mt-4 border px-4 py-4 disabled:opacity-60"
+          aria-invalid={Boolean(fieldErrors.relatedTopicIds)}
+          aria-describedby={fieldErrors.relatedTopicIds ? errorId("relatedTopicIds") : undefined}
+          className={inputClass("relatedTopicIds", "border-line rounded-tile mt-4 border px-4 py-4 disabled:opacity-60")}
         >
           <legend className="text-ink-70 px-1 text-[13px] font-semibold">
             Povezane teme
@@ -594,7 +679,7 @@ export function TaxonomyTermEditor({
                             ? current.filter((id) => id !== relatedTopic.termId)
                             : [...current, relatedTopic.termId],
                         );
-                        setValidationError(null);
+                        clearFieldError("relatedTopicIds");
                       }}
                       className="accent-forest mt-0.5 h-4 w-4 shrink-0"
                     />
@@ -617,6 +702,7 @@ export function TaxonomyTermEditor({
           <p className="text-ink-45 mt-2 text-right text-[11px]">
             Izabrano: {relatedTopicIds.length}
           </p>
+          <FieldError id={errorId("relatedTopicIds")} message={fieldErrors.relatedTopicIds} />
         </fieldset>
       ) : null}
 
@@ -642,7 +728,8 @@ export function TaxonomyTermEditor({
               disabled={saveMutation.isPending}
               onClick={() => {
                 setVisualMode(mode);
-                setValidationError(null);
+                clearFieldError("iconKey");
+                clearFieldError("assetId");
               }}
               className={cn(
                 "cursor-pointer rounded-full border px-3.5 py-2 text-[12.5px] font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-50",
@@ -672,10 +759,13 @@ export function TaxonomyTermEditor({
               placeholder="sparkles"
               onChange={(event) => {
                 setIconKey(event.target.value);
-                setValidationError(null);
+                clearFieldError("iconKey");
               }}
-              className="border-line-strong rounded-tile bg-panel-canvas text-coffee focus:border-sage w-full border px-3.5 py-2.5 font-mono text-sm outline-none disabled:opacity-60"
+              aria-invalid={Boolean(fieldErrors.iconKey)}
+              aria-describedby={fieldErrors.iconKey ? errorId("iconKey") : undefined}
+              className={inputClass("iconKey", "border-line-strong rounded-tile bg-panel-canvas text-coffee focus:border-sage w-full border px-3.5 py-2.5 font-mono text-sm outline-none disabled:opacity-60")}
             />
+            <FieldError id={errorId("iconKey")} message={fieldErrors.iconKey} />
             <p className="text-ink-55 mt-1.5 text-[12px]">
               Koristi ključ iz odobrenog seta ikona interfejsa.
             </p>
@@ -698,10 +788,13 @@ export function TaxonomyTermEditor({
               placeholder="asset-id"
               onChange={(event) => {
                 setAssetId(event.target.value);
-                setValidationError(null);
+                clearFieldError("assetId");
               }}
-              className="border-line-strong rounded-tile bg-panel-canvas text-coffee focus:border-sage w-full border px-3.5 py-2.5 font-mono text-sm outline-none disabled:opacity-60"
+              aria-invalid={Boolean(fieldErrors.assetId)}
+              aria-describedby={fieldErrors.assetId ? errorId("assetId") : undefined}
+              className={inputClass("assetId", "border-line-strong rounded-tile bg-panel-canvas text-coffee focus:border-sage w-full border px-3.5 py-2.5 font-mono text-sm outline-none disabled:opacity-60")}
             />
+            <FieldError id={errorId("assetId")} message={fieldErrors.assetId} />
             <p className="text-ink-55 mt-1.5 text-[12px]">
               Do asset biblioteke ovde se unosi ID već odobrenog asseta.
             </p>
@@ -725,7 +818,7 @@ export function TaxonomyTermEditor({
             label="Javno vidljivo"
             onChange={(checked) => {
               setPublicVisible(checked);
-              setValidationError(null);
+              setServerError(null);
             }}
           />
         </div>
@@ -744,7 +837,7 @@ export function TaxonomyTermEditor({
             label="Aktivno u Kompasu"
             onChange={(checked) => {
               setCompassEnabled(checked);
-              setValidationError(null);
+              setServerError(null);
             }}
           />
         </div>
@@ -765,10 +858,13 @@ export function TaxonomyTermEditor({
           disabled={saveMutation.isPending}
           onChange={(event) => {
             setInternalExpertNote(event.target.value);
-            setValidationError(null);
+            clearFieldError("internalExpertNote");
           }}
-          className="border-line-strong rounded-tile bg-panel-canvas text-coffee focus:border-sage w-full resize-y border px-3.5 py-2.5 text-sm leading-[1.55] outline-none disabled:opacity-60"
+          aria-invalid={Boolean(fieldErrors.internalExpertNote)}
+          aria-describedby={fieldErrors.internalExpertNote ? errorId("internalExpertNote") : undefined}
+          className={inputClass("internalExpertNote", "border-line-strong rounded-tile bg-panel-canvas text-coffee focus:border-sage w-full resize-y border px-3.5 py-2.5 text-sm leading-[1.55] outline-none disabled:opacity-60")}
         />
+        <FieldError id={errorId("internalExpertNote")} message={fieldErrors.internalExpertNote} />
         <div className="text-ink-55 mt-1.5 flex flex-wrap justify-between gap-2 text-[12px]">
           <span>Vidljiva je samo osoblju i nikada ne ulazi u javni API.</span>
           <span>{internalExpertNote.length}/4000</span>

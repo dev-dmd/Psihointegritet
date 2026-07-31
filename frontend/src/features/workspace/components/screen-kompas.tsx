@@ -25,6 +25,7 @@ import {
   recordTaxonomyReviewDecision,
   TAXONOMY_REGISTRY_QUERY_KEY,
   TaxonomyApiError,
+  taxonomyFieldErrors,
   transitionTaxonomyIntakeLink,
   transitionTaxonomyRevision,
   type TaxonomyAxis,
@@ -419,6 +420,14 @@ function GovernanceError({ error }: { error: string | null }) {
       className="border-danger/45 bg-danger/8 text-ink-70 rounded-tile mt-3 border px-3 py-2.5 text-[12.5px] leading-[1.5]"
     >
       {error}
+    </p>
+  ) : null;
+}
+
+function FieldError({ message, id }: { message?: string; id: string }) {
+  return message ? (
+    <p id={id} role="alert" className="text-danger mt-1.5 text-[12px] leading-[1.4]">
+      {message}
     </p>
   ) : null;
 }
@@ -1069,7 +1078,8 @@ function IntakeLinkCreator({
 }) {
   const [topicTermId, setTopicTermId] = useState("");
   const [supportAreaTermId, setSupportAreaTermId] = useState("");
-  const [validationError, setValidationError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [serverError, setServerError] = useState<string | null>(null);
   const topics = sortTerms(
     terms.filter((term) => term.axis === "topic" && term.status !== "archived"),
   );
@@ -1089,22 +1099,58 @@ function IntakeLinkCreator({
       setTopicTermId("");
       setSupportAreaTermId("");
     },
+    onError: (error) => {
+      const apiFieldErrors = taxonomyFieldErrors(error);
+      if (Object.keys(apiFieldErrors).length > 0) {
+        setFieldErrors(apiFieldErrors);
+        const field = Object.keys(apiFieldErrors)[0];
+        const elementId =
+          field === "topicTermId"
+            ? "kompas-intake-topic"
+            : field === "supportAreaTermId"
+              ? "kompas-intake-support-area"
+              : null;
+        if (elementId) {
+          requestAnimationFrame(() =>
+            document.getElementById(elementId)?.focus({ preventScroll: true }),
+          );
+        }
+        return;
+      }
+      setServerError(
+        error instanceof TaxonomyApiError || error instanceof Error
+          ? error.message
+          : "Povezivanje nije sačuvano. Pokušajte ponovo.",
+      );
+    },
   });
-  const mutationError = createMutation.isError
-    ? createMutation.error instanceof TaxonomyApiError
-      ? createMutation.error.message
-      : "Povezivanje nije sačuvano. Pokušajte ponovo."
-    : null;
+
+  const clearFieldError = (field: string) => {
+    setServerError(null);
+    setFieldErrors((current) => {
+      if (!current[field]) return current;
+      const next = { ...current };
+      delete next[field];
+      return next;
+    });
+  };
+  const focusLinkField = (id: string) =>
+    requestAnimationFrame(() =>
+      document.getElementById(id)?.focus({ preventScroll: true }),
+    );
 
   const submit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    setValidationError(null);
+    setFieldErrors({});
+    setServerError(null);
     if (!topicTermId) {
-      setValidationError("Izaberite konkretnu Kompas temu.");
+      setFieldErrors({ topicTermId: "Izaberite konkretnu Kompas temu." });
+      focusLinkField("kompas-intake-topic");
       return;
     }
     if (!supportAreaTermId) {
-      setValidationError("Izaberite Intake oblast podrške.");
+      setFieldErrors({ supportAreaTermId: "Izaberite Intake oblast podrške." });
+      focusLinkField("kompas-intake-support-area");
       return;
     }
     if (
@@ -1114,7 +1160,7 @@ function IntakeLinkCreator({
           link.supportAreaTermId === supportAreaTermId,
       )
     ) {
-      setValidationError("Ovo povezivanje već postoji u registru.");
+      setServerError("Ovo povezivanje već postoji u registru.");
       return;
     }
     createMutation.mutate();
@@ -1134,12 +1180,12 @@ function IntakeLinkCreator({
         stvaraju kroz Kompas.
       </p>
 
-      {validationError || mutationError ? (
+      {serverError ? (
         <div
           role="alert"
           className="border-danger/45 bg-danger/8 text-ink-70 rounded-tile mt-4 border px-4 py-3 text-[13px] leading-[1.5]"
         >
-          {validationError ?? mutationError}
+          {serverError}
         </div>
       ) : null}
 
@@ -1157,9 +1203,14 @@ function IntakeLinkCreator({
             disabled={createMutation.isPending || topics.length === 0}
             onChange={(event) => {
               setTopicTermId(event.target.value);
-              setValidationError(null);
+              clearFieldError("topicTermId");
             }}
-            className="border-line-strong rounded-tile bg-panel-canvas text-coffee focus:border-sage w-full border px-3.5 py-2.5 text-sm outline-none disabled:opacity-60"
+            aria-invalid={Boolean(fieldErrors.topicTermId)}
+            aria-describedby={fieldErrors.topicTermId ? "kompas-intake-topic-error" : undefined}
+            className={cn(
+              "border-line-strong rounded-tile bg-panel-canvas text-coffee focus:border-sage w-full border px-3.5 py-2.5 text-sm outline-none disabled:opacity-60",
+              fieldErrors.topicTermId ? "border-danger focus:border-danger" : "",
+            )}
           >
             <option value="">Izaberite temu</option>
             {topics.map((topic) => (
@@ -1168,6 +1219,7 @@ function IntakeLinkCreator({
               </option>
             ))}
           </select>
+          <FieldError id="kompas-intake-topic-error" message={fieldErrors.topicTermId} />
         </div>
 
         <div>
@@ -1183,9 +1235,14 @@ function IntakeLinkCreator({
             disabled={createMutation.isPending || supportAreas.length === 0}
             onChange={(event) => {
               setSupportAreaTermId(event.target.value);
-              setValidationError(null);
+              clearFieldError("supportAreaTermId");
             }}
-            className="border-line-strong rounded-tile bg-panel-canvas text-coffee focus:border-sage w-full border px-3.5 py-2.5 text-sm outline-none disabled:opacity-60"
+            aria-invalid={Boolean(fieldErrors.supportAreaTermId)}
+            aria-describedby={fieldErrors.supportAreaTermId ? "kompas-intake-support-area-error" : undefined}
+            className={cn(
+              "border-line-strong rounded-tile bg-panel-canvas text-coffee focus:border-sage w-full border px-3.5 py-2.5 text-sm outline-none disabled:opacity-60",
+              fieldErrors.supportAreaTermId ? "border-danger focus:border-danger" : "",
+            )}
           >
             <option value="">Izaberite Intake oblast podrške</option>
             {supportAreas.map((supportArea) => (
@@ -1194,6 +1251,7 @@ function IntakeLinkCreator({
               </option>
             ))}
           </select>
+          <FieldError id="kompas-intake-support-area-error" message={fieldErrors.supportAreaTermId} />
           <p className="text-ink-55 mt-1.5 text-[12px] leading-[1.45]">
             Zaključana sistemska vrednost iz D-052; izbor ne rangira terapeute.
           </p>
