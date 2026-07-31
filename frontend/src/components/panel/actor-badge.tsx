@@ -17,7 +17,7 @@ export function ActorBadge({
     <span className="bg-badge-neutral-bg text-badge-neutral inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold">
       <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-current" />
       {action}: {actor.displayName}
-      {actor.isSuperadmin ? " · superadmin" : ""}
+      {actor.isSuperadmin ? " · superadmin" : " · administrator organizacije"}
     </span>
   );
 }

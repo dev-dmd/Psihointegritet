@@ -4,7 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { FormEvent, ReactNode } from "react";
 import { useState } from "react";
 
-import { ActorBadge } from "@/components/panel/actor-badge";
+import { ActorBadge, type ActorSummary } from "@/components/panel/actor-badge";
 import { EmptyDashedCard } from "@/components/panel/empty-dashed-card";
 import { StatCard } from "@/components/panel/stat-card";
 import {
@@ -85,6 +85,13 @@ interface ReviewDecisionView {
   capability: ApprovalCapability;
   outcome: "approved" | "rejected";
   note?: string | null;
+  decidedBy?: ActorSummary | null;
+  decidedAt?: string;
+}
+
+interface AuditEventView {
+  toStatus: TaxonomyStatus;
+  actor?: ActorSummary | null;
 }
 
 const AXIS_BY_TAB: Partial<Record<KompasTab, TaxonomyAxis>> = {
@@ -132,6 +139,84 @@ const DATE_FORMATTER = new Intl.DateTimeFormat("sr-Latn-RS", {
 
 function formatDate(value: string): string {
   return DATE_FORMATTER.format(new Date(value));
+}
+
+function latestActorForStatus(
+  events: readonly AuditEventView[],
+  status: TaxonomyStatus,
+): ActorSummary | null {
+  return events.find((event) => event.toStatus === status)?.actor ?? null;
+}
+
+function ActivityActorBadges({
+  createdBy,
+  updatedBy,
+  events,
+}: {
+  createdBy?: ActorSummary | null;
+  updatedBy?: ActorSummary | null;
+  events: readonly AuditEventView[];
+}) {
+  const publishedBy = latestActorForStatus(events, "published");
+  const archivedBy = latestActorForStatus(events, "archived");
+
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      <ActorBadge action="Kreirao/la" actor={createdBy ?? null} />
+      <ActorBadge action="Poslednja izmena" actor={updatedBy ?? null} />
+      <ActorBadge action="Objavio/la" actor={publishedBy} />
+      <ActorBadge action="Arhivirao/la" actor={archivedBy} />
+    </div>
+  );
+}
+
+function ApprovalEvidence({
+  decisions,
+}: {
+  decisions: readonly ReviewDecisionView[];
+}) {
+  if (decisions.length === 0) return null;
+
+  return (
+    <section className="border-line mt-4 border-t pt-3">
+      <h4 className="text-ink-45 text-[10.5px] font-semibold tracking-[0.1em] uppercase">
+        Odluke o odobrenju
+      </h4>
+      <div className="mt-2 flex flex-wrap gap-2">
+        {decisions.map((decision) => {
+          const decisionLabel = `${APPROVAL_LABELS[decision.capability]} ${
+            decision.outcome === "approved" ? "odobrenje" : "nije odobreno"
+          }`;
+          return (
+            <div
+              key={decision.capability}
+              className="border-line-strong rounded-tile flex flex-wrap items-center gap-2 border px-2.5 py-2"
+            >
+              <span
+                className={cn(
+                  "text-[11.5px] font-semibold",
+                  decision.outcome === "approved"
+                    ? "text-badge-ok"
+                    : "text-danger",
+                )}
+              >
+                {decisionLabel}
+              </span>
+              <ActorBadge
+                action={decision.outcome === "approved" ? "Odobrio/la" : "Odbio/la"}
+                actor={decision.decidedBy ?? null}
+              />
+              {decision.decidedAt ? (
+                <span className="text-ink-45 text-[11px]">
+                  {formatDate(decision.decidedAt)}
+                </span>
+              ) : null}
+            </div>
+          );
+        })}
+      </div>
+    </section>
+  );
 }
 
 function sortTerms(terms: TaxonomyTerm[]): TaxonomyTerm[] {
@@ -385,6 +470,18 @@ function ApprovalControls({
                       ? "Nije odobreno"
                       : "Čeka odluku"}
                 </div>
+                {decision?.decidedBy ? (
+                  <div className="mt-1.5">
+                    <ActorBadge
+                      action={
+                        decision.outcome === "approved"
+                          ? "Odobrio/la"
+                          : "Odbio/la"
+                      }
+                      actor={decision.decidedBy}
+                    />
+                  </div>
+                ) : null}
               </div>
               <div className="flex gap-2">
                 <button
@@ -780,6 +877,8 @@ function TermCard({
         </details>
       ) : null}
 
+      <ApprovalEvidence decisions={term.decisions} />
+
       <div className="border-line mt-4 flex flex-wrap items-center gap-2 border-t pt-3">
         <RegistryFlag active={term.publicVisible}>
           {term.publicVisible ? "Javno vidljivo" : "Nije javno"}
@@ -802,9 +901,10 @@ function TermCard({
 
       <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-2">
-          <ActorBadge
-            action="Poslednja izmena"
-            actor={term.updatedBy ?? null}
+          <ActivityActorBadges
+            createdBy={term.createdBy}
+            updatedBy={term.updatedBy}
+            events={term.events}
           />
           <span className="text-ink-45 text-[11.5px]">
             {term.versionLabel} · {formatDate(term.updatedAt)}
@@ -935,14 +1035,16 @@ function IntakeLinkCards({
                 </div>
               </div>
               <div className="mt-4 flex flex-wrap items-center gap-2">
-                <ActorBadge
-                  action="Poslednja izmena"
-                  actor={link.updatedBy ?? null}
+                <ActivityActorBadges
+                  createdBy={link.createdBy}
+                  updatedBy={link.updatedBy}
+                  events={link.events}
                 />
                 <span className="text-ink-45 text-[11.5px]">
                   {formatDate(link.updatedAt)}
                 </span>
               </div>
+              <ApprovalEvidence decisions={link.decisions} />
               {onChanged ? (
                 <IntakeLinkGovernanceControls
                   link={link}
