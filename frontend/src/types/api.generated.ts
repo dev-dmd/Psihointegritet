@@ -323,6 +323,57 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/content/taxonomy/terms/{term_id}/routes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Taxonomy Term Routes */
+        get: operations["list_taxonomy_term_routes"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/content/taxonomy/terms/{term_id}/routes/canonical": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Confirm Taxonomy Term Route */
+        put: operations["confirm_taxonomy_term_route"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/content/taxonomy/terms/{term_id}/routes/suggestion": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Suggest Taxonomy Term Route */
+        post: operations["suggest_taxonomy_term_route"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/health": {
         parameters: {
             query?: never;
@@ -571,6 +622,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/public/compass/taxonomy/routes/{route_kind}/{slug}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Resolve Public Taxonomy Route */
+        get: operations["resolve_public_taxonomy_route"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/public/content/published": {
         parameters: {
             query?: never;
@@ -799,6 +867,18 @@ export interface components {
              * Format: uuid
              */
             therapistProfileId: string;
+        };
+        /** ConfirmTaxonomyRouteRequest */
+        ConfirmTaxonomyRouteRequest: {
+            /**
+             * Locale
+             * @default sr-Latn
+             */
+            locale: string;
+            /** Lockversion */
+            lockVersion?: number | null;
+            /** Slug */
+            slug: string;
         };
         /**
          * ConsentKind
@@ -1303,6 +1383,8 @@ export interface components {
             /** Assetid */
             assetId?: string | null;
             axis: components["schemas"]["TaxonomyAxis"];
+            /** Canonicalpath */
+            canonicalPath: string | null;
             /** Iconkey */
             iconKey?: string | null;
             /** Journeyintent */
@@ -1441,6 +1523,14 @@ export interface components {
          * @enum {string}
          */
         SubjectAgeBand: "under_12" | "12_15" | "16_17" | "adult";
+        /** SuggestTaxonomyRouteRequest */
+        SuggestTaxonomyRouteRequest: {
+            /**
+             * Locale
+             * @default sr-Latn
+             */
+            locale: string;
+        };
         /**
          * TaxonomyAxis
          * @enum {string}
@@ -1553,11 +1643,69 @@ export interface components {
             note?: string | null;
             outcome: components["schemas"]["ReviewOutcome"];
         };
+        /**
+         * TaxonomyRouteKind
+         * @enum {string}
+         */
+        TaxonomyRouteKind: "oblast" | "tema";
+        /** TaxonomyRouteOut */
+        TaxonomyRouteOut: {
+            /** Canonicalpath */
+            canonicalPath: string;
+            /**
+             * Createdat
+             * Format: date-time
+             */
+            createdAt: string;
+            createdBy?: components["schemas"]["ActorSummaryOut"] | null;
+            /** Iscanonical */
+            isCanonical: boolean;
+            /** Locale */
+            locale: string;
+            /** Lockversion */
+            lockVersion: number;
+            /**
+             * Routeid
+             * Format: uuid
+             */
+            routeId: string;
+            routeKind: components["schemas"]["TaxonomyRouteKind"];
+            /** Slug */
+            slug: string;
+            /** Supersededat */
+            supersededAt?: string | null;
+            /**
+             * Termid
+             * Format: uuid
+             */
+            termId: string;
+            /**
+             * Updatedat
+             * Format: date-time
+             */
+            updatedAt: string;
+            updatedBy?: components["schemas"]["ActorSummaryOut"] | null;
+        };
+        /** TaxonomyRouteSuggestionOut */
+        TaxonomyRouteSuggestionOut: {
+            /** Available */
+            available: boolean;
+            /** Canonicalpath */
+            canonicalPath: string;
+            /** Currentlockversion */
+            currentLockVersion?: number | null;
+            /** Currentrouteid */
+            currentRouteId?: string | null;
+            /** Slug */
+            slug: string;
+        };
         /** TaxonomyTermOut */
         TaxonomyTermOut: {
             /** Assetid */
             assetId?: string | null;
             axis: components["schemas"]["TaxonomyAxis"];
+            /** Canonicalpath */
+            canonicalPath: string | null;
             /** Compassenabled */
             compassEnabled: boolean;
             /**
@@ -2797,6 +2945,190 @@ export interface operations {
             };
         };
     };
+    list_taxonomy_term_routes: {
+        parameters: {
+            query?: {
+                locale?: string;
+            };
+            header?: never;
+            path: {
+                term_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaxonomyRouteOut"][];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+        };
+    };
+    confirm_taxonomy_term_route: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                term_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConfirmTaxonomyRouteRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaxonomyRouteOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+        };
+    };
+    suggest_taxonomy_term_route: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                term_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SuggestTaxonomyRouteRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaxonomyRouteSuggestionOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+        };
+    };
     get_api_v1_health: {
         parameters: {
             query?: never;
@@ -3276,6 +3608,56 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PublicTaxonomyOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    resolve_public_taxonomy_route: {
+        parameters: {
+            query?: {
+                locale?: string;
+            };
+            header?: never;
+            path: {
+                route_kind: components["schemas"]["TaxonomyRouteKind"];
+                slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicTaxonomyTermOut"];
+                };
+            };
+            /** @description Stara putanja preusmerava na aktuelnu kanonsku putanju. */
+            308: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
                 };
             };
             /** @description Validation Error */

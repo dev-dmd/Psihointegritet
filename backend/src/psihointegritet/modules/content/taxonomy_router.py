@@ -2,22 +2,29 @@
 
 from __future__ import annotations
 
+from typing import Any
 from uuid import UUID
 
 from fastapi import APIRouter, HTTPException, Query, status
+from fastapi.responses import RedirectResponse
 from sqlalchemy import select
 
 from psihointegritet.api.dependencies import AppSettings, CurrentIdentity, DatabaseSession
 from psihointegritet.api.errors import ApiProblem
-from psihointegritet.modules.content.taxonomy_models import TaxonomyAxis
+from psihointegritet.modules.content.taxonomy_models import TaxonomyAxis, TaxonomyRouteKind
 from psihointegritet.modules.content.taxonomy_schemas import (
+    ConfirmTaxonomyRouteRequest,
     CreateTaxonomyIntakeLinkRequest,
     CreateTaxonomyTermRequest,
     PublicTaxonomyOut,
+    PublicTaxonomyTermOut,
+    SuggestTaxonomyRouteRequest,
     TaxonomyIntakeLinkOut,
     TaxonomyIntakeLinkReviewRequest,
     TaxonomyIntakeLinkTransitionRequest,
     TaxonomyReviewDecisionRequest,
+    TaxonomyRouteOut,
+    TaxonomyRouteSuggestionOut,
     TaxonomyTermOut,
     TaxonomyTransitionRequest,
     UpdateTaxonomyRevisionRequest,
@@ -164,6 +171,69 @@ async def get_taxonomy_term(
         async with session.begin():
             actor = await _actor(session, settings, identity)
             return await TaxonomyService(session).get_term(actor, term_id, locale)
+    except TaxonomyError as error:
+        raise _http_error(error) from error
+
+
+@router.get(
+    "/terms/{term_id}/routes",
+    response_model=list[TaxonomyRouteOut],
+    responses=_ERROR_RESPONSES,
+    operation_id="list_taxonomy_term_routes",
+)
+async def list_taxonomy_term_routes(
+    term_id: UUID,
+    identity: CurrentIdentity,
+    session: DatabaseSession,
+    settings: AppSettings,
+    locale: str = Query(default="sr-Latn", min_length=2, max_length=16),
+) -> list[TaxonomyRouteOut]:
+    try:
+        async with session.begin():
+            actor = await _actor(session, settings, identity)
+            return await TaxonomyService(session).list_routes(actor, term_id, locale)
+    except TaxonomyError as error:
+        raise _http_error(error) from error
+
+
+@router.post(
+    "/terms/{term_id}/routes/suggestion",
+    response_model=TaxonomyRouteSuggestionOut,
+    responses=_ERROR_RESPONSES,
+    operation_id="suggest_taxonomy_term_route",
+)
+async def suggest_taxonomy_term_route(
+    term_id: UUID,
+    request: SuggestTaxonomyRouteRequest,
+    identity: CurrentIdentity,
+    session: DatabaseSession,
+    settings: AppSettings,
+) -> TaxonomyRouteSuggestionOut:
+    try:
+        async with session.begin():
+            actor = await _actor(session, settings, identity)
+            return await TaxonomyService(session).suggest_route(actor, term_id, request)
+    except TaxonomyError as error:
+        raise _http_error(error) from error
+
+
+@router.put(
+    "/terms/{term_id}/routes/canonical",
+    response_model=TaxonomyRouteOut,
+    responses=_ERROR_RESPONSES,
+    operation_id="confirm_taxonomy_term_route",
+)
+async def confirm_taxonomy_term_route(
+    term_id: UUID,
+    request: ConfirmTaxonomyRouteRequest,
+    identity: CurrentIdentity,
+    session: DatabaseSession,
+    settings: AppSettings,
+) -> TaxonomyRouteOut:
+    try:
+        async with session.begin():
+            actor = await _actor(session, settings, identity)
+            return await TaxonomyService(session).confirm_route(actor, term_id, request)
     except TaxonomyError as error:
         raise _http_error(error) from error
 
@@ -354,3 +424,41 @@ async def get_public_taxonomy(
         if organization is None:
             return PublicTaxonomyOut(locale=locale, terms=[])
         return await TaxonomyService(session).list_public(organization.id, locale)
+
+
+@public_router.get(
+    "/routes/{route_kind}/{slug}",
+    response_model=PublicTaxonomyTermOut,
+    responses={
+        308: {"description": "Stara putanja preusmerava na aktuelnu kanonsku putanju."},
+        404: {"model": ApiProblem},
+    },
+    operation_id="resolve_public_taxonomy_route",
+)
+async def resolve_public_taxonomy_route(
+    route_kind: TaxonomyRouteKind,
+    slug: str,
+    session: DatabaseSession,
+    settings: AppSettings,
+    locale: str = Query(default="sr-Latn", min_length=2, max_length=16),
+) -> Any:
+    try:
+        async with session.begin():
+            organization = await session.scalar(
+                select(Organization).where(Organization.slug == settings.default_organization_slug)
+            )
+            if organization is None:
+                raise TaxonomyNotFoundError(
+                    "TAX-ROUTE-404", "Tražena Kompas stranica ne postoji.", "slug"
+                )
+            output, is_alias = await TaxonomyService(session).resolve_public_route(
+                organization.id, route_kind, slug, locale
+            )
+            if is_alias:
+                return RedirectResponse(
+                    url=output.canonical_path,
+                    status_code=status.HTTP_308_PERMANENT_REDIRECT,
+                )
+            return output
+    except TaxonomyError as error:
+        raise _http_error(error) from error

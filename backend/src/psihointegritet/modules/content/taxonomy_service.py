@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 import unicodedata
 from datetime import UTC, datetime
 from uuid import UUID
@@ -20,21 +21,27 @@ from psihointegritet.modules.content.taxonomy_models import (
     TaxonomyPublicationEvent,
     TaxonomyRelationKind,
     TaxonomyReviewDecision,
+    TaxonomyRouteKind,
     TaxonomyTerm,
     TaxonomyTermRelation,
+    TaxonomyTermRoute,
     TaxonomyTermRevision,
     TaxonomyTermSearchTerm,
 )
 from psihointegritet.modules.content.taxonomy_schemas import (
+    ConfirmTaxonomyRouteRequest,
     CreateTaxonomyIntakeLinkRequest,
     CreateTaxonomyTermRequest,
     PublicTaxonomyOut,
     PublicTaxonomyTermOut,
+    SuggestTaxonomyRouteRequest,
     TaxonomyEventOut,
     TaxonomyIntakeLinkOut,
     TaxonomyIntakeLinkReviewRequest,
     TaxonomyIntakeLinkTransitionRequest,
     TaxonomyRelationOut,
+    TaxonomyRouteOut,
+    TaxonomyRouteSuggestionOut,
     TaxonomyReviewDecisionOut,
     TaxonomyReviewDecisionRequest,
     TaxonomyTermOut,
@@ -53,6 +60,16 @@ from psihointegritet.shared.domain.publication import (
 TAXONOMY_VERSION = "kompas-taxonomy-v1"
 TERM_REQUIRED_APPROVALS = frozenset({ApprovalCapability.CLINICAL, ApprovalCapability.BUSINESS})
 LINK_REQUIRED_APPROVALS = frozenset({ApprovalCapability.CLINICAL})
+ROUTE_KIND_BY_AXIS = {
+    TaxonomyAxis.TOPIC_GROUP: TaxonomyRouteKind.AREA,
+    TaxonomyAxis.TOPIC: TaxonomyRouteKind.TOPIC,
+}
+ROUTE_PREFIX_BY_KIND = {
+    TaxonomyRouteKind.AREA: "/kompas/oblast",
+    TaxonomyRouteKind.TOPIC: "/kompas/tema",
+}
+_SLUG_SEPARATORS = re.compile(r"[^a-z0-9]+")
+_SERBIAN_ASCII = str.maketrans({"č": "c", "ć": "c", "ž": "z", "š": "s", "đ": "dj"})
 
 
 class TaxonomyError(RuntimeError):
@@ -88,6 +105,16 @@ def _next_version_label(current: str) -> str:
     if current.startswith("v") and current[1:].isdigit():
         return f"v{int(current[1:]) + 1}"
     return f"{current}-next"
+
+
+def _slugify(value: str) -> str:
+    latin = value.casefold().translate(_SERBIAN_ASCII)
+    ascii_value = unicodedata.normalize("NFKD", latin).encode("ascii", "ignore").decode("ascii")
+    return _SLUG_SEPARATORS.sub("-", ascii_value).strip("-")[:160].rstrip("-")
+
+
+def _canonical_path(route_kind: TaxonomyRouteKind, slug: str) -> str:
+    return f"{ROUTE_PREFIX_BY_KIND[route_kind]}/{slug}"
 
 
 class TaxonomyService:
@@ -147,6 +174,230 @@ class TaxonomyService:
                 "TAX-REF-002", "Tražena verzija registra ne postoji.", "revisionId"
             )
         return revision
+
+    @staticmethod
+    def _route_kind(term: TaxonomyTerm) -> TaxonomyRouteKind:
+        route_kind = ROUTE_KIND_BY_AXIS.get(term.axis)
+        if route_kind is None or term.system_defined or term.organization_id is None:
+            raise TaxonomyValidationError(
+                "TAX-ROUTE-003",
+                "Javna putanja postoji samo za oblast ili konkretnu temu.",
+                "termId",
+            )
+        return route_kind
+
+    async def _canonical_route(self, term_id: UUID, locale: str) -> TaxonomyTermRoute | None:
+        return await self._session.scalar(
+            select(TaxonomyTermRoute).where(
+                TaxonomyTermRoute.term_id == term_id,
+                TaxonomyTermRoute.locale == locale,
+                TaxonomyTermRoute.is_canonical.is_(True),
+            )
+        )
+
+    async def _route_out(self, route: TaxonomyTermRoute) -> TaxonomyRouteOut:
+        return TaxonomyRouteOut(
+            route_id=route.id,
+            term_id=route.term_id,
+            locale=route.locale,
+            route_kind=route.route_kind,
+            slug=route.slug,
+            canonical_path=_canonical_path(route.route_kind, route.slug),
+            is_canonical=route.is_canonical,
+            lock_version=route.lock_version,
+            created_by=await self._actor_summary(route.created_by_user_id),
+            updated_by=await self._actor_summary(route.updated_by_user_id),
+            created_at=route.created_at,
+            updated_at=route.updated_at,
+            superseded_at=route.superseded_at,
+        )
+
+    async def list_routes(
+        self, actor: StaffActor, term_id: UUID, locale: str = "sr-Latn"
+    ) -> list[TaxonomyRouteOut]:
+        self._require_org_admin(actor)
+        term = await self._term(actor, term_id)
+        self._route_kind(term)
+        routes = (
+            await self._session.scalars(
+                select(TaxonomyTermRoute)
+                .where(
+                    TaxonomyTermRoute.term_id == term.id,
+                    TaxonomyTermRoute.organization_id == actor.organization_id,
+                    TaxonomyTermRoute.locale == locale,
+                )
+                .order_by(
+                    TaxonomyTermRoute.is_canonical.desc(),
+                    TaxonomyTermRoute.created_at.desc(),
+                )
+            )
+        ).all()
+        return [await self._route_out(route) for route in routes]
+
+    async def suggest_route(
+        self,
+        actor: StaffActor,
+        term_id: UUID,
+        request: SuggestTaxonomyRouteRequest,
+    ) -> TaxonomyRouteSuggestionOut:
+        self._require_org_admin(actor)
+        term = await self._term(actor, term_id)
+        route_kind = self._route_kind(term)
+        revision = await self._latest_effective_revision(
+            term, actor.organization_id, request.locale
+        )
+        if revision is None:
+            raise TaxonomyValidationError(
+                "TAX-ROUTE-005",
+                "Termin nema verziju za izabrani jezik.",
+                "locale",
+            )
+        current = await self._canonical_route(term.id, request.locale)
+        if current is not None:
+            return TaxonomyRouteSuggestionOut(
+                slug=current.slug,
+                canonical_path=_canonical_path(route_kind, current.slug),
+                available=True,
+                current_route_id=current.id,
+                current_lock_version=current.lock_version,
+            )
+
+        base = _slugify(revision.public_label) or term.stable_id
+        if len(base) < 2:
+            raise TaxonomyValidationError(
+                "TAX-ROUTE-001",
+                "Od javnog naziva nije moguće napraviti bezbednu putanju.",
+                "publicLabel",
+            )
+        candidate = base
+        suffix_number = 2
+        while (
+            await self._session.scalar(
+                select(TaxonomyTermRoute.id).where(
+                    TaxonomyTermRoute.organization_id == actor.organization_id,
+                    TaxonomyTermRoute.locale == request.locale,
+                    TaxonomyTermRoute.route_kind == route_kind,
+                    TaxonomyTermRoute.slug == candidate,
+                )
+            )
+            is not None
+        ):
+            suffix = f"-{suffix_number}"
+            candidate = f"{base[: 160 - len(suffix)].rstrip('-')}{suffix}"
+            suffix_number += 1
+        return TaxonomyRouteSuggestionOut(
+            slug=candidate,
+            canonical_path=_canonical_path(route_kind, candidate),
+            available=True,
+        )
+
+    async def confirm_route(
+        self,
+        actor: StaffActor,
+        term_id: UUID,
+        request: ConfirmTaxonomyRouteRequest,
+    ) -> TaxonomyRouteOut:
+        self._require_org_admin(actor)
+        term = await self._term(actor, term_id)
+        route_kind = self._route_kind(term)
+        revision = await self._latest_effective_revision(
+            term, actor.organization_id, request.locale
+        )
+        if revision is None:
+            raise TaxonomyValidationError(
+                "TAX-ROUTE-005",
+                "Termin nema verziju za izabrani jezik.",
+                "locale",
+            )
+        if _slugify(request.slug) != request.slug:
+            raise TaxonomyValidationError(
+                "TAX-ROUTE-001",
+                "Javna putanja koristi mala ASCII slova, brojeve i crtice.",
+                "slug",
+            )
+
+        current = await self._canonical_route(term.id, request.locale)
+        if current is None and request.lock_version is not None:
+            raise TaxonomyConflictError(
+                "TAX-LOCK-001",
+                "Putanja je izmenjena u međuvremenu — osvežite i pokušajte ponovo.",
+                "lockVersion",
+            )
+        if current is not None:
+            if request.lock_version is None or current.lock_version != request.lock_version:
+                raise TaxonomyConflictError(
+                    "TAX-LOCK-001",
+                    "Putanja je izmenjena u međuvremenu — osvežite i pokušajte ponovo.",
+                    "lockVersion",
+                )
+            if current.slug == request.slug:
+                return await self._route_out(current)
+
+        existing = await self._session.scalar(
+            select(TaxonomyTermRoute).where(
+                TaxonomyTermRoute.organization_id == actor.organization_id,
+                TaxonomyTermRoute.locale == request.locale,
+                TaxonomyTermRoute.route_kind == route_kind,
+                TaxonomyTermRoute.slug == request.slug,
+            )
+        )
+        if existing is not None:
+            raise TaxonomyConflictError(
+                "TAX-ROUTE-002",
+                "Ova javna putanja je već rezervisana i ne može se ponovo koristiti.",
+                "slug",
+            )
+
+        now = datetime.now(UTC)
+        if current is not None:
+            current.is_canonical = False
+            current.superseded_at = now
+            current.updated_by_user_id = actor.user_id
+            current.updated_at = now
+            try:
+                await self._session.flush()
+            except StaleDataError as error:
+                raise TaxonomyConflictError(
+                    "TAX-LOCK-001",
+                    "Putanja je izmenjena u međuvremenu — osvežite i pokušajte ponovo.",
+                    "lockVersion",
+                ) from error
+
+        route = TaxonomyTermRoute(
+            organization_id=actor.organization_id,
+            term_id=term.id,
+            locale=request.locale,
+            route_kind=route_kind,
+            slug=request.slug,
+            is_canonical=True,
+            created_by_user_id=actor.user_id,
+            updated_by_user_id=actor.user_id,
+        )
+        self._session.add(route)
+        try:
+            await self._session.flush()
+        except IntegrityError as error:
+            raise TaxonomyConflictError(
+                "TAX-ROUTE-002",
+                "Ova javna putanja je već rezervisana — osvežite i pokušajte ponovo.",
+                "slug",
+            ) from error
+        await self._session.refresh(route)
+        return await self._route_out(route)
+
+    async def _require_canonical_route(
+        self, term: TaxonomyTerm, locale: str
+    ) -> TaxonomyTermRoute | None:
+        if term.axis not in ROUTE_KIND_BY_AXIS:
+            return None
+        route = await self._canonical_route(term.id, locale)
+        if route is None:
+            raise TaxonomyConflictError(
+                "TAX-ROUTE-004",
+                "Pre objave potvrdite javnu putanju oblasti ili teme.",
+                "canonicalPath",
+            )
+        return route
 
     async def _latest_effective_revision(
         self, term: TaxonomyTerm, organization_id: UUID, locale: str
@@ -448,6 +699,11 @@ class TaxonomyService:
         search_terms = await self._search_terms(revision.id)
         relations = await self._relations(revision.id)
         decisions = await self._term_decisions(revision.id)
+        canonical_route = (
+            await self._canonical_route(term.id, revision.locale)
+            if term.axis in ROUTE_KIND_BY_AXIS
+            else None
+        )
         parent = (
             await self._session.get(TaxonomyTerm, revision.primary_parent_term_id)
             if revision.primary_parent_term_id
@@ -475,6 +731,11 @@ class TaxonomyService:
             organization_id=revision.organization_id,
             axis=term.axis,
             stable_id=term.stable_id,
+            canonical_path=(
+                _canonical_path(canonical_route.route_kind, canonical_route.slug)
+                if canonical_route is not None
+                else None
+            ),
             system_defined=term.system_defined,
             locale=revision.locale,
             public_label=revision.public_label,
@@ -926,6 +1187,7 @@ class TaxonomyService:
             )
             await self._require_term_approvals(revision.id)
         if request.target is RevisionStatus.PUBLISHED:
+            await self._require_canonical_route(term, revision.locale)
             relations = await self._relations(revision.id)
             await self._validate_shape(
                 actor,
@@ -1011,6 +1273,95 @@ class TaxonomyService:
             )
         )
 
+    async def _public_term_out(
+        self, term: TaxonomyTerm, organization_id: UUID, locale: str
+    ) -> PublicTaxonomyTermOut | None:
+        revision = await self._published_effective_revision(term, organization_id, locale)
+        if revision is None or not revision.public_visible or not revision.compass_enabled:
+            return None
+        canonical_route = (
+            await self._canonical_route(term.id, locale)
+            if term.axis in ROUTE_KIND_BY_AXIS
+            else None
+        )
+        if term.axis in ROUTE_KIND_BY_AXIS and canonical_route is None:
+            return None
+        parent = (
+            await self._session.get(TaxonomyTerm, revision.primary_parent_term_id)
+            if revision.primary_parent_term_id
+            else None
+        )
+        journey = (
+            await self._session.get(TaxonomyTerm, revision.journey_intent_term_id)
+            if revision.journey_intent_term_id
+            else None
+        )
+        if term.axis is TaxonomyAxis.TOPIC:
+            parent_revision = (
+                await self._published_effective_revision(parent, organization_id, locale)
+                if parent is not None
+                else None
+            )
+            parent_route = (
+                await self._canonical_route(parent.id, locale) if parent is not None else None
+            )
+            journey_revision = (
+                await self._published_effective_revision(journey, organization_id, locale)
+                if journey is not None
+                else None
+            )
+            if (
+                parent_revision is None
+                or not parent_revision.public_visible
+                or not parent_revision.compass_enabled
+                or parent_route is None
+                or journey_revision is None
+                or not journey_revision.public_visible
+                or not journey_revision.compass_enabled
+            ):
+                return None
+        relations = await self._relations(revision.id)
+        related_ids: list[str] = []
+        for relation in relations:
+            if relation.relation_kind is not TaxonomyRelationKind.RELATED_TOPIC:
+                continue
+            target = await self._session.get(TaxonomyTerm, relation.target_term_id)
+            target_revision = (
+                await self._published_effective_revision(target, organization_id, locale)
+                if target is not None
+                else None
+            )
+            target_route = (
+                await self._canonical_route(target.id, locale) if target is not None else None
+            )
+            if (
+                target is not None
+                and target_revision is not None
+                and target_revision.public_visible
+                and target_revision.compass_enabled
+                and target_route is not None
+            ):
+                related_ids.append(target.stable_id)
+        return PublicTaxonomyTermOut(
+            term_id=term.id,
+            axis=term.axis,
+            stable_id=term.stable_id,
+            canonical_path=(
+                _canonical_path(canonical_route.route_kind, canonical_route.slug)
+                if canonical_route is not None
+                else None
+            ),
+            public_label=revision.public_label,
+            short_description=revision.short_description,
+            parent_stable_id=parent.stable_id if parent else None,
+            journey_intent=journey.stable_id if journey else None,
+            sort_order=revision.sort_order,
+            icon_key=revision.icon_key,
+            asset_id=revision.asset_id,
+            search_terms=[item.original_value for item in await self._search_terms(revision.id)],
+            related_stable_ids=sorted(related_ids),
+        )
+
     async def list_public(
         self, organization_id: UUID, locale: str = "sr-Latn"
     ) -> PublicTaxonomyOut:
@@ -1026,75 +1377,9 @@ class TaxonomyService:
         ).all()
         outputs: list[PublicTaxonomyTermOut] = []
         for term in terms:
-            revision = await self._published_effective_revision(term, organization_id, locale)
-            if revision is None or not revision.public_visible or not revision.compass_enabled:
-                continue
-            parent = (
-                await self._session.get(TaxonomyTerm, revision.primary_parent_term_id)
-                if revision.primary_parent_term_id
-                else None
-            )
-            journey = (
-                await self._session.get(TaxonomyTerm, revision.journey_intent_term_id)
-                if revision.journey_intent_term_id
-                else None
-            )
-            if term.axis is TaxonomyAxis.TOPIC:
-                parent_revision = (
-                    await self._published_effective_revision(parent, organization_id, locale)
-                    if parent is not None
-                    else None
-                )
-                journey_revision = (
-                    await self._published_effective_revision(journey, organization_id, locale)
-                    if journey is not None
-                    else None
-                )
-                if (
-                    parent_revision is None
-                    or not parent_revision.public_visible
-                    or not parent_revision.compass_enabled
-                    or journey_revision is None
-                    or not journey_revision.public_visible
-                    or not journey_revision.compass_enabled
-                ):
-                    continue
-            relations = await self._relations(revision.id)
-            related_ids: list[str] = []
-            for relation in relations:
-                if relation.relation_kind is not TaxonomyRelationKind.RELATED_TOPIC:
-                    continue
-                target = await self._session.get(TaxonomyTerm, relation.target_term_id)
-                target_revision = (
-                    await self._published_effective_revision(target, organization_id, locale)
-                    if target is not None
-                    else None
-                )
-                if (
-                    target is not None
-                    and target_revision is not None
-                    and target_revision.public_visible
-                    and target_revision.compass_enabled
-                ):
-                    related_ids.append(target.stable_id)
-            outputs.append(
-                PublicTaxonomyTermOut(
-                    term_id=term.id,
-                    axis=term.axis,
-                    stable_id=term.stable_id,
-                    public_label=revision.public_label,
-                    short_description=revision.short_description,
-                    parent_stable_id=parent.stable_id if parent else None,
-                    journey_intent=journey.stable_id if journey else None,
-                    sort_order=revision.sort_order,
-                    icon_key=revision.icon_key,
-                    asset_id=revision.asset_id,
-                    search_terms=[
-                        item.original_value for item in await self._search_terms(revision.id)
-                    ],
-                    related_stable_ids=sorted(related_ids),
-                )
-            )
+            output = await self._public_term_out(term, organization_id, locale)
+            if output is not None:
+                outputs.append(output)
         return PublicTaxonomyOut(
             taxonomy_version=TAXONOMY_VERSION,
             locale=locale,
@@ -1102,6 +1387,41 @@ class TaxonomyService:
                 outputs, key=lambda item: (item.axis.value, item.sort_order, item.public_label)
             ),
         )
+
+    async def resolve_public_route(
+        self,
+        organization_id: UUID,
+        route_kind: TaxonomyRouteKind,
+        slug: str,
+        locale: str = "sr-Latn",
+    ) -> tuple[PublicTaxonomyTermOut, bool]:
+        route = await self._session.scalar(
+            select(TaxonomyTermRoute).where(
+                TaxonomyTermRoute.organization_id == organization_id,
+                TaxonomyTermRoute.locale == locale,
+                TaxonomyTermRoute.route_kind == route_kind,
+                TaxonomyTermRoute.slug == slug,
+            )
+        )
+        if route is None:
+            raise TaxonomyNotFoundError(
+                "TAX-ROUTE-404", "Tražena Kompas stranica ne postoji.", "slug"
+            )
+        term = await self._session.get(TaxonomyTerm, route.term_id)
+        if (
+            term is None
+            or term.organization_id != organization_id
+            or ROUTE_KIND_BY_AXIS.get(term.axis) != route_kind
+        ):
+            raise TaxonomyNotFoundError(
+                "TAX-ROUTE-404", "Tražena Kompas stranica ne postoji.", "slug"
+            )
+        output = await self._public_term_out(term, organization_id, locale)
+        if output is None or output.canonical_path is None:
+            raise TaxonomyNotFoundError(
+                "TAX-ROUTE-404", "Tražena Kompas stranica nije objavljena.", "slug"
+            )
+        return output, not route.is_canonical
 
     async def _link(self, actor: StaffActor, link_id: UUID) -> TaxonomyIntakeLink:
         link = await self._session.scalar(

@@ -381,7 +381,7 @@
 - [x] LD-7 — FastAPI ruter za registar dokumenata + regenerisan OpenAPI TS klijent; pravi API wiring, actor evidence, custom dokumenti, Tiptap/`.docx` create tok i javni renderer.
 - [ ] ADR-015 (B2B coffee widget granice, D-041).
 - [ ] R2 Booking Engine.
-- [ ] **Kompas — K1 backend foundation završen 2026-07-31:** kanonski registar, migracija D-052 oblasti, lifecycle/audit, staff/public API i OpenAPI klijent postoje. D-054 razdvaja kanonske stranice oblasti/tema od dinamičkog prikaza; slede K2.0 javni route registry + K2 panel sa tabom „Oblasti” → kontrolisana CMS polja → K3B kanonski read-model/`CompassGuide` → recommendation/public Kompas. Basic/advanced granica i release mapa ostaju O-21.
+- [ ] **Kompas — K1 foundation + K2.0 route registry završeni 2026-07-31:** kanonski registar, migracija D-052 oblasti, lifecycle/audit, staff/public API, locale-aware kanonske putanje, sačuvani 308 aliasi i OpenAPI klijent postoje. D-054 razdvaja kanonske stranice oblasti/tema od dinamičkog prikaza; slede K2 panel sa tabom „Oblasti” → kontrolisana CMS polja → K3B javni renderer/`CompassGuide` → recommendation/public Kompas. Basic/advanced granica i release mapa ostaju O-21.
 
 ### Preduslovi pre bilo kog kataloga sadržaja (D-047)
 

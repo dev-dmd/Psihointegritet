@@ -59,6 +59,11 @@ class TaxonomyRelationKind(StrEnum):
     REPLACEMENT = "replacement"
 
 
+class TaxonomyRouteKind(StrEnum):
+    AREA = "oblast"
+    TOPIC = "tema"
+
+
 class JourneyIntent(StrEnum):
     EXPLORE = "explore"
     PROFESSIONAL_SUPPORT = "professional_support"
@@ -238,6 +243,68 @@ class TaxonomyTermRevision(Base):
     )
     published_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     archived_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+    __mapper_args__ = {"version_id_col": lock_version}  # noqa: RUF012
+
+
+class TaxonomyTermRoute(Base):
+    """Locale-aware canonical path plus immutable redirect aliases (D-054)."""
+
+    __tablename__ = "taxonomy_term_routes"
+    __table_args__ = (
+        CheckConstraint(
+            "(is_canonical AND superseded_at IS NULL) OR "
+            "(NOT is_canonical AND superseded_at IS NOT NULL)",
+            name="taxonomy_route_canonical_state",
+        ),
+        Index(
+            "uq_tax_route_path",
+            "organization_id",
+            "locale",
+            "route_kind",
+            "slug",
+            unique=True,
+        ),
+        Index(
+            "uq_tax_route_canonical",
+            "term_id",
+            "locale",
+            unique=True,
+            postgresql_where=text("is_canonical"),
+        ),
+    )
+
+    id: Mapped[UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid4)
+    organization_id: Mapped[UUID] = mapped_column(
+        Uuid(as_uuid=True), ForeignKey("organizations.id", ondelete="CASCADE"), index=True
+    )
+    term_id: Mapped[UUID] = mapped_column(
+        Uuid(as_uuid=True), ForeignKey("taxonomy_terms.id", ondelete="RESTRICT"), index=True
+    )
+    locale: Mapped[str] = mapped_column(String(16), nullable=False)
+    route_kind: Mapped[TaxonomyRouteKind] = mapped_column(
+        value_enum(TaxonomyRouteKind, length=16), nullable=False
+    )
+    slug: Mapped[str] = mapped_column(String(160), nullable=False)
+    is_canonical: Mapped[bool] = mapped_column(
+        Boolean, default=True, server_default=text("true"), nullable=False
+    )
+    lock_version: Mapped[int] = mapped_column(
+        Integer, default=1, server_default="1", nullable=False
+    )
+    created_by_user_id: Mapped[UUID | None] = mapped_column(
+        Uuid(as_uuid=True), ForeignKey("internal_users.id", ondelete="SET NULL"), nullable=True
+    )
+    updated_by_user_id: Mapped[UUID | None] = mapped_column(
+        Uuid(as_uuid=True), ForeignKey("internal_users.id", ondelete="SET NULL"), nullable=True
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False
+    )
+    superseded_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
     __mapper_args__ = {"version_id_col": lock_version}  # noqa: RUF012
 

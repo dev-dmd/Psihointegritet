@@ -13,6 +13,7 @@ from psihointegritet.modules.content.models import ReviewOutcome
 from psihointegritet.modules.content.taxonomy_models import (
     TaxonomyAxis,
     TaxonomyRelationKind,
+    TaxonomyRouteKind,
 )
 from psihointegritet.modules.identity.schemas import ActorSummaryOut
 from psihointegritet.shared.domain.publication import ApprovalCapability, RevisionStatus
@@ -52,6 +53,7 @@ class TaxonomyTermOut(TaxonomyApiSchema):
     organization_id: UUID | None
     axis: TaxonomyAxis
     stable_id: str
+    canonical_path: str | None
     system_defined: bool
     locale: str
     public_label: str
@@ -83,6 +85,7 @@ class PublicTaxonomyTermOut(TaxonomyApiSchema):
     term_id: UUID
     axis: TaxonomyAxis
     stable_id: str
+    canonical_path: str | None
     public_label: str
     short_description: str
     parent_stable_id: str | None = None
@@ -98,6 +101,50 @@ class PublicTaxonomyOut(TaxonomyApiSchema):
     taxonomy_version: str = "kompas-taxonomy-v1"
     locale: str
     terms: list[PublicTaxonomyTermOut]
+
+
+class TaxonomyRouteOut(TaxonomyApiSchema):
+    route_id: UUID
+    term_id: UUID
+    locale: str
+    route_kind: TaxonomyRouteKind
+    slug: str
+    canonical_path: str
+    is_canonical: bool
+    lock_version: int
+    created_by: ActorSummaryOut | None = None
+    updated_by: ActorSummaryOut | None = None
+    created_at: datetime
+    updated_at: datetime
+    superseded_at: datetime | None = None
+
+
+class SuggestTaxonomyRouteRequest(TaxonomyApiSchema):
+    locale: str = Field(default="sr-Latn", min_length=2, max_length=16)
+
+
+class TaxonomyRouteSuggestionOut(TaxonomyApiSchema):
+    slug: str
+    canonical_path: str
+    available: bool
+    current_route_id: UUID | None = None
+    current_lock_version: int | None = None
+
+
+class ConfirmTaxonomyRouteRequest(TaxonomyApiSchema):
+    locale: str = Field(default="sr-Latn", min_length=2, max_length=16)
+    slug: str = Field(min_length=2, max_length=160)
+    lock_version: int | None = Field(default=None, ge=1)
+
+    @field_validator("slug")
+    @classmethod
+    def validate_slug(cls, value: str) -> str:
+        if not _MANAGED_ID.fullmatch(value):
+            raise ValueError(
+                "Javna putanja koristi mala ASCII slova, brojeve i crtice, "
+                "na primer stres-i-preopterecenost"
+            )
+        return value
 
 
 class CreateTaxonomyTermRequest(TaxonomyApiSchema):
