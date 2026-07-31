@@ -5,6 +5,15 @@ export type TaxonomyTerm = components["schemas"]["TaxonomyTermOut"];
 export type TaxonomyIntakeLink = components["schemas"]["TaxonomyIntakeLinkOut"];
 export type TaxonomyAxis = components["schemas"]["TaxonomyAxis"];
 export type TaxonomyStatus = components["schemas"]["RevisionStatus"];
+export type CreateTaxonomyTermInput =
+  components["schemas"]["CreateTaxonomyTermRequest"];
+export type UpdateTaxonomyRevisionInput =
+  components["schemas"]["UpdateTaxonomyRevisionRequest"];
+
+export const TAXONOMY_REGISTRY_QUERY_KEY = [
+  "kompas-taxonomy-registry",
+  "sr-Latn",
+] as const;
 
 export interface TaxonomyRegistrySnapshot {
   terms: TaxonomyTerm[];
@@ -61,4 +70,31 @@ export async function fetchTaxonomyRegistry(
     parseOrThrow<TaxonomyIntakeLink[]>(intakeLinksResponse),
   ]);
   return { terms, intakeLinks };
+}
+
+export async function createTaxonomyTerm(
+  input: CreateTaxonomyTermInput,
+): Promise<TaxonomyTerm> {
+  const response = await fetch("/api/content/taxonomy/terms", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  });
+  return parseOrThrow<TaxonomyTerm>(response);
+}
+
+export async function updateTaxonomyRevision(
+  termId: string,
+  revisionId: string,
+  input: UpdateTaxonomyRevisionInput,
+): Promise<TaxonomyTerm> {
+  const response = await fetch(
+    `/api/content/taxonomy/terms/${encodeURIComponent(termId)}/revisions/${encodeURIComponent(revisionId)}`,
+    {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(input),
+    },
+  );
+  return parseOrThrow<TaxonomyTerm>(response);
 }

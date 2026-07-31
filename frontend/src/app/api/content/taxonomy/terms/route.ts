@@ -7,3 +7,12 @@ export async function GET(request: Request): Promise<Response> {
     { method: "GET" },
   );
 }
+
+export async function POST(request: Request): Promise<Response> {
+  const body = await request.text();
+  return forwardStaffIntake("/api/v1/content/taxonomy/terms", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body,
+  });
+}

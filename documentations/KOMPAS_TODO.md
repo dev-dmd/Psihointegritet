@@ -1,6 +1,6 @@
 # KOMPAS TODO — discovery i recommendation sloj
 
-**Status:** K1 backend foundation, K2.0 route registry i K2.1 panel površina implementirani; sledeći korak je K2.2 generički editor registra
+**Status:** K1 backend foundation i K2.0–K2.2 panel foundation implementirani; sledeći korak je K2.3 proširenje svih uređivih registry polja
 **Datum:** 2026-07-31  
 **Vlasnik tehničkih odluka:** Milan Dražić (CTO)  
 **Vlasnik stručne kategorizacije i javnih naziva:** Anja Stamenković i stručni tim  
@@ -730,7 +730,7 @@ Preporuka za v1:
 - [x] **K2.0b** Staff API daje predlog/potvrdu/korekciju sluga, koristi optimistic lock i publication guard; stari alias javno vraća `308` samo ka aktuelnom objavljenom terminu. Stable ID ostaje odvojen i ne menja se.
 - [x] **K2.0c** Staff/public read-model nose `canonicalPath`; route istorija ostaje samo u zaštićenom staff odgovoru, a javni taxonomy odgovor ne izlaže draft ni alias podatke. OpenAPI klijent je regenerisan.
 - [x] **K2.1** Dodata je admin-only panel površina `/radni-prostor/kompas` sa tabovima **Oblasti · Teme · Publike · Ciljevi sadržaja · Povezivanja · Pregled i odobrenja**. Čita stvarni staff API kroz Clerk proxy i TanStack Query, ima loading/error/empty stanja, statusne preglede i actor evidence. „Oblasti” koriste `topic_group`; `support_area` se prikazuje samo kao „Intake oblast podrške” u Povezivanjima.
-- [ ] **K2.2** Napraviti generički editor registra sa različitim pravilima po osi, ne poseban ekran za svaki mali registar. Tehničko `topic_group` prikazati kao „Oblast”, a system `support_area` isključivo kao „Intake oblast podrške” u Povezivanjima.
+- [x] **K2.2** Napravljen je jedan generički create/edit editor sa konfiguracijom po managed osi, bez četiri kopirana formulara. Oblast, tema, publika i cilj koriste isti mutation/cache tok; tema dodatno zahteva kontrolisanu oblast i system put korisnika. Stabilni ID se unosi samo pri kreiranju i posle je zaključan. `support_area` nije dobio editor ni javni tab.
 - [ ] **K2.3** Omogućiti javni naziv/opis, sinonime, hijerarhiju, redosled, ikonu/asset, vidljivost, aktivnost u Kompasu, povezane teme i internu stručnu napomenu.
 - [ ] **K2.4** Stable ID prikazati zaključano nakon kreiranja; system ID/semantiku nikad ne ponuditi kao slobodno polje.
 - [ ] **K2.5** Journey/format/access/lifecycle/approval vrednosti učitati kao system select opcije; D-052 `support_area` učitati samo kao read-only izbor za topic → Intake povezivanje; `subscriber`/`purchased` su disabled „U pripremi”.
@@ -742,7 +742,9 @@ Preporuka za v1:
 
 **K2.0 napomena:** implementacija je završena bez primene migracije i bez stvarnog ulogovanog browser toka. To ostaje za posebno zatraženu test fazu po `TODO.md` §0A.
 
-**K2.1 granica:** završena je jedna read-only upravljačka površina nad stvarnim registrom. Create/edit, lifecycle komande, odobrenja i potvrda sluga nisu privremeno simulirani u browseru; uvode se redom kroz K2.2–K2.10 nad postojećim backend ugovorom.
+**K2.1 granica:** ovaj korak je završio read-only upravljačku površinu nad stvarnim registrom. Create/edit je zatim dodat kroz K2.2; lifecycle komande, odobrenja i potvrda sluga i dalje se uvode redom kroz K2.3–K2.10 nad postojećim backend ugovorom.
+
+**K2.2 granica:** generički editor sada stvarno kreira i menja osnovni draft (javni naziv, kratak opis i obavezni topic kontekst) kroz staff API i `lockVersion`. Sinonimi, redosled, asset/ikona, vidljivost, Kompas aktivnost, povezane teme i interna stručna napomena ostaju objedinjeno proširenje K2.3; lifecycle i odobrenja nisu preuranjeno dodati.
 
 **Gate K2:** Anja ili ovlašćeni org admin može napraviti draft oblasti/teme, jasno razlikuje oblast Kompasa od Intake oblasti podrške, šalje na pregled, odobrava/objavljuje po dozvoli, menja labelu bez promene ID-ja/rute i vidi ko je izvršio svaku radnju.
 
@@ -944,7 +946,7 @@ Mali broj contract/parity testova može se dodati uz vertikalni tok, ali se izvr
 
 D-053, D-054 i ADR-022 Amandman 1 su usvojeni. Sledeće:
 
-1. nastaviti **K2.2 generičkim editorom registra**, zatim K2.3–K2.10 stvarnim governance tokom na već postavljenoj K2.1 površini;
+1. nastaviti **K2.3 proširenjem uređivih registry polja**, zatim K2.4–K2.10 stvarnim governance tokom na već postavljenom generičkom editoru;
 2. povezati registar sa **K3 CMS formama**;
 3. Anjinu konačnu tabelu uneti kao stručne podatke čim stigne, bez menjanja arhitekture;
 4. završiti K3A katalog i K3B kanonske stranice/`CompassGuide` ugovor, zatim K4/K5 i tek tada javni K6;

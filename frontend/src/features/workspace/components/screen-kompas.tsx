@@ -1,6 +1,7 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import type { ReactNode } from "react";
 import { useState } from "react";
 
 import { ActorBadge } from "@/components/panel/actor-badge";
@@ -15,16 +16,21 @@ import { cn } from "@/helpers/cn";
 
 import {
   fetchTaxonomyRegistry,
+  TAXONOMY_REGISTRY_QUERY_KEY,
   TaxonomyApiError,
   type TaxonomyAxis,
   type TaxonomyIntakeLink,
+  type TaxonomyRegistrySnapshot,
   type TaxonomyStatus,
   type TaxonomyTerm,
 } from "../taxonomy-api";
 import { LockIcon } from "./icons";
 import { PageHeader } from "./page-header";
-
-const REGISTRY_QUERY_KEY = ["kompas-taxonomy-registry", "sr-Latn"] as const;
+import {
+  AXIS_EDITOR_CONFIG,
+  type ManagedTaxonomyAxis,
+  TaxonomyTermEditor,
+} from "./taxonomy-term-editor";
 
 type KompasTab =
   "areas" | "topics" | "audiences" | "goals" | "links" | "review";
@@ -116,6 +122,17 @@ function publicLabelFor(
   );
 }
 
+function isManagedAxis(
+  axis: TaxonomyAxis | undefined,
+): axis is ManagedTaxonomyAxis {
+  return (
+    axis === "topic_group" ||
+    axis === "topic" ||
+    axis === "audience" ||
+    axis === "content_goal"
+  );
+}
+
 function RegistryFlag({
   active,
   children,
@@ -140,9 +157,11 @@ function RegistryFlag({
 function TermCard({
   term,
   registryTerms,
+  onEdit,
 }: {
   term: TaxonomyTerm;
   registryTerms: TaxonomyTerm[];
+  onEdit?: () => void;
 }) {
   const status = STATUS_META[term.status];
   const isRouteTerm = term.axis === "topic_group" || term.axis === "topic";
@@ -221,11 +240,25 @@ function TermCard({
         ) : null}
       </div>
 
-      <div className="mt-3 flex flex-wrap items-center gap-2">
-        <ActorBadge action="Poslednja izmena" actor={term.updatedBy ?? null} />
-        <span className="text-ink-45 text-[11.5px]">
-          {term.versionLabel} · {formatDate(term.updatedAt)}
-        </span>
+      <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center gap-2">
+          <ActorBadge
+            action="Poslednja izmena"
+            actor={term.updatedBy ?? null}
+          />
+          <span className="text-ink-45 text-[11.5px]">
+            {term.versionLabel} · {formatDate(term.updatedAt)}
+          </span>
+        </div>
+        {onEdit ? (
+          <button
+            type="button"
+            onClick={onEdit}
+            className="border-line-strong text-ink-70 hover:border-coffee/40 cursor-pointer rounded-full border bg-transparent px-3.5 py-2 text-[12.5px] font-semibold transition-colors"
+          >
+            Uredi
+          </button>
+        ) : null}
       </div>
     </article>
   );
@@ -235,20 +268,38 @@ function TermList({
   terms,
   registryTerms,
   tab,
+  axis,
+  editor,
+  onCreate,
+  onEdit,
 }: {
   terms: TaxonomyTerm[];
   registryTerms: TaxonomyTerm[];
   tab: Exclude<KompasTab, "links" | "review">;
+  axis: ManagedTaxonomyAxis;
+  editor: ReactNode;
+  onCreate: () => void;
+  onEdit: (term: TaxonomyTerm) => void;
 }) {
   const copy = TAB_COPY[tab];
   return (
     <div role="tabpanel" aria-label={copy.title}>
-      <div className="mb-4">
-        <h2 className="text-forest font-serif text-[22px]">{copy.title}</h2>
-        <p className="text-ink-55 mt-1 max-w-[760px] text-[13.5px] leading-[1.5]">
-          {copy.description}
-        </p>
+      <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h2 className="text-forest font-serif text-[22px]">{copy.title}</h2>
+          <p className="text-ink-55 mt-1 max-w-[760px] text-[13.5px] leading-[1.5]">
+            {copy.description}
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={onCreate}
+          className="bg-forest text-panel-canvas hover:bg-forest-hover cursor-pointer rounded-full border-0 px-4 py-2.5 text-[13px] font-semibold transition-colors"
+        >
+          {AXIS_EDITOR_CONFIG[axis].newLabel}
+        </button>
       </div>
+      {editor}
       {terms.length === 0 ? (
         <EmptyDashedCard title={copy.empty}>
           Podaci će se pojaviti ovde čim budu uneti kroz registar. Panel ne
@@ -261,6 +312,9 @@ function TermList({
               key={term.revisionId}
               term={term}
               registryTerms={registryTerms}
+              {...(term.status === "draft" && !term.systemDefined
+                ? { onEdit: () => onEdit(term) }
+                : {})}
             />
           ))}
         </div>
@@ -413,9 +467,14 @@ function ReviewQueue({
 }
 
 export function ScreenKompas() {
+  const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<KompasTab>("areas");
+  const [editorState, setEditorState] = useState<{
+    axis: ManagedTaxonomyAxis;
+    termId: string | null;
+  } | null>(null);
   const registryQuery = useQuery({
-    queryKey: REGISTRY_QUERY_KEY,
+    queryKey: TAXONOMY_REGISTRY_QUERY_KEY,
     queryFn: () => fetchTaxonomyRegistry(),
     staleTime: 30_000,
   });
@@ -441,6 +500,26 @@ export function ScreenKompas() {
   const activeTerms = activeAxis
     ? terms.filter((term) => term.axis === activeAxis)
     : [];
+  const activeManagedAxis = isManagedAxis(activeAxis) ? activeAxis : undefined;
+  const editorTerm = editorState?.termId
+    ? (terms.find((term) => term.termId === editorState.termId) ?? null)
+    : null;
+
+  const handleSaved = (saved: TaxonomyTerm) => {
+    queryClient.setQueryData<TaxonomyRegistrySnapshot>(
+      TAXONOMY_REGISTRY_QUERY_KEY,
+      (current) => ({
+        terms: [
+          ...(current?.terms ?? []).filter(
+            (term) => term.termId !== saved.termId,
+          ),
+          saved,
+        ],
+        intakeLinks: current?.intakeLinks ?? [],
+      }),
+    );
+    setEditorState(null);
+  };
 
   return (
     <section className="animate-fade-up">
@@ -483,16 +562,42 @@ export function ScreenKompas() {
             <TabPills
               tabs={TABS}
               activeId={activeTab}
-              onChange={(tab) => setActiveTab(tab as KompasTab)}
+              onChange={(tab) => {
+                setActiveTab(tab as KompasTab);
+                setEditorState(null);
+              }}
             />
           </div>
 
           <div className="mt-6">
-            {activeAxis ? (
+            {activeAxis && activeManagedAxis ? (
               <TermList
                 terms={activeTerms}
                 registryTerms={terms}
                 tab={activeTab as Exclude<KompasTab, "links" | "review">}
+                axis={activeManagedAxis}
+                editor={
+                  editorState?.axis === activeManagedAxis &&
+                  (!editorState.termId || editorTerm) ? (
+                    <TaxonomyTermEditor
+                      key={`${activeManagedAxis}:${editorTerm?.revisionId ?? "new"}`}
+                      axis={activeManagedAxis}
+                      term={editorTerm}
+                      registryTerms={terms}
+                      onSaved={handleSaved}
+                      onCancel={() => setEditorState(null)}
+                    />
+                  ) : null
+                }
+                onCreate={() =>
+                  setEditorState({ axis: activeManagedAxis, termId: null })
+                }
+                onEdit={(term) =>
+                  setEditorState({
+                    axis: activeManagedAxis,
+                    termId: term.termId,
+                  })
+                }
               />
             ) : null}
             {activeTab === "links" ? <IntakeLinks links={intakeLinks} /> : null}
