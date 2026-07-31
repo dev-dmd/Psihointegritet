@@ -15,6 +15,9 @@ export type TaxonomyReviewDecisionInput =
   components["schemas"]["TaxonomyReviewDecisionRequest"];
 export type TaxonomyIntakeLinkReviewInput =
   components["schemas"]["TaxonomyIntakeLinkReviewRequest"];
+export type TaxonomyRouteSuggestion =
+  components["schemas"]["TaxonomyRouteSuggestionOut"];
+export type TaxonomyRoute = components["schemas"]["TaxonomyRouteOut"];
 
 export const TAXONOMY_REGISTRY_QUERY_KEY = [
   "kompas-taxonomy-registry",
@@ -157,6 +160,40 @@ export async function updateTaxonomyRevision(
     },
   );
   return parseOrThrow<TaxonomyTerm>(response);
+}
+
+export async function suggestTaxonomyRoute(
+  termId: string,
+  locale = "sr-Latn",
+): Promise<TaxonomyRouteSuggestion> {
+  const response = await fetch(
+    `/api/content/taxonomy/terms/${encodeURIComponent(termId)}/routes/suggestion`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ locale }),
+    },
+  );
+  return parseOrThrow<TaxonomyRouteSuggestion>(response);
+}
+
+export async function confirmTaxonomyRoute(
+  termId: string,
+  input: { slug: string; lockVersion?: number | null; locale?: string },
+): Promise<TaxonomyRoute> {
+  const response = await fetch(
+    `/api/content/taxonomy/terms/${encodeURIComponent(termId)}/routes/canonical`,
+    {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        locale: input.locale ?? "sr-Latn",
+        slug: input.slug,
+        ...(input.lockVersion == null ? {} : { lockVersion: input.lockVersion }),
+      }),
+    },
+  );
+  return parseOrThrow<TaxonomyRoute>(response);
 }
 
 export async function createTaxonomyIntakeLink(

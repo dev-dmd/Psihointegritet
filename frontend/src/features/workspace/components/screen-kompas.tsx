@@ -19,6 +19,7 @@ import {
 } from "@/lib/content-governance/types";
 
 import {
+  confirmTaxonomyRoute,
   createTaxonomyIntakeLink,
   fetchTaxonomyRegistry,
   recordTaxonomyIntakeLinkReview,
@@ -26,11 +27,14 @@ import {
   TAXONOMY_REGISTRY_QUERY_KEY,
   TaxonomyApiError,
   taxonomyFieldErrors,
+  suggestTaxonomyRoute,
   transitionTaxonomyIntakeLink,
   transitionTaxonomyRevision,
   type TaxonomyAxis,
   type TaxonomyIntakeLink,
   type TaxonomyRegistrySnapshot,
+  type TaxonomyRoute,
+  type TaxonomyRouteSuggestion,
   type TaxonomyStatus,
   type TaxonomyTerm,
 } from "../taxonomy-api";
@@ -81,6 +85,7 @@ const TERM_APPROVAL_CAPABILITIES: ApprovalCapability[] = [
   "business",
 ];
 const LINK_APPROVAL_CAPABILITIES: ApprovalCapability[] = ["clinical"];
+const ROUTE_SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
 interface ReviewDecisionView {
   capability: ApprovalCapability;
@@ -430,6 +435,163 @@ function FieldError({ message, id }: { message?: string; id: string }) {
       {message}
     </p>
   ) : null;
+}
+
+function RouteGovernanceControls({
+  term,
+  onConfirmed,
+}: {
+  term: TaxonomyTerm;
+  onConfirmed: (route: TaxonomyRoute) => void;
+}) {
+  const [suggestion, setSuggestion] = useState<TaxonomyRouteSuggestion | null>(
+    term.canonicalPath
+      ? {
+          slug: term.canonicalPath.split("/").pop() ?? "",
+          canonicalPath: term.canonicalPath,
+          available: true,
+        }
+      : null,
+  );
+  const [slug, setSlug] = useState(suggestion?.slug ?? "");
+  const hasCanonicalRoute = Boolean(term.canonicalPath);
+  const suggestMutation = useMutation({
+    mutationFn: () => suggestTaxonomyRoute(term.termId),
+    onSuccess: (next) => {
+      setSuggestion(next);
+      setSlug(next.slug);
+    },
+  });
+  const confirmMutation = useMutation({
+    mutationFn: async () => {
+      const normalizedSlug = slug.trim();
+      if (!ROUTE_SLUG_PATTERN.test(normalizedSlug)) {
+        throw new TaxonomyApiError(
+          "Javna putanja koristi mala slova, brojeve i crtice, na primer stres-i-preopterecenost.",
+          422,
+          { fieldPath: "slug" },
+        );
+      }
+      // The list read-model deliberately exposes only the canonical path, not
+      // the route lock. Fetch it only when correcting an existing path.
+      const current =
+        hasCanonicalRoute && suggestion?.currentLockVersion == null
+          ? await suggestTaxonomyRoute(term.termId)
+          : suggestion;
+      return confirmTaxonomyRoute(term.termId, {
+        slug: normalizedSlug,
+        lockVersion: current?.currentLockVersion ?? null,
+      });
+    },
+    onSuccess: (route) => {
+      setSuggestion({
+        slug: route.slug,
+        canonicalPath: route.canonicalPath,
+        available: true,
+        currentRouteId: route.routeId,
+        currentLockVersion: route.lockVersion,
+      });
+      setSlug(route.slug);
+      onConfirmed(route);
+    },
+  });
+  const routeError = suggestMutation.isError
+    ? suggestMutation.error instanceof TaxonomyApiError
+      ? suggestMutation.error.message
+      : "Predlog javne putanje nije dostupan. Pokušajte ponovo."
+    : confirmMutation.isError
+      ? confirmMutation.error instanceof TaxonomyApiError
+        ? confirmMutation.error.message
+        : "Javna putanja nije sačuvana. Pokušajte ponovo."
+      : null;
+  const fieldError = taxonomyFieldErrors(confirmMutation.error).slug;
+  const globalError = fieldError ? null : routeError;
+  const busy = suggestMutation.isPending || confirmMutation.isPending;
+
+  return (
+    <section className="border-line rounded-tile mt-4 border px-3.5 py-3.5">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h4 className="text-ink-70 text-[12.5px] font-semibold">
+            Javna putanja
+          </h4>
+          <p className="text-ink-55 mt-1 max-w-[620px] text-[12px] leading-[1.45]">
+            {hasCanonicalRoute
+              ? "Promena javnog naziva ne menja ovu putanju. Ako je namerno promenite, stara putanja ostaje bezbedan redirect."
+              : "Pre objave potvrdite putanju koju će ljudi i pretraživači koristiti. Ovo je samo preview; K2 ne gradi javnu stranicu."}
+          </p>
+        </div>
+        <span
+          className={cn(
+            "rounded-full px-2.5 py-1 text-[11px] font-semibold",
+            hasCanonicalRoute
+              ? "bg-badge-ok-bg text-badge-ok"
+              : "bg-badge-amber-bg text-badge-amber",
+          )}
+        >
+          {hasCanonicalRoute ? "Putanja potvrđena" : "Potvrda potrebna"}
+        </span>
+      </div>
+
+      {!suggestion ? (
+        <button
+          type="button"
+          disabled={busy}
+          onClick={() => suggestMutation.mutate()}
+          className="border-line-strong text-ink-70 hover:border-coffee/40 mt-3 cursor-pointer rounded-full border bg-transparent px-3.5 py-2 text-[12px] font-semibold disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          {suggestMutation.isPending ? "Priprema predloga…" : "Predloži javnu putanju"}
+        </button>
+      ) : (
+        <div className="mt-3">
+          <label
+            htmlFor={`kompas-route-${term.termId}`}
+            className="text-ink-70 mb-1.5 block text-[12px] font-semibold"
+          >
+            Slug putanje
+          </label>
+          <div className="flex flex-wrap items-start gap-2">
+            <span className="border-line-strong bg-panel-canvas text-ink-45 rounded-tile border px-3 py-2 text-[12px] font-mono">
+              /kompas/{term.axis === "topic_group" ? "oblast" : "tema"}/
+            </span>
+            <input
+              id={`kompas-route-${term.termId}`}
+              value={slug}
+              maxLength={160}
+              disabled={busy}
+              onChange={(event) => {
+                setSlug(event.target.value);
+                confirmMutation.reset();
+              }}
+              aria-invalid={Boolean(fieldError)}
+              aria-describedby={fieldError ? `kompas-route-${term.termId}-error` : undefined}
+              className={cn(
+                "border-line-strong rounded-tile bg-panel-canvas text-coffee focus:border-sage min-w-[220px] flex-1 border px-3 py-2 font-mono text-[12px] outline-none disabled:opacity-60",
+                fieldError ? "border-danger focus:border-danger" : "",
+              )}
+            />
+            <button
+              type="button"
+              disabled={busy || !slug.trim()}
+              onClick={() => confirmMutation.mutate()}
+              className="bg-forest text-panel-canvas hover:bg-forest-hover cursor-pointer rounded-full border-0 px-3.5 py-2 text-[12px] font-semibold disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {confirmMutation.isPending
+                ? "Čuvanje…"
+                : hasCanonicalRoute
+                  ? "Sačuvaj korekciju"
+                  : "Potvrdi putanju"}
+            </button>
+          </div>
+          <FieldError id={`kompas-route-${term.termId}-error`} message={fieldError} />
+          <p className="text-ink-45 mt-2 text-[11.5px]">
+            Preview: <span className="font-mono">{suggestion.canonicalPath.replace(/[^/]+$/, slug.trim() || "…")}</span>
+          </p>
+        </div>
+      )}
+      <GovernanceError error={globalError} />
+    </section>
+  );
 }
 
 function ApprovalControls({
@@ -907,6 +1069,15 @@ function TermCard({
           )
         ) : null}
       </div>
+
+      {isRouteTerm && !term.systemDefined && onChanged ? (
+        <RouteGovernanceControls
+          term={term}
+          onConfirmed={(route) =>
+            onChanged({ ...term, canonicalPath: route.canonicalPath })
+          }
+        />
+      ) : null}
 
       <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-2">
