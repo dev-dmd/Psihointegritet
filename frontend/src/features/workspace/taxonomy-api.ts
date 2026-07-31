@@ -117,6 +117,7 @@ async function parseOrThrow<T>(response: Response): Promise<T> {
         : {}),
     });
   }
+  if (response.status === 204) return undefined as T;
   return (await response.json()) as T;
 }
 
@@ -229,8 +230,8 @@ export async function deleteTaxonomyRevision(
   revisionId: string,
 ): Promise<void> {
   const response = await fetch(
-    `/api/content/taxonomy/terms/${encodeURIComponent(termId)}/revisions/${encodeURIComponent(revisionId)}`,
-    { method: "DELETE" },
+    `/api/content/taxonomy/terms/${encodeURIComponent(termId)}/revisions/${encodeURIComponent(revisionId)}/delete`,
+    { method: "POST" },
   );
   await parseOrThrow<void>(response);
 }

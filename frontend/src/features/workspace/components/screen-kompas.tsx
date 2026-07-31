@@ -1140,7 +1140,10 @@ function TermCard({
         reasonPlaceholder="Npr. duplikat ili pogrešan unos"
         note="Brisanje objavljene verzije uklanja je iz aktivnog registra. Prethodna verzija, ako postoji, ostaje zasebna istorijska verzija."
         confirmLabel={deleteMutation.isPending ? "Brisanje…" : "Obriši verziju"}
-        onConfirm={() => deleteMutation.mutate()}
+        onConfirm={() => {
+          setDeleteOpen(false);
+          deleteMutation.mutate();
+        }}
         onClose={() => setDeleteOpen(false)}
       />
       {!term.systemDefined && onChanged ? (

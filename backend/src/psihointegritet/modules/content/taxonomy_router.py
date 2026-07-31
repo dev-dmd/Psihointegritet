@@ -308,6 +308,28 @@ async def delete_taxonomy_revision(
 
 
 @router.post(
+    "/terms/{term_id}/revisions/{revision_id}/delete",
+    status_code=status.HTTP_204_NO_CONTENT,
+    responses=_ERROR_RESPONSES,
+    operation_id="delete_taxonomy_revision_action",
+)
+async def delete_taxonomy_revision_action(
+    term_id: UUID,
+    revision_id: UUID,
+    identity: CurrentIdentity,
+    session: DatabaseSession,
+    settings: AppSettings,
+) -> None:
+    """Action-route counterpart for panel/proxy layers that reject DELETE."""
+    try:
+        async with session.begin():
+            actor = await _actor(session, settings, identity)
+            await TaxonomyService(session).delete_revision(actor, term_id, revision_id)
+    except (TaxonomyError, ValueError) as error:
+        raise _http_error(error) from error
+
+
+@router.post(
     "/terms/{term_id}/revisions/{revision_id}/transition",
     response_model=TaxonomyTermOut,
     responses=_ERROR_RESPONSES,
