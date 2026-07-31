@@ -11,6 +11,10 @@ export type UpdateTaxonomyRevisionInput =
   components["schemas"]["UpdateTaxonomyRevisionRequest"];
 export type CreateTaxonomyIntakeLinkInput =
   components["schemas"]["CreateTaxonomyIntakeLinkRequest"];
+export type TaxonomyReviewDecisionInput =
+  components["schemas"]["TaxonomyReviewDecisionRequest"];
+export type TaxonomyIntakeLinkReviewInput =
+  components["schemas"]["TaxonomyIntakeLinkReviewRequest"];
 
 export const TAXONOMY_REGISTRY_QUERY_KEY = [
   "kompas-taxonomy-registry",
@@ -109,5 +113,69 @@ export async function createTaxonomyIntakeLink(
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(input),
   });
+  return parseOrThrow<TaxonomyIntakeLink>(response);
+}
+
+export async function transitionTaxonomyRevision(
+  termId: string,
+  revisionId: string,
+  lockVersion: number,
+  target: TaxonomyStatus,
+): Promise<TaxonomyTerm> {
+  const response = await fetch(
+    `/api/content/taxonomy/terms/${encodeURIComponent(termId)}/revisions/${encodeURIComponent(revisionId)}/transition`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ lockVersion, target }),
+    },
+  );
+  return parseOrThrow<TaxonomyTerm>(response);
+}
+
+export async function recordTaxonomyReviewDecision(
+  termId: string,
+  revisionId: string,
+  input: TaxonomyReviewDecisionInput,
+): Promise<TaxonomyTerm> {
+  const response = await fetch(
+    `/api/content/taxonomy/terms/${encodeURIComponent(termId)}/revisions/${encodeURIComponent(revisionId)}/reviews`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(input),
+    },
+  );
+  return parseOrThrow<TaxonomyTerm>(response);
+}
+
+export async function transitionTaxonomyIntakeLink(
+  linkId: string,
+  lockVersion: number,
+  target: TaxonomyStatus,
+): Promise<TaxonomyIntakeLink> {
+  const response = await fetch(
+    `/api/content/taxonomy/intake-links/${encodeURIComponent(linkId)}/transition`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ lockVersion, target }),
+    },
+  );
+  return parseOrThrow<TaxonomyIntakeLink>(response);
+}
+
+export async function recordTaxonomyIntakeLinkReview(
+  linkId: string,
+  input: TaxonomyIntakeLinkReviewInput,
+): Promise<TaxonomyIntakeLink> {
+  const response = await fetch(
+    `/api/content/taxonomy/intake-links/${encodeURIComponent(linkId)}/reviews`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(input),
+    },
+  );
   return parseOrThrow<TaxonomyIntakeLink>(response);
 }

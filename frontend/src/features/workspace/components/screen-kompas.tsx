@@ -21,8 +21,12 @@ import {
 import {
   createTaxonomyIntakeLink,
   fetchTaxonomyRegistry,
+  recordTaxonomyIntakeLinkReview,
+  recordTaxonomyReviewDecision,
   TAXONOMY_REGISTRY_QUERY_KEY,
   TaxonomyApiError,
+  transitionTaxonomyIntakeLink,
+  transitionTaxonomyRevision,
   type TaxonomyAxis,
   type TaxonomyIntakeLink,
   type TaxonomyRegistrySnapshot,
@@ -70,6 +74,18 @@ const PLANNED_ACCESS_OPTIONS = [
   { stableId: "subscriber", label: "Pretplata" },
   { stableId: "purchased", label: "Kupljen materijal" },
 ] as const;
+
+const TERM_APPROVAL_CAPABILITIES: ApprovalCapability[] = [
+  "clinical",
+  "business",
+];
+const LINK_APPROVAL_CAPABILITIES: ApprovalCapability[] = ["clinical"];
+
+interface ReviewDecisionView {
+  capability: ApprovalCapability;
+  outcome: "approved" | "rejected";
+  note?: string | null;
+}
 
 const AXIS_BY_TAB: Partial<Record<KompasTab, TaxonomyAxis>> = {
   areas: "topic_group",
@@ -311,14 +327,353 @@ function SystemChoices({ terms }: { terms: TaxonomyTerm[] }) {
   );
 }
 
+function GovernanceError({ error }: { error: string | null }) {
+  return error ? (
+    <p
+      role="alert"
+      className="border-danger/45 bg-danger/8 text-ink-70 rounded-tile mt-3 border px-3 py-2.5 text-[12.5px] leading-[1.5]"
+    >
+      {error}
+    </p>
+  ) : null;
+}
+
+function ApprovalControls({
+  capabilities,
+  decisions,
+  disabled,
+  onDecision,
+}: {
+  capabilities: readonly ApprovalCapability[];
+  decisions: readonly ReviewDecisionView[];
+  disabled: boolean;
+  onDecision: (
+    capability: ApprovalCapability,
+    outcome: "approved" | "rejected",
+    note: string | undefined,
+  ) => void;
+}) {
+  const [note, setNote] = useState("");
+  return (
+    <div className="border-line rounded-tile mt-3 border px-3.5 py-3.5">
+      <h4 className="text-ink-70 text-[12.5px] font-semibold">
+        Odobrenja za pregled
+      </h4>
+      <p className="text-ink-55 mt-1 text-[12px] leading-[1.45]">
+        Svaka odluka ostavlja dokaz u ovoj reviziji. Nova odluka iste vrste
+        zamenjuje prethodnu dok je stavka na pregledu.
+      </p>
+      <div className="mt-3 space-y-2.5">
+        {capabilities.map((capability) => {
+          const decision = decisions.find(
+            (item) => item.capability === capability,
+          );
+          const label = APPROVAL_LABELS[capability];
+          return (
+            <div
+              key={capability}
+              className="border-line-strong rounded-tile flex flex-wrap items-center justify-between gap-2 border px-3 py-2.5"
+            >
+              <div>
+                <div className="text-ink-70 text-[12.5px] font-semibold">
+                  {label}
+                </div>
+                <div className="text-ink-45 mt-0.5 text-[11px]">
+                  {decision?.outcome === "approved"
+                    ? "Odobreno"
+                    : decision?.outcome === "rejected"
+                      ? "Nije odobreno"
+                      : "Čeka odluku"}
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  disabled={disabled}
+                  onClick={() =>
+                    onDecision(capability, "approved", note.trim() || undefined)
+                  }
+                  className="bg-forest text-panel-canvas hover:bg-forest-hover disabled:bg-ink-45 cursor-pointer rounded-full border-0 px-3 py-1.5 text-[11.5px] font-semibold transition-colors disabled:cursor-not-allowed"
+                >
+                  Odobri
+                </button>
+                <button
+                  type="button"
+                  disabled={disabled}
+                  onClick={() =>
+                    onDecision(capability, "rejected", note.trim() || undefined)
+                  }
+                  className="border-line-strong text-ink-70 hover:border-danger/45 disabled:text-ink-45 cursor-pointer rounded-full border bg-transparent px-3 py-1.5 text-[11.5px] font-semibold transition-colors disabled:cursor-not-allowed"
+                >
+                  Ne odobravaj
+                </button>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      <label className="text-ink-55 mt-3 block text-[11.5px]">
+        Napomena odluke (opciono)
+        <textarea
+          value={note}
+          maxLength={500}
+          rows={2}
+          disabled={disabled}
+          onChange={(event) => setNote(event.target.value)}
+          className="border-line-strong rounded-tile bg-panel-canvas text-coffee focus:border-sage mt-1.5 w-full resize-y border px-3 py-2 text-[12.5px] leading-[1.5] outline-none disabled:opacity-60"
+        />
+      </label>
+    </div>
+  );
+}
+
+function TermGovernanceControls({
+  term,
+  onChanged,
+}: {
+  term: TaxonomyTerm;
+  onChanged: (term: TaxonomyTerm) => void;
+}) {
+  const transitionMutation = useMutation({
+    mutationFn: (target: TaxonomyStatus) =>
+      transitionTaxonomyRevision(
+        term.termId,
+        term.revisionId,
+        term.lockVersion,
+        target,
+      ),
+    onSuccess: onChanged,
+  });
+  const reviewMutation = useMutation({
+    mutationFn: ({
+      capability,
+      outcome,
+      note,
+    }: {
+      capability: ApprovalCapability;
+      outcome: "approved" | "rejected";
+      note?: string;
+    }) =>
+      recordTaxonomyReviewDecision(term.termId, term.revisionId, {
+        capability,
+        outcome,
+        ...(note ? { note } : {}),
+      }),
+    onSuccess: onChanged,
+  });
+  const approvedCapabilities = new Set(
+    term.decisions
+      .filter((decision) => decision.outcome === "approved")
+      .map((decision) => decision.capability),
+  );
+  const approvalsComplete = TERM_APPROVAL_CAPABILITIES.every((capability) =>
+    approvedCapabilities.has(capability),
+  );
+  const busy = transitionMutation.isPending || reviewMutation.isPending;
+  const error = transitionMutation.isError
+    ? transitionMutation.error instanceof TaxonomyApiError
+      ? transitionMutation.error.message
+      : "Promena statusa nije sačuvana. Pokušajte ponovo."
+    : reviewMutation.isError
+      ? reviewMutation.error instanceof TaxonomyApiError
+        ? reviewMutation.error.message
+        : "Odluka nije sačuvana. Pokušajte ponovo."
+      : null;
+
+  const transitionButton = (
+    target: TaxonomyStatus,
+    label: string,
+    disabled = false,
+  ) => (
+    <button
+      key={target}
+      type="button"
+      disabled={busy || disabled}
+      onClick={() => transitionMutation.mutate(target)}
+      className="border-line-strong text-ink-70 hover:border-coffee/40 disabled:text-ink-45 cursor-pointer rounded-full border bg-transparent px-3.5 py-2 text-[12px] font-semibold transition-colors disabled:cursor-not-allowed"
+    >
+      {busy ? "Čuvanje…" : label}
+    </button>
+  );
+
+  return (
+    <div className="border-line mt-4 border-t pt-3">
+      <div className="text-ink-55 text-[12px] leading-[1.45]">
+        {term.status === "draft"
+          ? "Radna verzija je spremna za slanje na pregled."
+          : term.status === "in_review"
+            ? "Za odobrenje su potrebni stručno i poslovno odobrenje."
+            : term.status === "approved"
+              ? "Odobrena verzija može biti objavljena ili vraćena u novu radnu verziju."
+              : term.status === "published"
+                ? "Objavljena verzija ostaje u registru dok je ne arhivirate."
+                : "Arhivirana verzija može otvoriti novu radnu verziju."}
+      </div>
+      {term.status === "in_review" ? (
+        <ApprovalControls
+          capabilities={TERM_APPROVAL_CAPABILITIES}
+          decisions={term.decisions}
+          disabled={busy}
+          onDecision={(capability, outcome, note) =>
+            reviewMutation.mutate({ capability, outcome, note })
+          }
+        />
+      ) : null}
+      <div className="mt-3 flex flex-wrap gap-2">
+        {term.status === "draft"
+          ? transitionButton("in_review", "Pošalji na pregled")
+          : null}
+        {term.status === "in_review"
+          ? [
+              transitionButton("draft", "Vrati u radnu verziju"),
+              transitionButton(
+                "approved",
+                "Označi kao odobreno",
+                !approvalsComplete,
+              ),
+            ]
+          : null}
+        {term.status === "approved"
+          ? [
+              transitionButton("draft", "Otvori novu radnu verziju"),
+              transitionButton("published", "Objavi"),
+            ]
+          : null}
+        {term.status === "published"
+          ? transitionButton("archived", "Arhiviraj")
+          : null}
+        {term.status === "archived"
+          ? transitionButton("draft", "Otvori novu radnu verziju")
+          : null}
+      </div>
+      <GovernanceError error={error} />
+    </div>
+  );
+}
+
+function IntakeLinkGovernanceControls({
+  link,
+  onChanged,
+}: {
+  link: TaxonomyIntakeLink;
+  onChanged: (link: TaxonomyIntakeLink) => void;
+}) {
+  const transitionMutation = useMutation({
+    mutationFn: (target: TaxonomyStatus) =>
+      transitionTaxonomyIntakeLink(link.linkId, link.lockVersion, target),
+    onSuccess: onChanged,
+  });
+  const reviewMutation = useMutation({
+    mutationFn: ({
+      outcome,
+      note,
+    }: {
+      outcome: "approved" | "rejected";
+      note?: string;
+    }) =>
+      recordTaxonomyIntakeLinkReview(link.linkId, {
+        capability: "clinical",
+        outcome,
+        ...(note ? { note } : {}),
+      }),
+    onSuccess: onChanged,
+  });
+  const approvalsComplete = link.decisions.some(
+    (decision) =>
+      decision.capability === "clinical" && decision.outcome === "approved",
+  );
+  const busy = transitionMutation.isPending || reviewMutation.isPending;
+  const error = transitionMutation.isError
+    ? transitionMutation.error instanceof TaxonomyApiError
+      ? transitionMutation.error.message
+      : "Promena statusa povezivanja nije sačuvana. Pokušajte ponovo."
+    : reviewMutation.isError
+      ? reviewMutation.error instanceof TaxonomyApiError
+        ? reviewMutation.error.message
+        : "Odluka nije sačuvana. Pokušajte ponovo."
+      : null;
+
+  const transitionButton = (
+    target: TaxonomyStatus,
+    label: string,
+    disabled = false,
+  ) => (
+    <button
+      key={target}
+      type="button"
+      disabled={busy || disabled}
+      onClick={() => transitionMutation.mutate(target)}
+      className="border-line-strong text-ink-70 hover:border-coffee/40 disabled:text-ink-45 cursor-pointer rounded-full border bg-transparent px-3.5 py-2 text-[12px] font-semibold transition-colors disabled:cursor-not-allowed"
+    >
+      {busy ? "Čuvanje…" : label}
+    </button>
+  );
+
+  return (
+    <div className="border-line mt-4 border-t pt-3">
+      <div className="text-ink-55 text-[12px] leading-[1.45]">
+        {link.status === "draft"
+          ? "Povezivanje je radna verzija i čeka stručni pregled."
+          : link.status === "in_review"
+            ? "Za ovu vezu je potrebno stručno odobrenje."
+            : link.status === "approved"
+              ? "Odobrena veza može biti objavljena ili vraćena u novu radnu verziju."
+              : link.status === "published"
+                ? "Objavljena veza je aktivna u autorizovanom mostu ka Intake-u."
+                : "Arhivirana veza može otvoriti novu radnu verziju."}
+      </div>
+      {link.status === "in_review" ? (
+        <ApprovalControls
+          capabilities={LINK_APPROVAL_CAPABILITIES}
+          decisions={link.decisions}
+          disabled={busy}
+          onDecision={(_capability, outcome, note) =>
+            reviewMutation.mutate({ outcome, note })
+          }
+        />
+      ) : null}
+      <div className="mt-3 flex flex-wrap gap-2">
+        {link.status === "draft"
+          ? transitionButton("in_review", "Pošalji na pregled")
+          : null}
+        {link.status === "in_review"
+          ? [
+              transitionButton("draft", "Vrati u radnu verziju"),
+              transitionButton(
+                "approved",
+                "Označi kao odobreno",
+                !approvalsComplete,
+              ),
+            ]
+          : null}
+        {link.status === "approved"
+          ? [
+              transitionButton("draft", "Otvori novu radnu verziju"),
+              transitionButton("published", "Objavi"),
+            ]
+          : null}
+        {link.status === "published"
+          ? transitionButton("archived", "Arhiviraj")
+          : null}
+        {link.status === "archived"
+          ? transitionButton("draft", "Otvori novu radnu verziju")
+          : null}
+      </div>
+      <GovernanceError error={error} />
+    </div>
+  );
+}
+
 function TermCard({
   term,
   registryTerms,
   onEdit,
+  onChanged,
 }: {
   term: TaxonomyTerm;
   registryTerms: TaxonomyTerm[];
   onEdit?: () => void;
+  onChanged?: (term: TaxonomyTerm) => void;
 }) {
   const status = STATUS_META[term.status];
   const isRouteTerm = term.axis === "topic_group" || term.axis === "topic";
@@ -465,6 +820,9 @@ function TermCard({
           </button>
         ) : null}
       </div>
+      {!term.systemDefined && onChanged ? (
+        <TermGovernanceControls term={term} onChanged={onChanged} />
+      ) : null}
     </article>
   );
 }
@@ -477,6 +835,7 @@ function TermList({
   editor,
   onCreate,
   onEdit,
+  onChanged,
 }: {
   terms: TaxonomyTerm[];
   registryTerms: TaxonomyTerm[];
@@ -485,6 +844,7 @@ function TermList({
   editor: ReactNode;
   onCreate: () => void;
   onEdit: (term: TaxonomyTerm) => void;
+  onChanged: (term: TaxonomyTerm) => void;
 }) {
   const copy = TAB_COPY[tab];
   return (
@@ -517,6 +877,7 @@ function TermList({
               key={term.revisionId}
               term={term}
               registryTerms={registryTerms}
+              onChanged={onChanged}
               {...(isEditableManagedTerm(term, axis)
                 ? { onEdit: () => onEdit(term) }
                 : {})}
@@ -528,7 +889,13 @@ function TermList({
   );
 }
 
-function IntakeLinkCards({ links }: { links: TaxonomyIntakeLink[] }) {
+function IntakeLinkCards({
+  links,
+  onChanged,
+}: {
+  links: TaxonomyIntakeLink[];
+  onChanged?: (link: TaxonomyIntakeLink) => void;
+}) {
   return (
     <div className="grid grid-cols-1 gap-3.5 xl:grid-cols-2">
       {[...links]
@@ -576,6 +943,12 @@ function IntakeLinkCards({ links }: { links: TaxonomyIntakeLink[] }) {
                   {formatDate(link.updatedAt)}
                 </span>
               </div>
+              {onChanged ? (
+                <IntakeLinkGovernanceControls
+                  link={link}
+                  onChanged={onChanged}
+                />
+              ) : null}
             </article>
           );
         })}
@@ -746,10 +1119,12 @@ function IntakeLinks({
   links,
   terms,
   onCreated,
+  onChanged,
 }: {
   links: TaxonomyIntakeLink[];
   terms: TaxonomyTerm[];
   onCreated: (link: TaxonomyIntakeLink) => void;
+  onChanged: (link: TaxonomyIntakeLink) => void;
 }) {
   return (
     <div role="tabpanel" aria-label="Povezivanja">
@@ -768,7 +1143,7 @@ function IntakeLinks({
           ne potvrdi njihovu vezu.
         </EmptyDashedCard>
       ) : (
-        <IntakeLinkCards links={links} />
+        <IntakeLinkCards links={links} onChanged={onChanged} />
       )}
     </div>
   );
@@ -777,9 +1152,13 @@ function IntakeLinks({
 function ReviewQueue({
   terms,
   links,
+  onTermChanged,
+  onLinkChanged,
 }: {
   terms: TaxonomyTerm[];
   links: TaxonomyIntakeLink[];
+  onTermChanged: (term: TaxonomyTerm) => void;
+  onLinkChanged: (link: TaxonomyIntakeLink) => void;
 }) {
   const reviewTerms = sortTerms(
     terms.filter(
@@ -820,6 +1199,7 @@ function ReviewQueue({
                     key={term.revisionId}
                     term={term}
                     registryTerms={terms}
+                    onChanged={onTermChanged}
                   />
                 ))}
               </div>
@@ -830,7 +1210,7 @@ function ReviewQueue({
               <h3 className="text-ink-70 mb-2 text-[12px] font-semibold tracking-[0.12em] uppercase">
                 Povezivanja · {reviewLinks.length}
               </h3>
-              <IntakeLinkCards links={reviewLinks} />
+              <IntakeLinkCards links={reviewLinks} onChanged={onLinkChanged} />
             </section>
           ) : null}
         </div>
@@ -1012,6 +1392,7 @@ export function ScreenKompas() {
                     termId: term.termId,
                   })
                 }
+                onChanged={handleSaved}
               />
             ) : null}
             {activeTab === "links" ? (
@@ -1019,10 +1400,16 @@ export function ScreenKompas() {
                 links={intakeLinks}
                 terms={terms}
                 onCreated={handleIntakeLinkCreated}
+                onChanged={handleIntakeLinkCreated}
               />
             ) : null}
             {activeTab === "review" ? (
-              <ReviewQueue terms={terms} links={intakeLinks} />
+              <ReviewQueue
+                terms={terms}
+                links={intakeLinks}
+                onTermChanged={handleSaved}
+                onLinkChanged={handleIntakeLinkCreated}
+              />
             ) : null}
           </div>
         </>

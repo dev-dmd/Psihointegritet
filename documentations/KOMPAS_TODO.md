@@ -1,6 +1,6 @@
 # KOMPAS TODO — discovery i recommendation sloj
 
-**Status:** K1 backend foundation i K2.0–K2.5 panel/editor implementirani; sledeći korak je K2.6 stvarni lifecycle i approval tok
+**Status:** K1 backend foundation i K2.0–K2.6 panel/editor implementirani; sledeći korak je K2.7 prošireni actor badge prikaz
 **Datum:** 2026-07-31  
 **Vlasnik tehničkih odluka:** Milan Dražić (CTO)  
 **Vlasnik stručne kategorizacije i javnih naziva:** Anja Stamenković i stručni tim  
@@ -734,7 +734,7 @@ Preporuka za v1:
 - [x] **K2.3** Generički editor sada uređuje javni naziv/opis, deduplikovane sinonime i pojmove za pretragu, topic hijerarhiju, redosled, međusobno isključivu ikonu/asset, odvojenu javnu vidljivost i Kompas aktivnost, topic-only povezane teme i internu stručnu napomenu. Sve vrednosti ulaze u isti tipizirani create/update payload; interna napomena ostaje staff-only.
 - [x] **K2.4** Stable ID se pri izmeni prikazuje samo kao zaključana vrednost, bez inputa ili mutation putanje. Panel ima runtime guard za pogrešan/stari cilj editora, a sistemske vrednosti i njihova semantika ne mogu otvoriti generički editor niti se kreiraju kroz njega; vidljive su samo kao kontrolisane reference.
 - [x] **K2.5** Put korisnika je stvarni DB-backed select pri uređivanju teme; format i izvršivi nivo pristupa učitavaju se iz sistemskog registra kao kontrolisane CMS opcije, dok su `subscriber`/`purchased` jasno disabled „U pripremi”. Lifecycle i approval capability su prikazani kao zaključan sistemski ugovor bez slobodnog unosa. Tab Povezivanja sada kroz stvarni `POST` tok bira konkretnu temu i read-only D-052 `support_area`; ne može kreirati ili menjati Intake oblast niti rankira terapeute.
-- [ ] **K2.6** Uvesti stvarni draft → in_review → approved → published → archived tok sa Clinical/Business odobrenjima.
+- [x] **K2.6** Panel sada koristi stvarni staff API za `draft → in_review → approved → published → archived` i dozvoljene povratke. Managed termini traže Stručno + Poslovno odobrenje, a topic → Intake veza samo Stručno; odluka može imati napomenu i ostaje dokaz revizije. `approved/archived → draft` koristi postojeće backend pravilo nove radne revizije, a objava topic/oblasti i dalje prolazi kanonski-route guard do K2.10.
 - [ ] **K2.7** Prikazati mali actor badge za kreiranje, izmenu, odobrenje, objavu i arhiviranje.
 - [ ] **K2.8** Implementirati razumljive srpske validation/error poruke, fokus na konkretno polje i globalni error banner bez neželjenog skrola pri običnom kliku.
 - [ ] **K2.9** Org admin i D-051 superadmin koriste postojeće role/capability-je; ne uvoditi novu Clerk rolu niti zahtevati therapist profil superadminu.
@@ -751,6 +751,8 @@ Preporuka za v1:
 **K2.4 napomena:** server je već autoritet — stable ID nema update putanju, a `TAX-SYSTEM-001` odbija kreiranje sistemske ose. Panel sada istu granicu jasno prikazuje i proverava pre slanja zahteva; ne oslanja se na to da korisnik zna internu razliku između managed i system registra.
 
 **K2.5 napomena:** format i access nisu prerano dodati na taxonomy termin — njihovi potrošači su CMS metadata forme u K3. Panel ih sada čita iz istog DB registra i jasno pokazuje izvršive naspram budućih access nivoa. Lifecycle/approval nisu posebne taxonomy ose, nego postojeći zatvoreni backend ugovor; K2.6 tek uvodi njegove akcije.
+
+**K2.6 napomena:** četiri Next proxy rute prosleđuju samo postojeće backend `POST` ugovore za transition/review termina i Intake veze. Nema nove role, migracije ni alternativnog lifecycle-a; UI blokira „Označi kao odobreno” dok potrebna odobrenja nisu upisana, a server ostaje poslednji autoritet za lock, validaciju i objavu.
 
 **Gate K2:** Anja ili ovlašćeni org admin može napraviti draft oblasti/teme, jasno razlikuje oblast Kompasa od Intake oblasti podrške, šalje na pregled, odobrava/objavljuje po dozvoli, menja labelu bez promene ID-ja/rute i vidi ko je izvršio svaku radnju.
 
@@ -952,7 +954,7 @@ Mali broj contract/parity testova može se dodati uz vertikalni tok, ali se izvr
 
 D-053, D-054 i ADR-022 Amandman 1 su usvojeni. Sledeće:
 
-1. nastaviti **K2.6 stvarnim lifecycle i approval tokom**, zatim K2.7–K2.10 governance detaljima na već postavljenom generičkom editoru;
+1. nastaviti **K2.7 proširenim actor badge prikazom**, zatim K2.8–K2.10 governance detaljima na već postavljenom generičkom editoru;
 2. povezati registar sa **K3 CMS formama**;
 3. Anjinu konačnu tabelu uneti kao stručne podatke čim stigne, bez menjanja arhitekture;
 4. završiti K3A katalog i K3B kanonske stranice/`CompassGuide` ugovor, zatim K4/K5 i tek tada javni K6;
