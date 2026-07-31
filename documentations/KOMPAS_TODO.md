@@ -1,23 +1,23 @@
 # KOMPAS TODO — discovery i recommendation sloj
 
-**Status:** plan pre implementacije  
+**Status:** D-053 i ADR-022 usvojeni; sledeći korak je backend foundation
 **Datum:** 2026-07-31  
 **Vlasnik tehničkih odluka:** Milan Dražić (CTO)  
 **Vlasnik stručne kategorizacije i javnih naziva:** Anja Stamenković i stručni tim  
 **Ulazni dokument:** `CODEX HANDOFF — KOMPAS.docx`, primljen 2026-07-31  
-**Povezano:** O-21 · O-24b · D-047 · D-048 · D-052 · ADR-016 · ADR-018 · budući ADR-019/ADR-021
+**Povezano:** O-21 · D-047 · D-048 · D-052 · **D-053 · ADR-022** · ADR-016 · ADR-018 · budući ADR-019/ADR-021
 
 ---
 
 ## 0. Kako se koristi ovaj dokument
 
 - Ovo je jedini operativni TODO za Kompas. `TODO.md` i `CMS_TODO.md` nose samo sažetak i link ovde.
-- Kompas kod ne počinje dok Faza K0 ne zaključa proizvodnu odluku i ADR o taksonomiji/granicama.
+- D-053 i ADR-022 su zaključali taksonomiju i granice. Implementacija sada počinje backend foundation-om, zatim panelom, CMS povezivanjem i tek na kraju javnim Kompasom.
 - Konačna Anjina kategorizacija menja podatke registra, ne strukturu engine-a. Novi ili precizniji nazivi ne smeju zahtevati izmenu Kompas koda.
 - Ne hardkodovati stručne kategorije, sinonime ni recommendation pravila u React komponentama.
 - Ne praviti novi višekoračni upitnik. Kompas je interaktivna površina koja reaguje odmah.
 - Ne uvoditi AI kao preduslov za v1. Prvi engine mora biti determinističan i objašnjiv.
-- Ne uvoditi `subscriber`, `purchased` ili finansijske reference pre stvarnog R5 entitlement sistema (D-048).
+- `subscriber` i `purchased` postoje samo kao rezervisan ciljni ugovor. Panel ih prikazuje onemogućene kao „U pripremi” i ne sme da ih sačuva ili objavi pre stvarnog R5 entitlement sistema (D-048).
 - Ne praviti Dnevnu sobu, čuvanje sadržaja ni privatne kolekcije kroz ovaj plan (O-23).
 - Po `TODO.md` §0A, testovi/build/lint/typecheck se ne pokreću automatski posle implementacije. Verifikacija se radi kao posebna faza samo na Milanov zahtev, prvenstveno kroz stvaran vertikalni korisnički tok.
 
@@ -57,13 +57,13 @@ Kompas nije:
 - page builder;
 - AI personalizacija u prvoj verziji.
 
-### Tri korisničke namere
+### Tri sistemske vrednosti puta
 
 Kontrola mora stalno da dozvoli:
 
 1. `explore` — želim da istražujem sadržaj;
-2. `professional-support` — želim stručnu podršku;
-3. nesiguran izbor — prikaz oba puta bez prisilnog svrstavanja.
+2. `professional_support` — želim stručnu podršku;
+3. `both` — sadržaj je koristan za oba puta.
 
 „Ne znam kako da opišem” nije stručna tema i ne čuva se kao `topicId`. To je discovery ulaz/escape hatch koji korisniku nudi lakše početne izbore.
 
@@ -93,7 +93,7 @@ Kontrola mora stalno da dozvoli:
 | `ContentType.article` i article model | Tri kartice u `/znanje` su fallback/„u pripremi”, nisu objavljeni katalog |
 | Article template + javna ruta + Article JSON-LD | Kompas još nema pravi stručni članak koji može da preporuči |
 | Kanonske DB tabele za topic grupe/teme/sinonime | `contracts/fixtures/taxonomy.v1.json` trenutno zaključava samo Intake rečnik |
-| Revision-bound discovery metadata | CMS sadržaj nema `topicIds`, `journeyIntentIds`, `goalIds`, `audienceIds` |
+| Revision-bound discovery metadata | CMS sadržaj nema `topicIds`, `journeyIntent`, `goalIds`, `audienceIds` |
 | Compass recommendation read-model/API | Nema autoritativnog filtriranja ni objašnjivih razloga |
 | `ResourceAsset` implementacija | PDF/radni list još nisu preporučivi asset entiteti |
 | Audio/video/knjiga katalog | Ne uvoditi placeholder modele |
@@ -132,7 +132,7 @@ Za svaki sadržaj se odvojeno definišu:
 | --- | --- | --- | --- |
 | Šira grupa teme | `topicGroupId` | `stress-overload` | Jedna primarna javna grupa u v1 |
 | Konkretne teme | `topicIds` | `burnout`, `difficulty-resting` | Jedna ili više tema iz izabrane grupe |
-| Put korisnika | `journeyIntentIds` | `explore`, `professional-support` | Može sadržati oba |
+| Put korisnika | `journeyIntent` | `explore`, `professional_support`, `both` | Tačno jedna zaključana sistemska vrednost |
 | Cilj sadržaja | `goalIds` | `understand`, `practical-step` | Jedan ili više kontrolisanih ciljeva |
 | Publika | `audienceIds` | `self`, `parent`, `adolescent` | Jedna ili više publika |
 | Format sadržaja | `contentFormat` | `article`, `worksheet` | Ne zvati samo `format`, jer Intake već koristi format rada |
@@ -152,7 +152,7 @@ Ne koristiti:
 {
   "topicGroupId": "stress-overload",
   "topicIds": ["burnout", "difficulty-resting"],
-  "journeyIntentIds": ["explore", "professional-support"],
+  "journeyIntent": "both",
   "goalIds": ["understand", "prepare-for-conversation"],
   "audienceIds": ["self"],
   "contentFormat": "article",
@@ -166,7 +166,7 @@ Drugi sadržaj može deliti temu, ali imati drugu ulogu:
 {
   "topicGroupId": "stress-overload",
   "topicIds": ["burnout"],
-  "journeyIntentIds": ["explore"],
+  "journeyIntent": "explore",
   "goalIds": ["practical-step"],
   "audienceIds": ["self"],
   "contentFormat": "worksheet",
@@ -174,15 +174,20 @@ Drugi sadržaj može deliti temu, ali imati drugu ulogu:
 }
 ```
 
-### 3.3 Predložene stabilne vrednosti koje ne zavise od Anjinih naziva grupa
+### 3.3 System journey ugovor i početni managed predlozi
 
-Ovo su ugovorni kandidati za D-053/ADR, ne DB seed pre odobrenja:
+Samo je `journeyIntent` ispod zaključan D-053/ADR-022 sistemski rečnik:
 
 ```text
-journeyIntentIds
+journeyIntent
 ├── explore
-└── professional-support
+├── professional_support
+└── both
+```
 
+Sledeće su početni managed predlozi za unos i stručnu potvrdu, ne hardkodovan sistemski rečnik:
+
+```text
 goalIds
 ├── understand
 ├── practical-step
@@ -198,6 +203,8 @@ audienceIds
 └── general-information
 ```
 
+Javna labela/opis, status i redosled managed ciljeva/publika uređuju se kroz panel. Njihov stable ID ostaje nepromenljiv nakon kreiranja.
+
 Otvoreno za Anju/tim:
 
 - da li `child` postoji kao zasebna publika ili se uvek vodi kroz `parent` zbog pravila za maloletnike;
@@ -208,19 +215,20 @@ Otvoreno za Anju/tim:
 | Vrednost | Ciljni katalog | V1 status |
 | --- | --- | --- |
 | `article` | Da | Posle ADR-019 i pravog article toka |
-| `program` / `workshop` | Da | Može referencirati postojeće objavljene entitete |
+| `program` | Da | Kada postoji objavljeni entitet i card adapter |
 | `pdf` / `worksheet` | Da | Posle `ResourceAsset` vertikale iz ADR-018 |
 | `audio` | Da | ⏸️ Nema model/provider |
 | `video` | Da | ⏸️ `VideoAsset` namerno nije otvoren |
-| `book` | Da | ⏸️ Traži ugovor za kuriranu eksternu preporuku |
+
+Knjiga, radionica, partner, klinika i affiliate preporuka nisu vrednosti ovog sistemskog format rečnika. Dobijaju svoj entitet/adapter ili kontrolisanu relation vrstu tek kada njihov domen bude formalno spreman.
 
 | Access vrednost | V1 | Kasnije |
 | --- | --- | --- |
 | `public` | Da | — |
 | `registered` | Da | — |
 | `staff_only` | Sistemska vrednost, ne javna Kompas kartica | — |
-| `subscriber` | Ne upisivati | R5, aditivno |
-| `purchased` | Ne upisivati | R5, aditivno |
+| `subscriber` | Rezervisan; prikazati disabled „U pripremi”, ne upisivati | R5, aditivno |
+| `purchased` | Rezervisan; prikazati disabled „U pripremi”, ne upisivati | R5, aditivno |
 
 `contentFormat` treba vratiti u javnom API-ju, ali ga ne duplirati kao ručno polje kada se pouzdano izvodi iz tipa entiteta/asset-a.
 
@@ -320,38 +328,48 @@ DB modeli, repository i recommendation pravila ne pripadaju `shared/`.
 
 ---
 
-## 6. Kanonski DB model — predmet ADR odluke
+## 6. Kanonski DB model — usvojen ADR-022
 
-Preporučeni minimalni oblik:
+Tačna SQLAlchemy imena mogu pratiti postojeće konvencije, ali granice ispod su zaključane.
 
 ### Stabilni identiteti
 
 `taxonomy_terms`
 
 - `id` — UUID;
-- `axis` — `topic_group | topic | journey_intent | content_goal | audience`;
+- `organization_id` — obavezan za managed termine; `NULL` samo za system termine;
+- `axis`;
 - `stable_id` — nepromenljiv identitet;
+- `system_defined`;
 - `created_at`, `created_by_user_id`;
-- unique `(axis, stable_id)`;
+- unique identitet po osi i vlasniku;
 - stable ID se nikada ne reciklira za drugo značenje.
+
+Managed ose su `topic_group | topic | content_goal | audience`. System ose su `support_area | journey_intent | content_format | access_level` i postojeći lifecycle/approval ugovori. Tenant uređuje stručne termine, ali ne menja ID i semantiku system vrednosti.
 
 ### Verzije termina
 
 `taxonomy_term_revisions`
 
 - `term_id`;
-- `version_label`;
+- `version`;
 - `locale`;
-- `label`;
-- `description`;
-- `parent_term_id` — samo topic → topic group;
+- `public_label`;
+- `short_description`;
+- `internal_expert_note`;
+- `primary_parent_term_id` — samo topic → topic group;
+- `journey_intent_term_id` — system izbor za put konkretne teme;
 - `sort_order`;
-- `status` — isti lifecycle rečnik kao Content Core;
+- `icon_key` ili nullable `asset_id`;
+- `public_visible`;
+- `compass_enabled`;
+- `status` — `draft | in_review | approved | published | archived`;
+- `lock_version`;
 - created/updated/published/archived actor evidence.
 
-Labela i opis mogu da se promene bez promene stabilnog identiteta. Arhiviranje ne briše istoriju.
+Labela i opis mogu da se promene bez promene stabilnog identiteta. Lifecycle, javna vidljivost i aktivnost u Kompasu su tri odvojene stvari. Arhiviranje ne briše istoriju.
 
-### Sinonimi i pretraga
+### Sinonimi, pretraga i veze
 
 `taxonomy_term_search_terms`
 
@@ -361,18 +379,27 @@ Labela i opis mogu da se promene bez promene stabilnog identiteta. Arhiviranje n
 - služe isključivo pretrazi i pronalaženju;
 - ne ulaze direktno u recommendation score.
 
+`taxonomy_term_relations`
+
+- revision-bound izvor i stabilni target;
+- kontrolisan `relation_kind`, počev od `related_topic`;
+- nema slobodan URL, score ni therapist ID.
+
 ### Metadata sadržaja
 
 `content_revision_taxonomy_terms`
 
 - `revision_id`;
 - `term_id`;
-- unique `(revision_id, term_id)`;
+- kontrolisana uloga reference;
+- unique po revision/term/ulozi;
 - metadata pripada tačnoj reviziji, ne `ContentEntry` identitetu.
 
 `content_revision_discovery`
 
 - `revision_id` — 1:1;
+- tačno jedan `journeyIntent`;
+- izvedeni ili kontrolisano potvrđen `contentFormat`;
 - eventualni kontrolisani editorial priority/tie-breaker;
 - bez `estimatedTime` ako je izvodljiv;
 - bez terapeuta;
@@ -390,19 +417,22 @@ Labela i opis mogu da se promene bez promene stabilnog identiteta. Arhiviranje n
 `taxonomy_intake_links`
 
 - `topic_term_id`;
-- `support_area_id` iz D-052;
-- review evidence;
+- `support_area_term_id` iz system ose sa pet D-052 ID-jeva;
+- Clinical review evidence i lifecycle;
 - nema score/therapist kolone.
 
 ### Tenant granica
 
-Preporuka za ADR:
-
-- stabilni stručni pojmovi i njihovo značenje su platform-wide;
+- managed stručni termini su org-scoped;
+- system ugovori su platform-wide i mogu dobiti samo odobren lokalizovan label override;
 - sadržaj i njegove metadata veze ostaju tenant-scoped kroz `ContentRevision`;
-- tenant ne sme redefinisati značenje globalnog `stable_id`;
-- budući tenant overlay može sakriti/omogućiti termin ili dati odobrenu lokalnu labelu, ali ne menja identitet;
+- tenant ne sme redefinisati značenje system `stable_id`;
+- sadržaj sme da referencira samo system termin ili managed termin iste organizacije;
 - svaki public recommendation query mora krenuti iz organizacije i nikada vratiti sadržaj drugog tenant-a.
+
+### Migracija postojećih Intake oblasti
+
+Pet D-052 oblasti se backfill-uje kao system `support_area` termini. `therapist_matching_profiles.areas` prelazi sa JSON autoriteta na join reference kroz create → backfill → dual-read/parity → cutover faze. Matching značenje, težine i `addiction_related_support` capability se ne menjaju.
 
 ---
 
@@ -413,7 +443,7 @@ Sadržaj ne može biti objavljen u Kompas katalog ako:
 - nema tačno jednu aktivnu `topicGroupId` referencu;
 - nema najmanje jednu aktivnu `topicId` referencu;
 - topic nije dete izabrane grupe;
-- nema `journeyIntentIds`, `goalIds` ili `audienceIds`;
+- nema `journeyIntent`, `goalIds` ili `audienceIds`;
 - referencira nepoznat ili arhiviran termin;
 - `contentFormat` ne odgovara stvarnom tipu entiteta/asset-a;
 - access politika nema backend evaluator;
@@ -455,7 +485,7 @@ Jedinstveni fixture/generated artefakt:
   "taxonomyVersion": "kompas-taxonomy-v1",
   "topicGroupId": "stress-overload",
   "topicIds": ["burnout"],
-  "journeyIntentIds": ["explore"],
+  "journeyIntent": "explore",
   "goalIds": ["understand"],
   "audienceIds": ["self"],
   "limit": 12
@@ -486,7 +516,7 @@ Kandidat mora biti:
 
 1. tačan `topicId`;
 2. pripadnost izabranoj `topicGroupId`;
-3. `journeyIntentId`;
+3. `journeyIntent`;
 4. `goalId`;
 5. `audienceId`;
 6. kontrolisani editorial tie-breaker;
@@ -520,6 +550,12 @@ Nikada ne prikazivati nepovezan sadržaj samo da lista ne bude prazna.
 ---
 
 ## 9. Minimalni backend–frontend ugovor
+
+### Staff registry
+
+Administrativni API podržava list/search po osi i statusu, create managed termina, novu radnu reviziju, optimistic locking, sinonime/hijerarhiju/veze, submit/review/publish/archive i actor evidence. Zaključane system vrednosti vraća kao read-only opcije za select kontrole. Nevalidna referenca vraća stabilan reason code, `fieldPath` i jasnu poruku na srpskom.
+
+Panel „Kompas” koristi ovaj API kroz regenerisan OpenAPI klijent. Ne održava taxonomy fixture kao runtime autoritet.
 
 ### Public taxonomy
 
@@ -575,7 +611,7 @@ Vraća:
   "topicGroupId": "stress-overload",
   "topicIds": ["burnout"],
   "audienceIds": ["self"],
-  "journeyIntentIds": ["professional-support"],
+  "journeyIntent": "professional_support",
   "createdAt": "ISO-8601",
   "expiresAt": "ISO-8601"
 }
@@ -611,49 +647,67 @@ Preporuka za v1:
 
 - [x] **K0.1** Pročitan `CODEX HANDOFF — KOMPAS.docx` i napravljen current-state nalaz.
 - [x] **K0.2** Razdvojene Kompas topic ose od D-052 Intake routing oblasti.
-- [ ] **K0.3** Upisati Product Decision **D-053**: definicija Kompasa, osi v1, DB autoritet, deterministički v1, bez therapist ranking-a.
-- [ ] **K0.4** Napisati **ADR-022**: vlasništvo taksonomije, revision model, tenant granica, API i Kompas ↔ Intake most.
+- [x] **K0.3** Usvojen **D-053**: backend → panel → CMS → javni Kompas; DB autoritet; managed i system registri; bez therapist ranking-a.
+- [x] **K0.4** Usvojen **ADR-022**: vlasništvo, revision model, tenant granica, API, migracija D-052 oblasti i Kompas ↔ Intake most.
 - [ ] **K0.5** Potvrditi osnovni vs napredni Kompas i release mapu; „napredni” ne sme biti sinonim za AI bez konkretne vrednosti.
-- [ ] **K0.6** Potvrditi privacy odluku za session/share state.
+- [x] **K0.6** ADR-022 zaključava v1 session state: React memorija + kratki `sessionStorage` TTL, bez query topic ID-jeva, DB profila i identifikovanog analytics-a; eksplicitno deljenje ostaje otvoreno.
 - [ ] **K0.7** Primiti i uneti Anjinu konačnu mapu grupa/tema/sinonima.
 
-**Gate K0:** D-053 + ADR-022 accepted. Tačne Anjine labele mogu stići posle ADR-a jer su podaci, ali pre javnog UI-ja.
+**Gate K0:** ✅ D-053 + ADR-022 su accepted. Nepoznate konačne labele su podaci registra i ne blokiraju početak K1.
 
-### K1 — article i katalog preduslovi
+### K1 — backend registry foundation
 
-- [ ] **K1.1** ADR-019: `article` tip, identitet, autor/reviewer, izvori, SEO/JSON-LD i javna ruta.
-- [ ] **K1.2** Zaključati minimalni Layout Engine recept za članak pre prvog blog renderer-a (ADR-021); bez AI generisanja layouta u ovom koraku.
-- [ ] **K1.3** Dodati `ContentType.article`/article template tek posle ADR-019.
-- [ ] **K1.4** Završiti jedan stvarni `.docx → RichDoc → review → approve → publish → public article` vertikalni tok.
-- [ ] **K1.5** Odlučiti koji postojeći `service`/`program` entiteti smeju u discovery katalog i sa kojim card adapterom.
+- [ ] **K1.1** Implementirati `taxonomy_terms` identitete: org-scoped managed ose i globalne system ose; stable ID je immutable.
+- [ ] **K1.2** Implementirati revision model sa javnom labelom/opisom, internom napomenom, parent vezom, redosledom, ikonom/asset-om, `public_visible`, `compass_enabled`, lifecycle-om i actor evidence-om.
+- [ ] **K1.3** Implementirati sinonime/search terms i revision-bound `related_topic` veze bez recommendation autoriteta.
+- [ ] **K1.4** Seedovati zaključane system vrednosti: pet D-052 `support_area`, `journey_intent`, `content_format` i trenutno izvršive access vrednosti.
+- [ ] **K1.5** Migrirati `therapist_matching_profiles.areas` kroz backfill + dual-read/parity + cutover bez promene matching rezultata.
+- [ ] **K1.6** Implementirati `topic -> support_area` most sa Clinical review evidence-om, bez score/therapist kolone.
+- [ ] **K1.7** Implementirati lifecycle, optimistic locking, approval tok, archive/replacement i zaštitu postojećih referenci.
+- [ ] **K1.8** Implementirati staff CRUD/review/publish/archive API i javni taxonomy read-model sa tenant/locale zaštitom.
+- [ ] **K1.9** Vraćati stabilne reason kodove, `fieldPath` i jasne srpske poruke; internal note/audit nikad ne vraćati javno.
+- [ ] **K1.10** Regenerisati OpenAPI klijent tek kada backend ugovor bude završen.
 
-**Gate K1:** najmanje jedan pravi objavljen članak i jedan objavljen postojeći entitet mogu da se čitaju iz istog discovery read-modela.
+**Gate K1:** stable ID preživi promenu labele; cross-tenant referenca i brisanje korišćenog termina su odbijeni; D-052 matching ostaje nepromenjen; API nosi stvarnog actor-a.
 
-### K2 — DB taxonomy foundation
+### K2 — panel „Kompas”
 
-- [ ] **K2.1** Implementirati stabilne term identitete i versioned labele/opise.
-- [ ] **K2.2** Implementirati topic group → topic hijerarhiju.
-- [ ] **K2.3** Implementirati sinonime/search terms bez recommendation autoriteta.
-- [ ] **K2.4** Implementirati migration/seed import iz Anjine potvrđene tabele.
-- [ ] **K2.5** Implementirati lifecycle, actor badge/audit i archive pravila.
-- [ ] **K2.6** Implementirati public taxonomy read-model.
-- [ ] **K2.7** Uvesti `topicId -> SupportAreaId` most bez menjanja Intake scoring-a.
-- [ ] **K2.8** Nakon DB vertikale ukloniti ručno održavanje Kompas registra na frontendu; OpenAPI/generated tipovi postaju ugovor.
+- [ ] **K2.1** Dodati jednu panel površinu sa tabovima: **Grupe · Teme · Publike · Ciljevi sadržaja · Povezivanja · Pregled i odobrenja**.
+- [ ] **K2.2** Napraviti generički editor registra sa različitim pravilima po osi, ne poseban ekran za svaki mali registar.
+- [ ] **K2.3** Omogućiti javni naziv/opis, sinonime, hijerarhiju, redosled, ikonu/asset, vidljivost, aktivnost u Kompasu, povezane teme i internu stručnu napomenu.
+- [ ] **K2.4** Stable ID prikazati zaključano nakon kreiranja; system ID/semantiku nikad ne ponuditi kao slobodno polje.
+- [ ] **K2.5** Journey/format/access/lifecycle/approval vrednosti učitati kao system select opcije; `subscriber`/`purchased` su disabled „U pripremi”.
+- [ ] **K2.6** Uvesti stvarni draft → in_review → approved → published → archived tok sa Clinical/Business odobrenjima.
+- [ ] **K2.7** Prikazati mali actor badge za kreiranje, izmenu, odobrenje, objavu i arhiviranje.
+- [ ] **K2.8** Implementirati razumljive srpske validation/error poruke, fokus na konkretno polje i globalni error banner bez neželjenog skrola pri običnom kliku.
+- [ ] **K2.9** Org admin i D-051 superadmin koriste postojeće role/capability-je; ne uvoditi novu Clerk rolu niti zahtevati therapist profil superadminu.
 
-**Gate K2:** promena javne labele u DB ne menja ID, ne traži izmenu React/Python koda i ne lomi postojeću referencu.
+**Gate K2:** Anja ili ovlašćeni org admin može napraviti draft grupe/teme, poslati na pregled, odobriti/objaviti po dozvoli, promeniti labelu bez promene ID-ja i videti ko je izvršio svaku radnju.
 
-### K3 — CMS discovery metadata
+### K3 — neposredna CMS integracija
 
 - [ ] **K3.1** Vezati taxonomy reference za `ContentRevision`, ne `ContentEntry`.
-- [ ] **K3.2** Dodati schema-driven polja za grupu, teme, journey, cilj i publiku.
-- [ ] **K3.3** Format i estimated time izvoditi kada god je moguće.
-- [ ] **K3.4** Dodati potvrđene veze ka uslugama/programima.
-- [ ] **K3.5** Isključiti therapist recommendation metadata.
-- [ ] **K3.6** Dodati server Content Health pravila i jasne srpske remediation poruke.
-- [ ] **K3.7** Metadata izmena mora da se vidi u `createdBy/updatedBy` i da poništi odobrenja nove revizije.
-- [ ] **K3.8** Content bez kompletnog metadata može ostati objavljen na svojoj ruti, ali ne ulazi u Kompas katalog dok ne prođe Compass eligibility gate.
+- [ ] **K3.2** U CMS formama koristiti DB-backed kontrolisana polja za grupu, teme, put, cilj, publiku, format i nivo pristupa.
+- [ ] **K3.3** UI pitanja pisati jezikom terapeuta: „Kojim oblastima pripada…?”, „Kome je namenjen…?”, „Šta korisnik dobija…?”, „Istraživanje, stručna podrška ili oba?”, „Ko može da pristupi?”.
+- [ ] **K3.4** Ne prikazivati `journeyIntent`, `topicGroupId` ili `accessLevel` kao glavne labele i ne dozvoliti slobodan taxonomy string.
+- [ ] **K3.5** Format i estimated time izvoditi kada god je moguće; onemogućiti vrednost za koju nema stvarnog entiteta/handlera.
+- [ ] **K3.6** Dodati potvrđene veze ka uslugama/programima; isključiti therapist recommendation metadata.
+- [ ] **K3.7** Dodati server Content Health pravila i jasne srpske remediation poruke.
+- [ ] **K3.8** Metadata izmena mora da se vidi u actor audit-u i da poništi odobrenja nove revizije.
+- [ ] **K3.9** Content bez kompletnog metadata može ostati objavljen na svojoj ruti, ali ne ulazi u Kompas katalog dok ne prođe eligibility gate.
+- [ ] **K3.10** Pravne saglasnosti i `custom_document` ne uključivati automatski; Kompas PDF/radni list je budući odobren `ResourceAsset`.
 
-**Gate K3:** admin uređuje stvarni članak, bira ID-jeve iz DB registra, čuva, dobija precizne nalaze, odobrava i objavljuje bez slobodnog taxonomy stringa.
+**Gate K3:** admin uređuje stvarni podržani sadržaj, bira ID-jeve iz DB registra, čuva, dobija precizne nalaze, odobrava i objavljuje bez slobodnog taxonomy stringa.
+
+### K3A — article/Layout i katalog sadržaja, zasebna domenska kapija
+
+- [ ] **K3A.1** ADR-019: `article` tip, identitet, autor/reviewer, izvori, SEO/JSON-LD i javna ruta.
+- [ ] **K3A.2** ADR-021: minimalni Layout Engine recept pre prvog article renderer-a; AI generisanje nije deo ovog koraka.
+- [ ] **K3A.3** Dodati `ContentType.article`/article template tek posle ADR-019.
+- [ ] **K3A.4** Završiti stvarni `.docx → RichDoc → metadata → review → approve → publish → public article` tok.
+- [ ] **K3A.5** Potvrditi koji postojeći `service`/`program` entiteti imaju discovery card adapter.
+
+**Gate K3A:** najmanje jedan stvarni objavljeni članak i jedan dozvoljeni postojeći entitet ulaze u isti discovery read-model. Ova kapija ne blokira K1/K2.
 
 ### K4 — recommendation service
 
@@ -680,7 +734,7 @@ Preporuka za v1:
 
 ### K6 — javni Kompas UI
 
-- [ ] **K6.1** Ruta i javna metadata tek kada K2–K5 API radi.
+- [ ] **K6.1** Ruta i javna metadata tek kada K1–K5 API, panel i CMS reference rade.
 - [ ] **K6.2** Grupe dolaze iz DB read-modela; nema frontend stručnog niza.
 - [ ] **K6.3** Jedna interaktivna površina, bez „korak X od Y”.
 - [ ] **K6.4** Izbor grupe odmah prikazuje sadržaj.
@@ -723,7 +777,10 @@ Preporuka za v1:
 | javni naziv | Stres i preopterećenost |
 | kratak opis | Plain-language opis za karticu |
 | redosled | 1 |
-| aktivna | da |
+| javno vidljiva | da |
+| aktivna u Kompasu | da |
+| ikona/asset | opciono |
+| lifecycle | draft |
 
 ### Teme
 
@@ -733,6 +790,8 @@ Preporuka za v1:
 | `topicGroupId` | `stress-overload` |
 | javni naziv | Burnout |
 | sinonimi | sagorevanje; iscrpljenost; preopterećenost |
+| put | oba |
+| povezane teme | opciono |
 | Intake veza | `anxiety_stress` |
 | napomena/reviewer | stručna napomena bez javne dijagnoze |
 
@@ -775,7 +834,7 @@ Mali broj contract/parity testova može se dodati uz vertikalni tok, ali se izvr
 
 ### Od Milana
 
-- [ ] D-053 i ADR-022 prihvatanje.
+- [x] D-053 i ADR-022 prihvaćeni 2026-07-31.
 - [ ] Da li je basic Kompas deo R3 Content release-a ili zaseban release iza feature flag-a.
 - [ ] Šta tačno daje „napredni Kompas”.
 - [ ] Da li eksplicitno deljenje izbora ulazi u v1.
@@ -788,7 +847,7 @@ Mali broj contract/parity testova može se dodati uz vertikalni tok, ali se izvr
 - [ ] Konkretne teme i sinonimi.
 - [ ] Topic → Intake support-area veze.
 - [ ] `child` i „za drugu osobu” audience odluka.
-- [ ] Ko odobrava izmene taksonomije.
+- [ ] Konkretna raspodela Anje/ovlašćenih članova na postojeće Clinical i Business review capability-je.
 - [ ] Koje veze sadržaj → usluga/program su stručno i poslovno opravdane.
 
 ### Odloženo drugim domenima
@@ -804,10 +863,11 @@ Mali broj contract/parity testova može se dodati uz vertikalni tok, ali se izvr
 
 ## 15. Sledeći konkretan korak
 
-Posle usvajanja ovog plana:
+D-053 i ADR-022 su usvojeni. Sledeće:
 
-1. zapisati D-053 bez konačnih Anjinih labela;
-2. napisati ADR-022 sa DB modelom, tenant granicom, API-jem i privacy state odlukom;
-3. sutrašnju Anjinu tabelu uneti kao seed/import podatke;
-4. zatim sprovesti K1 → K2 → K3 → K4 → K5 → K6;
-5. tek posle stvarnog osnovnog toka širiti formate i AI.
+1. sprovesti **K1 backend registry foundation**, uključujući migraciju D-052 `areas`;
+2. odmah zatim **K2 panel „Kompas”** sa svih šest tabova i stvarnim governance tokom;
+3. povezati registar sa **K3 CMS formama**;
+4. Anjinu konačnu tabelu uneti kao stručne podatke čim stigne, bez menjanja arhitekture;
+5. završiti K3A/K4/K5 i tek tada javni K6;
+6. širiti formate i AI tek posle stvarnog osnovnog toka.
