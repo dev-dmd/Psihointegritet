@@ -9,6 +9,7 @@ import { staticContentProvider } from "./static-provider";
 
 const publishedService: PublishedContentOverride = {
   contentType: "service",
+  management: "system",
   slug: "individualna-psihoterapija",
   locale: "sr-Latn",
   template: "service_detail",

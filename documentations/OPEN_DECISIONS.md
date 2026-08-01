@@ -139,21 +139,23 @@ Psihointegritet želi eksplicitno da prikaže da prima LGBTQIA+ osobe bez stigme
 
 ### O-21 · Kompas — obim, vlasnik i granice novog proizvoda _(novo 2026-07-26)_
 
-> **Gde piše:** PRODUCT_CONTEXT v0.3 §11.5 · content-architecture.md §6 · **Blokira:** bilo kakav Kompas kod ili javnu najavu sa funkcijom
+> **Gde piše:** PRODUCT_CONTEXT v0.3 §11.5 · content-architecture.md §6 · D-053 · ADR-022 · **Blokira još samo:** tier/release obećanje, ne backend registra
 
-**Šta znamo:** CTO je 2026-07-26 potvrdio da je Kompas **novi, zaseban proizvod** — nije novo ime za postojeći Vođeni izbor / Intake & Matching tok. U dokumentaciji postoji samo kao stavka access-tier liste („osnovni Kompas" u besplatnom sloju; „napredni Kompas" kao U pripremi). Integracija sa Content/Programs/Booking engine-ima dolazi **tek kada Booking ugovor bude stabilan** (posle R2).
+**Šta znamo:** CTO je 2026-07-26 potvrdio da je Kompas **novi, zaseban proizvod** — nije novo ime za postojeći Vođeni izbor / Intake & Matching tok. D-053/ADR-022 sada dozvoljavaju backend registar, panel i CMS reference pre javnog proizvoda. Recommendation, javni Kompas i Intake/Booking handoff dolaze tek kroz svoje K3A–K6 kapije.
 
-**Traži se od CTO/tima:**
+**Preostalo od CTO/tima:**
 
 1. ~~Definicija proizvoda: šta Kompas radi, za koga, čime se razlikuje od Vođenog izbora~~ → **napredak 2026-07-29, vidi ispod**
 2. Granica osnovni vs napredni tier
-3. Vlasnik, release (R-mapa) i odnos prema Engines arhitekturi (novi engine ili deo postojećeg)
+3. Release (R-mapa)
 
 > **Napredak 2026-07-29 (CTO).** Kompas je **discovery i recommendation sloj iznad istog kataloga sadržaja** — ne novi katalog. Prvi izbor korisnika: „Želim stručnu podršku" · „Želim da razumem šta mi se dešava" · „Tražim koristan sadržaj" · „Tražim podršku za roditeljstvo" · „Tražim podršku za odnos" · „Tražim sadržaj za kompaniju ili tim". Grana **informacije** pretražuje članke, video, PDF vodiče, preporuke knjiga, programe i radionice; grana **stručna podrška** vodi na usluge, terapeute, način rada i prelazak na zahtev za termin. Zakazivanje ostaje globalno dostupno ali ne agresivno — sekundarni CTA na stručnom sadržaju („Potrebna vam je stručna podrška?") i povratak iz booking toka na sadržaj („Još nisam spreman da zakažem — želim prvo da pogledam materijale").
 >
-> **Time je tačka 1 suštinski odgovorena, ali O-21 ostaje otvoren** na tačkama 2 i 3, i na jednoj novoj: Kompas pretpostavlja **zajedničku taksonomiju** preko svih tipova sadržaja (`audience`, `topics`, `goals`, `contentType`, `supportLevel`, `ageGroup`, `format`, `accessLevel`, `estimatedTime`, `relatedServices`, `relatedTherapists`) — a to je zasebna otvorena stavka, **O-24**. Bez nje Kompas nema po čemu da pretražuje.
+> Tačka 1 je odgovorena. Zajednička taksonomija, koja je ranije bila O-24 blokada, zatvorena je D-052 + D-053/ADR-022. O-21 sada nosi samo tačke 2 i 3.
 
-**Dok ne stigne:** nikakav placeholder kod, ruta, model ni javna najava sa rokom (anti-placeholder pravila iz master plana §3 i PRODUCT_CONTEXT §11.5). Pominjanje u access-tier listi ostaje kakvo jeste.
+> **Usvojeno 2026-07-31 — D-053 / ADR-022:** `KOMPAS_TODO.md` razdvaja Kompas topic grupe/teme od D-052 Intake routing oblasti. V1 ose su `topicGroupId`, `topicIds`, jedna sistemska vrednost `journeyIntent`, `goalIds`, `audienceIds`, izvedeni/kontrolisani `contentFormat` i postojeći `accessPolicy`; tagovi/sinonimi ostaju samo pretraga. Kompas je u v1 deterministički content recommendation servis u `modules/content`, bez novog therapist scoring-a i bez obaveznog AI-ja. Implementacija ide backend registar → panel → CMS → javni Kompas.
+
+**O-21 ostaje otvoren samo** za basic/advanced granicu i release mapu. K0 arhitektonska kapija je prošla; K1 backend foundation može da počne. Tačne Anjine kategorije su podaci registra i mogu stići tokom implementacije, ali pre javnog UI-ja.
 
 ---
 
@@ -169,7 +171,7 @@ Psihointegritet želi eksplicitno da prikaže da prima LGBTQIA+ osobe bez stigme
 
 | Sekcija | Stanje |
 |---|---|
-| „Sačuvano", „Nastavi čitanje", „Preporučeno", privatne kolekcije | Traže katalog sadržaja iz kog se čuva — dakle posle ADR-019 (članci) i O-24 (taksonomija) |
+| „Sačuvano", „Nastavi čitanje", „Preporučeno", privatne kolekcije | Traže stvarni katalog sadržaja — O-24 ugovor je rešen, ali K1–K4 i ADR-019 još nisu implementirani |
 | **„Moje kupovine", „Moja pretplata"** | 🚫 **D-031 / BDS-014 / `PUB-003`** — finansijski domen je R5 |
 | **„Moji termini"** | 🚫 **R2 Booking Engine** — ne postoji |
 
@@ -183,30 +185,20 @@ Psihointegritet želi eksplicitno da prikaže da prima LGBTQIA+ osobe bez stigme
 
 ---
 
-### O-24 · Zajednička taksonomija sadržaja — unifikacija pre proširenja _(novo 2026-07-29)_
+### O-24 · Zajednička taksonomija sadržaja — unifikacija pre proširenja _(✅ rešeno D-052 + D-053/ADR-022, 2026-07-31)_
 
-> **Gde piše:** `CONTENT_MODEL_MATRIX_v0.1.md` §8 · `content-architecture.md` §6 · **Blokira:** Kompas (O-21), filtriranje kataloga, Dnevnu sobu (O-23)
+> **Gde piše:** `CONTENT_MODEL_MATRIX_v0.1.md` §8 · `content-architecture.md` §6 · **Ranije blokiralo:** Kompas registar i filtriranje kataloga
 
 **Problem 1 — tražene ose nisu u dozvoljenoj listi.** CTO traži `audience`, `topics`, `goals`, `contentType`, `supportLevel`, `ageGroup`, `format`, `accessLevel`, `estimatedTime`, `relatedServices`, `relatedTherapists`. `CONTENT_MODEL_MATRIX_v0.1.md` §8 je iscrpna dozvola šta R3 CMS sme da doda modelu — `revisionId`, `createdBy`, `updatedBy`, `publishedAt`, audit i scheduling polja — i izričito kaže da se javni field name-ovi, CTA registry, template registry i ograničenja **ne smeju menjati bez nove produktne odluke**. Nijedna tražena osa nije na toj listi. Uz to `contentType` **već postoji kao javno ime polja** (`ContentBase.type: ContentType`) i ne sme dobiti drugo značenje.
 
-**Problem 2 — postojeća taksonomija je učetvorostručena i već je driftovala.** Isti pojam `areas` postoji na četiri mesta:
+**O-24a — Intake & Matching drift je rešen D-052.** Frontend, backend i postojeći DB profili koriste pet stabilnih ID-jeva; `contracts/fixtures/taxonomy.v1.json` čitaju parity provere sa obe strane. „Zavisnost" je potvrđena Anjina uža capability oznaka i stvarna opcija upitnika, uz postojeći timski handoff. Javni čipovi u `content/therapists.ts` ostaju slobodan prezentacioni tekst i namerno nisu matching izvor.
 
-| Gde | Oblik | Primer |
-|---|---|---|
-| `frontend/src/content/therapists.ts` | prikazni tekst, veliko slovo | `"Anksioznost i depresija"` |
-| `frontend/src/features/guidance/matching.ts` | matching predikat, malo slovo | `"anksioznost"` |
-| `backend/.../modules/guidance/matching.py` | isto, druga kopija | `"anksioznost"` |
-| `therapist_matching_profiles.areas` (JSON kolona) | seedovano migracijom `20260722_0001` | isto |
+**Ishod:**
 
-⚠️ **Drift je već nastupio:** `matching.py:160` nosi `"zavisnost"` u Anjinim `areas`, a frontend nema **nijedan** pogodak na tu reč. Migracija `20260722_0001:478` ju je upisala i u bazu. Trenutno je bezopasno samo zato što nijedan `REASON_AREAS` ključ ne mapira na nju. **Za matching ne postoji parity fixture** — `contracts/fixtures/` sadrži samo `legal-publication.v1.json`.
+1. ✅ **Od tima/Anje:** pet Intake oblasti i Anjina primarna stručnost za zavisnost potvrđeni su i sprovedeni kroz D-052.
+2. ✅ **O-24b — usvojen D-053/ADR-022:** odvojene managed topic group/topic/audience/goal ose, zaključane system journey/format/access vrednosti, revision-bound content metadata, org-scoped tenant granica i eksplicitni topic → Intake most. Postojeći `ContentBase.type` ostaje jedino značenje polja `contentType`.
 
-**Traži se:**
-
-1. **Od tima/Anje:** mapiranje prikaznih čipova na stabilne ID-jeve. Mapiranje sme biti **više-na-jedan** — `"Anksioznost i depresija"` je jedan čip koji stoji za dve matching teme, i to je jedini način da preživi bez vidljive izmene teksta. **Ovo nije refaktor:** re-keying menja rečenice razloga koje korisnik vidi u rezultatu vođenog izbora, a te su pod D-025 (najviše 3, običan jezik, bez skorova).
-2. **Od Anje, činjenično:** da li `"zavisnost"` treba da bude u Anjinim oblastima? Ona nosi `addiction_related_support` u `serviceCapabilities` na obe strane, ali `"zavisnost"` u `areas` samo na Python strani. Jedno od to dvoje je greška.
-3. **Od CTO:** da li se nove ose uopšte uvode sada. Danas imamo šest terapeuta, devet usluga i nijedan članak — nema kolekcije dovoljno velike da traži filtriranje.
-
-**Dok ne stigne:** ne dodavati nijednu novu osu. Prvo unifikacija `areas` u kontrolisani rečnik sa `contracts/fixtures/taxonomy.v1.json` koji čitaju obe strane — bez toga bi svaka nova osa bila **peta** kopija, a postojeće tri nemaju nikakvu zaštitu od drifta.
+O-24 više nije otvorena arhitektonska blokada. Implementacija se prati u `KOMPAS_TODO.md` K1–K3. Anjine konačne grupe/teme/sinonimi su stručni registry podaci, ne nova produkt odluka.
 
 ---
 
@@ -275,4 +267,4 @@ Koji kalendar po terapeutu, koji scope-ovi. Free/busy only, nikad naslovi (T15).
 **Uskoro:** tekst o lokacijama (O-02) · pregled upitnika (O-04) · prva radionica (O-05)
 **Pre Faze 2:** pravila otkazivanja (O-08) · cena za studente (O-09) · Google kalendari (O-10)
 
-**Traži Anjinu potvrdu pre CMS taksonomije (O-24):** mapiranje prikaznih oblasti na stabilne ID-jeve — menja rečenice razloga u vođenom izboru, pa nije tehnička odluka · i jedno činjenično pitanje: da li „zavisnost" pripada Anjinim oblastima rada (danas stoji u bazi i na backendu, ali ne i na sajtu)
+**Intake taksonomija je potvrđena i zatvorena (D-052):** pet stabilnih oblasti + Anjina primarna stručnost za zavisnost, uz timski handoff. CMS/Kompas arhitektura je takođe zatvorena D-053/ADR-022; Anjina konačna mapa grupa/tema je registry unos i ne traži novu potvrdu Intake pravila.

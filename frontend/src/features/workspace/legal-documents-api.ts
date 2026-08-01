@@ -3,12 +3,10 @@
  * `app/api/privacy/**` Next Route Handlers (same pattern as
  * `intake-team-queue-api.ts` → `app/api/intake/**`).
  *
- * **Hand-typed, not generated.** `npm run api:generate` was not run for this
- * pass (D-047 — no verification gates until the CMS + Booking testing pass),
- * so these types are written to match `modules/privacy/schemas.py` field for
- * field rather than sourced from `@/types/api.generated`. `ApiSchema`'s
- * `alias_generator=to_camel` on the backend means the wire shape is already
- * camelCase — no case conversion happens here.
+ * The panel keeps a small hand-shaped adapter over the generated OpenAPI
+ * contract so its domain names stay stable. The generated client is refreshed
+ * whenever this wire contract changes. `ApiSchema`'s `alias_generator=to_camel`
+ * means no case conversion happens here.
  */
 
 import type { RichDoc } from "@/lib/content-governance/rich-doc";
@@ -35,6 +33,7 @@ export interface ApiLegalDocumentRevision {
   documentId: string;
   revisionId: string;
   kind: LegalDocumentKind;
+  management: "document";
   title: string;
   slug: string;
   body: RichDoc;
@@ -92,6 +91,7 @@ export function toLegalDocument(
     documentId: revision.documentId,
     revisionId: revision.revisionId,
     kind: revision.kind,
+    management: revision.management,
     title: revision.title,
     slug: revision.slug,
     body: revision.body,
@@ -112,7 +112,19 @@ async function parseOrThrow<T>(response: Response): Promise<T> {
     try {
       const parsed: unknown = text ? JSON.parse(text) : null;
       if (isApiProblem(parsed)) {
-        detail = parsed.detail ?? parsed.title;
+        detail =
+          parsed.status >= 500
+            ? `Server trenutno ne može da obradi zahtev. Pokušajte ponovo. Ako se greška ponovi, pošaljite podršci ID greške: ${parsed.correlationId}.`
+            : (parsed.detail ?? parsed.title);
+        if (parsed.fieldErrors) {
+          const fieldDetails = Object.entries(parsed.fieldErrors).flatMap(
+            ([field, messages]) =>
+              messages.map((message) => `${field}: ${message}`),
+          );
+          if (fieldDetails.length > 0) {
+            detail = `${detail} — ${fieldDetails.join("; ")}`;
+          }
+        }
       }
     } catch {
       // Keep a non-JSON proxy/network response as-is.
@@ -133,6 +145,7 @@ export async function createLegalDocument(input: {
   kind: LegalDocumentKind;
   title: string;
   slug: string;
+  body: RichDoc;
 }): Promise<LegalDocument> {
   const response = await fetch("/api/privacy/documents", {
     method: "POST",
@@ -210,6 +223,20 @@ export async function recordLegalDocumentApproval(
   );
 }
 
+export async function removeLegalDocumentApproval(
+  documentId: string,
+  revisionId: string,
+  capability: ApprovalCapability,
+): Promise<LegalDocument> {
+  const response = await fetch(
+    `/api/privacy/documents/${encodeURIComponent(documentId)}/revisions/${encodeURIComponent(revisionId)}/approvals/${encodeURIComponent(capability)}`,
+    { method: "DELETE" },
+  );
+  return toLegalDocument(
+    await parseOrThrow<ApiLegalDocumentRevision>(response),
+  );
+}
+
 export async function deleteLegalDocumentRevision(
   documentId: string,
   revisionId: string,
@@ -227,6 +254,7 @@ export async function importLegalDocumentDocx(
   documentId: string,
   file: File,
 ): Promise<ApiImportDocxResult> {
+  requireDocxFile(file);
   const formData = new FormData();
   formData.set("file", file);
   const response = await fetch(
@@ -234,4 +262,27 @@ export async function importLegalDocumentDocx(
     { method: "POST", body: formData },
   );
   return parseOrThrow<ApiImportDocxResult>(response);
+}
+
+/** Preview-only import for the create form. It does not create a document or
+ * persist the converted content. */
+export async function previewNewLegalDocumentDocx(
+  file: File,
+): Promise<ApiImportDocxResult> {
+  requireDocxFile(file);
+  const formData = new FormData();
+  formData.set("file", file);
+  const response = await fetch("/api/privacy/documents?action=import-docx", {
+    method: "POST",
+    body: formData,
+  });
+  return parseOrThrow<ApiImportDocxResult>(response);
+}
+
+function requireDocxFile(file: File): void {
+  if (file.name.toLowerCase().endsWith(".docx")) return;
+  throw new LegalDocumentsApiError(
+    "Izabrani fajl nije .docx. Sačuvajte Word dokument kao .docx i pokušajte ponovo.",
+    422,
+  );
 }

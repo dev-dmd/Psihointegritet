@@ -4,10 +4,13 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 
 import { ErrorBanner } from "@/components/panel/error-banner";
-import type {
-  ContentTemplate,
-  ContentType,
-} from "@/lib/content-governance/types";
+import {
+  findSystemContentDefinition,
+  systemContentCatalog,
+  systemContentIdentity,
+  type SystemContentDefinition,
+} from "@/lib/content-governance/system-content-catalog";
+import type { ContentType } from "@/lib/content-governance/types";
 
 import {
   ContentApiError,
@@ -50,45 +53,82 @@ export function ScreenSadrzaj() {
 
   const [activeType, setActiveType] = useState<ContentType>("static_page");
   const [selectedEntryId, setSelectedEntryId] = useState<string | null>(null);
-  const [creating, setCreating] = useState(false);
-  const [createError, setCreateError] = useState<string | null>(null);
+  const [openingIdentity, setOpeningIdentity] = useState<string | null>(null);
+  const [openError, setOpenError] = useState<string | null>(null);
 
   const errors = errorsFor(HREF);
   const selectedEntry =
     entries.find((entry) => entry.entryId === selectedEntryId) ?? null;
+  const selectedDefinition = selectedEntry
+    ? findSystemContentDefinition(selectedEntry.contentType, selectedEntry.slug)
+    : null;
 
-  const handleCreate = async (input: {
-    slug: string;
-    template: ContentTemplate;
-  }) => {
-    setCreating(true);
-    setCreateError(null);
+  const handleOpen = async (
+    definition: SystemContentDefinition,
+    existing: ApiContentRevision | null,
+  ) => {
+    if (existing) {
+      setOpenError(null);
+      setSelectedEntryId(existing.entryId);
+      return;
+    }
+
+    const identity = systemContentIdentity(definition);
+    setOpeningIdentity(identity);
+    setOpenError(null);
     try {
       const created = await createContentEntry({
-        contentType: activeType,
-        slug: input.slug,
-        template: input.template,
+        contentType: definition.contentType,
+        slug: definition.slug,
+        template: definition.template,
       });
       queryClient.setQueryData<ApiContentRevision[]>(
         CONTENT_ENTRIES_QUERY_KEY,
-        (current) => [...(current ?? []), created],
+        (current) => [
+          ...(current ?? []).filter((item) => item.entryId !== created.entryId),
+          created,
+        ],
       );
       setSelectedEntryId(created.entryId);
     } catch (error) {
+      // Another staff member may have opened the same fallback between our
+      // list read and POST. Resolve a real 409 by loading the tenant list and
+      // opening the now-existing registered entry instead of surfacing a
+      // false failure.
+      if (error instanceof ContentApiError && error.status === 409) {
+        try {
+          const refreshed = await fetchContentEntries();
+          queryClient.setQueryData(CONTENT_ENTRIES_QUERY_KEY, refreshed);
+          const concurrent =
+            refreshed.find(
+              (item) =>
+                item.contentType === definition.contentType &&
+                item.slug === definition.slug &&
+                item.template === definition.template,
+            ) ?? null;
+          if (concurrent) {
+            setSelectedEntryId(concurrent.entryId);
+            return;
+          }
+        } catch {
+          // Keep and report the original 409 if reconciliation is unavailable.
+        }
+      }
+
       const message =
         error instanceof ContentApiError
           ? error.message
           : "Zahtev nije uspeo. Pokušajte ponovo.";
-      setCreateError(message);
+      setOpenError(message);
       reportError({
         href: HREF,
         tabLabel: TAB_LABEL,
-        title: "Nova stranica nije sačuvana",
+        title: "Sistemska stranica nije otvorena",
         description: message,
         details: [],
       });
     } finally {
-      setCreating(false);
+      setOpeningIdentity(null);
     }
   };
 
@@ -96,7 +136,7 @@ export function ScreenSadrzaj() {
     <section className="animate-fade-up">
       <PageHeader
         title="Sadržaj"
-        description="Generički editor za operativne stranice, usluge, terapeute, programe, kompanije i pakete — jedan po jedan slot, iz registra šema (CG-C1). Pregled i objava dolaze u sledećem koraku (CG-C4)."
+        description="Sistemske stranice, usluge, terapeuti, programi, kompanije i paketi. Izaberite postojeću stavku i menjajte samo polja definisana njenom strukturom."
       />
 
       <ErrorBanner errors={errors} onDismiss={clearError} />
@@ -118,22 +158,26 @@ export function ScreenSadrzaj() {
         <>
           <ContentEntryList
             entries={entries}
+            catalogue={systemContentCatalog}
             activeType={activeType}
             onTypeChange={(type) => {
               setActiveType(type);
               setSelectedEntryId(null);
+              setOpenError(null);
             }}
             selectedEntryId={selectedEntryId}
             onSelect={setSelectedEntryId}
-            creating={creating}
-            createError={createError}
-            onCreate={handleCreate}
+            openingIdentity={openingIdentity}
+            openError={openError}
+            onOpen={handleOpen}
           />
 
-          {selectedEntry ? (
+          {selectedEntry && selectedDefinition ? (
             <ContentRevisionEditor
               key={selectedEntry.revisionId}
               entry={selectedEntry}
+              displayTitle={selectedDefinition.title}
+              publicRoute={selectedDefinition.publicRoute}
               onDeleted={() => setSelectedEntryId(null)}
             />
           ) : null}

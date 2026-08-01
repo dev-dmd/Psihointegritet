@@ -8,11 +8,17 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from psihointegritet.core.config import Settings
+from psihointegritet.core.logging import get_logger
+from psihointegritet.modules.content.taxonomy_models import (
+    TaxonomyTerm,
+    TherapistMatchingProfileSupportArea,
+)
 from psihointegritet.modules.guidance.authorization import StaffActor
 from psihointegritet.modules.guidance.matching import (
     DEFAULT_PROFILES,
     MatchCandidate,
     MatchingAdapter,
+    MatchingProfile,
     MatchingResult,
     StaticMatchingAdapter,
     profile_from_entity,
@@ -375,7 +381,41 @@ class GuidanceService:
                 )
             )
         ).all()
-        profiles = tuple(profile_from_entity(entity) for entity in entities) or DEFAULT_PROFILES
+        profile_ids = [entity.id for entity in entities]
+        areas_by_profile: dict[UUID, list[str]] = {}
+        if profile_ids:
+            reference_rows = (
+                await self._session.execute(
+                    select(
+                        TherapistMatchingProfileSupportArea.therapist_profile_id,
+                        TaxonomyTerm.stable_id,
+                    )
+                    .join(
+                        TaxonomyTerm,
+                        TaxonomyTerm.id == TherapistMatchingProfileSupportArea.support_area_term_id,
+                    )
+                    .where(
+                        TherapistMatchingProfileSupportArea.therapist_profile_id.in_(profile_ids)
+                    )
+                )
+            ).all()
+            for profile_id, stable_id in reference_rows:
+                areas_by_profile.setdefault(profile_id, []).append(stable_id)
+
+        profiles_list: list[MatchingProfile] = []
+        for entity in entities:
+            referenced_areas = areas_by_profile.get(entity.id)
+            if referenced_areas and set(referenced_areas) != set(entity.areas):
+                # K1 cutover keeps the FK-backed registry authoritative while
+                # surfacing legacy JSON drift without logging client data.
+                get_logger(__name__).warning(
+                    "matching_support_area_parity_mismatch",
+                    therapist_profile_id=str(entity.id),
+                    reference_count=len(referenced_areas),
+                    legacy_count=len(entity.areas),
+                )
+            profiles_list.append(profile_from_entity(entity, referenced_areas))
+        profiles = tuple(profiles_list) or DEFAULT_PROFILES
         return StaticMatchingAdapter(profiles)
 
     async def _find_idempotent_case(

@@ -16,7 +16,9 @@ from pydantic import BaseModel, ConfigDict, Field
 from pydantic.alias_generators import to_camel
 
 from psihointegritet.modules.content.models import ContentTemplate, ContentType, ReviewOutcome
+from psihointegritet.modules.content.publication import PublishStage, Severity
 from psihointegritet.modules.identity.schemas import ActorSummaryOut
+from psihointegritet.shared.domain.content_management import ContentManagement
 from psihointegritet.shared.domain.publication import ApprovalCapability, RevisionStatus
 
 
@@ -39,15 +41,30 @@ class SeoFields(ApiSchema):
     og_image_asset_id: str | None = Field(default=None, max_length=191)
 
 
+class ContentDiscoveryMetadata(ApiSchema):
+    """Controlled Kompas metadata attached to exactly one CMS revision."""
+
+    topic_group_term_id: UUID | None = None
+    topic_term_ids: list[UUID] = Field(default_factory=list)  # pyright: ignore[reportUnknownVariableType]
+    audience_term_ids: list[UUID] = Field(default_factory=list)  # pyright: ignore[reportUnknownVariableType]
+    content_goal_term_ids: list[UUID] = Field(default_factory=list)  # pyright: ignore[reportUnknownVariableType]
+    journey_intent_term_id: UUID | None = None
+    content_format_term_id: UUID | None = None
+    access_level_term_id: UUID | None = None
+    related_content_entry_ids: list[UUID] = Field(default_factory=list)  # pyright: ignore[reportUnknownVariableType]
+
+
 class ContentRevisionOut(ApiSchema):
     entry_id: UUID
     revision_id: UUID
     content_type: ContentType
+    management: ContentManagement
     slug: str
     locale: str
     template: ContentTemplate
     slot_data: dict[str, object]
     seo: SeoFields
+    discovery: ContentDiscoveryMetadata
     status: RevisionStatus
     version_label: str
     lock_version: int
@@ -61,6 +78,7 @@ class PublicContentRevisionOut(ApiSchema):
     """Published CMS override without staff identity or edit metadata."""
 
     content_type: ContentType
+    management: ContentManagement
     slug: str
     locale: str
     template: ContentTemplate
@@ -83,6 +101,7 @@ class UpdateContentRevisionRequest(ApiSchema):
     lock_version: int
     slot_data: dict[str, object] | None = None
     seo: SeoFields | None = None
+    discovery: ContentDiscoveryMetadata | None = None
 
 
 class TransitionRequest(ApiSchema):
@@ -98,7 +117,7 @@ class RecordReviewDecisionRequest(ApiSchema):
 class ContentFindingOut(ApiSchema):
     rule_id: str
     rule_version: str
-    severity: str
+    severity: Severity
     message: str
     remediation: str
     field_path: str | None = None
@@ -106,9 +125,20 @@ class ContentFindingOut(ApiSchema):
 
 
 class PublishBlockOut(ApiSchema):
-    stage: str
+    stage: PublishStage
     findings: list[ContentFindingOut]
     missing: list[ApprovalCapability]
+
+
+class ContentHealthOut(ApiSchema):
+    """Read-only result for one saved revision (CG-D4)."""
+
+    rule_set_version: str
+    checked_at: datetime
+    summary: dict[str, int]
+    findings: list[ContentFindingOut]
+    required_approvals: list[ApprovalCapability]
+    missing_approvals: list[ApprovalCapability]
 
 
 class NormalizeRichHtmlRequest(ApiSchema):

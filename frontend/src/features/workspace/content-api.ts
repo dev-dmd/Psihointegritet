@@ -3,20 +3,14 @@
  * through `app/api/content/**` Next Route Handlers — same pattern as
  * `legal-documents-api.ts` → `app/api/privacy/documents/**`.
  *
- * **CG-C1b scope: draft editing only.** No publish-check/transition/reviews
- * client here — those are CG-C4 (lifecycle), a separate step so this
- * editor's smoke test never depends on objava/pregled (see `TODO.md` §5D
- * Faza 1, korak 1.2). The backend endpoints already exist; this file simply
- * doesn't call them yet.
- *
- * **Hand-typed, not generated** — same reasoning as `legal-documents-api.ts`
- * (D-047, no `npm run api:generate` pass yet). `ApiSchema`'s
- * `alias_generator=to_camel` on the backend means the wire shape is already
- * camelCase — no case conversion happens here.
+ * Covers draft CRUD, lifecycle and the saved-revision Content Health surface.
+ * The small hand-written adapter keeps panel-specific names stable while the
+ * generated OpenAPI contract remains the wire authority. `ApiSchema`'s
+ * `alias_generator=to_camel` means no runtime case conversion is needed.
  */
 
-import { isApiProblem } from "@/lib/errors/api-problem";
 import type { ActorSummary } from "@/components/panel/actor-badge";
+import { isApiProblem } from "@/lib/errors/api-problem";
 import type {
   ApprovalCapability,
   ContentTemplate,
@@ -38,11 +32,13 @@ export interface ApiContentRevision {
   entryId: string;
   revisionId: string;
   contentType: ContentType;
+  management: "system";
   slug: string;
   locale: string;
   template: ContentTemplate;
   slotData: Record<string, unknown>;
   seo: SeoFields;
+  discovery: ApiContentDiscovery;
   status: PublicationStatus;
   versionLabel: string;
   lockVersion: number;
@@ -50,6 +46,17 @@ export interface ApiContentRevision {
   createdBy: ActorSummary | null;
   updatedBy: ActorSummary | null;
   updatedAt: string;
+}
+
+export interface ApiContentDiscovery {
+  topicGroupTermId: string | null;
+  topicTermIds: string[];
+  audienceTermIds: string[];
+  contentGoalTermIds: string[];
+  journeyIntentTermId: string | null;
+  contentFormatTermId: string | null;
+  accessLevelTermId: string | null;
+  relatedContentEntryIds: string[];
 }
 
 export interface RichDocNormalizationFinding {
@@ -69,7 +76,7 @@ export interface RichDocNormalizationResult {
 export interface ApiContentFinding {
   ruleId: string;
   ruleVersion: string;
-  severity: string;
+  severity: "info" | "warning" | "error";
   message: string;
   remediation: string;
   fieldPath: string | null;
@@ -80,6 +87,15 @@ export interface ApiContentPublishBlock {
   stage: "content" | "transition" | "approvals";
   findings: ApiContentFinding[];
   missing: ApprovalCapability[];
+}
+
+export interface ApiContentHealth {
+  ruleSetVersion: string;
+  checkedAt: string;
+  summary: Record<"info" | "warning" | "error", number>;
+  findings: ApiContentFinding[];
+  requiredApprovals: ApprovalCapability[];
+  missingApprovals: ApprovalCapability[];
 }
 
 export class ContentApiError extends Error {
@@ -100,13 +116,16 @@ async function parseOrThrow<T>(response: Response): Promise<T> {
     // (detail=X)` becomes `title: X`, not `detail` (that field is only set
     // by the 500 handler's generic message). Reading raw response text
     // directly here would show the user the whole JSON envelope instead of
-    // the actual message — same latent bug `legal-documents-api.ts` still
-    // has; fixed here since CG-C1b needs a real, readable 409 message.
+    // the actual message. Server failures are deliberately translated below
+    // while retaining their correlation ID for support.
     let message = text || `Zahtev nije uspeo (${response.status}).`;
     try {
       const parsed: unknown = text ? JSON.parse(text) : null;
       if (isApiProblem(parsed)) {
-        message = parsed.detail ?? parsed.title;
+        message =
+          parsed.status >= 500
+            ? `Server trenutno ne može da obradi zahtev. Pokušajte ponovo. Ako se greška ponovi, pošaljite podršci ID greške: ${parsed.correlationId}.`
+            : (parsed.detail ?? parsed.title);
       }
     } catch {
       // Not JSON (network failure, proxy error page…) — keep the raw text.
@@ -150,6 +169,7 @@ export async function updateContentRevision(
     lockVersion: number;
     slotData?: Record<string, unknown>;
     seo?: SeoFields;
+    discovery?: ApiContentDiscovery;
   },
 ): Promise<ApiContentRevision> {
   const response = await fetch(
@@ -194,6 +214,17 @@ export async function checkContentPublishable(
     { cache: "no-store" },
   );
   return parseOrThrow<ApiContentPublishBlock | null>(response);
+}
+
+export async function fetchContentRevisionHealth(
+  entryId: string,
+  revisionId: string,
+): Promise<ApiContentHealth> {
+  const response = await fetch(
+    `/api/content/entries/${encodeURIComponent(entryId)}/revisions/${encodeURIComponent(revisionId)}/content-health`,
+    { cache: "no-store" },
+  );
+  return parseOrThrow<ApiContentHealth>(response);
 }
 
 export async function transitionContentRevision(

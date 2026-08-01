@@ -23,7 +23,8 @@ export type LegalDocumentKind =
   | "privacy_policy"
   | "terms_of_use"
   | "cookie_policy"
-  | "booking_rules";
+  | "booking_rules"
+  | "custom_document";
 
 export type RevisionStatus =
   "draft" | "in_review" | "approved" | "published" | "archived";
@@ -40,6 +41,7 @@ export interface LegalDocument {
    */
   revisionId: string;
   kind: LegalDocumentKind;
+  management: "document";
   title: string;
   slug: string;
   /** RichDoc v1 JSON (ADR-017 Amendment 1 §A1.3, CG-B9) — was a plain string. */
@@ -76,6 +78,7 @@ export const REQUIRED_APPROVALS: Record<
   terms_of_use: ["legal"],
   cookie_policy: ["legal"],
   booking_rules: ["legal", "business"],
+  custom_document: ["legal", "business"],
 };
 
 /** Kinds whose published revision opens an Intake consent gate. */
@@ -91,6 +94,7 @@ export const KIND_LABELS: Record<LegalDocumentKind, string> = {
   terms_of_use: "Uslovi korišćenja",
   cookie_policy: "Politika kolačića",
   booking_rules: "Pravila zakazivanja",
+  custom_document: "Dokument ili saglasnost po meri",
 };
 
 export const STATUS_LABELS: Record<RevisionStatus, string> = {

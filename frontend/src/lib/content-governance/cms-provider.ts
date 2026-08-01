@@ -19,12 +19,69 @@ import type {
 
 export interface PublishedContentOverride {
   contentType: ContentType;
+  management: "system";
   slug: string;
   locale: string;
   template: ContentEntity["template"];
   slotData: Record<string, unknown>;
   seo: SeoFields;
   publishedAt: string;
+}
+
+const contentTypes = new Set<ContentType>([
+  "static_page",
+  "service",
+  "therapist",
+  "program",
+  "company_plan",
+  "package_offer",
+]);
+
+const contentTemplates = new Set<ContentEntity["template"]>([
+  "service_detail",
+  "therapist_profile",
+  "support_area",
+  "audience_page",
+  "program_detail",
+  "company_page",
+  "pricing_page",
+  "static_information",
+  "legal_page",
+]);
+
+/** Runtime boundary shared by the public resolver and `content:check`. */
+export function parsePublishedContentOverrides(
+  value: unknown,
+): PublishedContentOverride[] | null {
+  if (!Array.isArray(value)) return null;
+  const revisions: PublishedContentOverride[] = [];
+  for (const item of value) {
+    if (!item || typeof item !== "object") return null;
+    const revision = item as Record<string, unknown>;
+    const seo = revision.seo;
+    if (
+      !contentTypes.has(revision.contentType as ContentType) ||
+      revision.management !== "system" ||
+      typeof revision.slug !== "string" ||
+      typeof revision.locale !== "string" ||
+      !contentTemplates.has(revision.template as ContentEntity["template"]) ||
+      !revision.slotData ||
+      typeof revision.slotData !== "object" ||
+      Array.isArray(revision.slotData) ||
+      !seo ||
+      typeof seo !== "object" ||
+      Array.isArray(seo) ||
+      typeof (seo as Record<string, unknown>).title !== "string" ||
+      typeof (seo as Record<string, unknown>).description !== "string" ||
+      ((seo as Record<string, unknown>).ogImageAssetId !== undefined &&
+        typeof (seo as Record<string, unknown>).ogImageAssetId !== "string") ||
+      typeof revision.publishedAt !== "string"
+    ) {
+      return null;
+    }
+    revisions.push(item as PublishedContentOverride);
+  }
+  return revisions;
 }
 
 type OverrideSlot = {

@@ -11,6 +11,8 @@ on:
 jobs:
   check:
     runs-on: ubuntu-latest
+    env:
+      NEXT_PUBLIC_API_URL: ${{ secrets.CMS_PUBLIC_URL }}
     defaults:
       run:
         working-directory: frontend

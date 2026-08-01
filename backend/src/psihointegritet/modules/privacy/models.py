@@ -48,13 +48,23 @@ class LegalDocumentKind(StrEnum):
     TERMS_OF_USE = "terms_of_use"
     COOKIE_POLICY = "cookie_policy"
     BOOKING_RULES = "booking_rules"
+    CUSTOM_DOCUMENT = "custom_document"
 
 
 class LegalDocument(Base):
-    """Stable identity for one document kind inside one organization."""
+    """Stable identity for a protected kind or one custom document."""
 
     __tablename__ = "legal_documents"
-    __table_args__ = (UniqueConstraint("organization_id", "kind", name="uq_legal_document_kind"),)
+    __table_args__ = (
+        UniqueConstraint("organization_id", "slug", name="uq_legal_document_slug"),
+        Index(
+            "uq_legal_document_protected_kind",
+            "organization_id",
+            "kind",
+            unique=True,
+            postgresql_where=text("kind <> 'custom_document'"),
+        ),
+    )
 
     id: Mapped[UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid4)
     organization_id: Mapped[UUID] = mapped_column(
@@ -63,6 +73,9 @@ class LegalDocument(Base):
     kind: Mapped[LegalDocumentKind] = mapped_column(
         value_enum(LegalDocumentKind, length=64), nullable=False
     )
+    # Stable public identity. Revisions retain their historical slug snapshot,
+    # but changing a title/body never silently moves the public route.
+    slug: Mapped[str] = mapped_column(String(80), nullable=False)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
@@ -96,14 +109,8 @@ class LegalDocumentRevision(Base):
     version_label: Mapped[str] = mapped_column(String(80))
     locale: Mapped[str] = mapped_column(String(16), default="sr-Latn", server_default="sr-Latn")
     title: Mapped[str] = mapped_column(String(200))
-    # Added in CG-B9/LD-7 (migration 20260729_0005): the column never
-    # existed even though `publication.py::content_problems`/
-    # `check_publishable` and the frontend `LegalDocument.slug` both already
-    # treated it as part of the document's identity — nothing had actually
-    # persisted it until the LD-7 service/router needed a real column to
-    # read and write. No uniqueness constraint yet — the panel's client-side
-    # check (`existingSlugs.includes`) is advisory only, same gap CG-B9
-    # already flagged for `create_document`.
+    # Historical snapshot retained for consent evidence. The stable and
+    # tenant-unique public identity now lives on `LegalDocument.slug`.
     slug: Mapped[str] = mapped_column(String(80), default="", server_default="")
     # RichDoc v1 JSON (ADR-017 Amendment 1 §A1.3, CG-B9). Was a plain `Text`
     # column under `20260726_0004`; a dedicated migration converts existing

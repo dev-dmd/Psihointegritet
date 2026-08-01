@@ -51,6 +51,10 @@ __all__ = [
     "ContentEntry",
     "ContentPublicationEvent",
     "ContentReviewDecision",
+    "ContentRevisionDiscovery",
+    "ContentRevisionRelation",
+    "ContentRevisionTaxonomyTerm",
+    "ContentTaxonomyRole",
     "ContentTemplate",
     "ContentType",
     "ReviewOutcome",
@@ -99,6 +103,15 @@ class ReviewOutcome(StrEnum):
 
     APPROVED = "approved"
     REJECTED = "rejected"
+
+
+class ContentTaxonomyRole(StrEnum):
+    """Controlled meaning of a Kompas term reference on one CMS revision."""
+
+    TOPIC_GROUP = "topic_group"
+    TOPIC = "topic"
+    AUDIENCE = "audience"
+    CONTENT_GOAL = "content_goal"
 
 
 class ContentEntry(Base):
@@ -215,6 +228,82 @@ class ContentRevision(Base):
     # is the documented SQLAlchemy 2.0 mechanism for exactly this guarantee,
     # not a hand-rolled `UPDATE ... WHERE` — same outcome, no raw SQL needed.
     __mapper_args__ = {"version_id_col": lock_version}  # noqa: RUF012 — matches DeclarativeBase's own (non-ClassVar) typing
+
+
+class ContentRevisionTaxonomyTerm(Base):
+    """A controlled topic, audience or goal reference for one revision.
+
+    It points to the stable taxonomy identity, not presentation copy.  The
+    service verifies the axis, tenant scope and published registry revision.
+    """
+
+    __tablename__ = "content_revision_taxonomy_terms"
+    __table_args__ = (
+        UniqueConstraint(
+            "revision_id", "term_id", "role", name="uq_content_revision_taxonomy_term"
+        ),
+    )
+
+    id: Mapped[UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid4)
+    revision_id: Mapped[UUID] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("content_revisions.id", ondelete="CASCADE"),
+        index=True,
+    )
+    term_id: Mapped[UUID] = mapped_column(
+        Uuid(as_uuid=True), ForeignKey("taxonomy_terms.id", ondelete="RESTRICT"), index=True
+    )
+    role: Mapped[ContentTaxonomyRole] = mapped_column(
+        value_enum(ContentTaxonomyRole, length=32), nullable=False
+    )
+
+
+class ContentRevisionDiscovery(Base):
+    """Single-choice discovery metadata for one revision.
+
+    This contains IDs only. Labels stay in the registry and access evaluation
+    stays at the public boundary; therefore no user-entered taxonomy strings
+    can become recommendation logic.
+    """
+
+    __tablename__ = "content_revision_discovery"
+
+    revision_id: Mapped[UUID] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("content_revisions.id", ondelete="CASCADE"),
+        primary_key=True,
+    )
+    journey_intent_term_id: Mapped[UUID | None] = mapped_column(
+        Uuid(as_uuid=True), ForeignKey("taxonomy_terms.id", ondelete="RESTRICT"), nullable=True
+    )
+    content_format_term_id: Mapped[UUID | None] = mapped_column(
+        Uuid(as_uuid=True), ForeignKey("taxonomy_terms.id", ondelete="RESTRICT"), nullable=True
+    )
+    access_level_term_id: Mapped[UUID | None] = mapped_column(
+        Uuid(as_uuid=True), ForeignKey("taxonomy_terms.id", ondelete="RESTRICT"), nullable=True
+    )
+
+
+class ContentRevisionRelation(Base):
+    """A reviewed relation from authored content to a published service/program.
+
+    A target is an existing CMS entry rather than a therapist, arbitrary URL or
+    affiliate target. The service checks its current published revision before
+    accepting the relation.
+    """
+
+    __tablename__ = "content_revision_relations"
+    __table_args__ = (
+        UniqueConstraint("revision_id", "target_entry_id", name="uq_content_revision_relation"),
+    )
+
+    id: Mapped[UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid4)
+    revision_id: Mapped[UUID] = mapped_column(
+        Uuid(as_uuid=True), ForeignKey("content_revisions.id", ondelete="CASCADE"), index=True
+    )
+    target_entry_id: Mapped[UUID] = mapped_column(
+        Uuid(as_uuid=True), ForeignKey("content_entries.id", ondelete="RESTRICT"), index=True
+    )
 
 
 class ContentReviewDecision(Base):

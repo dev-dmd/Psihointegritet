@@ -57,6 +57,12 @@ export type ContentType =
   | "company_plan"
   | "package_offer";
 
+/**
+ * Explicit ownership of a public content identity. Templates describe shape;
+ * they never decide which CMS workflow owns the record.
+ */
+export type ContentManagement = "system" | "document" | "article" | "internal";
+
 export type ContentTemplate =
   | "service_detail"
   | "therapist_profile"
@@ -154,6 +160,7 @@ export interface AssetReference {
 export interface ContentEntityBase {
   id: string;
   type: ContentType;
+  management: ContentManagement;
   route: string;
   canonicalSlug: string;
   publicationStatus: PublicationStatus;
@@ -246,6 +253,8 @@ export type ContentHealthSeverity = "info" | "warning" | "error";
 
 export interface ContentHealthFinding {
   ruleId: string;
+  /** Additive in Content Health v0.2; omitted only by legacy/import adapters. */
+  ruleVersion?: string;
   severity: ContentHealthSeverity;
   entityType: string;
   entityId: string;

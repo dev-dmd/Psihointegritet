@@ -259,9 +259,10 @@ def structural_findings(
 ) -> tuple[ContentFinding, ...]:
     """Template-shape checks the backend can run on its own.
 
-    This is the independent server-side floor, not the whole rule set: SEO,
-    CTA, character limits and discoverability rules stay with the shared rule
-    engine and arrive with CG-D4. `MODEL-004` is an additive rule ID for a
+    This is the independent template-shape floor. CG-D4's
+    `modules/content/health.py` adds field/mode, RichDoc, CTA, asset and limit
+    findings, while the TypeScript pass validates the merged public fallback
+    and discoverability output. `MODEL-004` is an additive rule ID for a
     missing required slot, which `MODEL-003` (a disallowed slot) does not
     cover. A required slot whose `SLOT_SPEC_REGISTRY` entry is `computed` is
     exempt from `MODEL-004` — it is derived at render time and is never

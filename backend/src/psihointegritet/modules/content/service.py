@@ -12,15 +12,23 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from uuid import UUID
 
-from sqlalchemy import select
+from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm.exc import StaleDataError
 
+from psihointegritet.modules.content.health import (
+    CONTENT_HEALTH_RULESET_VERSION,
+    authored_content_findings,
+)
 from psihointegritet.modules.content.models import (
     ContentEntry,
     ContentPublicationEvent,
     ContentReviewDecision,
     ContentRevision,
+    ContentRevisionDiscovery,
+    ContentRevisionRelation,
+    ContentRevisionTaxonomyTerm,
+    ContentTaxonomyRole,
     ContentType,
 )
 from psihointegritet.modules.content.publication import (
@@ -34,7 +42,9 @@ from psihointegritet.modules.content.publication import (
     structural_findings,
 )
 from psihointegritet.modules.content.schemas import (
+    ContentDiscoveryMetadata,
     ContentFindingOut,
+    ContentHealthOut,
     ContentRevisionOut,
     CreateContentEntryRequest,
     PublicContentRevisionOut,
@@ -45,9 +55,19 @@ from psihointegritet.modules.content.schemas import (
     TransitionRequest,
     UpdateContentRevisionRequest,
 )
+from psihointegritet.modules.content.system_catalog import (
+    is_system_content_definition,
+    require_system_content_definition,
+)
+from psihointegritet.modules.content.taxonomy_models import (
+    TaxonomyAxis,
+    TaxonomyTerm,
+    TaxonomyTermRevision,
+)
 from psihointegritet.modules.guidance.authorization import StaffActor
 from psihointegritet.modules.identity.models import InternalUser
 from psihointegritet.modules.identity.schemas import ActorSummaryOut
+from psihointegritet.shared.domain.content_management import ContentManagement
 from psihointegritet.shared.domain.publication import (
     CannotDeleteRevisionError,
     RevisionStatus,
@@ -75,6 +95,7 @@ class ContentForbiddenError(PermissionError):
 class PublishCheckResult:
     ok: bool
     block: PublishBlockOut | None
+    outcome: ContentPublishCheck
 
 
 class ContentService:
@@ -141,6 +162,213 @@ class ContentService:
             is_superadmin=user.is_superadmin,
         )
 
+    async def _discovery(self, revision_id: UUID) -> ContentDiscoveryMetadata:
+        """Read stable IDs through their role; absent metadata is intentional.
+
+        Existing system pages predate Kompas and stay editable/publishable. A
+        separate eligibility finding explains why they are not catalogue
+        material until an editor completes these controlled fields.
+        """
+        references = (
+            await self._session.scalars(
+                select(ContentRevisionTaxonomyTerm).where(
+                    ContentRevisionTaxonomyTerm.revision_id == revision_id
+                )
+            )
+        ).all()
+        discovery = await self._session.get(ContentRevisionDiscovery, revision_id)
+        relations = (
+            await self._session.scalars(
+                select(ContentRevisionRelation.target_entry_id).where(
+                    ContentRevisionRelation.revision_id == revision_id
+                )
+            )
+        ).all()
+        by_role: dict[ContentTaxonomyRole, list[UUID]] = {}
+        for reference in references:
+            by_role.setdefault(reference.role, []).append(reference.term_id)
+        return ContentDiscoveryMetadata(
+            topic_group_term_id=(by_role.get(ContentTaxonomyRole.TOPIC_GROUP) or [None])[0],
+            topic_term_ids=by_role.get(ContentTaxonomyRole.TOPIC, []),
+            audience_term_ids=by_role.get(ContentTaxonomyRole.AUDIENCE, []),
+            content_goal_term_ids=by_role.get(ContentTaxonomyRole.CONTENT_GOAL, []),
+            journey_intent_term_id=(
+                discovery.journey_intent_term_id if discovery is not None else None
+            ),
+            content_format_term_id=(
+                discovery.content_format_term_id if discovery is not None else None
+            ),
+            access_level_term_id=(
+                discovery.access_level_term_id if discovery is not None else None
+            ),
+            related_content_entry_ids=list(relations),
+        )
+
+    async def _require_taxonomy_term(
+        self,
+        actor: StaffActor,
+        term_id: UUID,
+        axis: TaxonomyAxis,
+        locale: str,
+        field_path: str,
+    ) -> TaxonomyTermRevision:
+        term = await self._session.get(TaxonomyTerm, term_id)
+        if (
+            term is None
+            or term.axis is not axis
+            or term.organization_id
+            not in (
+                None,
+                actor.organization_id,
+            )
+        ):
+            raise ValueError("Izaberite aktivnu vrednost iz odgovarajuće Kompas liste.")
+        tenant_revision = await self._session.scalar(
+            select(TaxonomyTermRevision).where(
+                TaxonomyTermRevision.term_id == term.id,
+                TaxonomyTermRevision.organization_id == actor.organization_id,
+                TaxonomyTermRevision.locale == locale,
+                TaxonomyTermRevision.status == RevisionStatus.PUBLISHED,
+            )
+        )
+        revision = tenant_revision
+        if revision is None and term.system_defined:
+            revision = await self._session.scalar(
+                select(TaxonomyTermRevision).where(
+                    TaxonomyTermRevision.term_id == term.id,
+                    TaxonomyTermRevision.organization_id.is_(None),
+                    TaxonomyTermRevision.locale == locale,
+                    TaxonomyTermRevision.status == RevisionStatus.PUBLISHED,
+                )
+            )
+        if revision is None or revision.status is RevisionStatus.ARCHIVED:
+            raise ValueError(
+                f"Izabrana Kompas vrednost za „{field_path}” nije objavljena i aktivna."
+            )
+        return revision
+
+    async def _replace_discovery(
+        self,
+        actor: StaffActor,
+        revision: ContentRevision,
+        locale: str,
+        metadata: ContentDiscoveryMetadata,
+    ) -> None:
+        """Persist only registry IDs, after validating every reference server-side."""
+        unique_topic_ids = list(dict.fromkeys(metadata.topic_term_ids))
+        unique_audience_ids = list(dict.fromkeys(metadata.audience_term_ids))
+        unique_goal_ids = list(dict.fromkeys(metadata.content_goal_term_ids))
+        if metadata.topic_group_term_id is not None:
+            await self._require_taxonomy_term(
+                actor, metadata.topic_group_term_id, TaxonomyAxis.TOPIC_GROUP, locale, "oblast"
+            )
+        for term_id in unique_topic_ids:
+            topic_revision = await self._require_taxonomy_term(
+                actor, term_id, TaxonomyAxis.TOPIC, locale, "teme"
+            )
+            if (
+                metadata.topic_group_term_id is not None
+                and topic_revision.primary_parent_term_id != metadata.topic_group_term_id
+            ):
+                raise ValueError("Svaka izabrana tema mora pripadati izabranoj oblasti.")
+        for term_id in unique_audience_ids:
+            await self._require_taxonomy_term(
+                actor, term_id, TaxonomyAxis.AUDIENCE, locale, "publika"
+            )
+        for term_id in unique_goal_ids:
+            await self._require_taxonomy_term(
+                actor, term_id, TaxonomyAxis.CONTENT_GOAL, locale, "cilj sadržaja"
+            )
+        if metadata.journey_intent_term_id is not None:
+            await self._require_taxonomy_term(
+                actor,
+                metadata.journey_intent_term_id,
+                TaxonomyAxis.JOURNEY_INTENT,
+                locale,
+                "put korisnika",
+            )
+        if metadata.content_format_term_id is not None:
+            await self._require_taxonomy_term(
+                actor,
+                metadata.content_format_term_id,
+                TaxonomyAxis.CONTENT_FORMAT,
+                locale,
+                "format",
+            )
+        if metadata.access_level_term_id is not None:
+            access = await self._require_taxonomy_term(
+                actor, metadata.access_level_term_id, TaxonomyAxis.ACCESS_LEVEL, locale, "pristup"
+            )
+            # The only currently public CMS renderer is public. Do not let an
+            # editor select an entitlement label the route cannot enforce.
+            access_term = await self._session.get(TaxonomyTerm, access.term_id)
+            if access_term is None or access_term.stable_id != "public":
+                raise ValueError(
+                    "Za postojeće CMS stranice trenutno je dostupan samo javni pristup."
+                )
+        related_entry_ids = list(dict.fromkeys(metadata.related_content_entry_ids))
+        for target_entry_id in related_entry_ids:
+            if target_entry_id == revision.entry_id:
+                raise ValueError("Sadržaj ne može preporučiti samog sebe.")
+            target = await self._session.scalar(
+                select(ContentEntry).where(
+                    ContentEntry.id == target_entry_id,
+                    ContentEntry.organization_id == actor.organization_id,
+                    ContentEntry.content_type.in_((ContentType.SERVICE, ContentType.PROGRAM)),
+                )
+            )
+            if target is None:
+                raise ValueError(
+                    "Možete povezati samo postojeću uslugu ili program svoje organizacije."
+                )
+            published = await self._session.scalar(
+                select(ContentRevision.id).where(
+                    ContentRevision.entry_id == target.id,
+                    ContentRevision.status == RevisionStatus.PUBLISHED,
+                )
+            )
+            if published is None:
+                raise ValueError("Povezana usluga ili program prvo mora biti objavljen.")
+
+        await self._session.execute(
+            delete(ContentRevisionTaxonomyTerm).where(
+                ContentRevisionTaxonomyTerm.revision_id == revision.id
+            )
+        )
+        await self._session.execute(
+            delete(ContentRevisionRelation).where(
+                ContentRevisionRelation.revision_id == revision.id
+            )
+        )
+        role_values = (
+            (
+                ContentTaxonomyRole.TOPIC_GROUP,
+                [metadata.topic_group_term_id] if metadata.topic_group_term_id else [],
+            ),
+            (ContentTaxonomyRole.TOPIC, unique_topic_ids),
+            (ContentTaxonomyRole.AUDIENCE, unique_audience_ids),
+            (ContentTaxonomyRole.CONTENT_GOAL, unique_goal_ids),
+        )
+        for role, term_ids in role_values:
+            for term_id in term_ids:
+                self._session.add(
+                    ContentRevisionTaxonomyTerm(revision_id=revision.id, term_id=term_id, role=role)
+                )
+        for target_entry_id in related_entry_ids:
+            self._session.add(
+                ContentRevisionRelation(
+                    revision_id=revision.id,
+                    target_entry_id=target_entry_id,
+                )
+            )
+        row = await self._session.get(ContentRevisionDiscovery, revision.id)
+        if row is None:
+            row = ContentRevisionDiscovery(revision_id=revision.id)
+            self._session.add(row)
+        row.journey_intent_term_id = metadata.journey_intent_term_id
+        row.content_format_term_id = metadata.content_format_term_id
+        row.access_level_term_id = metadata.access_level_term_id
+
     async def _to_schema(
         self, entry: ContentEntry, revision: ContentRevision, decisions: list[ContentReviewDecision]
     ) -> ContentRevisionOut:
@@ -150,11 +378,13 @@ class ContentService:
             entry_id=entry.id,
             revision_id=revision.id,
             content_type=entry.content_type,
+            management=ContentManagement.SYSTEM,
             slug=entry.slug,
             locale=entry.locale,
             template=revision.template,
             slot_data=revision.slot_data,
             seo=SeoFields.model_validate(revision.seo),
+            discovery=await self._discovery(revision.id),
             status=revision.status,
             version_label=revision.version_label,
             lock_version=revision.lock_version,
@@ -187,6 +417,7 @@ class ContentService:
     async def list_entries(
         self, actor: StaffActor, content_type: ContentType | None = None
     ) -> list[ContentRevisionOut]:
+        self._require_org_admin(actor)
         query = select(ContentEntry).where(ContentEntry.organization_id == actor.organization_id)
         if content_type is not None:
             query = query.where(ContentEntry.content_type == content_type)
@@ -222,6 +453,7 @@ class ContentService:
         return [
             PublicContentRevisionOut(
                 content_type=entry.content_type,
+                management=ContentManagement.SYSTEM,
                 slug=entry.slug,
                 locale=entry.locale,
                 template=revision.template,
@@ -230,19 +462,46 @@ class ContentService:
                 published_at=revision.published_at or revision.updated_at,
             )
             for entry, revision in rows
+            if is_system_content_definition(
+                entry.content_type,
+                entry.slug,
+                revision.template,
+                entry.locale,
+            )
         ]
 
     async def get_entry(self, actor: StaffActor, entry_id: UUID) -> ContentRevisionOut:
+        self._require_org_admin(actor)
         entry = await self._entry(actor, entry_id)
         revision = await self._latest_revision(entry.id)
         if revision is None:
             raise ContentNotFoundError(f"Entry {entry_id} has no revision")
         return await self._to_schema_loaded(entry, revision)
 
+    async def get_revision_preview(
+        self, actor: StaffActor, entry_id: UUID, revision_id: UUID
+    ) -> ContentRevisionOut:
+        """Exact saved revision for the private staff preview (CG-D3).
+
+        This deliberately does not use `list_published`: draft/review content
+        is returned only after tenant scope and org_admin authorization.
+        """
+
+        self._require_org_admin(actor)
+        entry = await self._entry(actor, entry_id)
+        revision = await self._revision(actor, entry_id, revision_id)
+        return await self._to_schema_loaded(entry, revision)
+
     async def create_entry(
         self, actor: StaffActor, request: CreateContentEntryRequest
     ) -> ContentRevisionOut:
         self._require_org_admin(actor)
+        require_system_content_definition(
+            request.content_type,
+            request.slug,
+            request.template,
+            request.locale,
+        )
         existing = await self._session.scalar(
             select(ContentEntry).where(
                 ContentEntry.organization_id == actor.organization_id,
@@ -252,18 +511,23 @@ class ContentService:
             )
         )
         if existing is not None:
-            raise ContentConflictError(
-                f"An entry with slug {request.slug!r} already exists for this type and locale"
+            # Older delete behavior could leave an entry with no revisions.
+            # Reuse that stable identity so a protected page never gets stuck
+            # behind a permanent 409.
+            if await self._latest_revision(existing.id) is not None:
+                raise ContentConflictError(
+                    f"An entry with slug {request.slug!r} already exists for this type and locale"
+                )
+            entry = existing
+        else:
+            entry = ContentEntry(
+                organization_id=actor.organization_id,
+                content_type=request.content_type,
+                slug=request.slug,
+                locale=request.locale,
             )
-
-        entry = ContentEntry(
-            organization_id=actor.organization_id,
-            content_type=request.content_type,
-            slug=request.slug,
-            locale=request.locale,
-        )
-        self._session.add(entry)
-        await self._session.flush()
+            self._session.add(entry)
+            await self._session.flush()
 
         revision = ContentRevision(
             entry_id=entry.id,
@@ -281,7 +545,7 @@ class ContentService:
         return await self._to_schema_loaded(entry, revision)
 
     async def _reissue_if_needed(
-        self, revision: ContentRevision, actor: StaffActor
+        self, revision: ContentRevision, actor: StaffActor, locale: str
     ) -> ContentRevision:
         """Contract A.2 — same reissue rule as the legal registry
         (`modules/privacy/service.py::_reissue_if_needed`): `approved` and
@@ -306,6 +570,8 @@ class ContentService:
         )
         self._session.add(reissued)
         await self._session.flush()
+        previous_discovery = await self._discovery(revision.id)
+        await self._replace_discovery(actor, reissued, locale, previous_discovery)
         await self._log_event(reissued.id, None, RevisionStatus.DRAFT, actor, reason="reissued")
         return reissued
 
@@ -329,7 +595,7 @@ class ContentService:
                 "Revizija je izmenjena u međuvremenu — osvežite i pokušajte ponovo."
             )
 
-        revision = await self._reissue_if_needed(revision, actor)
+        revision = await self._reissue_if_needed(revision, actor, entry.locale)
         if request.slot_data is not None:
             revision.slot_data = request.slot_data
         if request.seo is not None:
@@ -337,6 +603,8 @@ class ContentService:
                 by_alias=False,
                 exclude_none=True,
             )
+        if request.discovery is not None:
+            await self._replace_discovery(actor, revision, entry.locale, request.discovery)
         revision.updated_by_user_id = actor.user_id
 
         try:
@@ -353,25 +621,24 @@ class ContentService:
     async def check_publish(
         self, actor: StaffActor, entry_id: UUID, revision_id: UUID
     ) -> PublishCheckResult:
+        self._require_org_admin(actor)
         entry = await self._entry(actor, entry_id)
         revision = await self._revision(actor, entry_id, revision_id)
         decisions = [
             ReviewDecisionRecord(capability=d.capability, outcome=d.outcome)
             for d in await self._decisions(revision.id)
         ]
-        # `extra_findings` is deliberately empty: the slot schema / full rule
-        # engine (SEO, CTA, limits) lands with CG-C1/CG-D4. Only the
-        # structural required/allowed-slot check runs today.
+        extra_findings = authored_content_findings(entry, revision)
         outcome: ContentPublishCheck = check_publishable(
             entry.content_type,
             revision.template,
             revision.status,
             revision.slot_data,
             decisions,
-            extra_findings=(),
+            extra_findings=extra_findings,
         )
         if outcome.ok:
-            return PublishCheckResult(ok=True, block=None)
+            return PublishCheckResult(ok=True, block=None, outcome=outcome)
         return PublishCheckResult(
             ok=False,
             block=PublishBlockOut(
@@ -379,6 +646,44 @@ class ContentService:
                 findings=[_finding_out(f) for f in outcome.findings],
                 missing=sorted(outcome.missing, key=lambda item: item.value),
             ),
+            outcome=outcome,
+        )
+
+    async def content_health(
+        self, actor: StaffActor, entry_id: UUID, revision_id: UUID
+    ) -> ContentHealthOut:
+        """Always return findings for the saved revision, including warnings.
+
+        Publish-check remains the staged lifecycle endpoint and can return
+        `null` when publication is allowed. This endpoint is the read-only
+        Content Health surface, so a clean revision and a warning-only
+        revision remain distinguishable in the panel.
+        """
+
+        self._require_org_admin(actor)
+        entry = await self._entry(actor, entry_id)
+        revision = await self._revision(actor, entry_id, revision_id)
+        decisions = [
+            ReviewDecisionRecord(capability=item.capability, outcome=item.outcome)
+            for item in await self._decisions(revision.id)
+        ]
+        findings = (
+            structural_findings(revision.template, revision.slot_data)
+            + authored_content_findings(entry, revision)
+            + _discovery_findings(await self._discovery(revision.id))
+        )
+        required = effective_required_approvals(entry.content_type, revision.template, findings)
+        missing = required - granted_capabilities(decisions)
+        summary = {"info": 0, "warning": 0, "error": 0}
+        for finding in findings:
+            summary[finding.severity] += 1
+        return ContentHealthOut(
+            rule_set_version=CONTENT_HEALTH_RULESET_VERSION,
+            checked_at=datetime.now(UTC),
+            summary=summary,
+            findings=[_finding_out(item) for item in findings],
+            required_approvals=sorted(required, key=lambda item: item.value),
+            missing_approvals=sorted(missing, key=lambda item: item.value),
         )
 
     async def transition(
@@ -400,21 +705,27 @@ class ContentService:
             await self._archive_other_published(entry.id, revision.id, actor)
             revision.status = RevisionStatus.PUBLISHED
             revision.published_at = datetime.now(UTC)
+            revision.validation_snapshot = _validation_snapshot(check.outcome.findings)
             revision.updated_by_user_id = actor.user_id
             await self._log_event(revision.id, from_status, revision.status, actor)
         elif reissues_revision(revision.status, request.target):
             require_transition(revision.status, request.target)
-            revision = await self._reissue_if_needed(revision, actor)
+            revision = await self._reissue_if_needed(revision, actor, entry.locale)
         else:
             if request.target is RevisionStatus.APPROVED:
                 decisions = [
                     ReviewDecisionRecord(capability=item.capability, outcome=item.outcome)
                     for item in await self._decisions(revision.id)
                 ]
+                findings = structural_findings(
+                    revision.template, revision.slot_data
+                ) + authored_content_findings(entry, revision)
+                if any(item.severity == "error" for item in findings):
+                    raise ContentConflictError(
+                        "Revision cannot be approved while Content Health has blocking findings"
+                    )
                 required = effective_required_approvals(
-                    entry.content_type,
-                    revision.template,
-                    structural_findings(revision.template, revision.slot_data),
+                    entry.content_type, revision.template, findings
                 )
                 missing = required - granted_capabilities(decisions)
                 if missing:
@@ -422,6 +733,7 @@ class ContentService:
                     raise ContentConflictError(
                         f"Revision cannot be approved; missing decisions: {labels}"
                     )
+                revision.validation_snapshot = _validation_snapshot(findings)
             require_transition(revision.status, request.target)
             from_status = revision.status
             revision.status = request.target
@@ -496,6 +808,7 @@ class ContentService:
 
     async def delete_revision(self, actor: StaffActor, entry_id: UUID, revision_id: UUID) -> None:
         self._require_org_admin(actor)
+        entry = await self._entry(actor, entry_id)
         revision = await self._revision(actor, entry_id, revision_id)
         try:
             require_deletable(revision.status)
@@ -503,6 +816,12 @@ class ContentService:
             raise ContentConflictError(str(error)) from error
         await self._session.delete(revision)
         await self._session.flush()
+        remaining_revision_id = await self._session.scalar(
+            select(ContentRevision.id).where(ContentRevision.entry_id == entry.id).limit(1)
+        )
+        if remaining_revision_id is None:
+            await self._session.delete(entry)
+            await self._session.flush()
 
     async def _log_event(
         self,
@@ -533,6 +852,60 @@ def _finding_out(finding: ContentFinding) -> ContentFindingOut:
         field_path=finding.field_path,
         requires_approval=finding.requires_approval,
     )
+
+
+def _discovery_findings(metadata: ContentDiscoveryMetadata) -> tuple[ContentFinding, ...]:
+    """Eligibility is informative now: it never unpublishes a CMS route."""
+    missing: list[str] = []
+    if metadata.topic_group_term_id is None:
+        missing.append("oblast")
+    if not metadata.topic_term_ids:
+        missing.append("najmanje jednu temu")
+    if metadata.journey_intent_term_id is None:
+        missing.append("put korisnika")
+    if not metadata.content_goal_term_ids:
+        missing.append("cilj sadržaja")
+    if not metadata.audience_term_ids:
+        missing.append("publiku")
+    if metadata.content_format_term_id is None:
+        missing.append("format")
+    if metadata.access_level_term_id is None:
+        missing.append("nivo pristupa")
+    if not missing:
+        return ()
+    return (
+        ContentFinding(
+            rule_id="KOMPAS-ELIGIBILITY-001",
+            rule_version="1",
+            severity="warning",
+            message="Sadržaj još nema kompletne Kompas metapodatke.",
+            remediation="Dopunite: "
+            + ", ".join(missing)
+            + ". Stranica može ostati objavljena, ali se neće prikazivati u Kompas preporukama.",
+            field_path="discovery",
+        ),
+    )
+
+
+def _validation_snapshot(findings: tuple[ContentFinding, ...]) -> dict[str, object]:
+    """Durable evidence of the ruleset applied at approve/publish time."""
+
+    return {
+        "ruleSetVersion": CONTENT_HEALTH_RULESET_VERSION,
+        "checkedAt": datetime.now(UTC).isoformat(),
+        "findings": [
+            {
+                "ruleId": finding.rule_id,
+                "ruleVersion": finding.rule_version,
+                "severity": finding.severity,
+                "fieldPath": finding.field_path,
+                "requiresApproval": (
+                    finding.requires_approval.value if finding.requires_approval else None
+                ),
+            }
+            for finding in findings
+        ],
+    }
 
 
 def _next_version_label(current: str) -> str:

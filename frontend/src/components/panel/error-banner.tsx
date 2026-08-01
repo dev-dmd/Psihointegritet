@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect, useRef } from "react";
+
 import type { PanelError } from "@/features/workspace/panel-errors";
 
 interface ErrorBannerProps {
@@ -13,10 +15,29 @@ interface ErrorBannerProps {
  * screen, plus the specifics. Renders nothing when the tab is clean.
  */
 export function ErrorBanner({ errors, onDismiss }: ErrorBannerProps) {
+  const bannerRef = useRef<HTMLDivElement>(null);
+  const errorKey = errors
+    .map((error) => `${error.id}:${error.createdAt}`)
+    .join("|");
+
+  useEffect(() => {
+    if (!errorKey) return;
+    const animationFrame = requestAnimationFrame(() => {
+      window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
+    });
+    return () => cancelAnimationFrame(animationFrame);
+  }, [errorKey]);
+
   if (errors.length === 0) return null;
 
   return (
-    <div className="mb-5 flex flex-col gap-3" role="alert" aria-live="polite">
+    <div
+      ref={bannerRef}
+      tabIndex={-1}
+      className="mb-5 flex scroll-mt-6 flex-col gap-3 outline-none"
+      role="alert"
+      aria-live="polite"
+    >
       {errors.map((error) => (
         <div
           key={error.id}

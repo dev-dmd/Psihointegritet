@@ -1,6 +1,8 @@
 "use client";
 
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import type { Route } from "next";
+import Link from "next/link";
 import { useMemo, useState } from "react";
 
 import {
@@ -15,6 +17,7 @@ import {
   ContentApiError,
   checkContentPublishable,
   deleteContentRevision,
+  fetchContentRevisionHealth,
   recordContentReviewDecision,
   transitionContentRevision,
   updateContentRevision,
@@ -29,6 +32,7 @@ import { CONTENT_ENTRIES_QUERY_KEY } from "../content-entries-query";
 import { usePanelErrors, type PanelErrorResource } from "../panel-errors";
 import { SlotEditor } from "./slot-editor";
 import { SeoPreviewPanel } from "./seo-preview-panel";
+import { ContentDiscoveryMetadataEditor } from "./content-discovery-metadata";
 
 const STATUS_TONES: Record<string, StatusBadgeTone> = {
   draft: "neutral",
@@ -44,14 +48,6 @@ const TAB_LABEL = "Sadržaj";
  * (same pattern as `screen-dokumenti.tsx`'s `ORGANIZATION_ID`). */
 const ORGANIZATION_ID = "psihointegritet";
 const RESOURCE_TYPE = "content_entry";
-const ROUTE_PREFIX: Record<ApiContentRevision["contentType"], string> = {
-  static_page: "",
-  service: "/usluge",
-  therapist: "/tim",
-  program: "/programi",
-  company_plan: "/rad-sa-kompanijama",
-  package_offer: "/cene",
-};
 
 function resourceFor(entry: ApiContentRevision): PanelErrorResource {
   return {
@@ -81,9 +77,13 @@ function initialSlotData(entry: ApiContentRevision): Record<string, unknown> {
  */
 export function ContentRevisionEditor({
   entry,
+  displayTitle,
+  publicRoute,
   onDeleted,
 }: {
   entry: ApiContentRevision;
+  displayTitle: string;
+  publicRoute: string;
   onDeleted: () => void;
 }) {
   const queryClient = useQueryClient();
@@ -92,6 +92,7 @@ export function ContentRevisionEditor({
     initialSlotData(entry),
   );
   const [seo, setSeo] = useState(entry.seo);
+  const [discovery, setDiscovery] = useState(entry.discovery);
   const [pendingDelete, setPendingDelete] = useState(false);
   const [lifecyclePending, setLifecyclePending] = useState(false);
 
@@ -106,6 +107,17 @@ export function ContentRevisionEditor({
     () => validateContentDraft(entry, slotData, seo),
     [entry, seo, slotData],
   );
+  const serverHealthQuery = useQuery({
+    queryKey: [
+      "content-health",
+      entry.entryId,
+      entry.revisionId,
+      entry.lockVersion,
+    ],
+    queryFn: () => fetchContentRevisionHealth(entry.entryId, entry.revisionId),
+    staleTime: 30_000,
+    retry: false,
+  });
 
   // Only draft/approved revisions are editable at all (mirrors the backend's
   // own `update_revision` guard); everything else needs CG-C4's lifecycle to
@@ -113,7 +125,8 @@ export function ContentRevisionEditor({
   const isEditable = entry.status === "draft" || entry.status === "approved";
   const isDirty =
     JSON.stringify(slotData) !== JSON.stringify(entry.slotData) ||
-    JSON.stringify(seo) !== JSON.stringify(entry.seo);
+    JSON.stringify(seo) !== JSON.stringify(entry.seo) ||
+    JSON.stringify(discovery) !== JSON.stringify(entry.discovery);
 
   const reportApiError = (title: string, error: unknown) => {
     reportError({
@@ -146,12 +159,13 @@ export function ContentRevisionEditor({
         lockVersion: entry.lockVersion,
         slotData,
         seo,
+        discovery,
       }),
     onSuccess: (next) => {
       replaceEntry(next);
     },
     onError: (error: unknown) =>
-      reportApiError(`Izmena nije sačuvana za „/${entry.slug}”`, error),
+      reportApiError(`Izmena nije sačuvana za „${publicRoute}”`, error),
   });
 
   const transition = async (target: ApiContentRevision["status"]) => {
@@ -211,7 +225,7 @@ export function ContentRevisionEditor({
         ),
       );
     } catch (error) {
-      reportApiError(`Promena statusa za „/${entry.slug}” nije uspela`, error);
+      reportApiError(`Promena statusa za „${publicRoute}” nije uspela`, error);
     } finally {
       setLifecyclePending(false);
     }
@@ -228,7 +242,7 @@ export function ContentRevisionEditor({
         ),
       );
     } catch (error) {
-      reportApiError(`Odobrenje za „/${entry.slug}” nije sačuvano`, error);
+      reportApiError(`Odobrenje za „${publicRoute}” nije sačuvano`, error);
     } finally {
       setLifecyclePending(false);
     }
@@ -247,7 +261,7 @@ export function ContentRevisionEditor({
     },
     onError: (error: unknown) => {
       setPendingDelete(false);
-      reportApiError(`Stranica „/${entry.slug}” nije obrisana`, error);
+      reportApiError(`CMS verzija za „${publicRoute}” nije uklonjena`, error);
     },
   });
 
@@ -256,10 +270,10 @@ export function ContentRevisionEditor({
       <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
         <div>
           <div className="text-coffee text-[15px] font-semibold">
-            /{entry.slug}
+            {displayTitle}
           </div>
           <div className="text-ink-55 mt-0.5 text-[12.5px]">
-            {entry.template} · {entry.versionLabel}
+            {publicRoute} · {entry.template} · {entry.versionLabel}
           </div>
         </div>
         <StatusBadge tone={STATUS_TONES[entry.status] ?? "neutral"}>
@@ -269,6 +283,92 @@ export function ContentRevisionEditor({
       <div className="mb-4 flex flex-wrap gap-2">
         <ActorBadge action="Kreirao/la" actor={entry.createdBy} />
         <ActorBadge action="Poslednja izmena" actor={entry.updatedBy} />
+      </div>
+
+      <div
+        className={`rounded-tile mb-4 border px-4 py-3 ${
+          serverHealthQuery.data?.findings.length === 0 &&
+          serverHealthQuery.data.missingApprovals.length === 0
+            ? "border-badge-ok/40 bg-badge-ok-bg"
+            : "border-line bg-panel-canvas"
+        }`}
+        aria-live="polite"
+      >
+        <div className="text-coffee text-[13.5px] font-semibold">
+          Serverska Content Health provera
+          {serverHealthQuery.data
+            ? ` · pravila v${serverHealthQuery.data.ruleSetVersion}`
+            : ""}
+        </div>
+        {serverHealthQuery.isLoading ? (
+          <p className="text-ink-55 mt-1 text-[12.5px]">
+            Provera sačuvane revizije…
+          </p>
+        ) : serverHealthQuery.isError ? (
+          <p className="text-danger mt-1 text-[12.5px]">
+            Serverska provera trenutno nije dostupna. Objavu i dalje
+            autoritativno proverava backend.
+          </p>
+        ) : serverHealthQuery.data &&
+          serverHealthQuery.data.findings.length > 0 ? (
+          <>
+            <ul className="mt-2 flex flex-col gap-2">
+              {serverHealthQuery.data.findings.map((finding) => {
+                const displayClass = finding.requiresApproval
+                  ? "REVIEW_REQUIRED"
+                  : finding.severity === "error"
+                    ? "BLOCK"
+                    : "WARNING";
+                return (
+                  <li
+                    key={`${finding.ruleId}-${finding.fieldPath ?? ""}-${finding.message}`}
+                    className={`rounded-lg border px-3 py-2 text-[12.5px] ${
+                      displayClass === "BLOCK"
+                        ? "border-danger/35 bg-danger/8 text-danger"
+                        : "border-badge-amber/40 bg-badge-amber-bg text-coffee"
+                    }`}
+                  >
+                    <div className="font-semibold">
+                      {displayClass} · {finding.ruleId} v{finding.ruleVersion}
+                      {finding.fieldPath ? ` · ${finding.fieldPath}` : ""}
+                      {finding.requiresApproval
+                        ? ` · ${CONTENT_APPROVAL_LABELS[finding.requiresApproval]}`
+                        : ""}
+                    </div>
+                    <div className="mt-0.5">{finding.message}</div>
+                    <div className="text-ink-70 mt-0.5">
+                      {finding.remediation}
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+            {serverHealthQuery.data.missingApprovals.length > 0 ? (
+              <p className="text-ink-70 mt-2 text-[12px]">
+                Nedostaju odobrenja:{" "}
+                {serverHealthQuery.data.missingApprovals
+                  .map((item) => CONTENT_APPROVAL_LABELS[item])
+                  .join(", ")}
+                .
+              </p>
+            ) : null}
+          </>
+        ) : serverHealthQuery.data ? (
+          <>
+            <p className="text-badge-ok mt-1 text-[12.5px]">
+              PASSED · sačuvana revizija nema serverskih content nalaza.
+            </p>
+            {serverHealthQuery.data.missingApprovals.length > 0 ? (
+              <p className="text-ink-70 mt-2 text-[12px]">
+                Za sledeću fazu nedostaju odobrenja:{" "}
+                {serverHealthQuery.data.missingApprovals
+                  .map((item) => CONTENT_APPROVAL_LABELS[item])
+                  .join(", ")}
+                .
+              </p>
+            ) : null}
+          </>
+        ) : null}
       </div>
 
       {!isEditable ? (
@@ -287,7 +387,7 @@ export function ContentRevisionEditor({
         aria-live="polite"
       >
         <div className="text-coffee text-[13.5px] font-semibold">
-          Živa validacija ·{" "}
+          Živa provera trenutnog unosa ·{" "}
           {liveFindings.length === 0
             ? "PASSED"
             : `${liveFindings.length} nalaza`}
@@ -310,7 +410,8 @@ export function ContentRevisionEditor({
                   }`}
                 >
                   <div className="font-semibold">
-                    {displayClass}
+                    {displayClass} · {finding.ruleId}
+                    {finding.ruleVersion ? ` v${finding.ruleVersion}` : ""}
                     {finding.field ? ` · ${finding.field}` : ""}
                     {finding.requiresApproval
                       ? ` · ${CONTENT_APPROVAL_LABELS[finding.requiresApproval]}`
@@ -332,13 +433,17 @@ export function ContentRevisionEditor({
       </div>
 
       <SeoPreviewPanel
-        route={`${ROUTE_PREFIX[entry.contentType]}/${entry.slug}`.replace(
-          /^\/\//,
-          "/",
-        )}
+        route={publicRoute}
         value={seo}
         onChange={setSeo}
         disabled={!isEditable}
+      />
+
+      <ContentDiscoveryMetadataEditor
+        value={discovery}
+        onChange={setDiscovery}
+        disabled={!isEditable}
+        entryId={entry.entryId}
       />
 
       <div>
@@ -391,6 +496,27 @@ export function ContentRevisionEditor({
       ) : null}
 
       <div className="mt-3 flex flex-wrap items-center gap-2.5">
+        {isDirty ? (
+          <button
+            type="button"
+            disabled
+            title="Sačuvajte izmene pre pregleda."
+            className="border-line-strong text-ink-70 rounded-full border bg-transparent px-4 py-2.5 text-[13px] font-semibold opacity-50"
+          >
+            Pregled revizije
+          </button>
+        ) : (
+          <Link
+            href={
+              `/radni-prostor/sadrzaj/${entry.entryId}/revizije/${entry.revisionId}/pregled` as Route
+            }
+            target="_blank"
+            rel="noopener noreferrer"
+            className="border-line-strong text-forest hover:border-coffee/40 rounded-full border bg-transparent px-4 py-2.5 text-[13px] font-semibold"
+          >
+            Pregled revizije
+          </Link>
+        )}
         <button
           type="button"
           disabled={!isEditable || saveMutation.isPending}
@@ -454,7 +580,7 @@ export function ContentRevisionEditor({
             onClick={() => setPendingDelete(true)}
             className="border-danger/45 text-danger hover:bg-danger/8 cursor-pointer rounded-full border bg-transparent px-5 py-2.5 text-[13px] font-semibold transition-colors"
           >
-            Obriši
+            Ukloni CMS radnu verziju
           </button>
         ) : null}
       </div>
@@ -468,7 +594,10 @@ export function ContentRevisionEditor({
       {pendingDelete ? (
         <div className="border-danger/45 bg-danger/8 rounded-tile mt-3 px-4 py-3">
           <p className="text-coffee text-[13.5px] font-semibold">
-            Obrisati „/{entry.slug}”?
+            Ukloniti CMS radnu verziju za „{displayTitle}”?
+          </p>
+          <p className="text-ink-70 mt-1 text-[12px]">
+            Sistemska stranica i postojeći tekst iz koda ostaju dostupni.
           </p>
           <div className="mt-2.5 flex gap-2.5">
             <button
@@ -476,7 +605,7 @@ export function ContentRevisionEditor({
               onClick={() => deleteMutation.mutate()}
               className="bg-danger text-panel-canvas cursor-pointer rounded-full border-0 px-4 py-2 text-[13px] font-semibold"
             >
-              Obriši
+              Ukloni radnu verziju
             </button>
             <button
               type="button"

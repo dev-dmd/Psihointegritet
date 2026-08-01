@@ -84,6 +84,7 @@ type BaseInput = Pick<
   ContentEntityBase,
   | "id"
   | "type"
+  | "management"
   | "route"
   | "canonicalSlug"
   | "indexingPolicy"
@@ -160,6 +161,7 @@ function serviceSeoDescription(
 const staticPages: readonly StaticPageEntity[] = [
   staticPage({
     id: "page:home",
+    management: "system",
     route: "/",
     canonicalSlug: "pocetna",
     indexingPolicy: "index",
@@ -202,6 +204,7 @@ const staticPages: readonly StaticPageEntity[] = [
   }),
   staticPage({
     id: "page:o-nama",
+    management: "system",
     route: "/o-nama",
     canonicalSlug: "o-nama",
     indexingPolicy: "index",
@@ -232,6 +235,7 @@ const staticPages: readonly StaticPageEntity[] = [
   }),
   staticPage({
     id: "page:tim",
+    management: "system",
     route: "/tim",
     canonicalSlug: "tim",
     indexingPolicy: "index",
@@ -250,6 +254,7 @@ const staticPages: readonly StaticPageEntity[] = [
   }),
   staticPage({
     id: "page:usluge",
+    management: "system",
     route: "/usluge",
     canonicalSlug: "usluge",
     indexingPolicy: "index",
@@ -268,6 +273,7 @@ const staticPages: readonly StaticPageEntity[] = [
   }),
   staticPage({
     id: "page:radionice",
+    management: "system",
     route: "/radionice",
     canonicalSlug: "radionice",
     indexingPolicy: "index",
@@ -287,6 +293,7 @@ const staticPages: readonly StaticPageEntity[] = [
   }),
   staticPage({
     id: "page:podrska-roditeljima",
+    management: "system",
     route: "/podrska-roditeljima",
     canonicalSlug: "podrska-roditeljima",
     indexingPolicy: "index",
@@ -325,6 +332,7 @@ const staticPages: readonly StaticPageEntity[] = [
   }),
   staticPage({
     id: "page:cene",
+    management: "system",
     route: "/cene",
     canonicalSlug: "cene",
     indexingPolicy: "index",
@@ -358,6 +366,7 @@ const staticPages: readonly StaticPageEntity[] = [
   }),
   staticPage({
     id: "page:znanje",
+    management: "system",
     route: "/znanje",
     canonicalSlug: "znanje",
     indexingPolicy: "index",
@@ -376,6 +385,7 @@ const staticPages: readonly StaticPageEntity[] = [
   }),
   staticPage({
     id: "page:rad-sa-kompanijama",
+    management: "system",
     route: "/rad-sa-kompanijama",
     canonicalSlug: "rad-sa-kompanijama",
     indexingPolicy: "index",
@@ -420,6 +430,7 @@ const staticPages: readonly StaticPageEntity[] = [
   }),
   staticPage({
     id: "page:kontakt",
+    management: "system",
     route: "/kontakt",
     canonicalSlug: "kontakt",
     indexingPolicy: "index",
@@ -450,6 +461,7 @@ const staticPages: readonly StaticPageEntity[] = [
   // this static entity, which exists for metadata/discoverability only).
   staticPage({
     id: "page:privatnost",
+    management: "document",
     route: "/privatnost",
     canonicalSlug: "privatnost",
     indexingPolicy: "noindex",
@@ -470,6 +482,7 @@ const staticPages: readonly StaticPageEntity[] = [
   }),
   staticPage({
     id: "page:uslovi",
+    management: "document",
     route: "/uslovi",
     canonicalSlug: "uslovi",
     indexingPolicy: "noindex",
@@ -488,6 +501,7 @@ const staticPages: readonly StaticPageEntity[] = [
   }),
   staticPage({
     id: "page:kolacici",
+    management: "document",
     route: "/kolacici",
     canonicalSlug: "kolacici",
     indexingPolicy: "noindex",
@@ -506,6 +520,7 @@ const staticPages: readonly StaticPageEntity[] = [
   }),
   staticPage({
     id: "page:pravila-zakazivanja",
+    management: "document",
     route: "/pravila-zakazivanja",
     canonicalSlug: "pravila-zakazivanja",
     indexingPolicy: "noindex",
@@ -526,6 +541,7 @@ const staticPages: readonly StaticPageEntity[] = [
   }),
   staticPage({
     id: "page:pronadji-podrsku",
+    management: "system",
     route: "/pronadji-podrsku",
     canonicalSlug: "pronadji-podrsku",
     indexingPolicy: "noindex",
@@ -544,6 +560,7 @@ const staticPages: readonly StaticPageEntity[] = [
   }),
   staticPage({
     id: "page:zakazi",
+    management: "system",
     route: "/zakazi",
     canonicalSlug: "zakazi",
     indexingPolicy: "noindex",
@@ -575,6 +592,7 @@ const serviceEntities: readonly ContentEntity[] = serviceCatalog.map(
     const entity = base({
       id: `service:${service.slug}`,
       type: "service",
+      management: "system",
       route: `/usluge/${service.slug}`,
       canonicalSlug: service.slug,
       indexingPolicy: "index",
@@ -636,6 +654,7 @@ const therapistEntities: readonly ContentEntity[] = therapists.map(
     const entity = base({
       id: `therapist:${therapist.slug}`,
       type: "therapist",
+      management: "system",
       route: `/tim/${therapist.slug}`,
       canonicalSlug: therapist.slug,
       indexingPolicy: "index",
@@ -698,6 +717,7 @@ const programEntities: readonly ContentEntity[] = groupPrograms.map(
     const entity = base({
       id: `program:${program.slug}`,
       type: "program",
+      management: "system",
       route: `/radionice/${program.slug}`,
       canonicalSlug: program.slug,
       indexingPolicy: "index",
@@ -745,6 +765,7 @@ const companyPlanEntities: readonly ContentEntity[] = companyPlanCards.map(
     const entity = base({
       id: `company_plan:${plan.slug}`,
       type: "company_plan",
+      management: "system",
       route: "/rad-sa-kompanijama",
       canonicalSlug: plan.slug,
       indexingPolicy: "noindex",
@@ -783,6 +804,7 @@ const packageEntities: readonly ContentEntity[] = sessionPackages.map(
     const entity = base({
       id: `package_offer:${pack.sessions}`,
       type: "package_offer",
+      management: "system",
       route: "/cene",
       canonicalSlug: `paket-${pack.sessions}`,
       indexingPolicy: "noindex",

@@ -1,4 +1,6 @@
+import json
 from dataclasses import replace
+from pathlib import Path
 
 from psihointegritet.modules.guidance.matching import (
     DEFAULT_PROFILES,
@@ -13,6 +15,18 @@ from psihointegritet.modules.guidance.models import (
     AcceptanceStatus,
     RequesterRole,
     SubjectAgeBand,
+)
+from psihointegritet.modules.guidance.taxonomy import (
+    ADDICTION_RELATED_SUPPORT,
+    SUPPORT_AREA_IDS,
+    SUPPORT_AREA_LABELS,
+    SupportAreaId,
+)
+
+TAXONOMY_FIXTURE = json.loads(
+    (Path(__file__).resolve().parents[3] / "contracts" / "fixtures" / "taxonomy.v1.json").read_text(
+        encoding="utf-8"
+    )
 )
 
 
@@ -33,6 +47,36 @@ def test_partner_path_returns_couples_service_and_equal_candidates() -> None:
     ]
     assert result.show_multiple_options is True
     assert result.requires_human_review is False
+
+
+def test_addiction_prioritizes_anja_and_preserves_team_handoff_contract() -> None:
+    result = StaticMatchingAdapter().evaluate(
+        MatchingInput(
+            reason=REASONS["addiction"],
+            participants=PARTICIPANTS["alone"],
+            goal=GOALS["concrete_situation"],
+            format=WORK_FORMATS["online"],
+        )
+    )
+
+    assert result.candidates[0].slug == "anja-stamenkovic"
+    assert ADDICTION_RELATED_SUPPORT in DEFAULT_PROFILES[0].service_capabilities
+    assert TAXONOMY_FIXTURE["specialties"] == [
+        {
+            "id": ADDICTION_RELATED_SUPPORT,
+            "label": "Zavisnost",
+            "primaryTherapistSlugs": ["anja-stamenkovic"],
+            "handoffAllowed": True,
+        }
+    ]
+
+
+def test_support_area_registry_matches_the_shared_fixture() -> None:
+    expected = [
+        {"id": area, "label": SUPPORT_AREA_LABELS[SupportAreaId(area)]} for area in SUPPORT_AREA_IDS
+    ]
+
+    assert TAXONOMY_FIXTURE["supportAreas"] == expected
 
 
 def test_under_sixteen_path_is_controlled_without_publishing_a_service_candidate() -> None:
