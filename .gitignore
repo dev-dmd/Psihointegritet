@@ -48,3 +48,7 @@ ds-bundle/
 .design-sync/.cache/
 .design-sync/learnings/
 .design-sync/node_modules
+
+# old files
+frontend-old/
+frontend-for-revision-reviewed/

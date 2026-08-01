@@ -14,7 +14,7 @@ export function Hero() {
             src="/images/hero-section-image-2.png"
             alt=""
             fill
-            priority
+            preload
             sizes="(max-width: 1536px) 100vw, 1472px"
             className="object-cover object-[center_38%]"
           />

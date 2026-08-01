@@ -10,13 +10,13 @@ interface TherapistRowProps {
   /** Even rows put the portrait first; odd rows flip it (zigzag). */
   flipped: boolean;
   /** The first row carries the LCP portrait. */
-  priority?: boolean;
+  preload?: boolean;
 }
 
 export function TherapistRow({
   therapist,
   flipped,
-  priority = false,
+  preload = false,
 }: TherapistRowProps) {
   return (
     <div className="border-coffee/10 grid grid-cols-1 items-center gap-8 border-t py-16 md:grid-cols-2 md:gap-[72px]">
@@ -26,7 +26,7 @@ export function TherapistRow({
             src={therapist.image}
             alt={therapist.name}
             fill
-            priority={priority}
+            preload={preload}
             sizes="(min-width: 768px) 50vw, 100vw"
             className="object-cover"
           />
