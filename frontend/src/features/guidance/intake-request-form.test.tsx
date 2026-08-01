@@ -2,6 +2,8 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+import { QueryProvider } from "@/providers/query-provider";
+
 import {
   ADULT_SUBJECT_AGE_BAND,
   GOALS,
@@ -41,13 +43,17 @@ async function acceptRequiredNotices(user: ReturnType<typeof userEvent.setup>) {
   await user.click(screen.getByLabelText(/nije potvrda termina/));
 }
 
+function renderWithQueryProvider(element: React.ReactElement) {
+  return render(element, { wrapper: QueryProvider });
+}
+
 describe("IntakeRequestForm", () => {
   it("submits adult contact, acknowledgements and no booking slot", async () => {
     const user = userEvent.setup();
     const fetchMock = vi.fn().mockResolvedValue(successfulResponse());
     vi.stubGlobal("fetch", fetchMock);
 
-    render(
+    renderWithQueryProvider(
       <IntakeRequestForm
         answers={{
           ...emptyIntakeAnswers,
@@ -106,7 +112,7 @@ describe("IntakeRequestForm", () => {
       .mockResolvedValue(successfulResponse("team_review"));
     vi.stubGlobal("fetch", fetchMock);
 
-    render(
+    renderWithQueryProvider(
       <IntakeRequestForm
         answers={{
           ...emptyIntakeAnswers,
@@ -154,7 +160,7 @@ describe("IntakeRequestForm", () => {
   });
 
   it("keeps the adolescent flow free of additional text", () => {
-    render(
+    renderWithQueryProvider(
       <IntakeRequestForm
         answers={{
           ...emptyIntakeAnswers,
@@ -186,7 +192,7 @@ describe("IntakeRequestForm", () => {
       .mockResolvedValue(successfulResponse("team_review", "priority"));
     vi.stubGlobal("fetch", fetchMock);
 
-    render(
+    renderWithQueryProvider(
       <IntakeRequestForm
         answers={{
           ...emptyIntakeAnswers,

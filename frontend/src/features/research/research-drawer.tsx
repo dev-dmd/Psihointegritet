@@ -9,7 +9,9 @@ import {
   surveySteps,
   type SurveyAnswers,
 } from "@/content/survey";
+import { useSurveyMutation } from "@/features/research/hooks/use-survey-mutation";
 import { cn } from "@/helpers/cn";
+import { QueryProvider } from "@/providers/query-provider";
 
 const progressWidths = ["w-1/4", "w-2/4", "w-3/4", "w-full"] as const;
 
@@ -25,16 +27,24 @@ interface ResearchDrawerProps {
  * „Pošalji", which sends them by email via /api/survey. „Možda kasnije" closes
  * and discards. Anonymous, no health data.
  */
-export function ResearchDrawer({ onClose }: ResearchDrawerProps) {
+export function ResearchDrawer(props: ResearchDrawerProps) {
+  return (
+    <QueryProvider>
+      <ResearchDrawerContent {...props} />
+    </QueryProvider>
+  );
+}
+
+function ResearchDrawerContent({ onClose }: ResearchDrawerProps) {
   const [screen, setScreen] = useState<Screen>("intro");
   const [step, setStep] = useState(0);
   const [answers, setAnswers] = useState<SurveyAnswers>(
     Array.from({ length: surveySteps.length }, () => null),
   );
   const [note, setNote] = useState("");
-  const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const advanceTimer = useRef<number | null>(null);
+  const submitMutation = useSurveyMutation();
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -78,33 +88,25 @@ export function ResearchDrawer({ onClose }: ResearchDrawerProps) {
     }
   };
 
-  const submit = async () => {
-    setSending(true);
+  const submit = () => {
     setError(null);
-    try {
-      const response = await fetch("/api/survey", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          surveyId: ONLINE_EXPERIENCE_SURVEY_ID,
-          answers: surveySteps.map((survey, index) => ({
-            question: survey.question,
-            answer: answers[index] ?? "—",
-          })),
-          note: note.trim() || undefined,
-        }),
-      });
-      if (!response.ok) {
-        throw new Error("send-failed");
-      }
-      setScreen("done");
-    } catch {
-      setError(
-        "Slanje trenutno nije uspelo. Pokušajte ponovo za koji trenutak.",
-      );
-    } finally {
-      setSending(false);
-    }
+    submitMutation.mutate(
+      {
+        surveyId: ONLINE_EXPERIENCE_SURVEY_ID,
+        answers: surveySteps.map((survey, index) => ({
+          question: survey.question,
+          answer: answers[index] ?? "—",
+        })),
+        ...(note.trim() ? { note: note.trim() } : {}),
+      },
+      {
+        onSuccess: () => setScreen("done"),
+        onError: () =>
+          setError(
+            "Slanje trenutno nije uspelo. Pokušajte ponovo za koji trenutak.",
+          ),
+      },
+    );
   };
 
   const stepLabel =
@@ -236,10 +238,10 @@ export function ResearchDrawer({ onClose }: ResearchDrawerProps) {
               <button
                 type="button"
                 onClick={submit}
-                disabled={sending}
+                disabled={submitMutation.isPending}
                 className="bg-forest text-canvas hover:bg-forest-hover cursor-pointer rounded-full border-0 px-7 py-[15px] text-[15px] font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-60"
               >
-                {sending ? "Šaljemo…" : "Pošalji"}
+                {submitMutation.isPending ? "Šaljemo…" : "Pošalji"}
               </button>
               <button
                 type="button"

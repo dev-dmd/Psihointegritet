@@ -16,7 +16,7 @@ export function TherapistRowsSection({
             <TherapistRow
               therapist={therapist}
               flipped={index % 2 === 1}
-              priority={index === 0}
+              preload={index === 0}
             />
           </Reveal>
         ))}

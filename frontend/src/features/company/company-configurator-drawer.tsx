@@ -13,7 +13,9 @@ import {
   type CompanyAnswers,
   type CompanyStepKey,
 } from "@/content/company";
+import { useCompanyInquiryMutation } from "@/features/company/hooks/use-company-inquiry-mutation";
 import { cn } from "@/helpers/cn";
+import { QueryProvider } from "@/providers/query-provider";
 
 type Screen = "intro" | "questions" | "recommendation" | "contact" | "done";
 
@@ -47,7 +49,17 @@ interface CompanyConfiguratorDrawerProps {
  * no persistence, no prices (everything is „Cena po ponudi"), no employee
  * health data.
  */
-export function CompanyConfiguratorDrawer({
+export function CompanyConfiguratorDrawer(
+  props: CompanyConfiguratorDrawerProps,
+) {
+  return (
+    <QueryProvider>
+      <CompanyConfiguratorDrawerContent {...props} />
+    </QueryProvider>
+  );
+}
+
+function CompanyConfiguratorDrawerContent({
   onClose,
   preselectedPlanSlug,
 }: CompanyConfiguratorDrawerProps) {
@@ -55,10 +67,10 @@ export function CompanyConfiguratorDrawer({
   const [stepIndex, setStepIndex] = useState(0);
   const [answers, setAnswers] = useState<CompanyAnswers>(emptyCompanyAnswers);
   const [contact, setContact] = useState<Contact>(emptyContact);
-  const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const advanceTimer = useRef<number | null>(null);
   const headingRef = useRef<HTMLHeadingElement | null>(null);
+  const submitMutation = useCompanyInquiryMutation();
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -144,41 +156,35 @@ export function CompanyConfiguratorDrawer({
     /.+@.+\..+/.test(contact.email) &&
     contact.consent;
 
-  const submit = async () => {
-    setSending(true);
+  const submit = () => {
     setError(null);
-    try {
-      const response = await fetch("/api/company-inquiry", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          model: { name: model.name, price: COMPANY_PRICE_ON_REQUEST },
-          answers: {
-            employees: answers.employees,
-            goals: answers.goals,
-            topics: answers.topics,
-            format: answers.format,
-          },
-          contact: {
-            companyName: contact.companyName.trim(),
-            contactName: contact.contactName.trim(),
-            email: contact.email.trim(),
-            phone: contact.phone.trim() || undefined,
-            message: contact.message.trim() || undefined,
-          },
-        }),
-      });
-      if (!response.ok) {
-        throw new Error("send-failed");
-      }
-      setScreen("done");
-    } catch {
-      setError(
-        "Slanje trenutno nije uspelo. Pokušajte ponovo za koji trenutak.",
-      );
-    } finally {
-      setSending(false);
-    }
+    submitMutation.mutate(
+      {
+        model: { name: model.name, price: COMPANY_PRICE_ON_REQUEST },
+        answers: {
+          employees: answers.employees,
+          goals: answers.goals,
+          topics: answers.topics,
+          format: answers.format,
+        },
+        contact: {
+          companyName: contact.companyName.trim(),
+          contactName: contact.contactName.trim(),
+          email: contact.email.trim(),
+          ...(contact.phone.trim() ? { phone: contact.phone.trim() } : {}),
+          ...(contact.message.trim()
+            ? { message: contact.message.trim() }
+            : {}),
+        },
+      },
+      {
+        onSuccess: () => setScreen("done"),
+        onError: () =>
+          setError(
+            "Slanje trenutno nije uspelo. Pokušajte ponovo za koji trenutak.",
+          ),
+      },
+    );
   };
 
   const stepLabel =
@@ -435,10 +441,10 @@ export function CompanyConfiguratorDrawer({
             <button
               type="button"
               onClick={submit}
-              disabled={sending || !contactValid}
+              disabled={submitMutation.isPending || !contactValid}
               className="bg-forest text-canvas hover:bg-forest-hover mt-6 cursor-pointer rounded-full border-0 px-7 py-[15px] text-[15px] font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-50"
             >
-              {sending ? "Šaljemo…" : "Pošaljite upit za program"}
+              {submitMutation.isPending ? "Šaljemo…" : "Pošaljite upit za program"}
             </button>
           </div>
         ) : null}

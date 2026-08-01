@@ -3,10 +3,10 @@
 import { useRef, useState } from "react";
 
 import { findTherapist } from "@/content/therapists";
+import { usePublicIntakeSubmission } from "@/features/guidance/hooks/use-public-intake-submission";
 
 import { ConsentDocumentDisclosure } from "./consent-document-disclosure";
 import {
-  submitPublicIntakeCase,
   toPublicIntakeAnswers,
   type PublicIntakeSubmissionKind,
 } from "./public-intake-api";
@@ -51,12 +51,7 @@ export function IntakeRequestForm({
   const [guardianConsentStatus, setGuardianConsentStatus] = useState<
     "confirmed" | "needs_review" | null
   >(null);
-  const [submittedTeamReview, setSubmittedTeamReview] = useState(false);
-  const [priorityReview, setPriorityReview] = useState(false);
-  const [state, setState] = useState<
-    "idle" | "submitting" | "success" | "error"
-  >("idle");
-  const [errorMessage, setErrorMessage] = useState("");
+  const submissionMutation = usePublicIntakeSubmission();
   const isGuardian = answers.requesterRole === REQUESTER_ROLES.guardian;
   const isAdolescent = answers.requesterRole === REQUESTER_ROLES.adolescent;
   const isControlledMinorFlow = isGuardian || isAdolescent;
@@ -73,56 +68,47 @@ export function IntakeRequestForm({
     ? findTherapist(preferredTherapistSlug)
     : undefined;
 
-  const submit = async (event: React.FormEvent<HTMLFormElement>) => {
+  const submit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    setState("submitting");
-    setErrorMessage("");
 
-    try {
-      const response = await submitPublicIntakeCase(
-        {
-          submissionKind: effectiveSubmissionKind,
-          answers: toPublicIntakeAnswers(answers),
-          contact: {
-            fullName: fullName.trim(),
-            email: email.trim(),
-            phone: phone.trim() || null,
-            replyPreference,
-          },
-          acknowledgements: [
-            {
-              kind: "intake_data_processing_notice",
-              documentVersion: dataProcessingNoticeVersion,
-              locale: "sr-Latn",
-            },
-            {
-              kind: "intake_request_acknowledgement",
-              documentVersion: requestAcknowledgementVersion,
-              locale: "sr-Latn",
-            },
-          ],
-          freeText: allowsFreeText ? freeText.trim() || null : null,
-          source: "matching",
-          preferredTherapistSlug,
-          subjectIsAware: isGuardian ? subjectIsAware : null,
-          guardianConsentStatus: isGuardian
-            ? (guardianConsentStatus ?? "not_applicable")
-            : "not_applicable",
+    submissionMutation.mutate({
+      idempotencyKey: idempotencyKey.current,
+      payload: {
+        submissionKind: effectiveSubmissionKind,
+        answers: toPublicIntakeAnswers(answers),
+        contact: {
+          fullName: fullName.trim(),
+          email: email.trim(),
+          phone: phone.trim() || null,
+          replyPreference,
         },
-        idempotencyKey.current,
-      );
-      setSubmittedTeamReview(response.submissionKind === "team_review");
-      setPriorityReview(response.reviewPriority === "priority");
-      setState("success");
-    } catch {
-      setState("error");
-      setErrorMessage(
-        "Zahtev trenutno ne može da se pošalje. Proverite podatke i pokušajte ponovo.",
-      );
-    }
+        acknowledgements: [
+          {
+            kind: "intake_data_processing_notice",
+            documentVersion: dataProcessingNoticeVersion,
+            locale: "sr-Latn",
+          },
+          {
+            kind: "intake_request_acknowledgement",
+            documentVersion: requestAcknowledgementVersion,
+            locale: "sr-Latn",
+          },
+        ],
+        freeText: allowsFreeText ? freeText.trim() || null : null,
+        source: "matching",
+        preferredTherapistSlug,
+        subjectIsAware: isGuardian ? subjectIsAware : null,
+        guardianConsentStatus: isGuardian
+          ? (guardianConsentStatus ?? "not_applicable")
+          : "not_applicable",
+      },
+    });
   };
 
-  if (state === "success") {
+  if (submissionMutation.isSuccess) {
+    const submittedTeamReview =
+      submissionMutation.data.submissionKind === "team_review";
+    const priorityReview = submissionMutation.data.reviewPriority === "priority";
     return (
       <section aria-live="polite">
         <p className="text-sage mb-3 text-[12.5px] font-semibold tracking-[0.16em] uppercase">
@@ -368,9 +354,10 @@ export function IntakeRequestForm({
         </div>
       </div>
 
-      {state === "error" ? (
+      {submissionMutation.isError ? (
         <p role="alert" className="text-danger mt-5 text-[14px] leading-[1.5]">
-          {errorMessage}
+          Zahtev trenutno ne može da se pošalje. Proverite podatke i pokušajte
+          ponovo.
         </p>
       ) : null}
 
@@ -378,7 +365,7 @@ export function IntakeRequestForm({
         <button
           type="submit"
           disabled={
-            state === "submitting" ||
+            submissionMutation.isPending ||
             !dataNoticeAccepted ||
             !requestAccepted ||
             (isGuardian &&
@@ -386,7 +373,7 @@ export function IntakeRequestForm({
           }
           className="bg-forest text-canvas hover:bg-forest-hover disabled:bg-forest/45 min-h-11 cursor-pointer rounded-full border-0 px-7 text-[15px] font-semibold transition-colors disabled:cursor-not-allowed"
         >
-          {state === "submitting" ? "Slanje..." : "Pošaljite zahtev"}
+          {submissionMutation.isPending ? "Slanje..." : "Pošaljite zahtev"}
         </button>
         <button
           type="button"
