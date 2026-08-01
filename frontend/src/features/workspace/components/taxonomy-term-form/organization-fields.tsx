@@ -1,0 +1,303 @@
+"use client";
+
+import { cn } from "@/helpers/cn";
+
+import { FieldError } from "../screen-kompas/governance-error";
+import type { TaxonomyTermFieldsProps } from "./field-props";
+import { AXIS_EDITOR_CONFIG, parseTaxonomySearchTerms } from "./model";
+
+export function TaxonomyOrganizationFields({
+  axis,
+  term,
+  registryTerms,
+  draft,
+  setField,
+  disabled,
+  editorId,
+  fieldErrors,
+  clearFieldError,
+  errorId,
+  inputClass,
+}: TaxonomyTermFieldsProps) {
+  const config = AXIS_EDITOR_CONFIG[axis];
+  const areas = registryTerms.filter(
+    (item) =>
+      item.axis === "topic_group" &&
+      (item.status !== "archived" || item.termId === draft.primaryParentTermId),
+  );
+  const journeyIntents = registryTerms.filter(
+    (item) =>
+      item.axis === "journey_intent" &&
+      item.systemDefined &&
+      (item.status !== "archived" || item.termId === draft.journeyIntentTermId),
+  );
+  const availableRelatedTopics = registryTerms.filter(
+    (item) =>
+      item.axis === "topic" &&
+      (item.status !== "archived" ||
+        draft.relatedTopicIds.includes(item.termId)) &&
+      item.termId !== term?.termId,
+  );
+  const searchTermCount = parseTaxonomySearchTerms(
+    draft.searchTermsText,
+  ).length;
+
+  return (
+    <>
+      {config.requiresTopicContext ? (
+        <div className="mt-4 grid gap-4 md:grid-cols-2">
+          <div>
+            <label
+              htmlFor={`${editorId}-parent`}
+              className="text-ink-70 mb-1.5 block text-[13px] font-semibold"
+            >
+              Kojoj oblasti pripada ova tema?
+            </label>
+            <select
+              id={`${editorId}-parent`}
+              value={draft.primaryParentTermId}
+              disabled={disabled || areas.length === 0}
+              onChange={(event) => {
+                setField("primaryParentTermId", event.target.value);
+                clearFieldError("primaryParentTermId");
+              }}
+              aria-invalid={Boolean(fieldErrors.primaryParentTermId)}
+              aria-describedby={
+                fieldErrors.primaryParentTermId
+                  ? errorId("primaryParentTermId")
+                  : undefined
+              }
+              className={inputClass(
+                "primaryParentTermId",
+                "border-line-strong rounded-tile bg-panel-canvas text-coffee focus:border-sage w-full border px-3.5 py-2.5 text-sm outline-none disabled:opacity-60",
+              )}
+            >
+              <option value="">Izaberite oblast</option>
+              {areas.map((area) => (
+                <option key={area.termId} value={area.termId}>
+                  {area.publicLabel}
+                  {area.status === "archived" ? " · arhivirano" : ""}
+                </option>
+              ))}
+            </select>
+            <FieldError
+              id={errorId("primaryParentTermId")}
+              message={fieldErrors.primaryParentTermId}
+            />
+            {areas.length === 0 ? (
+              <p className="text-badge-amber mt-1.5 text-[12px]">
+                Prvo napravite oblast u tabu „Oblasti”.
+              </p>
+            ) : null}
+          </div>
+
+          <div>
+            <label
+              htmlFor={`${editorId}-journey`}
+              className="text-ink-70 mb-1.5 block text-[13px] font-semibold"
+            >
+              Da li tema vodi ka istraživanju, stručnoj podršci ili oba puta?
+            </label>
+            <select
+              id={`${editorId}-journey`}
+              value={draft.journeyIntentTermId}
+              disabled={disabled || journeyIntents.length === 0}
+              onChange={(event) => {
+                setField("journeyIntentTermId", event.target.value);
+                clearFieldError("journeyIntentTermId");
+              }}
+              aria-invalid={Boolean(fieldErrors.journeyIntentTermId)}
+              aria-describedby={
+                fieldErrors.journeyIntentTermId
+                  ? errorId("journeyIntentTermId")
+                  : undefined
+              }
+              className={inputClass(
+                "journeyIntentTermId",
+                "border-line-strong rounded-tile bg-panel-canvas text-coffee focus:border-sage w-full border px-3.5 py-2.5 text-sm outline-none disabled:opacity-60",
+              )}
+            >
+              <option value="">Izaberite put korisnika</option>
+              {journeyIntents.map((journey) => (
+                <option key={journey.termId} value={journey.termId}>
+                  {journey.publicLabel}
+                  {journey.status === "archived" ? " · arhivirano" : ""}
+                </option>
+              ))}
+            </select>
+            <FieldError
+              id={errorId("journeyIntentTermId")}
+              message={fieldErrors.journeyIntentTermId}
+            />
+            <p className="text-ink-55 mt-1.5 text-[12px]">
+              Bira se iz zaključanog sistemskog registra i ne upisuje se kao
+              slobodan tekst.
+            </p>
+          </div>
+        </div>
+      ) : null}
+
+      <div className="mt-4 grid gap-4 lg:grid-cols-[minmax(0,1fr)_180px]">
+        <div>
+          <label
+            htmlFor={`${editorId}-search-terms`}
+            className="text-ink-70 mb-1.5 block text-[13px] font-semibold"
+          >
+            Sinonimi i pojmovi za pretragu
+          </label>
+          <textarea
+            id={`${editorId}-search-terms`}
+            value={draft.searchTermsText}
+            maxLength={16_100}
+            rows={4}
+            disabled={disabled}
+            placeholder={
+              axis === "topic"
+                ? "sagorevanje\nprofesionalna iscrpljenost"
+                : "Jedan pojam u svakom redu"
+            }
+            onChange={(event) => {
+              setField("searchTermsText", event.target.value);
+              clearFieldError("searchTerms");
+            }}
+            aria-invalid={Boolean(fieldErrors.searchTerms)}
+            aria-describedby={
+              fieldErrors.searchTerms ? errorId("searchTerms") : undefined
+            }
+            className={inputClass(
+              "searchTerms",
+              "border-line-strong rounded-tile bg-panel-canvas text-coffee focus:border-sage w-full resize-y border px-3.5 py-2.5 text-sm leading-[1.55] outline-none disabled:opacity-60",
+            )}
+          />
+          <FieldError
+            id={errorId("searchTerms")}
+            message={fieldErrors.searchTerms}
+          />
+          <div className="text-ink-55 mt-1.5 flex flex-wrap justify-between gap-2 text-[12px]">
+            <span>Jedan pojam po redu ili odvojen zarezom.</span>
+            <span>{searchTermCount}/100</span>
+          </div>
+        </div>
+
+        <div>
+          <label
+            htmlFor={`${editorId}-sort-order`}
+            className="text-ink-70 mb-1.5 block text-[13px] font-semibold"
+          >
+            Redosled prikaza
+          </label>
+          <input
+            id={`${editorId}-sort-order`}
+            type="number"
+            min={0}
+            max={100_000}
+            step={1}
+            value={draft.sortOrder}
+            disabled={disabled}
+            onChange={(event) => {
+              setField("sortOrder", event.target.value);
+              clearFieldError("sortOrder");
+            }}
+            aria-invalid={Boolean(fieldErrors.sortOrder)}
+            aria-describedby={
+              fieldErrors.sortOrder ? errorId("sortOrder") : undefined
+            }
+            className={inputClass(
+              "sortOrder",
+              "border-line-strong rounded-tile bg-panel-canvas text-coffee focus:border-sage w-full border px-3.5 py-2.5 text-sm outline-none disabled:opacity-60",
+            )}
+          />
+          <FieldError
+            id={errorId("sortOrder")}
+            message={fieldErrors.sortOrder}
+          />
+          <p className="text-ink-55 mt-1.5 text-[12px] leading-[1.45]">
+            Manji broj se prikazuje ranije. Isti broj se razrešava po nazivu.
+          </p>
+        </div>
+      </div>
+
+      {config.requiresTopicContext ? (
+        <fieldset
+          id={`${editorId}-related-topics`}
+          disabled={disabled}
+          aria-invalid={Boolean(fieldErrors.relatedTopicIds)}
+          aria-describedby={
+            fieldErrors.relatedTopicIds ? errorId("relatedTopicIds") : undefined
+          }
+          className={inputClass(
+            "relatedTopicIds",
+            "border-line rounded-tile mt-4 border px-4 py-4 disabled:opacity-60",
+          )}
+        >
+          <legend className="text-ink-70 px-1 text-[13px] font-semibold">
+            Povezane teme
+          </legend>
+          <p className="text-ink-55 mb-3 text-[12px] leading-[1.5]">
+            Veze stručni tim potvrđuje kroz pregled; sinonimi ih ne stvaraju
+            automatski.
+          </p>
+          {availableRelatedTopics.length === 0 ? (
+            <p className="text-ink-45 text-[12.5px] italic">
+              Nema drugih aktivnih tema koje se mogu povezati.
+            </p>
+          ) : (
+            <div className="grid max-h-[220px] gap-2 overflow-y-auto pr-1 sm:grid-cols-2">
+              {availableRelatedTopics.map((relatedTopic) => {
+                const checked = draft.relatedTopicIds.includes(
+                  relatedTopic.termId,
+                );
+                return (
+                  <label
+                    key={relatedTopic.termId}
+                    className={cn(
+                      "border-line-strong rounded-tile flex cursor-pointer items-start gap-2.5 border px-3 py-2.5 text-[12.5px] transition-colors",
+                      checked
+                        ? "border-sage bg-sage/8 text-forest"
+                        : "text-ink-70 hover:border-coffee/35",
+                    )}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      onChange={() => {
+                        setField(
+                          "relatedTopicIds",
+                          checked
+                            ? draft.relatedTopicIds.filter(
+                                (id) => id !== relatedTopic.termId,
+                              )
+                            : [...draft.relatedTopicIds, relatedTopic.termId],
+                        );
+                        clearFieldError("relatedTopicIds");
+                      }}
+                      className="accent-forest mt-0.5 h-4 w-4 shrink-0"
+                    />
+                    <span>
+                      <span className="block font-semibold">
+                        {relatedTopic.publicLabel}
+                        {relatedTopic.status === "archived"
+                          ? " · arhivirano"
+                          : ""}
+                      </span>
+                      <span className="text-ink-45 mt-0.5 block font-mono text-[10.5px]">
+                        {relatedTopic.stableId}
+                      </span>
+                    </span>
+                  </label>
+                );
+              })}
+            </div>
+          )}
+          <p className="text-ink-45 mt-2 text-right text-[11px]">
+            Izabrano: {draft.relatedTopicIds.length}
+          </p>
+          <FieldError
+            id={errorId("relatedTopicIds")}
+            message={fieldErrors.relatedTopicIds}
+          />
+        </fieldset>
+      ) : null}
+    </>
+  );
+}

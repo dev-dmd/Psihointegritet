@@ -141,7 +141,7 @@ Psihointegritet želi eksplicitno da prikaže da prima LGBTQIA+ osobe bez stigme
 
 > **Gde piše:** PRODUCT_CONTEXT v0.3 §11.5 · content-architecture.md §6 · D-053 · ADR-022 · **Blokira još samo:** tier/release obećanje, ne backend registra
 
-**Šta znamo:** CTO je 2026-07-26 potvrdio da je Kompas **novi, zaseban proizvod** — nije novo ime za postojeći Vođeni izbor / Intake & Matching tok. D-053/ADR-022 sada dozvoljavaju backend registar, panel i CMS reference pre javnog proizvoda. Recommendation, javni Kompas i Intake/Booking handoff dolaze tek kroz svoje K3A–K6 kapije.
+**Šta znamo:** CTO je 2026-07-26 potvrdio da je Kompas **novi, zaseban proizvod** — nije novo ime za postojeći Vođeni izbor / Intake & Matching tok. D-053/D-054/D-056 i ADR-022 Amandmani 1–2 zaključavaju backend registar, panel, CMS reference, javni v1 tok, anonimni access i Intake granicu. K3B core, K4 Engine, K5 storage granica, kanonske/list stranice i K6A „Brzi unos” su završeni; finalni `/kompas`, vidljivi Intake most i feedback ostaju iza svojih K5/K6 kapija.
 
 **Preostalo od CTO/tima:**
 
@@ -155,7 +155,7 @@ Psihointegritet želi eksplicitno da prikaže da prima LGBTQIA+ osobe bez stigme
 
 > **Usvojeno 2026-07-31 — D-053 / ADR-022:** `KOMPAS_TODO.md` razdvaja Kompas topic grupe/teme od D-052 Intake routing oblasti. V1 ose su `topicGroupId`, `topicIds`, jedna sistemska vrednost `journeyIntent`, `goalIds`, `audienceIds`, izvedeni/kontrolisani `contentFormat` i postojeći `accessPolicy`; tagovi/sinonimi ostaju samo pretraga. Kompas je u v1 deterministički content recommendation servis u `modules/content`, bez novog therapist scoring-a i bez obaveznog AI-ja. Implementacija ide backend registar → panel → CMS → javni Kompas.
 
-**O-21 ostaje otvoren samo** za basic/advanced granicu i release mapu. K0 arhitektonska kapija je prošla; K1 backend foundation može da počne. Tačne Anjine kategorije su podaci registra i mogu stići tokom implementacije, ali pre javnog UI-ja.
+**O-21 ostaje otvoren samo** za basic/advanced granicu i release mapu. K0 arhitektonska kapija i K1–K3 implementacija su prošle; tačne Anjine kategorije su podaci registra, a finalni javni vizuelni sloj čeka poseban Kompas design handoff.
 
 ---
 

@@ -13,6 +13,7 @@ import {
 import type { TaxonomyTerm } from "../../taxonomy-api";
 import { LockIcon } from "../icons";
 import { PageHeader } from "../page-header";
+import { TaxonomyQuickEntry } from "../taxonomy-quick-entry";
 import {
   type ManagedTaxonomyAxis,
   TaxonomyTermEditor,
@@ -138,6 +139,8 @@ export function ScreenKompas() {
               dot={publishedCount > 0 ? "meadow" : undefined}
             />
           </div>
+
+          <TaxonomyQuickEntry terms={terms} onSaved={upsertTerm} />
 
           <div className="rounded-panel border-line bg-surface border px-4 py-4 md:px-5">
             <TabPills

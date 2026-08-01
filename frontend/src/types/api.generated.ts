@@ -282,11 +282,32 @@ export interface paths {
         get?: never;
         put?: never;
         post?: never;
-        delete?: never;
+        /** Delete Taxonomy Revision */
+        delete: operations["delete_taxonomy_revision"];
         options?: never;
         head?: never;
         /** Update Taxonomy Revision */
         patch: operations["update_taxonomy_revision"];
+        trace?: never;
+    };
+    "/api/v1/content/taxonomy/terms/{term_id}/revisions/{revision_id}/delete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Delete Taxonomy Revision Action
+         * @description Action-route counterpart for panel/proxy layers that reject DELETE.
+         */
+        post: operations["delete_taxonomy_revision_action"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/v1/content/taxonomy/terms/{term_id}/revisions/{revision_id}/reviews": {
@@ -605,6 +626,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/public/compass/recommendations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Get Public Compass Recommendations */
+        post: operations["get_public_compass_recommendations"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/public/compass/taxonomy": {
         parameters: {
             query?: never;
@@ -614,6 +652,23 @@ export interface paths {
         };
         /** Get Public Taxonomy */
         get: operations["get_public_taxonomy"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/public/compass/taxonomy/pages/{route_kind}/{slug}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Public Compass Taxonomy Page */
+        get: operations["get_public_compass_taxonomy_page"];
         put?: never;
         post?: never;
         delete?: never;
@@ -868,6 +923,162 @@ export interface components {
              */
             therapistProfileId: string;
         };
+        /**
+         * CompassContentCardOut
+         * @description A controlled CMS identity, never an editor-provided destination URL.
+         */
+        CompassContentCardOut: {
+            /**
+             * Accesslevel
+             * @default public
+             * @constant
+             */
+            accessLevel: "public";
+            contentFormat: components["schemas"]["ContentFormat"];
+            contentType: components["schemas"]["ContentType"];
+            /** Itemkey */
+            itemKey: string;
+            /** Locale */
+            locale: string;
+            /**
+             * Publishedat
+             * Format: date-time
+             */
+            publishedAt: string;
+            seo: components["schemas"]["SeoFields"];
+            /** Slug */
+            slug: string;
+            template: components["schemas"]["ContentTemplate"];
+        };
+        /** CompassHandoffCandidateOut */
+        CompassHandoffCandidateOut: {
+            /** Audienceids */
+            audienceIds: string[];
+            journeyIntent?: components["schemas"]["JourneyIntent"] | null;
+            /**
+             * Schemaversion
+             * @default 1
+             * @constant
+             */
+            schemaVersion: "1";
+            /** Taxonomyversion */
+            taxonomyVersion: string;
+            /** Topicgroupid */
+            topicGroupId?: string | null;
+            /** Topicids */
+            topicIds: string[];
+        };
+        /** CompassNormalizedSelectionOut */
+        CompassNormalizedSelectionOut: {
+            /** Audienceid */
+            audienceId?: string | null;
+            /** Goalids */
+            goalIds: string[];
+            journeyIntent?: components["schemas"]["JourneyIntent"] | null;
+            /** Topicgroupid */
+            topicGroupId?: string | null;
+            /** Topicids */
+            topicIds: string[];
+        };
+        /** CompassPaginationOut */
+        CompassPaginationOut: {
+            /** Hasmore */
+            hasMore: boolean;
+            /** Limit */
+            limit: number;
+            /** Offset */
+            offset: number;
+            /** Total */
+            total: number;
+        };
+        /** CompassReasonOut */
+        CompassReasonOut: {
+            /** Code */
+            code: string;
+            /** Text */
+            text: string;
+        };
+        /** CompassRecommendationItemOut */
+        CompassRecommendationItemOut: {
+            card: components["schemas"]["CompassContentCardOut"];
+            /** Reasons */
+            reasons: components["schemas"]["CompassReasonOut"][];
+        };
+        /** CompassRecommendationOut */
+        CompassRecommendationOut: {
+            handoffCandidate: components["schemas"]["CompassHandoffCandidateOut"];
+            /** Locale */
+            locale: string;
+            normalizedSelection: components["schemas"]["CompassNormalizedSelectionOut"];
+            pagination: components["schemas"]["CompassPaginationOut"];
+            /** Recommendations */
+            recommendations: components["schemas"]["CompassRecommendationItemOut"][];
+            /** Relatedtopics */
+            relatedTopics: components["schemas"]["PublicTaxonomyTermOut"][];
+            /** Ruleversion */
+            ruleVersion: string;
+            /** Selectionadjustments */
+            selectionAdjustments: components["schemas"]["CompassSelectionAdjustmentOut"][];
+            /** Taxonomyversion */
+            taxonomyVersion: string;
+        };
+        /** CompassRecommendationRequest */
+        CompassRecommendationRequest: {
+            /** Audienceid */
+            audienceId?: string | null;
+            /** Goalids */
+            goalIds?: string[];
+            journeyIntent?: components["schemas"]["JourneyIntent"] | null;
+            /**
+             * Limit
+             * @default 12
+             */
+            limit: number;
+            /**
+             * Locale
+             * @default sr-Latn
+             */
+            locale: string;
+            /**
+             * Offset
+             * @default 0
+             */
+            offset: number;
+            /** Ruleversion */
+            ruleVersion: string;
+            /** Taxonomyversion */
+            taxonomyVersion: string;
+            /** Topicgroupid */
+            topicGroupId?: string | null;
+            /** Topicids */
+            topicIds?: string[];
+        };
+        /** CompassSelectionAdjustmentOut */
+        CompassSelectionAdjustmentOut: {
+            /** Code */
+            code: string;
+            /** Fieldpath */
+            fieldPath: string;
+            /** Message */
+            message: string;
+            /** Removedvalues */
+            removedValues?: string[];
+        };
+        /** CompassTaxonomyPageOut */
+        CompassTaxonomyPageOut: {
+            /** Children */
+            children: components["schemas"]["PublicTaxonomyTermOut"][];
+            /** Contentcards */
+            contentCards: components["schemas"]["CompassContentCardOut"][];
+            /** Locale */
+            locale: string;
+            parent?: components["schemas"]["PublicTaxonomyTermOut"] | null;
+            /** Relatedterms */
+            relatedTerms: components["schemas"]["PublicTaxonomyTermOut"][];
+            /** Taxonomyversion */
+            taxonomyVersion: string;
+            term: components["schemas"]["PublicTaxonomyTermOut"];
+        };
         /** ConfirmTaxonomyRouteRequest */
         ConfirmTaxonomyRouteRequest: {
             /**
@@ -885,6 +1096,28 @@ export interface components {
          * @enum {string}
          */
         ConsentKind: "intake_data_processing_notice" | "intake_request_acknowledgement" | "marketing" | "ai_free_text_processing";
+        /**
+         * ContentDiscoveryMetadata
+         * @description Controlled Kompas metadata attached to exactly one CMS revision.
+         */
+        ContentDiscoveryMetadata: {
+            /** Accessleveltermid */
+            accessLevelTermId?: string | null;
+            /** Audiencetermids */
+            audienceTermIds?: string[];
+            /** Contentformattermid */
+            contentFormatTermId?: string | null;
+            /** Contentgoaltermids */
+            contentGoalTermIds?: string[];
+            /** Journeyintenttermid */
+            journeyIntentTermId?: string | null;
+            /** Relatedcontententryids */
+            relatedContentEntryIds?: string[];
+            /** Topicgrouptermid */
+            topicGroupTermId?: string | null;
+            /** Topictermids */
+            topicTermIds?: string[];
+        };
         /** ContentFindingOut */
         ContentFindingOut: {
             /** Fieldpath */
@@ -904,6 +1137,11 @@ export interface components {
              */
             severity: "info" | "warning" | "error";
         };
+        /**
+         * ContentFormat
+         * @enum {string}
+         */
+        ContentFormat: "article" | "pdf" | "video" | "audio" | "worksheet" | "program";
         /**
          * ContentHealthOut
          * @description Read-only result for one saved revision (CG-D4).
@@ -938,6 +1176,7 @@ export interface components {
             createdBy?: components["schemas"]["ActorSummaryOut"] | null;
             /** Decisions */
             decisions: components["schemas"]["ReviewDecisionOut"][];
+            discovery: components["schemas"]["ContentDiscoveryMetadata"];
             /**
              * Entryid
              * Format: uuid
@@ -1181,6 +1420,11 @@ export interface components {
          * @enum {string}
          */
         IntakeSubmissionKind: "request" | "team_review";
+        /**
+         * JourneyIntent
+         * @enum {string}
+         */
+        JourneyIntent: "explore" | "professional_support" | "both";
         /**
          * LegalDocumentKind
          * @description Document identities the registry can hold.
@@ -1821,6 +2065,7 @@ export interface components {
          *     default — the client always edits against a specific version it fetched.
          */
         UpdateContentRevisionRequest: {
+            discovery?: components["schemas"]["ContentDiscoveryMetadata"] | null;
             /** Lockversion */
             lockVersion: number;
             seo?: components["schemas"]["SeoFields"] | null;
@@ -2756,6 +3001,63 @@ export interface operations {
             };
         };
     };
+    delete_taxonomy_revision: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                term_id: string;
+                revision_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+        };
+    };
     update_taxonomy_revision: {
         parameters: {
             query?: never;
@@ -2780,6 +3082,63 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["TaxonomyTermOut"];
                 };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+        };
+    };
+    delete_taxonomy_revision_action: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                term_id: string;
+                revision_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Forbidden */
             403: {
@@ -3590,6 +3949,57 @@ export interface operations {
             };
         };
     };
+    get_public_compass_recommendations: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CompassRecommendationRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CompassRecommendationOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+        };
+    };
     get_public_taxonomy: {
         parameters: {
             query?: {
@@ -3617,6 +4027,65 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_public_compass_taxonomy_page: {
+        parameters: {
+            query?: {
+                locale?: string;
+            };
+            header?: never;
+            path: {
+                route_kind: components["schemas"]["TaxonomyRouteKind"];
+                slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CompassTaxonomyPageOut"];
+                };
+            };
+            /** @description Stara putanja preusmerava na aktuelnu kanonsku putanju. */
+            308: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
                 };
             };
         };

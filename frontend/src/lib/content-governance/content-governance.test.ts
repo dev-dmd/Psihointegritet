@@ -33,6 +33,32 @@ function entity(id: string): ContentEntity {
 }
 
 describe("content governance contract", () => {
+  it.each(["/kompas/oblast/stres-i-preopterecenost", "/kompas/tema/burnout"])(
+    "recognizes the canonical Kompas taxonomy route %s",
+    (path) => {
+      expect(isKnownPublicRoute(path)).toBe(true);
+    },
+  );
+
+  it.each([
+    "/kompas/oblast",
+    "/kompas/oblast/",
+    "/kompas/tema",
+    "/kompas/tema/",
+    "/kompas/oblast/stres/dodatno",
+    "/kompas/tema/burnout/dodatno",
+    "/kompas-oblast/stres",
+    "/kompas/oblasti/stres",
+    "/kompas-tema/burnout",
+    "/kompas/teme/burnout",
+  ])("rejects a malformed or lookalike Kompas taxonomy route %s", (path) => {
+    expect(isKnownPublicRoute(path)).toBe(false);
+  });
+
+  it("does not register the Kompas landing page before its F3 renderer exists", () => {
+    expect(isKnownPublicRoute("/kompas")).toBe(false);
+  });
+
   it("allows only the locked publication lifecycle transitions", () => {
     expect(isValidPublicationTransition("draft", "in_review")).toBe(true);
     expect(isValidPublicationTransition("in_review", "approved")).toBe(true);

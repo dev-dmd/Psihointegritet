@@ -18,16 +18,15 @@ const sourceRoot = path.join(projectRoot, "src");
  *
  * Reduced 2026-08-01 by the workspace refactor: `screen-kompas.tsx` (1843) and
  * `screen-dokumenti.tsx` (1128) were decomposed into component families and no
- * longer exist as single files; `content-revision-editor.tsx` 643 -> 592 and
- * `taxonomy-term-editor.tsx` 1004 -> 983 after their network lifecycle moved
- * into feature hooks. The remaining entries are the outstanding debt.
+ * longer exist as single files; `content-revision-editor.tsx` 643 -> 592 after
+ * its network lifecycle moved into a feature hook. `taxonomy-term-editor.tsx`
+ * was decomposed for F4 Quick Entry and is no longer baseline debt.
  */
 const largeFileBaseline = new Map([
   ["src/features/booking/booking-request-form.tsx", 659],
   ["src/features/company/company-configurator-drawer.tsx", 517],
   ["src/features/guidance/guidance-flow.tsx", 963],
   ["src/features/workspace/components/content-revision-editor.tsx", 593],
-  ["src/features/workspace/components/taxonomy-term-editor.tsx", 983],
 ]);
 
 /**

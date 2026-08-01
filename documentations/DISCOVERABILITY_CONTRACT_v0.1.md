@@ -99,6 +99,7 @@ type RedirectRecord = {
 Pravila:
 
 - public slug promena čuva stari URL i šalje trajni redirect samo ka stvarnoj zameni;
+- Kompas taxonomy alias je zaseban runtime redirect izvor iz DB route registra: resolver vraća 308 samo ka validnoj aktuelnoj `/kompas/oblast/<slug>` ili `/kompas/tema/<slug>` putanji; taxonomy slugovi se nikada ne kopiraju u compile-time `redirectRegistry`;
 - kada nema zamene, koristi se eksplicitna 404/410 odluka;
 - source i target su interne normalizovane putanje;
 - nema lanaca, petlji, targeta u redirectu niti podrazumevanog slanja na home;

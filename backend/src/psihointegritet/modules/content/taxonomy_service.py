@@ -492,6 +492,7 @@ class TaxonomyService:
         replacement_term_id: UUID | None,
         *,
         published: bool = False,
+        allow_incomplete_topic_context: bool = False,
     ) -> None:
         if revision.icon_key and revision.asset_id:
             raise TaxonomyValidationError(
@@ -501,33 +502,37 @@ class TaxonomyService:
             )
         if term.axis is TaxonomyAxis.TOPIC:
             if revision.primary_parent_term_id is None:
-                raise TaxonomyValidationError(
-                    "TAX-HIER-001",
-                    "Tema mora pripadati jednoj primarnoj grupi.",
-                    "primaryParentTermId",
+                if not allow_incomplete_topic_context:
+                    raise TaxonomyValidationError(
+                        "TAX-HIER-001",
+                        "Tema mora pripadati jednoj primarnoj grupi.",
+                        "primaryParentTermId",
+                    )
+            else:
+                await self._reference_term(
+                    actor,
+                    revision.primary_parent_term_id,
+                    axis=TaxonomyAxis.TOPIC_GROUP,
+                    field_path="primaryParentTermId",
+                    published=published,
+                    locale=revision.locale,
                 )
             if revision.journey_intent_term_id is None:
-                raise TaxonomyValidationError(
-                    "TAX-JOURNEY-001",
-                    "Tema mora imati izabran put korisnika.",
-                    "journeyIntentTermId",
+                if not allow_incomplete_topic_context:
+                    raise TaxonomyValidationError(
+                        "TAX-JOURNEY-001",
+                        "Tema mora imati izabran put korisnika.",
+                        "journeyIntentTermId",
+                    )
+            else:
+                await self._reference_term(
+                    actor,
+                    revision.journey_intent_term_id,
+                    axis=TaxonomyAxis.JOURNEY_INTENT,
+                    field_path="journeyIntentTermId",
+                    published=published,
+                    locale=revision.locale,
                 )
-            await self._reference_term(
-                actor,
-                revision.primary_parent_term_id,
-                axis=TaxonomyAxis.TOPIC_GROUP,
-                field_path="primaryParentTermId",
-                published=published,
-                locale=revision.locale,
-            )
-            await self._reference_term(
-                actor,
-                revision.journey_intent_term_id,
-                axis=TaxonomyAxis.JOURNEY_INTENT,
-                field_path="journeyIntentTermId",
-                published=published,
-                locale=revision.locale,
-            )
         elif (
             revision.primary_parent_term_id is not None
             or revision.journey_intent_term_id is not None
@@ -874,7 +879,14 @@ class TaxonomyService:
         )
         self._session.add(revision)
         await self._session.flush()
-        await self._validate_shape(actor, term, revision, request.related_topic_ids, None)
+        await self._validate_shape(
+            actor,
+            term,
+            revision,
+            request.related_topic_ids,
+            None,
+            allow_incomplete_topic_context=True,
+        )
         await self._replace_search_terms(revision.id, request.search_terms)
         await self._replace_relations(revision, term.id, request.related_topic_ids, None)
         self._log_term_event(revision.id, None, RevisionStatus.DRAFT, actor)
@@ -1046,7 +1058,14 @@ class TaxonomyService:
                 None,
             )
         )
-        await self._validate_shape(actor, term, revision, related, replacement)
+        await self._validate_shape(
+            actor,
+            term,
+            revision,
+            related,
+            replacement,
+            allow_incomplete_topic_context=True,
+        )
         if request.search_terms is not None:
             await self._replace_search_terms(revision.id, request.search_terms)
         if request.related_topic_ids is not None or "replacement_term_id" in fields:
@@ -1184,6 +1203,26 @@ class TaxonomyService:
             await self._session.refresh(revision)
             return await self._term_out(term, revision)
         require_transition(revision.status, request.target)
+        if request.target is RevisionStatus.IN_REVIEW:
+            relations = await self._relations(revision.id)
+            await self._validate_shape(
+                actor,
+                term,
+                revision,
+                [
+                    item.target_term_id
+                    for item in relations
+                    if item.relation_kind is TaxonomyRelationKind.RELATED_TOPIC
+                ],
+                next(
+                    (
+                        item.target_term_id
+                        for item in relations
+                        if item.relation_kind is TaxonomyRelationKind.REPLACEMENT
+                    ),
+                    None,
+                ),
+            )
         if request.target is RevisionStatus.APPROVED:
             relations = await self._relations(revision.id)
             await self._validate_shape(
@@ -1404,7 +1443,13 @@ class TaxonomyService:
             taxonomy_version=TAXONOMY_VERSION,
             locale=locale,
             terms=sorted(
-                outputs, key=lambda item: (item.axis.value, item.sort_order, item.public_label)
+                outputs,
+                key=lambda item: (
+                    item.axis.value,
+                    item.sort_order,
+                    item.public_label,
+                    item.stable_id,
+                ),
             ),
         )
 

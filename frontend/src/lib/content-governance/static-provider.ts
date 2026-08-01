@@ -40,6 +40,8 @@ const publicRoutePatterns = [
   "/usluge/[slug]",
   "/radionice",
   "/radionice/[slug]",
+  "/kompas/oblast/[slug]",
+  "/kompas/tema/[slug]",
   "/podrska-roditeljima",
   "/cene",
   "/znanje",

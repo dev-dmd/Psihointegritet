@@ -11,6 +11,7 @@ from __future__ import annotations
 import asyncio
 from dataclasses import dataclass
 from datetime import UTC, datetime
+from typing import Final
 from uuid import UUID
 
 from sqlalchemy import select
@@ -61,11 +62,12 @@ from psihointegritet.shared.parsing.docx_import import (
 
 _EMPTY_BODY: dict[str, object] = {"schemaVersion": 1, "blocks": []}
 _DOCX_CONVERSION_TIMEOUT_SECONDS = 20
-_RESERVED_CUSTOM_DOCUMENT_SLUGS = frozenset(
+RESERVED_CUSTOM_DOCUMENT_SLUGS: Final[frozenset[str]] = frozenset(
     {
         "booking-widget",
         "cene",
         "kolacici",
+        "kompas",
         "kontakt",
         "o-nama",
         "podrska-roditeljima",
@@ -228,7 +230,7 @@ class LegalDocumentService:
 
         if (
             request.kind is LegalDocumentKind.CUSTOM_DOCUMENT
-            and request.slug in _RESERVED_CUSTOM_DOCUMENT_SLUGS
+            and request.slug in RESERVED_CUSTOM_DOCUMENT_SLUGS
         ):
             raise LegalDocumentConflictError(
                 "Slug is reserved by an existing system or internal page"

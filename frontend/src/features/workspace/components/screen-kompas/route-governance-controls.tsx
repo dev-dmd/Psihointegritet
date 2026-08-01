@@ -111,7 +111,7 @@ export function RouteGovernanceControls({
           <p className="text-ink-55 mt-1 max-w-[620px] text-[12px] leading-[1.45]">
             {hasCanonicalRoute
               ? "Promena javnog naziva ne menja ovu putanju. Ako je namerno promenite, stara putanja ostaje bezbedan redirect."
-              : "Pre objave potvrdite putanju koju će ljudi i pretraživači koristiti. Ovo je samo preview; K2 ne gradi javnu stranicu."}
+              : "Pre objave potvrdite putanju koju će ljudi i pretraživači koristiti. Javna stranica postaje dostupna tek kada termin bude objavljen."}
           </p>
         </div>
         <span

@@ -17,6 +17,7 @@ import {
   previewNewLegalDocumentDocx,
   type ApiImportDocxResult,
 } from "../../legal-documents-api";
+import { reservedCustomDocumentSlugs } from "../../reserved-custom-document-slugs";
 import { ActionButton } from "./action-button";
 import { describeDocxImportError } from "./helpers";
 import { DocxImportFindings } from "./docx-import-findings";
@@ -30,25 +31,6 @@ const CREATABLE_KINDS: LegalDocumentKind[] = [
   "intake_data_processing_notice",
   "intake_request_acknowledgement",
 ];
-const RESERVED_CUSTOM_DOCUMENT_SLUGS = new Set([
-  "booking-widget",
-  "cene",
-  "kolacici",
-  "kontakt",
-  "o-nama",
-  "podrska-roditeljima",
-  "pravila-zakazivanja",
-  "privatnost",
-  "pronadji-podrsku",
-  "rad-sa-kompanijama",
-  "radionice",
-  "tim",
-  "uslovi",
-  "usluge",
-  "zakazi",
-  "znanje",
-]);
-
 export interface NewDocumentInput {
   kind: LegalDocumentKind;
   title: string;
@@ -86,7 +68,7 @@ export function NewDocumentForm({
   const slugInvalid = effectiveSlug.length > 0 && !isValidSlug(effectiveSlug);
   const slugReserved =
     kind === "custom_document" &&
-    RESERVED_CUSTOM_DOCUMENT_SLUGS.has(effectiveSlug);
+    reservedCustomDocumentSlugs.has(effectiveSlug);
   const availableKinds = CREATABLE_KINDS.filter(
     (value) => value === "custom_document" || !existingKinds.includes(value),
   );

@@ -1,3 +1,4 @@
+import { revalidatePublicCompassAfterMutation } from "@/lib/compass/revalidation";
 import { forwardStaffIntake } from "@/lib/intake/backend-proxy";
 
 interface RouteContext {
@@ -10,7 +11,7 @@ export async function PUT(
 ): Promise<Response> {
   const { termId } = await context.params;
   const body = await request.text();
-  return forwardStaffIntake(
+  const response = await forwardStaffIntake(
     `/api/v1/content/taxonomy/terms/${encodeURIComponent(termId)}/routes/canonical`,
     {
       method: "PUT",
@@ -18,4 +19,6 @@ export async function PUT(
       body,
     },
   );
+  revalidatePublicCompassAfterMutation(response);
+  return response;
 }

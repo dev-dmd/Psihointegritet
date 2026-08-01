@@ -1,6 +1,7 @@
 from fastapi import APIRouter
 
 from psihointegritet.api.v1 import health
+from psihointegritet.modules.content.compass_router import router as compass_public_router
 from psihointegritet.modules.content.router import (
     public_router as content_public_router,
 )
@@ -23,3 +24,4 @@ api_v1_router.include_router(content_router)
 api_v1_router.include_router(content_public_router)
 api_v1_router.include_router(taxonomy_router)
 api_v1_router.include_router(taxonomy_public_router)
+api_v1_router.include_router(compass_public_router)
