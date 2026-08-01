@@ -1,6 +1,8 @@
-import { footerServiceLinks, navLinks } from "@/content/homepage";
+import type { Route } from "next";
+import Link from "next/link";
 
-const footerNavLinks = navLinks.filter((link) => link.href !== "#onama");
+import { footerNavigationGroups } from "@/content/site-navigation";
+import { siteSettings } from "@/content/site-settings";
 
 export function SiteFooter() {
   return (
@@ -18,52 +20,38 @@ export function SiteFooter() {
               />
             </div>
             <p className="text-canvas/62 mb-6 max-w-[340px] text-[15px] leading-[1.65]">
-              Digitalni centar za mentalno zdravlje. Psihoterapija,
-              savjetovanje, radionice i edukativni sadržaji — na jednom mjestu.
+              Digitalni centar za mentalno zdravlje. Psihoterapija, savetovanje,
+              radionice i edukativni sadržaji — na jednom mestu.
             </p>
             <div className="text-canvas/55 text-sm leading-[1.9]">
-              Niš · online i uživo
+              Niš · Leskovac · online i uživo
               <br />
               <a
-                href="mailto:kontakt@psihointegritet.rs"
+                href={`mailto:${siteSettings.contactEmail}`}
                 className="text-canvas/80 hover:text-meadow no-underline transition-colors duration-200"
               >
-                kontakt@psihointegritet.rs
+                {siteSettings.contactEmail}
               </a>
             </div>
           </div>
-          <div>
-            <div className="text-sage mb-[18px] text-[11.5px] font-semibold tracking-[0.14em] uppercase">
-              Navigacija
+          {footerNavigationGroups.map((group) => (
+            <div key={group.title}>
+              <div className="text-sage mb-[18px] text-[11.5px] font-semibold tracking-[0.14em] uppercase">
+                {group.title}
+              </div>
+              <div className="flex flex-col gap-3">
+                {group.links.map((link) => (
+                  <Link
+                    key={link.href}
+                    href={link.href as Route}
+                    className="text-canvas/75 hover:text-meadow text-[15px] no-underline transition-colors duration-200"
+                  >
+                    {link.label}
+                  </Link>
+                ))}
+              </div>
             </div>
-            <div className="flex flex-col gap-3">
-              {footerNavLinks.map((link) => (
-                <a
-                  key={link.href}
-                  href={link.href}
-                  className="text-canvas/75 hover:text-meadow text-[15px] no-underline transition-colors duration-200"
-                >
-                  {link.label}
-                </a>
-              ))}
-            </div>
-          </div>
-          <div>
-            <div className="text-sage mb-[18px] text-[11.5px] font-semibold tracking-[0.14em] uppercase">
-              Usluge
-            </div>
-            <div className="flex flex-col gap-3">
-              {footerServiceLinks.map((link) => (
-                <a
-                  key={link.label}
-                  href={link.href}
-                  className="text-canvas/75 hover:text-meadow text-[15px] no-underline transition-colors duration-200"
-                >
-                  {link.label}
-                </a>
-              ))}
-            </div>
-          </div>
+          ))}
         </div>
         <div className="flex flex-wrap items-center justify-between gap-6 pt-7">
           <div className="text-canvas/45 text-[13px]">
@@ -71,7 +59,7 @@ export function SiteFooter() {
           </div>
           <div className="text-canvas/40 max-w-[520px] text-[12.5px]">
             Sadržaji na ovoj stranici imaju edukativnu svrhu i ne predstavljaju
-            zamjenu za individualni razgovor sa stručnom osobom.
+            zamenu za individualni razgovor sa stručnom osobom.
           </div>
         </div>
       </div>

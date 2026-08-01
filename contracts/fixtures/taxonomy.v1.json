@@ -1,0 +1,34 @@
+{
+  "schemaVersion": 1,
+  "taxonomyVersion": "support-areas-v1",
+  "supportAreas": [
+    {
+      "id": "anxiety_stress",
+      "label": "Stres i anksioznost"
+    },
+    {
+      "id": "relationships",
+      "label": "Odnosi i partnerske teme"
+    },
+    {
+      "id": "parenting",
+      "label": "Roditeljstvo"
+    },
+    {
+      "id": "trauma_crisis",
+      "label": "Trauma i krizna iskustva"
+    },
+    {
+      "id": "personal_growth",
+      "label": "Lični rast i razvoj"
+    }
+  ],
+  "specialties": [
+    {
+      "id": "addiction_related_support",
+      "label": "Zavisnost",
+      "primaryTherapistSlugs": ["anja-stamenkovic"],
+      "handoffAllowed": true
+    }
+  ]
+}

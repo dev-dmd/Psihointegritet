@@ -1,64 +1,121 @@
-import { expect, test } from "@playwright/test";
+import AxeBuilder from "@axe-core/playwright";
+import { expect, test, type Page } from "@playwright/test";
 
-test("guided selection quiz recommends therapists", async ({ page }) => {
+async function startQuestionnaire(page: Page) {
+  await page.goto("/pronadji-podrsku");
+  await page.getByRole("button", { name: "Započni upitnik" }).click();
+}
+
+test("header booking CTA opens the canonical booking route", async ({
+  page,
+}) => {
   await page.goto("/");
 
-  await page
-    .getByRole("button", { name: "Pomozite mi da pronađem podršku" })
-    .click();
+  const cta = page.getByRole("link", { name: "Zakaži termin" }).first();
+  await expect(cta).toHaveAttribute("href", "/zakazi?source=header");
+  await cta.click();
 
-  const drawer = page.getByRole("dialog", { name: "Vođeni izbor podrške" });
-  await expect(drawer).toBeVisible();
-  await expect(drawer).toContainText("Korak 1 od 5");
-
-  await drawer.getByRole("button", { name: "Za partnerski odnos" }).click();
-  await drawer.getByRole("button", { name: "Odnosi i komunikacija" }).click();
-  await drawer.getByRole("button", { name: "Online" }).click();
-  await drawer.getByRole("button", { name: "Uveče" }).click();
-  await drawer
-    .getByRole("button", { name: "Nekoliko predloženih terapeuta" })
-    .click();
-
-  await expect(drawer).toContainText("Predlažemo da upoznate");
-  // Couples answer recommends A. S. and M. J. (deterministic rules).
-  await expect(drawer.getByRole("link", { name: /A\. S\./ })).toBeVisible();
-  await expect(drawer.getByRole("link", { name: /M\. J\./ })).toBeVisible();
-  await expect(drawer).toContainText("Vaši odgovori se ne čuvaju");
-
-  await drawer.getByRole("button", { name: "Zatvori" }).click();
-  await expect(drawer).not.toBeVisible();
+  await expect(page).toHaveURL(/\/zakazi\?source=header$/);
 });
 
-test("quiz supports going back and the services outcome", async ({ page }) => {
+test("homepage support CTA opens the route-level guided flow", async ({
+  page,
+}) => {
   await page.goto("/");
 
   await page
-    .getByRole("button", { name: "Pomozite mi da pronađem podršku" })
+    .getByRole("link", { name: "Pomozi mi da pronađem podršku" })
     .click();
 
-  const drawer = page.getByRole("dialog", { name: "Vođeni izbor podrške" });
-
-  await drawer
-    .getByRole("button", { name: "Tražim radionicu ili edukaciju" })
-    .click();
-  await expect(drawer).toContainText("Korak 2 od 5");
-
-  await drawer.getByRole("button", { name: "← Nazad" }).click();
-  await expect(drawer).toContainText("Korak 1 od 5");
-
-  await drawer
-    .getByRole("button", { name: "Tražim radionicu ili edukaciju" })
-    .click();
-  await drawer.getByRole("button", { name: "Lični razvoj" }).click();
-  await drawer.getByRole("button", { name: "Svejedno" }).click();
-  await drawer.getByRole("button", { name: "Fleksibilno" }).click();
-  await drawer.getByRole("button", { name: "Usluge i programe" }).click();
-
-  await expect(drawer).toContainText("Usluge i programi za vas");
+  await expect(page).toHaveURL(/\/pronadji-podrsku$/);
   await expect(
-    drawer.getByRole("link", { name: /Usluge i cjenovnik/ }),
+    page.getByRole("heading", {
+      level: 1,
+      name: "Pronađite podršku koja vam odgovara",
+    }),
+  ).toBeVisible();
+  await expect(page.getByText("Upitnik nije dijagnostički alat")).toBeVisible();
+});
+
+test("matching result hands off only safe booking context", async ({
+  page,
+}) => {
+  await startQuestionnaire(page);
+
+  await page
+    .getByRole("button", { name: "Za sebe kao punoletna osoba", exact: true })
+    .click();
+  await page.getByRole("button", { name: "Burnout", exact: true }).click();
+  await page.getByRole("button", { name: "Sam/a", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Naučiti kako da se nosim sa emocijama" })
+    .click();
+  await page.getByRole("button", { name: "Online", exact: true }).click();
+
+  await expect(
+    page.getByText("Predlog na osnovu vaših odgovora"),
   ).toBeVisible();
   await expect(
-    drawer.getByRole("link", { name: /Radionice i programi/ }),
+    page.getByText("Anja Stamenković", { exact: true }),
   ).toBeVisible();
+
+  const bookingLink = page
+    .getByRole("link", { name: "Zatražite termin" })
+    .first();
+  await expect(bookingLink).toHaveAttribute(
+    "href",
+    "/zakazi?service=individualna-psihoterapija&therapist=anja-stamenkovic&format=online&source=matching",
+  );
+  await bookingLink.click();
+
+  await expect(page).toHaveURL(
+    /\/zakazi\?service=individualna-psihoterapija&therapist=anja-stamenkovic&format=online&source=matching$/,
+  );
+  await expect(page.getByLabel("Usluga")).toHaveValue(
+    "individualna-psihoterapija",
+  );
+  await expect(page.getByLabel("Terapeut")).toHaveValue("anja-stamenkovic");
+});
+
+test("a guardian request for someone under 16 remains a controlled team-review path", async ({
+  page,
+}) => {
+  await startQuestionnaire(page);
+
+  await page
+    .getByRole("button", {
+      name: "Roditelj ili zakonski staratelj",
+      exact: true,
+    })
+    .click();
+  await page.getByRole("button", { name: "Roditeljstvo", exact: true }).click();
+  await page.getByRole("button", { name: "12–15 godina", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Poboljšati odnos sa detetom" })
+    .click();
+  await page.getByRole("button", { name: "Online", exact: true }).click();
+
+  await expect(
+    page.getByRole("heading", {
+      name: "Tim će najpre proveriti odgovarajući sledeći korak.",
+    }),
+  ).toBeVisible();
+  await expect(
+    page.getByText(/Za maloletne korisnike tim najpre/),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("link", { name: "Zatražite termin" }),
+  ).toHaveCount(0);
+});
+
+test("guided route has no critical accessibility violations", async ({
+  page,
+}) => {
+  await page.goto("/pronadji-podrsku");
+
+  const results = await new AxeBuilder({ page }).analyze();
+  const critical = results.violations.filter(
+    (violation) => violation.impact === "critical",
+  );
+  expect(critical).toEqual([]);
 });

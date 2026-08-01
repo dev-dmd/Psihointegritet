@@ -22,6 +22,11 @@ export const ACCOUNT_URL = "/nalog";
 export const ACCOUNT_APPOINTMENTS_URL = "/nalog/termini";
 export const ACCOUNT_SETTINGS_URL = "/nalog/podesavanja";
 
+/** Staff workspace (therapist / org-admin) — future Control Center. */
+export const WORKSPACE_URL = "/radni-prostor";
+/** Platform superadmin area — guarded by `requireSuperadmin` per page. */
+export const SUPERADMIN_URL = "/superadmin";
+
 /** URL prefixes that require an authenticated session. */
 export const PROTECTED_ROUTE_PREFIXES = [
   "/nalog", // (client) — client account area

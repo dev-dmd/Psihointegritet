@@ -2,7 +2,7 @@ import { Reveal } from "@/components/motion/reveal";
 import { TherapistCard } from "@/components/shared/therapist-card";
 import { ArrowLink } from "@/components/ui/arrow-link";
 import { SectionHeading } from "@/components/ui/section-heading";
-import { therapists } from "@/content/homepage";
+import { therapists } from "@/content/therapists";
 
 export function Therapists() {
   return (
@@ -13,19 +13,19 @@ export function Therapists() {
             <SectionHeading
               eyebrow="Naš tim"
               title="Upoznajte terapeute Psihointegriteta"
-              description="Pronađite osobu i način rada koji vam ulivaju povjerenje."
+              description="Pronađite osobu i način rada koji vam ulivaju poverenje."
             />
             <ArrowLink
-              href="#podrska"
+              href="/tim"
               tone="underline"
               className="whitespace-nowrap"
             >
-              Pomozite mi da izaberem
+              Pogledajte ceo tim
             </ArrowLink>
           </div>
           <div className="grid grid-cols-1 items-stretch gap-5 md:grid-cols-2 lg:grid-cols-3">
             {therapists.map((therapist) => (
-              <TherapistCard key={therapist.id} therapist={therapist} />
+              <TherapistCard key={therapist.slug} therapist={therapist} />
             ))}
           </div>
         </Reveal>

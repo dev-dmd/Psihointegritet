@@ -1,0 +1,73 @@
+/* Flexio Lingua — globals.css (Next.js: app/globals.css)
+   Pair with the Google Fonts below in app/layout.tsx via next/font, OR keep the
+   <link> import if you prefer. CSS variables mirror tailwind.config.ts. */
+
+@import url("https://fonts.googleapis.com/css2?family=Overpass:wght@400;500;600;700;800;900&family=Inter:wght@400;500;600;700&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --primary: #7c4dff;
+  --primary-light: #9747ff;
+  --primary-deep: #6f00ff;
+  --primary-50: #efebff;
+  --card: #f3f6fb;
+  --ink: #1e1e22;
+  --muted: #9c9bc2;
+  --muted2: #6b7280;
+  --track: #e1e6ee;
+  --line: #edeff4;
+  --danger: #ef5e5e;
+  --success: #22b07d;
+}
+
+html,
+body {
+  background: #ffffff;
+  color: var(--ink);
+  font-family: "Overpass", system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Reusable component classes (optional — or build as React components).
+   Shown so Claude Code can match exact values. */
+@layer components {
+  .btn-primary {
+    @apply flex w-full items-center justify-center gap-2 rounded-card
+           bg-brand-gradient px-4 py-4 text-[15px] font-bold text-white shadow-soft;
+  }
+  .btn-white {
+    @apply flex w-full items-center justify-center gap-2 rounded-card
+           bg-white px-4 py-4 text-[15px] font-extrabold text-primary shadow-card;
+  }
+  .lesson-card {
+    @apply flex min-h-[128px] flex-col gap-3.5 rounded-[18px] bg-card p-4;
+  }
+  .icon-tile {
+    @apply grid h-[46px] w-[46px] place-items-center rounded-tile bg-white text-primary shadow-tile;
+  }
+  .pill {
+    @apply rounded-pill bg-card px-4 py-2.5 text-[13px] font-semibold text-muted2;
+  }
+  .pill-active {
+    @apply rounded-pill bg-primary px-4 py-2.5 text-[13px] font-semibold text-white;
+  }
+}
+
+/* Progress ring — set --p (0-100) inline: style={{ ['--p' as any]: 60 }} */
+.ring {
+  --p: 60;
+  background: conic-gradient(
+    var(--primary) calc(var(--p) * 1%),
+    var(--track) 0
+  );
+}
+.ring::before {
+  content: "";
+  position: absolute;
+  inset: 6px;
+  border-radius: 50%;
+  background: var(--card);
+}

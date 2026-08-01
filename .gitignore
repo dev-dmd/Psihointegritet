@@ -2,6 +2,7 @@
 .env
 .env.*
 !.env.example
+!backend/.env.compose.local.example
 
 # Node / Next.js
 node_modules/
@@ -10,6 +11,7 @@ frontend/out/
 frontend/coverage/
 frontend/playwright-report/
 frontend/test-results/
+frontend/artifacts/
 frontend/next-env.d.ts
 *.tsbuildinfo
 
@@ -22,6 +24,9 @@ backend/.venv/
 backend/htmlcov/
 backend/.coverage
 
+# Design handoff — 14 MB reference prototype, lives locally only
+frontend/design-handoff/
+
 # Generated API contract artifacts
 backend/openapi.json
 
@@ -31,4 +36,15 @@ Thumbs.db
 .idea/
 .vscode/
 .claude/
-documentations/
+
+# Dokumentacija — .md se verzioniše; binarni izvornici (DOCX/PDF) ostaju van gita
+documentations/*.docx
+documentations/*.pdf
+COMMANDS.md
+
+# design-sync
+.ds-sync/
+ds-bundle/
+.design-sync/.cache/
+.design-sync/learnings/
+.design-sync/node_modules

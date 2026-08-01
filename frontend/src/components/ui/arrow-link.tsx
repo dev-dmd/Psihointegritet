@@ -1,3 +1,5 @@
+import type { Route } from "next";
+import Link from "next/link";
 import type { ReactNode } from "react";
 
 import { cn } from "@/helpers/cn";
@@ -29,15 +31,13 @@ export function ArrowLink({
   circled = false,
   className,
 }: ArrowLinkProps) {
-  return (
-    <a
-      href={href}
-      className={cn(
-        "inline-flex items-center gap-2.5 text-[15px] font-semibold no-underline transition-colors duration-200",
-        toneClasses[tone],
-        className,
-      )}
-    >
+  const linkClassName = cn(
+    "inline-flex items-center gap-2.5 text-[15px] font-semibold no-underline transition-colors duration-200",
+    toneClasses[tone],
+    className,
+  );
+  const content = (
+    <>
       <span>{children}</span>
       {circled ? (
         <span
@@ -49,6 +49,23 @@ export function ArrowLink({
       ) : (
         <span aria-hidden>→</span>
       )}
-    </a>
+    </>
+  );
+
+  // Same-page anchors stay plain <a>; routes go through next/link so
+  // navigation is client-side instead of a full page load. Content-driven
+  // hrefs are non-literal strings, hence the documented `as Route` cast.
+  if (href.startsWith("#")) {
+    return (
+      <a href={href} className={linkClassName}>
+        {content}
+      </a>
+    );
+  }
+
+  return (
+    <Link href={href as Route} className={linkClassName}>
+      {content}
+    </Link>
   );
 }

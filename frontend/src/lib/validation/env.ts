@@ -12,6 +12,9 @@ import { z } from "zod";
 const serverEnvSchema = z.object({
   NEXT_PUBLIC_APP_URL: z.url(),
   NEXT_PUBLIC_API_URL: z.url(),
+  DEPLOYMENT_ENV: z
+    .enum(["development", "preview", "staging", "production"])
+    .default("development"),
   NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: z
     .string()
     .min(1, "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY is required"),
@@ -24,6 +27,7 @@ function loadServerEnv(): ServerEnv {
   const parsed = serverEnvSchema.safeParse({
     NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
     NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
+    DEPLOYMENT_ENV: process.env.DEPLOYMENT_ENV,
     NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY:
       process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY,
     CLERK_SECRET_KEY: process.env.CLERK_SECRET_KEY,

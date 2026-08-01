@@ -9,6 +9,7 @@ export interface ApiProblem {
   code: string;
   detail?: string;
   correlationId: string;
+  fieldPath?: string;
   fieldErrors?: Record<string, string[]>;
 }
 

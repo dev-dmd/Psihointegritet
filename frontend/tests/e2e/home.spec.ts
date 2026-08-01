@@ -9,7 +9,7 @@ test("home page is server-rendered with the hero headline", async ({
   expect(response.status()).toBe(200);
   const html = await response.text();
   expect(html).toContain(
-    "Stručna podrška za bolje razumijevanje sebe i svojih odnosa.",
+    "Stručna podrška za bolje razumevanje sebe i svojih odnosa.",
   );
 });
 
@@ -18,7 +18,7 @@ test("homepage sections render", async ({ page }) => {
 
   await expect(
     page.getByRole("heading", {
-      name: "Stručna podrška za bolje razumijevanje sebe i svojih odnosa.",
+      name: "Stručna podrška za bolje razumevanje sebe i svojih odnosa.",
     }),
   ).toBeVisible();
 
@@ -35,7 +35,7 @@ test("FAQ accordion opens one item at a time", async ({ page }) => {
   await page.goto("/");
 
   const first = page.getByRole("button", {
-    name: "Da li je sve što kažem povjerljivo?",
+    name: "Da li je sve što kažem poverljivo?",
   });
   const second = page.getByRole("button", { name: "Koliko traje terapija?" });
 

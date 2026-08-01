@@ -4,6 +4,376 @@
  */
 
 export interface paths {
+    "/api/v1/content/entries": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Content Entries */
+        get: operations["list_content_entries"];
+        put?: never;
+        /** Create Content Entry */
+        post: operations["create_content_entry"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/content/entries/{entry_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Content Entry */
+        get: operations["get_content_entry"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/content/entries/{entry_id}/revisions/{revision_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete Content Revision */
+        delete: operations["delete_content_revision"];
+        options?: never;
+        head?: never;
+        /** Update Content Revision */
+        patch: operations["update_content_revision"];
+        trace?: never;
+    };
+    "/api/v1/content/entries/{entry_id}/revisions/{revision_id}/content-health": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Content Revision Health
+         * @description Authoritative saved-revision findings, including warnings (CG-D4).
+         */
+        get: operations["get_content_revision_health"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/content/entries/{entry_id}/revisions/{revision_id}/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Content Revision Preview
+         * @description Private exact-revision source for the staff preview route (CG-D3).
+         */
+        get: operations["get_content_revision_preview"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/content/entries/{entry_id}/revisions/{revision_id}/publish-check": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Check Content Publishable */
+        get: operations["check_content_publishable"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/content/entries/{entry_id}/revisions/{revision_id}/reviews": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Record Content Review Decision */
+        post: operations["record_content_review_decision"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/content/entries/{entry_id}/revisions/{revision_id}/transition": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Transition Content Revision */
+        post: operations["transition_content_revision"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/content/rich-doc/normalize-html": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Normalize Rich Html
+         * @description One allowlist normalizer for paste in every staff RichDoc editor.
+         */
+        post: operations["normalize_rich_html"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/content/taxonomy/intake-links": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Taxonomy Intake Links */
+        get: operations["list_taxonomy_intake_links"];
+        put?: never;
+        /** Create Taxonomy Intake Link */
+        post: operations["create_taxonomy_intake_link"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/content/taxonomy/intake-links/{link_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete Taxonomy Intake Link */
+        delete: operations["delete_taxonomy_intake_link"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/content/taxonomy/intake-links/{link_id}/reviews": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Review Taxonomy Intake Link */
+        post: operations["review_taxonomy_intake_link"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/content/taxonomy/intake-links/{link_id}/transition": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Transition Taxonomy Intake Link */
+        post: operations["transition_taxonomy_intake_link"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/content/taxonomy/terms": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Taxonomy Terms */
+        get: operations["list_taxonomy_terms"];
+        put?: never;
+        /** Create Taxonomy Term */
+        post: operations["create_taxonomy_term"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/content/taxonomy/terms/{term_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Taxonomy Term */
+        get: operations["get_taxonomy_term"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/content/taxonomy/terms/{term_id}/revisions/{revision_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update Taxonomy Revision */
+        patch: operations["update_taxonomy_revision"];
+        trace?: never;
+    };
+    "/api/v1/content/taxonomy/terms/{term_id}/revisions/{revision_id}/reviews": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Review Taxonomy Revision */
+        post: operations["review_taxonomy_revision"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/content/taxonomy/terms/{term_id}/revisions/{revision_id}/transition": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Transition Taxonomy Revision */
+        post: operations["transition_taxonomy_revision"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/content/taxonomy/terms/{term_id}/routes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Taxonomy Term Routes */
+        get: operations["list_taxonomy_term_routes"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/content/taxonomy/terms/{term_id}/routes/canonical": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Confirm Taxonomy Term Route */
+        put: operations["confirm_taxonomy_term_route"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/content/taxonomy/terms/{term_id}/routes/suggestion": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Suggest Taxonomy Term Route */
+        post: operations["suggest_taxonomy_term_route"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/health": {
         parameters: {
             query?: never;
@@ -13,6 +383,368 @@ export interface paths {
         };
         /** Get Health */
         get: operations["get_api_v1_health"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/intake/cases/queue": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Intake Team Queue */
+        get: operations["list_intake_team_queue"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/intake/cases/{case_id}/claim": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Claim Intake Case */
+        post: operations["claim_intake_case"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/intake/cases/{case_id}/reassign": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Reassign Intake Case */
+        post: operations["reassign_intake_case"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/privacy/documents": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Legal Documents */
+        get: operations["list_legal_documents"];
+        put?: never;
+        /** Create Legal Document */
+        post: operations["create_legal_document"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/privacy/documents/import-docx": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Preview New Legal Document Docx */
+        post: operations["preview_new_legal_document_docx"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/privacy/documents/{document_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Legal Document */
+        get: operations["get_legal_document"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/privacy/documents/{document_id}/import-docx": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Import Legal Document Docx */
+        post: operations["import_legal_document_docx"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/privacy/documents/{document_id}/revisions/{revision_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete Legal Document Revision */
+        delete: operations["delete_legal_document_revision"];
+        options?: never;
+        head?: never;
+        /** Update Legal Document Revision */
+        patch: operations["update_legal_document_revision"];
+        trace?: never;
+    };
+    "/api/v1/privacy/documents/{document_id}/revisions/{revision_id}/approvals": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Record Legal Document Approval */
+        post: operations["record_legal_document_approval"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/privacy/documents/{document_id}/revisions/{revision_id}/approvals/{capability}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Remove Legal Document Approval
+         * @description Withdraw one approval while the revision is still awaiting publication.
+         */
+        delete: operations["remove_legal_document_approval"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/privacy/documents/{document_id}/revisions/{revision_id}/publish-check": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Check Legal Document Publishable
+         * @description `None` means publishable — the panel calls this before attempting a
+         *     publish transition, same order the frontend already checks locally via
+         *     `checkPublishable()`.
+         */
+        get: operations["check_legal_document_publishable"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/privacy/documents/{document_id}/revisions/{revision_id}/transition": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Transition Legal Document Revision */
+        post: operations["transition_legal_document_revision"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/public/compass/taxonomy": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Public Taxonomy */
+        get: operations["get_public_taxonomy"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/public/compass/taxonomy/routes/{route_kind}/{slug}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Resolve Public Taxonomy Route */
+        get: operations["resolve_public_taxonomy_route"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/public/content/published": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Public Content
+         * @description Only immutable published overrides for the configured public tenant.
+         */
+        get: operations["list_public_content"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/public/intake/capabilities": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Public Intake Capabilities */
+        get: operations["get_public_intake_capabilities"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/public/intake/cases": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Submit Public Intake Case */
+        post: operations["submit_public_intake_case"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/public/intake/match": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Evaluate Public Intake Match */
+        post: operations["evaluate_public_intake_match"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/public/privacy/custom-documents/{slug}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Public Custom Document
+         * @description Published custom documents are resolved by their stable public slug.
+         */
+        get: operations["get_public_custom_document"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/public/privacy/documents/{kind}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Public Legal Document
+         * @description Unauthenticated: what `/privatnost`, `/uslovi`, `/kolacici`,
+         *     `/pravila-zakazivanja` and the Intake consent checkboxes read. 404 when
+         *     nothing is published — the caller renders its own static fallback text
+         *     (D-038), never a broken page.
+         */
+        get: operations["get_public_legal_document"];
         put?: never;
         post?: never;
         delete?: never;
@@ -45,12 +777,1136 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /**
+         * ActorSummaryOut
+         * @description Stable audit identity plus the human label shown in the panel.
+         */
+        ActorSummaryOut: {
+            /** Displayname */
+            displayName: string;
+            /** Issuperadmin */
+            isSuperadmin: boolean;
+            /**
+             * Userid
+             * Format: uuid
+             */
+            userId: string;
+        };
+        /**
+         * ApiProblem
+         * @description Stable problem-details envelope; mirrored by the frontend contract.
+         */
+        ApiProblem: {
+            /** Code */
+            code: string;
+            /** Correlationid */
+            correlationId: string;
+            /** Detail */
+            detail?: string | null;
+            /** Fielderrors */
+            fieldErrors?: {
+                [key: string]: string[];
+            } | null;
+            /** Fieldpath */
+            fieldPath?: string | null;
+            /** Status */
+            status: number;
+            /** Title */
+            title: string;
+            /**
+             * Type
+             * @default about:blank
+             */
+            type: string;
+        };
+        /**
+         * ApprovalCapability
+         * @description Approval capabilities from D-033. These are not auth roles.
+         * @enum {string}
+         */
+        ApprovalCapability: "clinical" | "legal" | "business";
+        /**
+         * ApprovalEvidenceOut
+         * @description Field names match the stored shape verbatim (`modules/privacy/models.py`'s
+         *     `LegalDocumentRevision.approvals` comment: `capability`/`approver`/
+         *     `approved_at`/`note`) — this is a read model over that JSON, not a
+         *     redesign of it.
+         */
+        ApprovalEvidenceOut: {
+            /** Approvedat */
+            approvedAt?: string | null;
+            approvedBy?: components["schemas"]["ActorSummaryOut"] | null;
+            /** Approver */
+            approver?: string | null;
+            /** Approveruserid */
+            approverUserId?: string | null;
+            capability: components["schemas"]["ApprovalCapability"];
+            /** Note */
+            note?: string | null;
+        };
+        /** Body_import_legal_document_docx */
+        Body_import_legal_document_docx: {
+            /** File */
+            file: string;
+        };
+        /** Body_preview_new_legal_document_docx */
+        Body_preview_new_legal_document_docx: {
+            /** File */
+            file: string;
+        };
+        /** ClaimIntakeCaseResponse */
+        ClaimIntakeCaseResponse: {
+            /**
+             * Caseid
+             * Format: uuid
+             */
+            caseId: string;
+            status: components["schemas"]["IntakeCaseStatus"];
+            /**
+             * Therapistprofileid
+             * Format: uuid
+             */
+            therapistProfileId: string;
+        };
+        /** ConfirmTaxonomyRouteRequest */
+        ConfirmTaxonomyRouteRequest: {
+            /**
+             * Locale
+             * @default sr-Latn
+             */
+            locale: string;
+            /** Lockversion */
+            lockVersion?: number | null;
+            /** Slug */
+            slug: string;
+        };
+        /**
+         * ConsentKind
+         * @enum {string}
+         */
+        ConsentKind: "intake_data_processing_notice" | "intake_request_acknowledgement" | "marketing" | "ai_free_text_processing";
+        /** ContentFindingOut */
+        ContentFindingOut: {
+            /** Fieldpath */
+            fieldPath?: string | null;
+            /** Message */
+            message: string;
+            /** Remediation */
+            remediation: string;
+            requiresApproval?: components["schemas"]["ApprovalCapability"] | null;
+            /** Ruleid */
+            ruleId: string;
+            /** Ruleversion */
+            ruleVersion: string;
+            /**
+             * Severity
+             * @enum {string}
+             */
+            severity: "info" | "warning" | "error";
+        };
+        /**
+         * ContentHealthOut
+         * @description Read-only result for one saved revision (CG-D4).
+         */
+        ContentHealthOut: {
+            /**
+             * Checkedat
+             * Format: date-time
+             */
+            checkedAt: string;
+            /** Findings */
+            findings: components["schemas"]["ContentFindingOut"][];
+            /** Missingapprovals */
+            missingApprovals: components["schemas"]["ApprovalCapability"][];
+            /** Requiredapprovals */
+            requiredApprovals: components["schemas"]["ApprovalCapability"][];
+            /** Rulesetversion */
+            ruleSetVersion: string;
+            /** Summary */
+            summary: {
+                [key: string]: number;
+            };
+        };
+        /**
+         * ContentManagement
+         * @enum {string}
+         */
+        ContentManagement: "system" | "document" | "article" | "internal";
+        /** ContentRevisionOut */
+        ContentRevisionOut: {
+            contentType: components["schemas"]["ContentType"];
+            createdBy?: components["schemas"]["ActorSummaryOut"] | null;
+            /** Decisions */
+            decisions: components["schemas"]["ReviewDecisionOut"][];
+            /**
+             * Entryid
+             * Format: uuid
+             */
+            entryId: string;
+            /** Locale */
+            locale: string;
+            /** Lockversion */
+            lockVersion: number;
+            management: components["schemas"]["ContentManagement"];
+            /**
+             * Revisionid
+             * Format: uuid
+             */
+            revisionId: string;
+            seo: components["schemas"]["SeoFields"];
+            /** Slotdata */
+            slotData: {
+                [key: string]: unknown;
+            };
+            /** Slug */
+            slug: string;
+            status: components["schemas"]["RevisionStatus"];
+            template: components["schemas"]["ContentTemplate"];
+            /**
+             * Updatedat
+             * Format: date-time
+             */
+            updatedAt: string;
+            updatedBy?: components["schemas"]["ActorSummaryOut"] | null;
+            /** Versionlabel */
+            versionLabel: string;
+        };
+        /**
+         * ContentTemplate
+         * @description Allowed templates, mirroring the frontend `ContentTemplate` registry.
+         *
+         *     The registry decides which slots a template requires; the editor may fill
+         *     slots but never invent a section type (CONTENT_MODEL_MATRIX §4).
+         * @enum {string}
+         */
+        ContentTemplate: "service_detail" | "therapist_profile" | "support_area" | "audience_page" | "program_detail" | "company_page" | "pricing_page" | "static_information" | "legal_page";
+        /**
+         * ContentType
+         * @description The six governed types from R1.4.i `ContentType`.
+         *
+         *     `article` is deliberately absent: the knowledge library is R3 (ADR-016).
+         * @enum {string}
+         */
+        ContentType: "static_page" | "service" | "therapist" | "program" | "company_plan" | "package_offer";
+        /** CreateContentEntryRequest */
+        CreateContentEntryRequest: {
+            contentType: components["schemas"]["ContentType"];
+            /**
+             * Locale
+             * @default sr-Latn
+             */
+            locale: string;
+            /** Slug */
+            slug: string;
+            template: components["schemas"]["ContentTemplate"];
+        };
+        /** CreateLegalDocumentRequest */
+        CreateLegalDocumentRequest: {
+            /** Body */
+            body?: {
+                [key: string]: unknown;
+            } | null;
+            kind: components["schemas"]["LegalDocumentKind"];
+            /** Slug */
+            slug: string;
+            /** Title */
+            title: string;
+        };
+        /** CreateTaxonomyIntakeLinkRequest */
+        CreateTaxonomyIntakeLinkRequest: {
+            /**
+             * Supportareatermid
+             * Format: uuid
+             */
+            supportAreaTermId: string;
+            /**
+             * Topictermid
+             * Format: uuid
+             */
+            topicTermId: string;
+        };
+        /** CreateTaxonomyTermRequest */
+        CreateTaxonomyTermRequest: {
+            /** Assetid */
+            assetId?: string | null;
+            axis: components["schemas"]["TaxonomyAxis"];
+            /**
+             * Compassenabled
+             * @default true
+             */
+            compassEnabled: boolean;
+            /** Iconkey */
+            iconKey?: string | null;
+            /** Internalexpertnote */
+            internalExpertNote?: string | null;
+            /** Journeyintenttermid */
+            journeyIntentTermId?: string | null;
+            /**
+             * Locale
+             * @default sr-Latn
+             */
+            locale: string;
+            /** Primaryparenttermid */
+            primaryParentTermId?: string | null;
+            /** Publiclabel */
+            publicLabel: string;
+            /**
+             * Publicvisible
+             * @default true
+             */
+            publicVisible: boolean;
+            /** Relatedtopicids */
+            relatedTopicIds?: string[];
+            /** Searchterms */
+            searchTerms?: string[];
+            /**
+             * Shortdescription
+             * @default
+             */
+            shortDescription: string;
+            /**
+             * Sortorder
+             * @default 0
+             */
+            sortOrder: number;
+            /** Stableid */
+            stableId: string;
+        };
+        /**
+         * GuardianConsentStatus
+         * @enum {string}
+         */
+        GuardianConsentStatus: "not_applicable" | "confirmed" | "needs_review";
+        /** HTTPValidationError */
+        HTTPValidationError: {
+            /** Detail */
+            detail?: components["schemas"]["ValidationError"][];
+        };
         /** HealthResponse */
         HealthResponse: {
             /** Status */
             status: string;
             /** Version */
             version: string;
+        };
+        /**
+         * ImportDocxFinding
+         * @description Mirrors `shared.domain.rich_doc.RichDocFinding` for the wire.
+         */
+        ImportDocxFinding: {
+            /** Fieldpath */
+            fieldPath?: string | null;
+            /** Message */
+            message: string;
+            /** Remediation */
+            remediation: string;
+            /** Ruleid */
+            ruleId: string;
+            /** Ruleversion */
+            ruleVersion: string;
+            /** Severity */
+            severity: string;
+        };
+        /**
+         * ImportDocxResponse
+         * @description `ContentPatch`-shaped preview (ADR-017 Amendment 1 §A1.2): the import
+         *     is never applied directly — the panel shows this report and the author
+         *     explicitly saves it via `PATCH .../revisions/{revisionId}`.
+         */
+        ImportDocxResponse: {
+            /** Body */
+            body: {
+                [key: string]: unknown;
+            };
+            /** Findings */
+            findings: components["schemas"]["ImportDocxFinding"][];
+            /** Requiresapproval */
+            requiresApproval: boolean;
+        };
+        /** IntakeAcknowledgementInput */
+        IntakeAcknowledgementInput: {
+            /** Documentversion */
+            documentVersion: string;
+            kind: components["schemas"]["ConsentKind"];
+            /**
+             * Locale
+             * @default sr-Latn
+             */
+            locale: string;
+        };
+        /** IntakeAnswersInput */
+        IntakeAnswersInput: {
+            /** Format */
+            format?: string | null;
+            /** Goal */
+            goal?: string | null;
+            /** Location */
+            location?: string | null;
+            /** Participants */
+            participants?: string | null;
+            /** Priortherapy */
+            priorTherapy?: ("Da" | "Ne") | null;
+            /** Reason */
+            reason?: string | null;
+            /** @default self_adult */
+            requesterRole: components["schemas"]["RequesterRole"];
+            /** @default adult */
+            subjectAgeBand: components["schemas"]["SubjectAgeBand"];
+        };
+        /**
+         * IntakeCaseStatus
+         * @enum {string}
+         */
+        IntakeCaseStatus: "unassigned" | "claimed" | "booking_started" | "converted" | "closed" | "withdrawn" | "expired";
+        /** IntakeContactInput */
+        IntakeContactInput: {
+            /**
+             * Email
+             * Format: email
+             */
+            email: string;
+            /** Fullname */
+            fullName: string;
+            /** Phone */
+            phone?: string | null;
+            /**
+             * Replypreference
+             * @default email
+             * @enum {string}
+             */
+            replyPreference: "email" | "phone";
+        };
+        /**
+         * IntakeSubmissionKind
+         * @enum {string}
+         */
+        IntakeSubmissionKind: "request" | "team_review";
+        /**
+         * LegalDocumentKind
+         * @description Document identities the registry can hold.
+         *
+         *     The first two values intentionally mirror `ConsentKind` so a published
+         *     revision maps straight onto the consent evidence written at submission.
+         * @enum {string}
+         */
+        LegalDocumentKind: "intake_data_processing_notice" | "intake_request_acknowledgement" | "privacy_policy" | "terms_of_use" | "cookie_policy" | "booking_rules" | "custom_document";
+        /** LegalDocumentRevisionOut */
+        LegalDocumentRevisionOut: {
+            /** Approvals */
+            approvals: components["schemas"]["ApprovalEvidenceOut"][];
+            /** Body */
+            body: {
+                [key: string]: unknown;
+            };
+            createdBy?: components["schemas"]["ActorSummaryOut"] | null;
+            /**
+             * Documentid
+             * Format: uuid
+             */
+            documentId: string;
+            kind: components["schemas"]["LegalDocumentKind"];
+            management: components["schemas"]["ContentManagement"];
+            /**
+             * Revisionid
+             * Format: uuid
+             */
+            revisionId: string;
+            /** Slug */
+            slug: string;
+            status: components["schemas"]["RevisionStatus"];
+            /** Title */
+            title: string;
+            /**
+             * Updatedat
+             * Format: date-time
+             */
+            updatedAt: string;
+            updatedBy?: components["schemas"]["ActorSummaryOut"] | null;
+            /** Versionlabel */
+            versionLabel: string;
+        };
+        /** NormalizeRichHtmlRequest */
+        NormalizeRichHtmlRequest: {
+            /** Html */
+            html: string;
+        };
+        /** NormalizeRichHtmlResponse */
+        NormalizeRichHtmlResponse: {
+            /** Body */
+            body: {
+                [key: string]: unknown;
+            };
+            /** Findings */
+            findings: components["schemas"]["RichDocFindingOut"][];
+        };
+        /**
+         * PublicContentRevisionOut
+         * @description Published CMS override without staff identity or edit metadata.
+         */
+        PublicContentRevisionOut: {
+            contentType: components["schemas"]["ContentType"];
+            /** Locale */
+            locale: string;
+            management: components["schemas"]["ContentManagement"];
+            /**
+             * Publishedat
+             * Format: date-time
+             */
+            publishedAt: string;
+            seo: components["schemas"]["SeoFields"];
+            /** Slotdata */
+            slotData: {
+                [key: string]: unknown;
+            };
+            /** Slug */
+            slug: string;
+            template: components["schemas"]["ContentTemplate"];
+        };
+        /** PublicIntakeCapabilitiesResponse */
+        PublicIntakeCapabilitiesResponse: {
+            /** Dataprocessingnoticeversion */
+            dataProcessingNoticeVersion?: string | null;
+            /** Matchingenabled */
+            matchingEnabled: boolean;
+            /** Requestacknowledgementversion */
+            requestAcknowledgementVersion?: string | null;
+            /** Sensitivesubmissionenabled */
+            sensitiveSubmissionEnabled: boolean;
+        };
+        /** PublicIntakeMatchRequest */
+        PublicIntakeMatchRequest: {
+            answers: components["schemas"]["IntakeAnswersInput"];
+        };
+        /** PublicIntakeMatchResponse */
+        PublicIntakeMatchResponse: {
+            /** Candidates */
+            candidates: components["schemas"]["PublicTherapistRecommendation"][];
+            /** Controlledminorflow */
+            controlledMinorFlow: boolean;
+            /** Onlinefallback */
+            onlineFallback: boolean;
+            /** Requireshumanreview */
+            requiresHumanReview: boolean;
+            /** Ruleversion */
+            ruleVersion: string;
+            service: components["schemas"]["PublicServiceRecommendation"];
+            /** Showmultipleoptions */
+            showMultipleOptions: boolean;
+        };
+        /** PublicIntakeSubmissionRequest */
+        PublicIntakeSubmissionRequest: {
+            /** Acknowledgements */
+            acknowledgements: components["schemas"]["IntakeAcknowledgementInput"][];
+            answers: components["schemas"]["IntakeAnswersInput"];
+            contact: components["schemas"]["IntakeContactInput"];
+            /** Freetext */
+            freeText?: string | null;
+            /** @default not_applicable */
+            guardianConsentStatus: components["schemas"]["GuardianConsentStatus"];
+            /** Preferredtherapistslug */
+            preferredTherapistSlug?: string | null;
+            /**
+             * Source
+             * @default matching
+             * @enum {string}
+             */
+            source: "header" | "homepage" | "service" | "therapist" | "matching" | "manual";
+            /** Subjectisaware */
+            subjectIsAware?: boolean | null;
+            submissionKind: components["schemas"]["IntakeSubmissionKind"];
+        };
+        /** PublicIntakeSubmissionResponse */
+        PublicIntakeSubmissionResponse: {
+            /**
+             * Caseid
+             * Format: uuid
+             */
+            caseId: string;
+            /** Replayed */
+            replayed: boolean;
+            /** Requireshumanreview */
+            requiresHumanReview: boolean;
+            reviewPriority: components["schemas"]["ReviewPriority"];
+            status: components["schemas"]["IntakeCaseStatus"];
+            submissionKind: components["schemas"]["IntakeSubmissionKind"];
+        };
+        /**
+         * PublicLegalDocumentOut
+         * @description Deliberately narrower than `LegalDocumentRevisionOut`: no approvals,
+         *     no internal `documentId`/`revisionId` — this is what an anonymous
+         *     visitor may read. `versionLabel` is kept because it is what
+         *     `ConsentRecord.document_version` records (`modules/privacy/models.py`).
+         */
+        PublicLegalDocumentOut: {
+            /** Body */
+            body: {
+                [key: string]: unknown;
+            };
+            kind: components["schemas"]["LegalDocumentKind"];
+            management: components["schemas"]["ContentManagement"];
+            /** Publishedat */
+            publishedAt?: string | null;
+            /** Slug */
+            slug: string;
+            /** Title */
+            title: string;
+            /** Versionlabel */
+            versionLabel: string;
+        };
+        /** PublicServiceRecommendation */
+        PublicServiceRecommendation: {
+            /** Currency */
+            currency: string;
+            /** Durationminutes */
+            durationMinutes: number;
+            /** Name */
+            name: string;
+            /** Priceamount */
+            priceAmount: number;
+            /** Slug */
+            slug: string;
+        };
+        /** PublicTaxonomyOut */
+        PublicTaxonomyOut: {
+            /** Locale */
+            locale: string;
+            /**
+             * Taxonomyversion
+             * @default kompas-taxonomy-v1
+             */
+            taxonomyVersion: string;
+            /** Terms */
+            terms: components["schemas"]["PublicTaxonomyTermOut"][];
+        };
+        /** PublicTaxonomyTermOut */
+        PublicTaxonomyTermOut: {
+            /** Assetid */
+            assetId?: string | null;
+            axis: components["schemas"]["TaxonomyAxis"];
+            /** Canonicalpath */
+            canonicalPath: string | null;
+            /** Iconkey */
+            iconKey?: string | null;
+            /** Journeyintent */
+            journeyIntent?: string | null;
+            /** Parentstableid */
+            parentStableId?: string | null;
+            /** Publiclabel */
+            publicLabel: string;
+            /** Relatedstableids */
+            relatedStableIds: string[];
+            /** Searchterms */
+            searchTerms: string[];
+            /** Shortdescription */
+            shortDescription: string;
+            /** Sortorder */
+            sortOrder: number;
+            /** Stableid */
+            stableId: string;
+            /**
+             * Termid
+             * Format: uuid
+             */
+            termId: string;
+        };
+        /** PublicTherapistRecommendation */
+        PublicTherapistRecommendation: {
+            /** Displayname */
+            displayName: string;
+            /** Explanationcodes */
+            explanationCodes: string[];
+            /** Reasons */
+            reasons: string[];
+            /** Slug */
+            slug: string;
+        };
+        /** ReassignIntakeCaseRequest */
+        ReassignIntakeCaseRequest: {
+            /**
+             * Reasoncode
+             * @enum {string}
+             */
+            reasonCode: "capacity" | "expertise" | "availability" | "other";
+            /**
+             * Therapistprofileid
+             * Format: uuid
+             */
+            therapistProfileId: string;
+        };
+        /** RecordApprovalRequest */
+        RecordApprovalRequest: {
+            /** Approverlabel */
+            approverLabel?: string | null;
+            capability: components["schemas"]["ApprovalCapability"];
+            /** Note */
+            note?: string | null;
+        };
+        /** RecordReviewDecisionRequest */
+        RecordReviewDecisionRequest: {
+            capability: components["schemas"]["ApprovalCapability"];
+            /** Note */
+            note?: string | null;
+            outcome: components["schemas"]["ReviewOutcome"];
+        };
+        /**
+         * RequesterRole
+         * @enum {string}
+         */
+        RequesterRole: "self_adult" | "guardian" | "adolescent_16_17" | "information_only";
+        /** ReviewDecisionOut */
+        ReviewDecisionOut: {
+            capability: components["schemas"]["ApprovalCapability"];
+            /**
+             * Decidedat
+             * Format: date-time
+             */
+            decidedAt: string;
+            decidedBy?: components["schemas"]["ActorSummaryOut"] | null;
+            /** Decidedbyuserid */
+            decidedByUserId?: string | null;
+            /** Note */
+            note?: string | null;
+            outcome: components["schemas"]["ReviewOutcome"];
+        };
+        /**
+         * ReviewOutcome
+         * @description A recorded review decision.
+         *
+         *     `pending` from the frontend `ApprovalStatus` has no row: a capability is
+         *     pending precisely when no decision exists for that revision.
+         * @enum {string}
+         */
+        ReviewOutcome: "approved" | "rejected";
+        /**
+         * ReviewPriority
+         * @enum {string}
+         */
+        ReviewPriority: "standard" | "priority";
+        /**
+         * RevisionStatus
+         * @description Publication lifecycle fixed by D-029.
+         * @enum {string}
+         */
+        RevisionStatus: "draft" | "in_review" | "approved" | "published" | "archived";
+        /** RichDocFindingOut */
+        RichDocFindingOut: {
+            /** Fieldpath */
+            fieldPath?: string | null;
+            /** Message */
+            message: string;
+            /** Remediation */
+            remediation: string;
+            /** Ruleid */
+            ruleId: string;
+            /** Ruleversion */
+            ruleVersion: string;
+            /** Severity */
+            severity: string;
+        };
+        /** SeoFields */
+        SeoFields: {
+            /**
+             * Description
+             * @default
+             */
+            description: string;
+            /** Ogimageassetid */
+            ogImageAssetId?: string | null;
+            /**
+             * Title
+             * @default
+             */
+            title: string;
+        };
+        /**
+         * SubjectAgeBand
+         * @enum {string}
+         */
+        SubjectAgeBand: "under_12" | "12_15" | "16_17" | "adult";
+        /** SuggestTaxonomyRouteRequest */
+        SuggestTaxonomyRouteRequest: {
+            /**
+             * Locale
+             * @default sr-Latn
+             */
+            locale: string;
+        };
+        /**
+         * TaxonomyAxis
+         * @enum {string}
+         */
+        TaxonomyAxis: "topic_group" | "topic" | "audience" | "content_goal" | "support_area" | "journey_intent" | "content_format" | "access_level";
+        /** TaxonomyEventOut */
+        TaxonomyEventOut: {
+            actor?: components["schemas"]["ActorSummaryOut"] | null;
+            /**
+             * Createdat
+             * Format: date-time
+             */
+            createdAt: string;
+            fromStatus?: components["schemas"]["RevisionStatus"] | null;
+            /** Reason */
+            reason?: string | null;
+            toStatus: components["schemas"]["RevisionStatus"];
+        };
+        /** TaxonomyIntakeLinkOut */
+        TaxonomyIntakeLinkOut: {
+            /**
+             * Createdat
+             * Format: date-time
+             */
+            createdAt: string;
+            createdBy?: components["schemas"]["ActorSummaryOut"] | null;
+            /** Decisions */
+            decisions: components["schemas"]["TaxonomyReviewDecisionOut"][];
+            /** Events */
+            events: components["schemas"]["TaxonomyEventOut"][];
+            /**
+             * Linkid
+             * Format: uuid
+             */
+            linkId: string;
+            /** Lockversion */
+            lockVersion: number;
+            status: components["schemas"]["RevisionStatus"];
+            /** Supportarealabel */
+            supportAreaLabel: string;
+            /** Supportareastableid */
+            supportAreaStableId: string;
+            /**
+             * Supportareatermid
+             * Format: uuid
+             */
+            supportAreaTermId: string;
+            /** Topiclabel */
+            topicLabel: string;
+            /** Topicstableid */
+            topicStableId: string;
+            /**
+             * Topictermid
+             * Format: uuid
+             */
+            topicTermId: string;
+            /**
+             * Updatedat
+             * Format: date-time
+             */
+            updatedAt: string;
+            updatedBy?: components["schemas"]["ActorSummaryOut"] | null;
+        };
+        /** TaxonomyIntakeLinkReviewRequest */
+        TaxonomyIntakeLinkReviewRequest: {
+            capability: components["schemas"]["ApprovalCapability"];
+            /** Note */
+            note?: string | null;
+            outcome: components["schemas"]["ReviewOutcome"];
+        };
+        /** TaxonomyIntakeLinkTransitionRequest */
+        TaxonomyIntakeLinkTransitionRequest: {
+            /** Lockversion */
+            lockVersion: number;
+            target: components["schemas"]["RevisionStatus"];
+        };
+        /**
+         * TaxonomyRelationKind
+         * @enum {string}
+         */
+        TaxonomyRelationKind: "related_topic" | "replacement";
+        /** TaxonomyRelationOut */
+        TaxonomyRelationOut: {
+            kind: components["schemas"]["TaxonomyRelationKind"];
+            /** Targetstableid */
+            targetStableId: string;
+            /**
+             * Targettermid
+             * Format: uuid
+             */
+            targetTermId: string;
+        };
+        /** TaxonomyReviewDecisionOut */
+        TaxonomyReviewDecisionOut: {
+            capability: components["schemas"]["ApprovalCapability"];
+            /**
+             * Decidedat
+             * Format: date-time
+             */
+            decidedAt: string;
+            decidedBy?: components["schemas"]["ActorSummaryOut"] | null;
+            /** Note */
+            note?: string | null;
+            outcome: components["schemas"]["ReviewOutcome"];
+        };
+        /** TaxonomyReviewDecisionRequest */
+        TaxonomyReviewDecisionRequest: {
+            capability: components["schemas"]["ApprovalCapability"];
+            /** Note */
+            note?: string | null;
+            outcome: components["schemas"]["ReviewOutcome"];
+        };
+        /**
+         * TaxonomyRouteKind
+         * @enum {string}
+         */
+        TaxonomyRouteKind: "oblast" | "tema";
+        /** TaxonomyRouteOut */
+        TaxonomyRouteOut: {
+            /** Canonicalpath */
+            canonicalPath: string;
+            /**
+             * Createdat
+             * Format: date-time
+             */
+            createdAt: string;
+            createdBy?: components["schemas"]["ActorSummaryOut"] | null;
+            /** Iscanonical */
+            isCanonical: boolean;
+            /** Locale */
+            locale: string;
+            /** Lockversion */
+            lockVersion: number;
+            /**
+             * Routeid
+             * Format: uuid
+             */
+            routeId: string;
+            routeKind: components["schemas"]["TaxonomyRouteKind"];
+            /** Slug */
+            slug: string;
+            /** Supersededat */
+            supersededAt?: string | null;
+            /**
+             * Termid
+             * Format: uuid
+             */
+            termId: string;
+            /**
+             * Updatedat
+             * Format: date-time
+             */
+            updatedAt: string;
+            updatedBy?: components["schemas"]["ActorSummaryOut"] | null;
+        };
+        /** TaxonomyRouteSuggestionOut */
+        TaxonomyRouteSuggestionOut: {
+            /** Available */
+            available: boolean;
+            /** Canonicalpath */
+            canonicalPath: string;
+            /** Currentlockversion */
+            currentLockVersion?: number | null;
+            /** Currentrouteid */
+            currentRouteId?: string | null;
+            /** Slug */
+            slug: string;
+        };
+        /** TaxonomyTermOut */
+        TaxonomyTermOut: {
+            /** Assetid */
+            assetId?: string | null;
+            axis: components["schemas"]["TaxonomyAxis"];
+            /** Canonicalpath */
+            canonicalPath: string | null;
+            /** Compassenabled */
+            compassEnabled: boolean;
+            /**
+             * Createdat
+             * Format: date-time
+             */
+            createdAt: string;
+            createdBy?: components["schemas"]["ActorSummaryOut"] | null;
+            /** Decisions */
+            decisions: components["schemas"]["TaxonomyReviewDecisionOut"][];
+            /** Events */
+            events: components["schemas"]["TaxonomyEventOut"][];
+            /** Iconkey */
+            iconKey?: string | null;
+            /** Internalexpertnote */
+            internalExpertNote?: string | null;
+            /** Journeyintent */
+            journeyIntent?: string | null;
+            /** Journeyintenttermid */
+            journeyIntentTermId?: string | null;
+            /** Locale */
+            locale: string;
+            /** Lockversion */
+            lockVersion: number;
+            /** Organizationid */
+            organizationId: string | null;
+            /** Primaryparentstableid */
+            primaryParentStableId?: string | null;
+            /** Primaryparenttermid */
+            primaryParentTermId?: string | null;
+            /** Publiclabel */
+            publicLabel: string;
+            /** Publicvisible */
+            publicVisible: boolean;
+            /** Relations */
+            relations: components["schemas"]["TaxonomyRelationOut"][];
+            /**
+             * Revisionid
+             * Format: uuid
+             */
+            revisionId: string;
+            /** Searchterms */
+            searchTerms: string[];
+            /** Shortdescription */
+            shortDescription: string;
+            /** Sortorder */
+            sortOrder: number;
+            /** Stableid */
+            stableId: string;
+            status: components["schemas"]["RevisionStatus"];
+            /** Systemdefined */
+            systemDefined: boolean;
+            /**
+             * Termid
+             * Format: uuid
+             */
+            termId: string;
+            /**
+             * Updatedat
+             * Format: date-time
+             */
+            updatedAt: string;
+            updatedBy?: components["schemas"]["ActorSummaryOut"] | null;
+            /** Versionlabel */
+            versionLabel: string;
+        };
+        /** TaxonomyTransitionRequest */
+        TaxonomyTransitionRequest: {
+            /** Lockversion */
+            lockVersion: number;
+            target: components["schemas"]["RevisionStatus"];
+        };
+        /** TeamQueueItem */
+        TeamQueueItem: {
+            /**
+             * Caseid
+             * Format: uuid
+             */
+            caseId: string;
+            /**
+             * Createdat
+             * Format: date-time
+             */
+            createdAt: string;
+            /** Format */
+            format: string | null;
+            /** Hasfreetext */
+            hasFreeText: boolean;
+            /** Location */
+            location: string | null;
+            /** Preferredtherapistslug */
+            preferredTherapistSlug: string | null;
+            /** Recommendedtherapistslugs */
+            recommendedTherapistSlugs: string[];
+            requesterRole: components["schemas"]["RequesterRole"];
+            /** Requireshumanreview */
+            requiresHumanReview: boolean;
+            /** Reviewdueat */
+            reviewDueAt: string | null;
+            reviewPriority: components["schemas"]["ReviewPriority"];
+            /** Serviceslug */
+            serviceSlug: string | null;
+            subjectAgeBand: components["schemas"]["SubjectAgeBand"];
+            submissionKind: components["schemas"]["IntakeSubmissionKind"];
+        };
+        /** TransitionRequest */
+        TransitionRequest: {
+            target: components["schemas"]["RevisionStatus"];
+        };
+        /**
+         * UpdateContentRevisionRequest
+         * @description `lock_version` is required, not optional: CG-B3 has no meaningful
+         *     default — the client always edits against a specific version it fetched.
+         */
+        UpdateContentRevisionRequest: {
+            /** Lockversion */
+            lockVersion: number;
+            seo?: components["schemas"]["SeoFields"] | null;
+            /** Slotdata */
+            slotData?: {
+                [key: string]: unknown;
+            } | null;
+        };
+        /**
+         * UpdateLegalDocumentRevisionRequest
+         * @description Every field optional: the panel only sends what changed.
+         */
+        UpdateLegalDocumentRevisionRequest: {
+            /** Body */
+            body?: {
+                [key: string]: unknown;
+            } | null;
+            /** Slug */
+            slug?: string | null;
+            /** Title */
+            title?: string | null;
+        };
+        /** UpdateTaxonomyRevisionRequest */
+        UpdateTaxonomyRevisionRequest: {
+            /** Assetid */
+            assetId?: string | null;
+            /** Compassenabled */
+            compassEnabled?: boolean | null;
+            /** Iconkey */
+            iconKey?: string | null;
+            /** Internalexpertnote */
+            internalExpertNote?: string | null;
+            /** Journeyintenttermid */
+            journeyIntentTermId?: string | null;
+            /** Lockversion */
+            lockVersion: number;
+            /** Primaryparenttermid */
+            primaryParentTermId?: string | null;
+            /** Publiclabel */
+            publicLabel?: string | null;
+            /** Publicvisible */
+            publicVisible?: boolean | null;
+            /** Relatedtopicids */
+            relatedTopicIds?: string[] | null;
+            /** Replacementtermid */
+            replacementTermId?: string | null;
+            /** Searchterms */
+            searchTerms?: string[] | null;
+            /** Shortdescription */
+            shortDescription?: string | null;
+            /** Sortorder */
+            sortOrder?: number | null;
+        };
+        /** ValidationError */
+        ValidationError: {
+            /** Context */
+            ctx?: Record<string, never>;
+            /** Input */
+            input?: unknown;
+            /** Location */
+            loc: (string | number)[];
+            /** Message */
+            msg: string;
+            /** Error Type */
+            type: string;
+        };
+        /** PublishBlockOut */
+        psihointegritet__modules__content__schemas__PublishBlockOut: {
+            /** Findings */
+            findings: components["schemas"]["ContentFindingOut"][];
+            /** Missing */
+            missing: components["schemas"]["ApprovalCapability"][];
+            /**
+             * Stage
+             * @enum {string}
+             */
+            stage: "content" | "transition" | "approvals";
+        };
+        /** PublishBlockOut */
+        psihointegritet__modules__privacy__schemas__PublishBlockOut: {
+            /** Contentproblems */
+            contentProblems: string[];
+            /** Missing */
+            missing: components["schemas"]["ApprovalCapability"][];
+            /** Stage */
+            stage: string;
         };
     };
     responses: never;
@@ -61,6 +1917,1218 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    list_content_entries: {
+        parameters: {
+            query?: {
+                content_type?: components["schemas"]["ContentType"] | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ContentRevisionOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_content_entry: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateContentEntryRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ContentRevisionOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_content_entry: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                entry_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ContentRevisionOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_content_revision: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                entry_id: string;
+                revision_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_content_revision: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                entry_id: string;
+                revision_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateContentRevisionRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ContentRevisionOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_content_revision_health: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                entry_id: string;
+                revision_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ContentHealthOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_content_revision_preview: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                entry_id: string;
+                revision_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ContentRevisionOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    check_content_publishable: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                entry_id: string;
+                revision_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["psihointegritet__modules__content__schemas__PublishBlockOut"] | null;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    record_content_review_decision: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                entry_id: string;
+                revision_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RecordReviewDecisionRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ContentRevisionOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    transition_content_revision: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                entry_id: string;
+                revision_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TransitionRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ContentRevisionOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    normalize_rich_html: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NormalizeRichHtmlRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NormalizeRichHtmlResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_taxonomy_intake_links: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaxonomyIntakeLinkOut"][];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+        };
+    };
+    create_taxonomy_intake_link: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateTaxonomyIntakeLinkRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaxonomyIntakeLinkOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+        };
+    };
+    delete_taxonomy_intake_link: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                link_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+        };
+    };
+    review_taxonomy_intake_link: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                link_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TaxonomyIntakeLinkReviewRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaxonomyIntakeLinkOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+        };
+    };
+    transition_taxonomy_intake_link: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                link_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TaxonomyIntakeLinkTransitionRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaxonomyIntakeLinkOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+        };
+    };
+    list_taxonomy_terms: {
+        parameters: {
+            query?: {
+                axis?: components["schemas"]["TaxonomyAxis"] | null;
+                status?: components["schemas"]["RevisionStatus"] | null;
+                query?: string | null;
+                locale?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaxonomyTermOut"][];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+        };
+    };
+    create_taxonomy_term: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateTaxonomyTermRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaxonomyTermOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+        };
+    };
+    get_taxonomy_term: {
+        parameters: {
+            query?: {
+                locale?: string;
+            };
+            header?: never;
+            path: {
+                term_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaxonomyTermOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+        };
+    };
+    update_taxonomy_revision: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                term_id: string;
+                revision_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateTaxonomyRevisionRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaxonomyTermOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+        };
+    };
+    review_taxonomy_revision: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                term_id: string;
+                revision_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TaxonomyReviewDecisionRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaxonomyTermOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+        };
+    };
+    transition_taxonomy_revision: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                term_id: string;
+                revision_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TaxonomyTransitionRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaxonomyTermOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+        };
+    };
+    list_taxonomy_term_routes: {
+        parameters: {
+            query?: {
+                locale?: string;
+            };
+            header?: never;
+            path: {
+                term_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaxonomyRouteOut"][];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+        };
+    };
+    confirm_taxonomy_term_route: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                term_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConfirmTaxonomyRouteRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaxonomyRouteOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+        };
+    };
+    suggest_taxonomy_term_route: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                term_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SuggestTaxonomyRouteRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaxonomyRouteSuggestionOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+        };
+    };
     get_api_v1_health: {
         parameters: {
             query?: never;
@@ -77,6 +3145,709 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HealthResponse"];
+                };
+            };
+        };
+    };
+    list_intake_team_queue: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TeamQueueItem"][];
+                };
+            };
+        };
+    };
+    claim_intake_case: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                case_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClaimIntakeCaseResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reassign_intake_case: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                case_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReassignIntakeCaseRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClaimIntakeCaseResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_legal_documents: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LegalDocumentRevisionOut"][];
+                };
+            };
+        };
+    };
+    create_legal_document: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateLegalDocumentRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LegalDocumentRevisionOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    preview_new_legal_document_docx: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_preview_new_legal_document_docx"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImportDocxResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_legal_document: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                document_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LegalDocumentRevisionOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    import_legal_document_docx: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                document_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_import_legal_document_docx"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImportDocxResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_legal_document_revision: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                document_id: string;
+                revision_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_legal_document_revision: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                document_id: string;
+                revision_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateLegalDocumentRevisionRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LegalDocumentRevisionOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    record_legal_document_approval: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                document_id: string;
+                revision_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RecordApprovalRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LegalDocumentRevisionOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    remove_legal_document_approval: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                document_id: string;
+                revision_id: string;
+                capability: components["schemas"]["ApprovalCapability"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LegalDocumentRevisionOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    check_legal_document_publishable: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                document_id: string;
+                revision_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["psihointegritet__modules__privacy__schemas__PublishBlockOut"] | null;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    transition_legal_document_revision: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                document_id: string;
+                revision_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TransitionRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LegalDocumentRevisionOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_public_taxonomy: {
+        parameters: {
+            query?: {
+                locale?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicTaxonomyOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    resolve_public_taxonomy_route: {
+        parameters: {
+            query?: {
+                locale?: string;
+            };
+            header?: never;
+            path: {
+                route_kind: components["schemas"]["TaxonomyRouteKind"];
+                slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicTaxonomyTermOut"];
+                };
+            };
+            /** @description Stara putanja preusmerava na aktuelnu kanonsku putanju. */
+            308: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_public_content: {
+        parameters: {
+            query?: {
+                locale?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicContentRevisionOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_public_intake_capabilities: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicIntakeCapabilitiesResponse"];
+                };
+            };
+        };
+    };
+    submit_public_intake_case: {
+        parameters: {
+            query?: never;
+            header: {
+                "Idempotency-Key": string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PublicIntakeSubmissionRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicIntakeSubmissionResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    evaluate_public_intake_match: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PublicIntakeMatchRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicIntakeMatchResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_public_custom_document: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicLegalDocumentOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_public_legal_document: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                kind: components["schemas"]["LegalDocumentKind"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicLegalDocumentOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

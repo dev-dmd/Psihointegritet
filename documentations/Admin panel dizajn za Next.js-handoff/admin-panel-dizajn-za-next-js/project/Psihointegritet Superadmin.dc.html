@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;0,6..72,500;1,6..72,300;1,6..72,400&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+  body { margin: 0; background: #FAF8F3; color: #3A2E28; font-family: 'Instrument Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+  a { color: #3A2E28; } a:hover { color: #96562F; }
+  ::selection { background: #D1A48C; color: #3A2E28; }
+  @keyframes saFadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes saFade { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes saSheet { from { transform: translateY(56px); opacity: 0; } to { transform: none; opacity: 1; } }
+  @keyframes saSpin { to { transform: rotate(360deg); } }
+  .sa-bottomnav { display: none !important; }
+  .sa-mob { display: none !important; }
+  @media (max-width: 1023px) {
+    .sa-sidebar { display: none !important; }
+    .sa-main { margin-left: 0 !important; }
+    .sa-bottomnav { display: grid !important; }
+    .sa-mob { display: flex !important; }
+    .sa-desk { display: none !important; }
+    .sa-content { padding-bottom: 104px !important; }
+    .sa-grid4 { grid-template-columns: repeat(2, 1fr) !important; }
+    .sa-split, .sa-grid2 { grid-template-columns: 1fr !important; }
+    .sa-trow { grid-template-columns: 1fr 1fr !important; row-gap: 12px !important; }
+    .sa-gaterow { grid-template-columns: 1fr auto !important; row-gap: 10px !important; }
+    .sa-gmeta { grid-column: 1 / -1 !important; }
+  }
+  @media (max-width: 767px) {
+    .sa-content { padding: 20px 16px 104px !important; }
+    .sa-topbar { padding: 10px 16px !important; }
+    .sa-grid4 { grid-template-columns: 1fr 1fr !important; }
+    .sa-h1 { font-size: 26px !important; }
+    .sa-trow { grid-template-columns: 1fr !important; }
+    .sa-modal { left: 14px !important; right: 14px !important; width: auto !important; transform: translateY(-50%) !important; }
+  }
+</style>
+</helmet>
+<div style="display: flex; min-height: 100vh;">
+
+<aside class="sa-sidebar" data-screen-label="Superadmin sidebar" style="position: fixed; left: 0; top: 0; bottom: 0; width: 264px; background: #3A2E28; display: flex; flex-direction: column; z-index: 50; box-sizing: border-box;">
+  <div style="padding: 26px 24px 6px; display: flex; align-items: baseline;">
+    <span style="font-family: 'Newsreader', serif; font-size: 23px; font-weight: 500; color: #FAF8F3;">Psihointegritet</span>
+    <span style="width: 6px; height: 6px; border-radius: 50%; background: #D1A48C; display: inline-block; margin-left: 4px;"></span>
+  </div>
+  <div style="padding: 0 24px 18px;"><span style="display: inline-flex; align-items: center; gap: 7px; font-size: 10px; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; color: #3A2E28; background: #D1A48C; padding: 5px 11px; border-radius: 999px;"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"></path></svg>Superadmin</span></div>
+  <nav style="flex: 1; overflow-y: auto; padding: 4px 14px 16px; display: flex; flex-direction: column; gap: 2px;">
+    <button onClick="{{ goPregled }}" style="cursor: pointer; border: none; text-align: left; display: flex; align-items: center; gap: 12px; font-family: 'Instrument Sans', sans-serif; font-size: 14px; font-weight: 600; padding: 11px 12px; border-radius: 12px; transition: background 0.2s ease; background: {{ nPregled.bg }}; color: {{ nPregled.fg }};" style-hover="background: rgba(250,248,243,0.08);"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1.5"></rect><rect x="14" y="3" width="7" height="5" rx="1.5"></rect><rect x="14" y="12" width="7" height="9" rx="1.5"></rect><rect x="3" y="16" width="7" height="5" rx="1.5"></rect></svg>Pregled</button>
+    <button onClick="{{ goTenanti }}" style="cursor: pointer; border: none; text-align: left; display: flex; align-items: center; gap: 12px; font-family: 'Instrument Sans', sans-serif; font-size: 14px; font-weight: 600; padding: 11px 12px; border-radius: 12px; transition: background 0.2s ease; background: {{ nTenanti.bg }}; color: {{ nTenanti.fg }};" style-hover="background: rgba(250,248,243,0.08);"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"></path><rect x="5" y="3" width="14" height="18" rx="1.5"></rect><path d="M9 7h2M13 7h2M9 11h2M13 11h2M9 15h2M13 15h2"></path></svg>Tenanti<span style="margin-left: auto; font-family: ui-monospace, Menlo, monospace; font-size: 11px; font-weight: 700; color: #FAF8F3; background: rgba(250,248,243,0.14); border-radius: 999px; padding: 2px 8px;">1</span></button>
+    <button onClick="{{ goGates }}" style="cursor: pointer; border: none; text-align: left; display: flex; align-items: center; gap: 12px; font-family: 'Instrument Sans', sans-serif; font-size: 14px; font-weight: 600; padding: 11px 12px; border-radius: 12px; transition: background 0.2s ease; background: {{ nGates.bg }}; color: {{ nGates.fg }};" style-hover="background: rgba(250,248,243,0.08);"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="10" rx="5"></rect><circle cx="16" cy="12" r="3"></circle></svg>Feature Gates</button>
+    <button onClick="{{ goDijagnostika }}" style="cursor: pointer; border: none; text-align: left; display: flex; align-items: center; gap: 12px; font-family: 'Instrument Sans', sans-serif; font-size: 14px; font-weight: 600; padding: 11px 12px; border-radius: 12px; transition: background 0.2s ease; background: {{ nDijag.bg }}; color: {{ nDijag.fg }};" style-hover="background: rgba(250,248,243,0.08);"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"></path></svg>Dijagnostika</button>
+    <button onClick="{{ goUskoro }}" style="cursor: pointer; border: none; background: none; text-align: left; display: flex; align-items: center; gap: 12px; font-family: 'Instrument Sans', sans-serif; font-size: 14px; font-weight: 500; padding: 10px 12px; border-radius: 12px; color: rgba(250,248,243,0.42);" style-hover="background: rgba(250,248,243,0.06);"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"></rect><path d="M2 10h20"></path></svg>Pretplate<span style="margin-left: auto; font-size: 9.5px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #D1A48C;">Uskoro</span></button>
+    <div style="margin: 18px 12px 8px; font-size: 10px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: rgba(250,248,243,0.35);">Sistem</div>
+    <button onClick="{{ goUskoro }}" style="cursor: pointer; border: none; background: none; text-align: left; display: flex; align-items: center; gap: 12px; font-family: 'Instrument Sans', sans-serif; font-size: 14px; font-weight: 500; padding: 10px 12px; border-radius: 12px; color: rgba(250,248,243,0.42);" style-hover="background: rgba(250,248,243,0.06);"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3v5h5"></path><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8l-5-5Z"></path><path d="M9 13h6M9 17h6"></path></svg>Audit Log<span style="margin-left: auto; font-size: 9.5px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #D1A48C;">Uskoro</span></button>
+    <button onClick="{{ goUskoro }}" style="cursor: pointer; border: none; background: none; text-align: left; display: flex; align-items: center; gap: 12px; font-family: 'Instrument Sans', sans-serif; font-size: 14px; font-weight: 500; padding: 10px 12px; border-radius: 12px; color: rgba(250,248,243,0.42);" style-hover="background: rgba(250,248,243,0.06);"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 5h-7M10 5H3M21 12h-9M8 12H3M21 19h-5M12 19H3"></path><circle cx="12" cy="5" r="2"></circle><circle cx="10" cy="12" r="2"></circle><circle cx="14" cy="19" r="2"></circle></svg>Podešavanja<span style="margin-left: auto; font-size: 9.5px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #D1A48C;">Uskoro</span></button>
+  </nav>
+  <div style="padding: 16px 18px 20px; border-top: 1px solid rgba(250,248,243,0.10); display: flex; align-items: center; gap: 11px;">
+    <span style="width: 38px; height: 38px; border-radius: 50%; background: rgba(209,164,140,0.25); border: 2px solid rgba(209,164,140,0.5); color: #FAF8F3; font-size: 12.5px; font-weight: 700; letter-spacing: 0.05em; display: inline-flex; align-items: center; justify-content: center;">SA</span>
+    <div style="flex: 1; min-width: 0;">
+      <div style="font-size: 13.5px; font-weight: 600; color: #FAF8F3;">Platform tim</div>
+      <div style="font-family: ui-monospace, Menlo, monospace; font-size: 10.5px; color: rgba(250,248,243,0.45);">produkcija · eu-central</div>
+    </div>
+    <button title="Odjavi se" style="cursor: pointer; border: none; background: none; color: rgba(250,248,243,0.45); width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center;" style-hover="background: rgba(179,64,46,0.25); color: #FAF8F3;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 3v9"></path><path d="M18.36 6.64a9 9 0 1 1-12.73 0"></path></svg></button>
+  </div>
+</aside>
+
+<div class="sa-main" style="flex: 1; margin-left: 264px; min-width: 0; display: flex; flex-direction: column;">
+  <header class="sa-topbar" style="position: sticky; top: 0; z-index: 40; background: rgba(250,248,243,0.88); backdrop-filter: blur(12px); border-bottom: 1px solid rgba(58,46,40,0.08); padding: 12px 32px; display: flex; align-items: center; gap: 14px;">
+    <span class="sa-mob" style="align-items: center; gap: 8px;"><span style="font-family: 'Newsreader', serif; font-size: 20px; font-weight: 500; color: #3A2E28;">Psihointegritet</span><span style="font-size: 9px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: #3A2E28; background: #D1A48C; padding: 3px 8px; border-radius: 999px;">SA</span></span>
+    <span class="sa-desk" style="font-size: 13px; color: rgba(58,46,40,0.55);">{{ danas }}</span>
+    <span style="flex: 1;"></span>
+    <span style="display: inline-flex; align-items: center; gap: 7px; font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #3D6B3D; background: rgba(198,213,168,0.45); padding: 6px 13px; border-radius: 999px;"><span style="width: 7px; height: 7px; border-radius: 50%; background: #3D6B3D;"></span>Svi sistemi operativni</span>
+    <span class="sa-desk" style="font-family: ui-monospace, Menlo, monospace; font-size: 11.5px; color: rgba(58,46,40,0.5); background: #FFFFFF; border: 1px solid rgba(58,46,40,0.1); padding: 7px 12px; border-radius: 999px;">v0.4.2 · produkcija</span>
+  </header>
+
+  <main class="sa-content" style="width: 100%; max-width: 1160px; margin: 0 auto; box-sizing: border-box; padding: 30px 32px 56px;">
+
+  <!-- ===== SA 01 PREGLED ===== -->
+  <sc-if value="{{ scrPregled }}" hint-placeholder-val="{{ true }}">
+  <section data-screen-label="SA Pregled" style="animation: saFadeUp 0.4s ease both;">
+    <div style="margin-bottom: 24px;">
+      <h1 class="sa-h1" style="margin: 0 0 6px; font-family: 'Newsreader', serif; font-weight: 400; font-size: 34px; line-height: 1.1; color: #3A2E28;">Pregled platforme</h1>
+      <p style="margin: 0; font-size: 14.5px; color: rgba(58,46,40,0.6);">Stanje sistema, tenanata i poslednja aktivnost — pretežno read-only.</p>
+    </div>
+    <div class="sa-grid4" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 16px;">
+      <sc-for list="{{ stats }}" as="s" hint-placeholder-count="8">
+        <div style="background: #FFFFFF; border: 1px solid rgba(58,46,40,0.06); border-radius: 18px; padding: 18px 20px;">
+          <span style="display: flex; align-items: baseline; gap: 8px;"><span style="font-family: 'Newsreader', serif; font-size: 30px; line-height: 1; color: #3A2E28;">{{ s.n }}</span><span style="width: 7px; height: 7px; border-radius: 50%; background: {{ s.dot }};"></span></span>
+          <span style="display: block; font-size: 12.5px; font-weight: 600; color: rgba(58,46,40,0.6); margin-top: 8px;">{{ s.t }}</span>
+        </div>
+      </sc-for>
+    </div>
+    <div class="sa-split" style="display: grid; grid-template-columns: 6fr 6fr; gap: 14px; align-items: start;">
+      <div style="background: #FFFFFF; border: 1px solid rgba(58,46,40,0.06); border-radius: 22px; padding: 22px 24px 12px;">
+        <div style="display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 8px;">
+          <h2 style="margin: 0; font-family: 'Newsreader', serif; font-weight: 400; font-size: 21px; color: #3A2E28;">Platform Health</h2>
+          <span style="font-family: ui-monospace, Menlo, monospace; font-size: 11px; color: rgba(58,46,40,0.5);">poslednja provera {{ lastCheck }}</span>
+        </div>
+        <sc-for list="{{ health }}" as="h" hint-placeholder-count="7">
+          <div style="display: grid; grid-template-columns: 1fr auto auto; align-items: center; gap: 12px; padding: 11px 2px; border-top: 1px solid rgba(58,46,40,0.06);">
+            <span style="font-size: 14px; font-weight: 600; color: #3A2E28;">{{ h.name }}</span>
+            <span style="font-family: ui-monospace, Menlo, monospace; font-size: 11.5px; color: rgba(58,46,40,0.5);">{{ h.meta }}</span>
+            <span style="display: inline-flex; align-items: center; gap: 6px; font-size: 11.5px; font-weight: 600; padding: 4px 10px; border-radius: 999px; background: {{ h.stBg }}; color: {{ h.stFg }};"><span style="width: 5px; height: 5px; border-radius: 50%; background: {{ h.stFg }};"></span>{{ h.stLabel }}</span>
+          </div>
+        </sc-for>
+      </div>
+      <div style="background: #FFFFFF; border: 1px solid rgba(58,46,40,0.06); border-radius: 22px; padding: 22px 24px 12px;">
+        <h2 style="margin: 0 0 8px; font-family: 'Newsreader', serif; font-weight: 400; font-size: 21px; color: #3A2E28;">Poslednja aktivnost</h2>
+        <sc-for list="{{ activity }}" as="a" hint-placeholder-count="5">
+          <div style="display: flex; align-items: flex-start; gap: 12px; padding: 11px 2px; border-top: 1px solid rgba(58,46,40,0.06);">
+            <span style="width: 8px; height: 8px; border-radius: 50%; margin-top: 6px; flex-shrink: 0; background: {{ a.dot }};"></span>
+            <span style="flex: 1;"><span style="display: block; font-size: 13.5px; font-weight: 600; color: #3A2E28; line-height: 1.4;">{{ a.t }}</span><span style="display: block; font-family: ui-monospace, Menlo, monospace; font-size: 11px; color: rgba(58,46,40,0.5); margin-top: 2px;">{{ a.d }}</span></span>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+  </section>
+  </sc-if>
+
+  <!-- ===== SA 02 TENANTI ===== -->
+  <sc-if value="{{ scrTenanti }}" hint-placeholder-val="{{ false }}">
+  <section data-screen-label="SA Tenanti" style="animation: saFadeUp 0.4s ease both;">
+    <div style="margin-bottom: 20px;">
+      <h1 class="sa-h1" style="margin: 0 0 6px; font-family: 'Newsreader', serif; font-weight: 400; font-size: 34px; line-height: 1.1; color: #3A2E28;">Tenanti</h1>
+      <p style="margin: 0; font-size: 14.5px; color: rgba(58,46,40,0.6);">Multi-tenant osnova — za sada jedan tenant, struktura spremna za više.</p>
+    </div>
+    <button onClick="{{ goTenant }}" class="sa-trow" style="cursor: pointer; width: 100%; text-align: left; background: #FFFFFF; border: 1px solid rgba(58,46,40,0.06); border-radius: 20px; padding: 22px 24px; display: grid; grid-template-columns: 2.2fr 1.2fr 1fr 1fr auto; align-items: center; gap: 16px; font-family: 'Instrument Sans', sans-serif; transition: transform 0.25s ease, box-shadow 0.25s ease;" style-hover="transform: translateY(-3px); box-shadow: 0 14px 34px rgba(58,46,40,0.10);">
+      <span style="display: flex; align-items: center; gap: 14px;">
+        <span style="width: 46px; height: 46px; border-radius: 14px; background: rgba(198,213,168,0.35); color: #2E3B2E; font-family: 'Newsreader', serif; font-size: 19px; display: inline-flex; align-items: center; justify-content: center;">P</span>
+        <span><span style="display: block; font-family: 'Newsreader', serif; font-size: 21px; color: #3A2E28;">{{ ten.name }}</span><span style="display: block; font-family: ui-monospace, Menlo, monospace; font-size: 11.5px; color: rgba(58,46,40,0.5); margin-top: 2px;">{{ ten.domain }} · slug: {{ ten.slug }}</span></span>
+      </span>
+      <span><span style="display: block; font-size: 11px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(58,46,40,0.45);">Vlasnik</span><span style="display: block; font-size: 13.5px; font-weight: 600; color: #3A2E28; margin-top: 2px;">{{ ten.owner }}</span></span>
+      <span><span style="display: block; font-size: 11px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(58,46,40,0.45);">Plan</span><span style="display: block; font-size: 13.5px; font-weight: 600; color: #3A2E28; margin-top: 2px;">{{ ten.plan }}</span></span>
+      <span><span style="display: block; font-size: 11px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(58,46,40,0.45);">Terapeuti · klijenti</span><span style="display: block; font-size: 13.5px; font-weight: 600; color: #3A2E28; margin-top: 2px;">{{ ten.terStr }} · {{ ten.kliStr }}</span></span>
+      <span style="display: inline-flex; align-items: center; gap: 6px; font-size: 11.5px; font-weight: 600; padding: 5px 11px; border-radius: 999px; white-space: nowrap; background: {{ ten.stBg }}; color: {{ ten.stFg }};"><span style="width: 5px; height: 5px; border-radius: 50%; background: {{ ten.stFg }};"></span>{{ ten.stLabel }}</span>
+    </button>
+    <div style="margin-top: 14px; background: rgba(255,255,255,0.6); border: 1.5px dashed rgba(58,46,40,0.18); border-radius: 20px; padding: 20px 24px; display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap;">
+      <span style="font-size: 13.5px; color: rgba(58,46,40,0.55);">Novi tenant — onboarding tok je planiran za fazu white-label ponude.</span>
+      <span style="font-size: 10.5px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #8A6A3B; background: rgba(209,164,140,0.22); padding: 4px 10px; border-radius: 999px;">Uskoro</span>
+    </div>
+  </section>
+  </sc-if>
+
+  <!-- ===== SA 03 PROFIL TENANTA ===== -->
+  <sc-if value="{{ scrTenant }}" hint-placeholder-val="{{ false }}">
+  <section data-screen-label="SA Profil tenanta" style="animation: saFadeUp 0.4s ease both;">
+    <button onClick="{{ backTenanti }}" style="cursor: pointer; border: none; background: none; display: inline-flex; align-items: center; gap: 8px; font-family: 'Instrument Sans', sans-serif; font-size: 13.5px; font-weight: 600; color: rgba(58,46,40,0.6); padding: 4px 0; margin-bottom: 14px;" style-hover="color: #3A2E28;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"></path><path d="M11 6l-6 6 6 6"></path></svg>Tenanti</button>
+    <div style="background: #FFFFFF; border: 1px solid rgba(58,46,40,0.06); border-radius: 22px; padding: 26px 28px; margin-bottom: 16px; display: flex; align-items: center; gap: 18px; flex-wrap: wrap;">
+      <span style="width: 60px; height: 60px; border-radius: 18px; background: rgba(198,213,168,0.35); color: #2E3B2E; font-family: 'Newsreader', serif; font-size: 25px; display: inline-flex; align-items: center; justify-content: center;">P</span>
+      <div style="flex: 1; min-width: 220px;">
+        <h1 class="sa-h1" style="margin: 0 0 5px; font-family: 'Newsreader', serif; font-weight: 400; font-size: 30px; line-height: 1.1; color: #3A2E28;">{{ ten.name }}</h1>
+        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+          <span style="display: inline-flex; align-items: center; gap: 6px; font-size: 11.5px; font-weight: 600; padding: 5px 11px; border-radius: 999px; background: {{ ten.stBg }}; color: {{ ten.stFg }};"><span style="width: 5px; height: 5px; border-radius: 50%; background: {{ ten.stFg }};"></span>{{ ten.stLabel }}</span>
+          <span style="font-family: ui-monospace, Menlo, monospace; font-size: 12px; color: rgba(58,46,40,0.55);">{{ ten.domain }}</span>
+          <span style="font-size: 12.5px; color: rgba(58,46,40,0.55);">{{ ten.trial }}</span>
+        </div>
+      </div>
+      <a href="Psihointegritet Control Center.dc.html" style="text-decoration: none; background: #3A2E28; color: #FAF8F3; font-size: 13.5px; font-weight: 600; padding: 12px 22px; border-radius: 999px; white-space: nowrap; transition: background 0.2s ease;" style-hover="background: #4d3d34;">Otvori tenant control panel →</a>
+    </div>
+    <div class="sa-tabs" style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 18px;">
+      <button onClick="{{ setTTPregled }}" style="cursor: pointer; white-space: nowrap; font-family: 'Instrument Sans', sans-serif; font-size: 13px; font-weight: 600; padding: 9px 17px; border-radius: 999px; transition: all 0.2s ease; border: 1px solid {{ pPregled.bd }}; background: {{ pPregled.bg }}; color: {{ pPregled.fg }};">Pregled</button>
+      <button onClick="{{ setTTFunk }}" style="cursor: pointer; white-space: nowrap; font-family: 'Instrument Sans', sans-serif; font-size: 13px; font-weight: 600; padding: 9px 17px; border-radius: 999px; transition: all 0.2s ease; border: 1px solid {{ pFunk.bd }}; background: {{ pFunk.bg }}; color: {{ pFunk.fg }};">Funkcionalnosti</button>
+      <button onClick="{{ setTTPotr }}" style="cursor: pointer; white-space: nowrap; font-family: 'Instrument Sans', sans-serif; font-size: 13px; font-weight: 600; padding: 9px 17px; border-radius: 999px; transition: all 0.2s ease; border: 1px solid {{ pPotr.bd }}; background: {{ pPotr.bg }}; color: {{ pPotr.fg }};">Potrošnja</button>
+      <span style="white-space: nowrap; font-size: 13px; font-weight: 600; color: rgba(58,46,40,0.4); background: rgba(58,46,40,0.05); padding: 9px 17px; border-radius: 999px;">Korisnici · uskoro</span>
+      <span style="white-space: nowrap; font-size: 13px; font-weight: 600; color: rgba(58,46,40,0.4); background: rgba(58,46,40,0.05); padding: 9px 17px; border-radius: 999px;">Pretplata · uskoro</span>
+    </div>
+    <sc-if value="{{ ttPregled }}" hint-placeholder-val="{{ false }}">
+      <div class="sa-grid2" style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+        <div style="background: #FFFFFF; border: 1px solid rgba(58,46,40,0.06); border-radius: 20px; padding: 22px 24px;">
+          <div style="font-size: 11.5px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: #96562F; margin-bottom: 14px;">Osnovni podaci</div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+            <span><span style="display: block; font-size: 11px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(58,46,40,0.45);">Vlasnik</span><span style="display: block; font-size: 14px; font-weight: 600; color: #3A2E28; margin-top: 3px;">{{ ten.owner }}</span></span>
+            <span><span style="display: block; font-size: 11px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(58,46,40,0.45);">Plan</span><span style="display: block; font-size: 14px; font-weight: 600; color: #3A2E28; margin-top: 3px;">{{ ten.plan }}</span></span>
+            <span><span style="display: block; font-size: 11px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(58,46,40,0.45);">Kreiran</span><span style="display: block; font-size: 14px; font-weight: 600; color: #3A2E28; margin-top: 3px;">{{ ten.created }}</span></span>
+            <span><span style="display: block; font-size: 11px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(58,46,40,0.45);">Poslednja aktivnost</span><span style="display: block; font-size: 14px; font-weight: 600; color: #3A2E28; margin-top: 3px;">{{ ten.last }}</span></span>
+            <span><span style="display: block; font-size: 11px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(58,46,40,0.45);">Terapeuti · klijenti</span><span style="display: block; font-family: 'Newsreader', serif; font-size: 20px; color: #3A2E28; margin-top: 2px;">{{ ten.terStr }} · {{ ten.kliStr }}</span></span>
+            <span><span style="display: block; font-size: 11px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(58,46,40,0.45);">Ukupno termina</span><span style="display: block; font-family: 'Newsreader', serif; font-size: 20px; color: #3A2E28; margin-top: 2px;">{{ ten.termStr }}</span></span>
+          </div>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 14px;">
+          <div style="background: #FFFFFF; border: 1px solid rgba(58,46,40,0.06); border-radius: 20px; padding: 22px 24px;">
+            <div style="font-size: 11.5px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: #96562F; margin-bottom: 12px;">Aktivni engine-i</div>
+            <div style="display: flex; flex-wrap: wrap; gap: 7px;">
+              <sc-for list="{{ ten.engines }}" as="e" hint-placeholder-count="6">
+                <span style="font-size: 12.5px; font-weight: 500; color: #3A2E28; background: rgba(198,213,168,0.22); border: 1px solid rgba(138,157,130,0.25); padding: 5px 12px; border-radius: 999px;">{{ e }}</span>
+              </sc-for>
+            </div>
+          </div>
+          <div style="background: rgba(209,164,140,0.16); border: 1px solid rgba(209,164,140,0.45); border-radius: 20px; padding: 20px 24px;">
+            <div style="font-size: 11.5px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: #96562F; margin-bottom: 8px;">Interna beleška — vidi samo superadmin</div>
+            <p style="margin: 0; font-size: 13.5px; line-height: 1.6; color: #3A2E28;">{{ ten.note }}</p>
+          </div>
+        </div>
+      </div>
+    </sc-if>
+    <sc-if value="{{ ttFunk }}" hint-placeholder-val="{{ false }}">
+      <div style="background: #FFFFFF; border: 1px solid rgba(58,46,40,0.06); border-radius: 22px; padding: 10px 24px 14px;">
+        <sc-for list="{{ gates }}" as="g" hint-placeholder-count="9">
+          <div style="display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 14px; padding: 13px 4px; border-top: 1px solid rgba(58,46,40,0.06);">
+            <span><span style="display: block; font-size: 14px; font-weight: 600; color: #3A2E28;">{{ g.name }}</span><span style="display: block; font-size: 12px; color: rgba(58,46,40,0.5); margin-top: 2px;">Min. plan: {{ g.plan }}</span></span>
+            <span style="display: inline-flex; align-items: center; gap: 6px; font-size: 11.5px; font-weight: 600; padding: 4px 10px; border-radius: 999px; background: {{ g.stBg }}; color: {{ g.stFg }};"><span style="width: 5px; height: 5px; border-radius: 50%; background: {{ g.stFg }};"></span>{{ g.stLabel }}</span>
+          </div>
+        </sc-for>
+        <p style="margin: 12px 6px 6px; font-size: 12.5px; font-style: italic; color: rgba(58,46,40,0.5);">Promene se rade u registru Feature Gates — sa potvrdom i upisom u Audit Log.</p>
+      </div>
+    </sc-if>
+    <sc-if value="{{ ttPotr }}" hint-placeholder-val="{{ false }}">
+      <div class="sa-grid4" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px;">
+        <sc-for list="{{ usage }}" as="u" hint-placeholder-count="8">
+          <div style="background: #FFFFFF; border: 1px solid rgba(58,46,40,0.06); border-radius: 18px; padding: 18px 20px;">
+            <span style="display: block; font-family: 'Newsreader', serif; font-size: 27px; color: #3A2E28;">{{ u.n }}</span>
+            <span style="display: block; font-size: 12.5px; font-weight: 600; color: rgba(58,46,40,0.6); margin-top: 4px;">{{ u.t }}</span>
+          </div>
+        </sc-for>
+      </div>
+      <p style="margin: 12px 4px 0; font-size: 12.5px; font-style: italic; color: rgba(58,46,40,0.5);">Read-only u ovoj fazi — plan i cena se unose ručno, naplata kasnije.</p>
+    </sc-if>
+  </section>
+  </sc-if>
+  <!-- ===== SA 04 FEATURE GATES ===== -->
+  <sc-if value="{{ scrGates }}" hint-placeholder-val="{{ false }}">
+  <section data-screen-label="SA Feature Gates" style="animation: saFadeUp 0.4s ease both;">
+    <div style="margin-bottom: 20px;">
+      <h1 class="sa-h1" style="margin: 0 0 6px; font-family: 'Newsreader', serif; font-weight: 400; font-size: 34px; line-height: 1.1; color: #3A2E28;">Feature Gates</h1>
+      <p style="margin: 0; font-size: 14.5px; color: rgba(58,46,40,0.6); max-width: 620px;">Registar funkcionalnosti po tenantu — osnova budućih planova i white-label ponude. Svaka promena zahteva razlog i upisuje se u Audit Log.</p>
+    </div>
+    <div style="background: #FFFFFF; border: 1px solid rgba(58,46,40,0.06); border-radius: 22px; padding: 8px 24px 10px;">
+      <div class="sa-desk" style="display: grid; grid-template-columns: 2fr 1fr 1.3fr auto; gap: 14px; padding: 12px 4px 10px; font-size: 10.5px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(58,46,40,0.45);">
+        <span>Funkcionalnost</span><span>Min. plan</span><span>Tenant override</span><span style="text-align: right;">Psihointegritet</span>
+      </div>
+      <sc-for list="{{ gates }}" as="g" hint-placeholder-count="9">
+        <div class="sa-gaterow" style="display: grid; grid-template-columns: 2fr 1fr 1.3fr auto; align-items: center; gap: 14px; padding: 14px 4px; border-top: 1px solid rgba(58,46,40,0.06);">
+          <span><span style="display: block; font-size: 14.5px; font-weight: 600; color: #3A2E28;">{{ g.name }}</span><span style="display: block; font-size: 12.5px; color: rgba(58,46,40,0.55); margin-top: 2px;">{{ g.desc }}</span></span>
+          <span class="sa-gmeta" style="font-size: 12.5px; font-weight: 600; color: rgba(58,46,40,0.65);"><span style="background: rgba(58,46,40,0.06); padding: 4px 11px; border-radius: 999px;">{{ g.plan }}</span></span>
+          <span class="sa-gmeta" style="font-family: ui-monospace, Menlo, monospace; font-size: 11.5px; color: rgba(58,46,40,0.5);">{{ g.ovr }}</span>
+          <span style="display: flex; align-items: center; gap: 10px; justify-content: flex-end;">
+            <span style="display: inline-flex; align-items: center; gap: 6px; font-size: 11.5px; font-weight: 600; padding: 4px 10px; border-radius: 999px; white-space: nowrap; background: {{ g.stBg }}; color: {{ g.stFg }};"><span style="width: 5px; height: 5px; border-radius: 50%; background: {{ g.stFg }};"></span>{{ g.stLabel }}</span>
+            <sc-if value="{{ g.toggable }}" hint-placeholder-val="{{ true }}">
+              <button onClick="{{ g.open }}" aria-label="Promeni gate" style="cursor: pointer; border: none; background: none; padding: 2px;">
+                <sc-if value="{{ g.isOn }}" hint-placeholder-val="{{ true }}"><span style="display: block; width: 40px; height: 23px; border-radius: 999px; background: #8A9D82; position: relative;"><span style="position: absolute; top: 2.5px; right: 3px; width: 18px; height: 18px; border-radius: 50%; background: #FAF8F3;"></span></span></sc-if>
+                <sc-if value="{{ g.isOff }}" hint-placeholder-val="{{ false }}"><span style="display: block; width: 40px; height: 23px; border-radius: 999px; background: rgba(58,46,40,0.18); position: relative;"><span style="position: absolute; top: 2.5px; left: 3px; width: 18px; height: 18px; border-radius: 50%; background: #FAF8F3;"></span></span></sc-if>
+              </button>
+            </sc-if>
+            <sc-if value="{{ g.isPrip }}" hint-placeholder-val="{{ false }}"><span style="width: 40px; display: inline-flex; justify-content: center; color: rgba(58,46,40,0.3);"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"></rect><path d="M8 11V7a4 4 0 0 1 8 0v4"></path></svg></span></sc-if>
+          </span>
+        </div>
+      </sc-for>
+    </div>
+  </section>
+  </sc-if>
+
+  <!-- ===== SA 05 DIJAGNOSTIKA ===== -->
+  <sc-if value="{{ scrDijagnostika }}" hint-placeholder-val="{{ false }}">
+  <section data-screen-label="SA Dijagnostika" style="animation: saFadeUp 0.4s ease both;">
+    <div style="display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; margin-bottom: 20px; flex-wrap: wrap;">
+      <div>
+        <h1 class="sa-h1" style="margin: 0 0 6px; font-family: 'Newsreader', serif; font-weight: 400; font-size: 34px; line-height: 1.1; color: #3A2E28;">Dijagnostika</h1>
+        <p style="margin: 0; font-size: 14.5px; color: rgba(58,46,40,0.6);">Diagnostic engine prvo pouzdano otkriva i lokalizuje problem — popravke kasnije.</p>
+      </div>
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <sc-if value="{{ checking }}" hint-placeholder-val="{{ false }}">
+          <span style="display: inline-flex; align-items: center; gap: 9px; font-size: 13px; font-weight: 600; color: rgba(58,46,40,0.6);"><span style="width: 15px; height: 15px; border-radius: 50%; border: 2px solid rgba(58,46,40,0.15); border-top-color: #96562F; animation: saSpin 0.8s linear infinite; display: inline-block;"></span>Provera u toku…</span>
+        </sc-if>
+        <sc-if value="{{ notChecking }}" hint-placeholder-val="{{ true }}">
+          <button onClick="{{ runCheck }}" style="cursor: pointer; border: none; background: #3A2E28; color: #FAF8F3; font-family: 'Instrument Sans', sans-serif; font-size: 13.5px; font-weight: 600; padding: 11px 22px; border-radius: 999px; transition: background 0.2s ease; min-height: 44px;" style-hover="background: #4d3d34;">Pokreni proveru</button>
+        </sc-if>
+        <button style="cursor: pointer; background: none; border: 1.5px solid rgba(58,46,40,0.22); color: #3A2E28; font-family: 'Instrument Sans', sans-serif; font-size: 13.5px; font-weight: 600; padding: 10px 18px; border-radius: 999px; transition: all 0.2s ease; min-height: 44px;" style-hover="border-color: #96562F;">Kopiraj tehničke podatke</button>
+      </div>
+    </div>
+    <div class="sa-split" style="display: grid; grid-template-columns: 6fr 6fr; gap: 14px; align-items: start;">
+      <div style="display: flex; flex-direction: column; gap: 14px;">
+        <div style="background: #FFFFFF; border: 1px solid rgba(58,46,40,0.06); border-radius: 22px; padding: 22px 24px 12px;">
+          <div style="display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 8px;">
+            <h2 style="margin: 0; font-family: 'Newsreader', serif; font-weight: 400; font-size: 21px; color: #3A2E28;">Servisi</h2>
+            <span style="font-family: ui-monospace, Menlo, monospace; font-size: 11px; color: rgba(58,46,40,0.5);">{{ lastCheck }}</span>
+          </div>
+          <sc-for list="{{ health }}" as="h" hint-placeholder-count="7">
+            <div style="display: grid; grid-template-columns: 1fr auto auto; align-items: center; gap: 12px; padding: 11px 2px; border-top: 1px solid rgba(58,46,40,0.06);">
+              <span style="font-size: 14px; font-weight: 600; color: #3A2E28;">{{ h.name }}</span>
+              <span style="font-family: ui-monospace, Menlo, monospace; font-size: 11.5px; color: rgba(58,46,40,0.5);">{{ h.meta }}</span>
+              <span style="display: inline-flex; align-items: center; gap: 6px; font-size: 11.5px; font-weight: 600; padding: 4px 10px; border-radius: 999px; background: {{ h.stBg }}; color: {{ h.stFg }};"><span style="width: 5px; height: 5px; border-radius: 50%; background: {{ h.stFg }};"></span>{{ h.stLabel }}</span>
+            </div>
+          </sc-for>
+        </div>
+        <div style="background: #FFFFFF; border: 1px solid rgba(58,46,40,0.06); border-radius: 22px; padding: 22px 24px;">
+          <h2 style="margin: 0 0 14px; font-family: 'Newsreader', serif; font-weight: 400; font-size: 21px; color: #3A2E28;">Aplikacija — poslednja 24h</h2>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+            <span><span style="display: block; font-size: 11px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(58,46,40,0.45);">Poslednji booking zahtev</span><span style="display: block; font-size: 13.5px; font-weight: 600; color: #3D6B3D; margin-top: 3px;">09:41 · uspešan</span></span>
+            <span><span style="display: block; font-size: 11px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(58,46,40,0.45);">Poslednji email</span><span style="display: block; font-size: 13.5px; font-weight: 600; color: #B3402E; margin-top: 3px;">08:12 · neuspešan, retry</span></span>
+            <span><span style="display: block; font-size: 11px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(58,46,40,0.45);">Neuspeli emailovi</span><span style="display: block; font-family: 'Newsreader', serif; font-size: 21px; color: #3A2E28; margin-top: 2px;">2</span></span>
+            <span><span style="display: block; font-size: 11px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(58,46,40,0.45);">API greške · udeo</span><span style="display: block; font-family: 'Newsreader', serif; font-size: 21px; color: #3A2E28; margin-top: 2px;">3 <span style="font-family: 'Instrument Sans', sans-serif; font-size: 13px; color: rgba(58,46,40,0.5);">(0,2%)</span></span></span>
+            <span><span style="display: block; font-size: 11px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(58,46,40,0.45);">Spore operacije</span><span style="display: block; font-family: 'Newsreader', serif; font-size: 21px; color: #3A2E28; margin-top: 2px;">1</span></span>
+            <span><span style="display: block; font-size: 11px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(58,46,40,0.45);">Neobrađeni Intake zahtevi</span><span style="display: block; font-family: 'Newsreader', serif; font-size: 21px; color: #3A2E28; margin-top: 2px;">2</span></span>
+          </div>
+        </div>
+      </div>
+      <div style="background: #FFFFFF; border: 1px solid rgba(58,46,40,0.06); border-radius: 22px; padding: 22px 24px;">
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 14px;">
+          <h2 style="margin: 0; font-family: 'Newsreader', serif; font-weight: 400; font-size: 21px; color: #3A2E28;">Tenant health — Psihointegritet</h2>
+          <button style="cursor: pointer; background: none; border: 1px solid rgba(58,46,40,0.15); color: rgba(58,46,40,0.6); font-family: 'Instrument Sans', sans-serif; font-size: 11.5px; font-weight: 600; padding: 6px 13px; border-radius: 999px;" style-hover="border-color: #96562F; color: #3A2E28;">Označi kao pregledano</button>
+        </div>
+        <div style="display: flex; flex-direction: column;">
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 11px 0; border-top: 1px solid rgba(58,46,40,0.06);"><span style="font-size: 14px; font-weight: 600; color: #3A2E28;">Domen</span><span style="font-family: ui-monospace, Menlo, monospace; font-size: 12px; color: #3D6B3D;">psihointegritet.com ✓</span></div>
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 11px 0; border-top: 1px solid rgba(58,46,40,0.06);"><span style="font-size: 14px; font-weight: 600; color: #3A2E28;">SSL sertifikat</span><span style="font-family: ui-monospace, Menlo, monospace; font-size: 12px; color: #3D6B3D;">važi do 14. okt ✓</span></div>
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 11px 0; border-top: 1px solid rgba(58,46,40,0.06);"><span style="font-size: 14px; font-weight: 600; color: #3A2E28;">Backend konekcija</span><span style="font-family: ui-monospace, Menlo, monospace; font-size: 12px; color: #3D6B3D;">124 ms ✓</span></div>
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 11px 0; border-top: 1px solid rgba(58,46,40,0.06);"><span style="font-size: 14px; font-weight: 600; color: #3A2E28;">Email konfiguracija</span><span style="font-family: ui-monospace, Menlo, monospace; font-size: 12px; color: #96562F;">DKIM ⚠ proveriti</span></div>
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 11px 0; border-top: 1px solid rgba(58,46,40,0.06);"><span style="font-size: 14px; font-weight: 600; color: #3A2E28;">Aktivni feature gate-ovi</span><span style="font-family: ui-monospace, Menlo, monospace; font-size: 12px; color: rgba(58,46,40,0.6);">6 / 9</span></div>
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 11px 0; border-top: 1px solid rgba(58,46,40,0.06);"><span style="font-size: 14px; font-weight: 600; color: #3A2E28;">Zakazani poslovi</span><span style="font-family: ui-monospace, Menlo, monospace; font-size: 12px; color: #3D6B3D;">svi na rasporedu ✓</span></div>
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 11px 0; border-top: 1px solid rgba(58,46,40,0.06);"><span style="font-size: 14px; font-weight: 600; color: #3A2E28;">Poslednja aktivnost</span><span style="font-family: ui-monospace, Menlo, monospace; font-size: 12px; color: rgba(58,46,40,0.6);">danas · 09:41</span></div>
+        </div>
+        <div style="margin-top: 14px; background: rgba(209,164,140,0.16); border: 1px solid rgba(209,164,140,0.45); border-radius: 14px; padding: 12px 16px; font-size: 12.5px; line-height: 1.55; color: #3A2E28;"><span style="font-weight: 700;">Nalaz:</span> 2 emaila nisu isporučena (DKIM upozorenje). Preporuka: proveriti DNS zapise domena — automatska popravka je planirana za kasniju fazu.</div>
+      </div>
+    </div>
+  </section>
+  </sc-if>
+
+  <!-- ===== SA 06 USKORO ===== -->
+  <sc-if value="{{ scrUskoro }}" hint-placeholder-val="{{ false }}">
+  <section data-screen-label="SA U pripremi" style="animation: saFadeUp 0.4s ease both;">
+    <div style="margin-bottom: 20px;">
+      <h1 class="sa-h1" style="margin: 0 0 6px; font-family: 'Newsreader', serif; font-weight: 400; font-size: 34px; line-height: 1.1; color: #3A2E28;">U pripremi</h1>
+      <p style="margin: 0; font-size: 14.5px; color: rgba(58,46,40,0.6); max-width: 560px;">Pretplate, Audit Log i Podešavanja postoje kao rute i navigacija — poslovna logika stiže u kasnijim fazama.</p>
+    </div>
+    <div class="sa-grid2" style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+      <div style="background: rgba(255,255,255,0.6); border: 1.5px dashed rgba(58,46,40,0.18); border-radius: 20px; padding: 22px 24px;">
+        <div style="font-family: 'Newsreader', serif; font-size: 20px; color: rgba(58,46,40,0.75); margin-bottom: 6px;">Pretplate i potrošnja</div>
+        <p style="margin: 0; font-size: 13px; color: rgba(58,46,40,0.55);">Plan, trial period, obnove, istorija uplata i procenjena mesečna potrošnja — read-only sa ručno unetim planom.</p>
+      </div>
+      <div style="background: rgba(255,255,255,0.6); border: 1.5px dashed rgba(58,46,40,0.18); border-radius: 20px; padding: 22px 24px;">
+        <div style="font-family: 'Newsreader', serif; font-size: 20px; color: rgba(58,46,40,0.75); margin-bottom: 6px;">Audit Log</div>
+        <p style="margin: 0; font-size: 13px; color: rgba(58,46,40,0.55);">Ko, koja akcija, nad kojim tenantom, prethodna i nova vrednost, razlog, vreme — zapisi već nastaju kroz Feature Gates.</p>
+      </div>
+    </div>
+  </section>
+  </sc-if>
+
+  </main>
+</div>
+
+<nav class="sa-bottomnav" data-screen-label="SA mobilna navigacija" style="position: fixed; left: 0; right: 0; bottom: 0; z-index: 70; background: #FFFFFF; border-top: 1px solid rgba(58,46,40,0.08); grid-template-columns: repeat(4, 1fr); padding: 8px 6px calc(10px + env(safe-area-inset-bottom));">
+  <button onClick="{{ goPregled }}" style="cursor: pointer; border: none; background: none; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 4px 0; font-family: 'Instrument Sans', sans-serif; min-height: 48px; justify-content: flex-end;"><span style="width: 42px; height: 26px; border-radius: 999px; display: flex; align-items: center; justify-content: center; background: {{ bPregled.tile }}; color: {{ bPregled.fg }};"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1.5"></rect><rect x="14" y="3" width="7" height="5" rx="1.5"></rect><rect x="14" y="12" width="7" height="9" rx="1.5"></rect><rect x="3" y="16" width="7" height="5" rx="1.5"></rect></svg></span><span style="font-size: 10.5px; font-weight: 600; color: {{ bPregled.fg }};">Pregled</span></button>
+  <button onClick="{{ goTenanti }}" style="cursor: pointer; border: none; background: none; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 4px 0; font-family: 'Instrument Sans', sans-serif; min-height: 48px; justify-content: flex-end;"><span style="width: 42px; height: 26px; border-radius: 999px; display: flex; align-items: center; justify-content: center; background: {{ bTenanti.tile }}; color: {{ bTenanti.fg }};"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"></path><rect x="5" y="3" width="14" height="18" rx="1.5"></rect><path d="M9 7h2M13 7h2M9 11h2M13 11h2M9 15h2M13 15h2"></path></svg></span><span style="font-size: 10.5px; font-weight: 600; color: {{ bTenanti.fg }};">Tenanti</span></button>
+  <button onClick="{{ goDijagnostika }}" style="cursor: pointer; border: none; background: none; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 4px 0; font-family: 'Instrument Sans', sans-serif; min-height: 48px; justify-content: flex-end;"><span style="width: 42px; height: 26px; border-radius: 999px; display: flex; align-items: center; justify-content: center; background: {{ bDijag.tile }}; color: {{ bDijag.fg }};"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"></path></svg></span><span style="font-size: 10.5px; font-weight: 600; color: {{ bDijag.fg }};">Dijagnostika</span></button>
+  <button onClick="{{ goGates }}" style="cursor: pointer; border: none; background: none; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 4px 0; font-family: 'Instrument Sans', sans-serif; min-height: 48px; justify-content: flex-end;"><span style="width: 42px; height: 26px; border-radius: 999px; display: flex; align-items: center; justify-content: center; background: {{ bGates.tile }}; color: {{ bGates.fg }};"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="10" rx="5"></rect><circle cx="16" cy="12" r="3"></circle></svg></span><span style="font-size: 10.5px; font-weight: 600; color: {{ bGates.fg }};">Gates</span></button>
+</nav>
+
+<!-- ===== MODAL: PROMENA FEATURE GATE-A ===== -->
+<sc-if value="{{ gateOpen }}" hint-placeholder-val="{{ false }}">
+  <div onClick="{{ closeGate }}" style="position: fixed; inset: 0; z-index: 90; background: rgba(58,46,40,0.5); animation: saFade 0.25s ease both;"></div>
+  <div class="sa-modal" role="dialog" aria-label="Promena feature gate-a" style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 91; width: 440px; background: #FAF8F3; border-radius: 24px; box-shadow: 0 32px 80px rgba(58,46,40,0.3); padding: 26px 28px; animation: saSheet 0.3s cubic-bezier(0.22,1,0.36,1) both; box-sizing: border-box;">
+    <div style="font-size: 11px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: #96562F; margin-bottom: 8px;">Potvrda promene</div>
+    <h2 style="margin: 0 0 8px; font-family: 'Newsreader', serif; font-weight: 400; font-size: 24px; line-height: 1.15; color: #3A2E28;">{{ gate.name }}</h2>
+    <p style="margin: 0 0 16px; font-size: 13.5px; color: rgba(58,46,40,0.65);">Tenant <span style="font-weight: 600;">Psihointegritet</span> · <span style="display: inline-flex; align-items: center; gap: 5px;"><span style="font-weight: 600; color: {{ gate.stFg }};">{{ gate.stLabel }}</span> → <span style="font-weight: 600; color: {{ gate.toFg }};">{{ gate.toLabel }}</span></span></p>
+    <label style="display: block; font-size: 11px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(58,46,40,0.5); margin-bottom: 7px;" for="sa-reason">Razlog promene — obavezno</label>
+    <input id="sa-reason" value="{{ reason }}" onChange="{{ setReason }}" placeholder="npr. Dogovor sa vlasnicom centra" style="width: 100%; box-sizing: border-box; background: #FFFFFF; border: 1.5px solid rgba(58,46,40,0.15); border-radius: 13px; padding: 12px 14px; font-family: 'Instrument Sans', sans-serif; font-size: 14px; color: #3A2E28; outline: none; margin-bottom: 12px;" style-focus="border-color: #8A9D82;">
+    <div style="background: rgba(209,164,140,0.16); border: 1px solid rgba(209,164,140,0.45); border-radius: 13px; padding: 11px 14px; font-size: 12.5px; line-height: 1.5; color: #3A2E28; margin-bottom: 18px;">Promena se upisuje u <span style="font-weight: 700;">Audit Log</span>: ko, kada, prethodna i nova vrednost, razlog.</div>
+    <div style="display: flex; gap: 10px; justify-content: flex-end;">
+      <button onClick="{{ closeGate }}" style="cursor: pointer; background: none; border: 1.5px solid rgba(58,46,40,0.22); color: #3A2E28; font-family: 'Instrument Sans', sans-serif; font-size: 13.5px; font-weight: 600; padding: 11px 20px; border-radius: 999px; min-height: 44px;" style-hover="border-color: #8A9D82;">Odustani</button>
+      <button onClick="{{ confirmGate }}" style="cursor: pointer; border: none; background: #3A2E28; color: #FAF8F3; font-family: 'Instrument Sans', sans-serif; font-size: 13.5px; font-weight: 600; padding: 11px 22px; border-radius: 999px; transition: background 0.2s ease; min-height: 44px;" style-hover="background: #4d3d34;">Potvrdi promenu</button>
+    </div>
+  </div>
+</sc-if>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;startScreen&quot;: {&quot;editor&quot;: &quot;enum&quot;, &quot;default&quot;: &quot;pregled&quot;, &quot;options&quot;: [&quot;pregled&quot;, &quot;tenanti&quot;, &quot;gates&quot;, &quot;dijagnostika&quot;], &quot;tsType&quot;: &quot;string&quot;, &quot;section&quot;: &quot;Demo&quot;}}">
+class Component extends DCLogic {
+  static ST = {
+    op: ['Operativan', '#3D6B3D', 'rgba(198,213,168,0.45)'],
+    deg: ['Degradiran', '#96562F', 'rgba(209,164,140,0.30)'],
+    down: ['Pao', '#B3402E', 'rgba(179,64,46,0.12)'],
+    on: ['Uključeno', '#3D6B3D', 'rgba(198,213,168,0.45)'],
+    off: ['Isključeno', 'rgba(58,46,40,0.62)', 'rgba(58,46,40,0.07)'],
+    prip: ['U pripremi', '#8A6A3B', 'rgba(209,164,140,0.22)'],
+    active: ['Aktivan', '#3D6B3D', 'rgba(198,213,168,0.45)'],
+    warn: ['Provera', '#96562F', 'rgba(209,164,140,0.30)'],
+  };
+  HEALTH = [
+    ['Frontend', 'op', 'Vercel · 78 ms'], ['Backend API', 'op', 'Railway · 124 ms'], ['PostgreSQL', 'op', '12 ms'],
+    ['Redis', 'op', 'Upstash · 3 ms'], ['QStash', 'op', 'queue prazan'], ['Resend', 'deg', 'retry aktivan'], ['Clerk', 'op', '96 ms'],
+  ];
+  STATS = [
+    ['1', 'Aktivni tenanti', '#C6D5A8'], ['24', 'Aktivni korisnici', '#C6D5A8'], ['3', 'Terapeuti', '#C6D5A8'], ['20', 'Klijenti', '#C6D5A8'],
+    ['5', 'Termini danas', '#C6D5A8'], ['3', 'Zahteva čeka', '#D1A48C'], ['2', 'Neuspele email poruke', '#D1A48C'], ['1', 'Sistemsko upozorenje', 'rgba(179,64,46,0.55)'],
+  ];
+  TEN = {
+    name: 'Psihointegritet', slug: 'psihointegritet', domain: 'psihointegritet.com', owner: 'Anja Stamenković', plan: 'Partner / Development',
+    st: 'active', trial: 'Trial do 30. sep 2026.', ter: 3, kli: 20, term: 214, created: '12. maj 2026.', last: 'danas · 09:41',
+    engines: ['Intake & Matching', 'Booking', 'Company Programs', 'Research Drawer', 'Research Analytics', 'White-label'],
+    note: 'Development partner — cena i uslovi po dogovoru. Kontakt ide preko Anje; tehničke izmene najavljivati unapred.',
+  };
+  USAGE = [
+    ['1.240', 'AI zahteva'], ['312', 'Poslatih emailova'], ['1,2 GB', 'Storage'], ['24', 'Korisnika'],
+    ['214', 'Termina'], ['18,4k', 'API poziva'], ['1.032', 'Background jobs'], ['0', 'Neuspelih jobs'],
+  ];
+  state = {
+    screen: null, tt: 'pregled', gate: null, reason: '', checking: false, lastCheck: 'danas · 09:41',
+    gates: [
+      { id: 'g1', name: 'Intake & Matching', desc: 'Vođeni izbor i preporuka terapeuta', st: 'on', plan: 'Partner', ovr: '—' },
+      { id: 'g2', name: 'Booking Engine', desc: 'Javno zakazivanje i statusi termina', st: 'on', plan: 'Core', ovr: '—' },
+      { id: 'g3', name: 'Company Programs', desc: 'Kompanijski fondovi i pozivnice', st: 'on', plan: 'Partner', ovr: '—' },
+      { id: 'g4', name: 'Research Drawer', desc: 'Ankete na javnom sajtu', st: 'on', plan: 'Core', ovr: '—' },
+      { id: 'g5', name: 'Research Analytics', desc: 'Analitika odgovora i filteri', st: 'on', plan: 'Partner', ovr: 'Ručno uključen · 1. jul' },
+      { id: 'g6', name: 'Marketing Engine', desc: 'Kampanje i kanali akvizicije', st: 'prip', plan: 'Growth', ovr: '—' },
+      { id: 'g7', name: 'Blog Engine', desc: 'Objave i biblioteka sadržaja', st: 'prip', plan: 'Growth', ovr: '—' },
+      { id: 'g8', name: 'Loyalty Engine', desc: 'Paketi, krediti i pogodnosti', st: 'off', plan: 'Growth', ovr: '—' },
+      { id: 'g9', name: 'White-label domen', desc: 'Sopstveni domen tenanta', st: 'on', plan: 'Partner', ovr: 'psihointegritet.com' },
+    ],
+    activity: [
+      { t: 'Neuspešno slanje emaila — potvrda termina', d: 'danas · 08:12 · resend retry zakazan', k: 'err' },
+      { t: 'Uključen feature gate — Research Analytics', d: '1. jul · superadmin · razlog: dogovor sa vlasnicom', k: 'gate' },
+      { t: 'Deployment frontend v0.4.2', d: 'juče · 22:40 · Vercel', k: 'sys' },
+      { t: 'Dodat terapeut — Marjan Janković', d: '2. jun · tenant psihointegritet', k: 'ok' },
+      { t: 'Kreiran tenant — Psihointegritet', d: '12. maj · superadmin', k: 'ok' },
+    ],
+  };
+  st(k) { const s = Component.ST[k] || Component.ST.off; return { stKey: k, stLabel: s[0], stFg: s[1], stBg: s[2] }; }
+  scr() { return this.state.screen ?? this.props.startScreen ?? 'pregled'; }
+  go(s) { this.setState({ screen: s }); window.scrollTo(0, 0); }
+  navS(id) {
+    const cur = this.scr() === 'tenant' ? 'tenanti' : this.scr();
+    return cur === id ? { bg: 'rgba(209,164,140,0.18)', fg: '#FAF8F3' } : { bg: 'transparent', fg: 'rgba(250,248,243,0.62)' };
+  }
+  bnS(id) {
+    const cur = this.scr() === 'tenant' ? 'tenanti' : this.scr();
+    return cur === id ? { fg: '#3A2E28', tile: 'rgba(209,164,140,0.5)' } : { fg: 'rgba(58,46,40,0.5)', tile: 'transparent' };
+  }
+  pill(on) { return on ? { bg: '#3A2E28', fg: '#FAF8F3', bd: '#3A2E28' } : { bg: '#FFFFFF', fg: 'rgba(58,46,40,0.72)', bd: 'rgba(58,46,40,0.14)' }; }
+  renderVals() {
+    const s = this.state, scr = this.scr();
+    const now = new Date();
+    let danas = new Intl.DateTimeFormat('sr-Latn-RS', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }).format(now);
+    danas = danas.charAt(0).toUpperCase() + danas.slice(1);
+    const dots = { err: 'rgba(179,64,46,0.6)', gate: '#D1A48C', sys: 'rgba(58,46,40,0.3)', ok: '#C6D5A8' };
+    const gate = s.gate ? { ...s.gate, ...this.st(s.gate.st) } : null;
+    if (gate) { const to = this.st(gate.st === 'on' ? 'off' : 'on'); gate.toLabel = to.stLabel; gate.toFg = to.stFg; }
+    return {
+      danas, lastCheck: s.lastCheck,
+      scrPregled: scr === 'pregled', scrTenanti: scr === 'tenanti', scrTenant: scr === 'tenant',
+      scrGates: scr === 'gates', scrDijagnostika: scr === 'dijagnostika', scrUskoro: scr === 'uskoro',
+      nPregled: this.navS('pregled'), nTenanti: this.navS('tenanti'), nGates: this.navS('gates'), nDijag: this.navS('dijagnostika'),
+      bPregled: this.bnS('pregled'), bTenanti: this.bnS('tenanti'), bGates: this.bnS('gates'), bDijag: this.bnS('dijagnostika'),
+      goPregled: () => this.go('pregled'), goTenanti: () => this.go('tenanti'), goTenant: () => this.go('tenant'),
+      goGates: () => this.go('gates'), goDijagnostika: () => this.go('dijagnostika'), goUskoro: () => this.go('uskoro'),
+      backTenanti: () => this.go('tenanti'),
+      stats: this.STATS.map(x => ({ n: x[0], t: x[1], dot: x[2] })),
+      health: this.HEALTH.map(h => ({ name: h[0], meta: h[2], ...this.st(h[1]) })),
+      activity: s.activity.map(a => ({ ...a, dot: dots[a.k] || dots.sys })),
+      ten: { ...this.TEN, ...this.st(this.TEN.st), terStr: String(this.TEN.ter), kliStr: String(this.TEN.kli), termStr: String(this.TEN.term) },
+      usage: this.USAGE.map(x => ({ n: x[0], t: x[1] })),
+      ttPregled: s.tt === 'pregled', ttFunk: s.tt === 'funk', ttPotr: s.tt === 'potr',
+      pPregled: this.pill(s.tt === 'pregled'), pFunk: this.pill(s.tt === 'funk'), pPotr: this.pill(s.tt === 'potr'),
+      setTTPregled: () => this.setState({ tt: 'pregled' }), setTTFunk: () => this.setState({ tt: 'funk' }), setTTPotr: () => this.setState({ tt: 'potr' }),
+      gates: s.gates.map(g => ({
+        ...g, ...this.st(g.st), isOn: g.st === 'on', isOff: g.st === 'off', isPrip: g.st === 'prip', toggable: g.st !== 'prip',
+        open: () => this.setState({ gate: g, reason: '' }),
+      })),
+      gateOpen: !!gate, gate: gate || {},
+      reason: s.reason, setReason: (e) => this.setState({ reason: e.target.value }),
+      closeGate: () => this.setState({ gate: null }),
+      confirmGate: () => this.setState(x => {
+        const g = x.gate; const to = g.st === 'on' ? 'off' : 'on';
+        return {
+          gates: x.gates.map(q => q.id === g.id ? { ...q, st: to } : q),
+          activity: [{ t: (to === 'on' ? 'Uključen' : 'Isključen') + ' feature gate — ' + g.name, d: 'upravo · superadmin · razlog: ' + (x.reason || 'bez obrazloženja'), k: 'gate' }, ...x.activity],
+          gate: null, reason: '',
+        };
+      }),
+      checking: s.checking, notChecking: !s.checking,
+      runCheck: () => { this.setState({ checking: true }); setTimeout(() => { const t = new Date(); this.setState({ checking: false, lastCheck: 'danas · ' + String(t.getHours()).padStart(2, '0') + ':' + String(t.getMinutes()).padStart(2, '0') }); }, 1400); },
+    };
+  }
+}
+</script>
+</body>
+</html>

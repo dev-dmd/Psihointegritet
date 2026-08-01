@@ -3,7 +3,7 @@ import { ArrowLink } from "@/components/ui/arrow-link";
 import { ButtonLink } from "@/components/ui/button-link";
 import { Eyebrow } from "@/components/ui/eyebrow";
 
-/** Two entry paths: guided selection (coming milestone) vs. self-serve browse. */
+/** Two entry paths: guided selection quiz vs. self-serve browse. */
 export function SupportPaths() {
   return (
     <section id="podrska" className="scroll-mt-24 pt-[72px] md:pt-32">
@@ -25,7 +25,7 @@ export function SupportPaths() {
                 </p>
               </div>
               <div>
-                <ButtonLink href="#terapeuti" variant="meadow">
+                <ButtonLink href="/pronadji-podrsku" variant="meadow">
                   Započni kratki upitnik
                 </ButtonLink>
               </div>
@@ -38,11 +38,11 @@ export function SupportPaths() {
                 </h3>
                 <p className="text-coffee/72 text-[15.5px] leading-[1.65]">
                   Pregledajte profile, pristupe i oblasti rada — pa izaberite
-                  osobu koja vam uliva povjerenje.
+                  osobu koja vam uliva poverenje.
                 </p>
               </div>
               <div>
-                <ArrowLink href="#terapeuti" tone="underlineStrong">
+                <ArrowLink href="/tim" tone="underlineStrong">
                   Pregledaj terapeute
                 </ArrowLink>
               </div>

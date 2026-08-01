@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Flexio Lingua · AI Tutor — Design Reference (Tailwind)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Overpass:wght@400;500;600;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  // Mirrors tailwind.config.ts — same tokens Claude Code uses in the Next.js app.
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          primary: { DEFAULT: "#7C4DFF", light: "#9747FF", deep: "#6F00FF", 50: "#EFEBFF" },
+          card: "#F3F6FB", ink: "#1E1E22", muted: "#9C9BC2", muted2: "#6B7280",
+          track: "#E1E6EE", line: "#EDEFF4", danger: "#EF5E5E", success: "#22B07D",
+        },
+        fontFamily: { sans: ["Overpass", "sans-serif"], body: ["Inter", "sans-serif"] },
+        borderRadius: { card: "16px", tile: "14px", sheet: "30px", phone: "36px" },
+        boxShadow: {
+          soft: "0 18px 40px -22px rgba(124,77,255,0.45)",
+          card: "0 10px 30px -18px rgba(30,30,34,0.25)",
+          tile: "0 6px 14px -8px rgba(124,77,255,0.60)",
+        },
+        backgroundImage: {
+          brand: "linear-gradient(120deg,#9747FF,#6F00FF)",
+          banner: "linear-gradient(125deg,#9747FF,#6F00FF)",
+        },
+      },
+    },
+  };
+</script>
+<script src="https://unpkg.com/lucide@0.456.0/dist/umd/lucide.min.js"></script>
+<style>
+  /* Decorative-only — robot mascot placeholder. NOT part of the token system. */
+  body{font-family:"Overpass",sans-serif;}
+  .robot{position:relative;width:150px;height:170px;}
+  .r-antenna{position:absolute;left:50%;top:-6px;width:4px;height:20px;background:#b7a6e8;transform:translateX(-50%);border-radius:3px;}
+  .r-antenna::after{content:"";position:absolute;top:-8px;left:50%;transform:translateX(-50%);width:12px;height:12px;border-radius:50%;background:#7C4DFF;box-shadow:0 0 0 4px rgba(124,77,255,.2);}
+  .r-head{position:absolute;left:50%;top:14px;transform:translateX(-50%);width:118px;height:96px;border-radius:30px;background:linear-gradient(160deg,#fff,#ece7fb);box-shadow:0 14px 30px -14px rgba(124,77,255,.5),inset 0 -6px 12px rgba(124,77,255,.08);}
+  .r-visor{position:absolute;left:50%;top:42px;transform:translateX(-50%);width:88px;height:50px;border-radius:22px;background:linear-gradient(160deg,#2a2440,#15101f);display:flex;align-items:center;justify-content:center;gap:14px;}
+  .r-eye{width:18px;height:18px;border-radius:50%;background:#7C4DFF;box-shadow:0 0 12px rgba(124,77,255,.9);position:relative;}
+  .r-eye::after{content:"";position:absolute;width:7px;height:7px;border-radius:50%;background:#fff;top:2px;left:7px;}
+  .r-body{position:absolute;left:50%;top:104px;transform:translateX(-50%);width:96px;height:64px;border-radius:26px 26px 22px 22px;background:linear-gradient(160deg,#f4f0ff,#d8cdf6);box-shadow:0 16px 30px -16px rgba(124,77,255,.6);}
+  .r-chest{position:absolute;left:50%;top:122px;transform:translateX(-50%);width:30px;height:30px;border-radius:50%;background:#fff;display:grid;place-items:center;color:#7C4DFF;box-shadow:inset 0 0 0 3px rgba(124,77,255,.25);}
+  .r-arm{position:absolute;top:112px;width:16px;height:44px;border-radius:10px;background:linear-gradient(160deg,#efe9ff,#cdbff2);}
+  .r-arm.l{left:14px;}.r-arm.r{right:14px;}
+  .blob-bg{position:absolute;width:260px;height:260px;border-radius:50%;background:radial-gradient(circle at 40% 35%,rgba(151,71,255,.30),rgba(151,71,255,0) 70%);top:30px;}
+  .blob-bg2{position:absolute;width:200px;height:200px;border-radius:50%;background:radial-gradient(circle at 60% 60%,rgba(111,0,255,.20),rgba(111,0,255,0) 70%);top:90px;left:30px;}
+</style>
+</head>
+<body class="bg-[#E9EBF2] text-ink px-8 pt-12 pb-20">
+
+  <header class="mx-auto mb-10 max-w-[1280px]">
+    <div class="font-body text-[13px] font-semibold uppercase tracking-[0.14em] text-primary">Design Reference · Claude Code Handoff · Tailwind</div>
+    <h1 class="mt-2 text-[40px] font-extrabold tracking-[-0.02em]">AI Language Tutor — Screen Library</h1>
+    <p class="mt-3 max-w-[680px] font-body text-[15px] leading-[1.6] text-muted2">Sve klase su <b>čisti Tailwind</b> (isti tokeni kao u <code>tailwind.config.ts</code>). Web app je <b>mobile-first</b>; na desktop/laptopu je ista app centrirana u koloni (<code>max-w-[480px] mx-auto</code>) — prikaz na vrhu. Linijske ikonice = <code>lucide-react</code>.</p>
+    <div class="mt-6 flex flex-wrap gap-2.5 font-body text-[12px] font-semibold text-muted2">
+      <span class="flex items-center gap-2 rounded-full bg-white py-1.5 pl-1.5 pr-3 shadow-card"><span class="h-5 w-5 rounded-md bg-primary"></span>primary #7C4DFF</span>
+      <span class="flex items-center gap-2 rounded-full bg-white py-1.5 pl-1.5 pr-3 shadow-card"><span class="h-5 w-5 rounded-md bg-brand"></span>gradient 9747FF→6F00FF</span>
+      <span class="flex items-center gap-2 rounded-full bg-white py-1.5 pl-1.5 pr-3 shadow-card"><span class="h-5 w-5 rounded-md bg-card ring-1 ring-line"></span>card #F3F6FB</span>
+      <span class="flex items-center gap-2 rounded-full bg-white py-1.5 pl-1.5 pr-3 shadow-card"><span class="h-5 w-5 rounded-md bg-ink"></span>ink #1E1E22</span>
+      <span class="flex items-center gap-2 rounded-full bg-white py-1.5 pl-1.5 pr-3 shadow-card"><span class="h-5 w-5 rounded-md bg-muted"></span>muted #9C9BC2</span>
+      <span class="flex items-center gap-2 rounded-full bg-white py-1.5 pl-1.5 pr-3 shadow-card"><span class="h-5 w-5 rounded-md bg-white ring-1 ring-line"></span>Overpass + Inter</span>
+    </div>
+  </header>
+
+  <!-- Desktop / laptop demo -->
+  <section class="mx-auto mb-14 max-w-[1080px]">
+    <div class="mb-3 flex items-baseline gap-2.5 pl-1">
+      <span class="text-[13px] font-extrabold text-primary">00</span>
+      <span class="font-body text-[14px] font-semibold text-ink">Desktop / Laptop — ista app, centrirana kolona</span>
+      <span class="rounded-full bg-white px-2.5 py-0.5 font-body text-[11px] font-semibold text-muted">web app</span>
+    </div>
+    <div class="overflow-hidden rounded-2xl bg-white shadow-[0_30px_70px_-35px_rgba(30,30,34,0.45)] ring-1 ring-black/5">
+      <div class="flex h-11 items-center gap-2 border-b border-line bg-[#f4f4f7] px-4">
+        <span class="h-3 w-3 rounded-full bg-[#ff5f57]"></span>
+        <span class="h-3 w-3 rounded-full bg-[#febc2e]"></span>
+        <span class="h-3 w-3 rounded-full bg-[#28c840]"></span>
+        <div class="mx-auto flex items-center gap-2 rounded-md bg-white px-4 py-1 font-body text-[12px] text-muted2 ring-1 ring-line"><i data-lucide="lock" class="h-3 w-3"></i>flexio-lingua.app/home</div>
+      </div>
+      <div id="desktop-stage" class="flex min-h-[600px] justify-center bg-[#EEF0F6] py-10"></div>
+    </div>
+    <p class="mt-3 pl-1 font-body text-[12.5px] text-muted2">Pristup A: na <code>lg:</code> ekranima app shell je <code>min-h-screen max-w-[480px] mx-auto</code> — isti mobilni sistem (bottom nav ostaje), samo udobna širina i centrirano. Ostatak prozora je mirna pozadina.</p>
+  </section>
+
+  <div class="mx-auto mb-4 max-w-[1280px] pl-1 font-body text-[13px] font-semibold uppercase tracking-[0.12em] text-muted">Svi ekrani (mobilni izvor)</div>
+  <div id="gallery" class="mx-auto flex max-w-[1280px] flex-wrap items-start justify-center gap-x-9 gap-y-10"></div>
+
+  <p class="mx-auto mt-14 max-w-[1280px] text-center font-body text-[12.5px] text-muted2">Flexio Lingua · AI Language Learning — design reference. Klase su čisti Tailwind; ikonice preko <code>lucide-react</code> u Next.js-u.</p>
+
+<script>
+/* ---------- shared class tokens (pure Tailwind) ---------- */
+const PAD   = "flex flex-1 flex-col px-[22px] pt-2";
+const HSCR  = "text-[30px] font-extrabold leading-[1.08] tracking-[-0.01em]";
+const HSEC  = "text-[19px] font-extrabold tracking-[-0.01em]";
+const SUB   = "font-body text-[13.5px] leading-[1.55] text-muted2";
+const BTN_P = "flex w-full items-center justify-center gap-2 rounded-card bg-brand py-4 text-[15px] font-bold text-white shadow-soft";
+const BTN_W = "flex w-full items-center justify-center gap-2 rounded-card bg-white py-4 text-[15px] font-extrabold text-primary shadow-card";
+const TILE  = "grid h-[46px] w-[46px] place-items-center rounded-tile bg-white text-primary shadow-tile shrink-0";
+const ARROW = "grid h-8 w-8 place-items-center rounded-full bg-white text-ink shrink-0";
+const LCARD = "flex min-h-[128px] flex-col gap-3.5 rounded-[18px] bg-card p-4";
+const CCARD = "flex items-center gap-3.5 rounded-[14px] bg-card p-3.5";
+const INPUT = "flex items-center gap-2.5 rounded-tile bg-card px-4 py-[15px] font-body text-[14px] text-muted2";
+const AVATAR= "grid place-items-center rounded-full bg-gradient-to-br from-[#d9c8ff] to-[#b79bff] font-extrabold text-white shrink-0 overflow-hidden";
+
+const statusbar = () => `
+  <div class="flex items-center justify-between px-[26px] pt-3.5 pb-1.5 font-body text-[13px] font-semibold text-ink">
+    <span>9:41</span>
+    <span class="flex items-center gap-1.5">
+      <i data-lucide="signal" class="h-4 w-4"></i><i data-lucide="wifi" class="h-4 w-4"></i><i data-lucide="battery-full" class="h-4 w-4"></i>
+    </span>
+  </div>`;
+
+const bnav = (active=0) => {
+  const items = ["home","calendar-days","message-circle","user"];
+  return `<div class="mt-auto flex items-center justify-around px-6 pt-3.5 pb-[22px]">
+    ${items.map((ic,i)=>`<div class="grid h-11 w-11 place-items-center rounded-full ${i===active?'bg-brand text-white shadow-soft':'text-muted'}"><i data-lucide="${ic}" class="h-[22px] w-[22px]"></i></div>`).join("")}
+  </div>`;
+};
+
+const lcard = (icon,title,meta) => `
+  <div class="${LCARD}">
+    <div class="flex items-center justify-between">
+      <div class="${TILE}"><i data-lucide="${icon}" class="h-[23px] w-[23px]"></i></div>
+      <div class="${ARROW}"><i data-lucide="arrow-up-right" class="h-4 w-4"></i></div>
+    </div>
+    <div><div class="text-[15.5px] font-extrabold">${title}</div><div class="mt-0.5 font-body text-[12px] text-muted">${meta}</div></div>
+  </div>`;
+
+const ccItem = (icon,title) => `
+  <div class="flex min-h-[104px] flex-col gap-3.5 rounded-[18px] bg-card p-4">
+    <div class="flex items-center justify-between">
+      <div class="${TILE}"><i data-lucide="${icon}" class="h-[23px] w-[23px]"></i></div>
+      <div class="${ARROW}"><i data-lucide="arrow-up-right" class="h-4 w-4"></i></div>
+    </div>
+    <div class="text-[15.5px] font-extrabold">${title}</div>
+  </div>`;
+
+const slotCard = (icon,title,scn,tutor,level) => `
+  <div class="rounded-card bg-card p-4">
+    <div class="flex items-center gap-3">
+      <div class="grid h-[42px] w-[42px] place-items-center rounded-tile bg-white text-primary shadow-tile"><i data-lucide="${icon}" class="h-5 w-5"></i></div>
+      <div><div class="text-[15px] font-extrabold">${title}</div><div class="${SUB} text-[11.5px]">${scn}</div></div>
+      <div class="ml-auto rounded-full bg-primary-50 px-2.5 py-[5px] text-[12px] font-extrabold text-primary">${level}</div>
+    </div>
+    <div class="mt-2.5 font-body text-[12.5px] text-muted2">Tutor: <b class="font-bold text-ink">${tutor}</b> · Scenario: <b class="font-bold text-ink">${scn}</b></div>
+    <div class="mt-3.5 flex gap-2.5">
+      <div class="flex-1 rounded-tile bg-primary py-2.5 text-center text-[13px] font-bold text-white">Open</div>
+      <div class="flex-1 rounded-tile bg-white py-2.5 text-center text-[13px] font-bold text-danger ring-1 ring-inset ring-[#f6d9d9]">Delete</div>
+    </div>
+  </div>`;
+
+const chip = (label,on=false) => `<div class="rounded-tile px-3.5 py-2.5 text-[13px] font-semibold ${on?'bg-primary text-white':'bg-card text-muted2'}">${label}</div>`;
+const pbar = (label,val) => `
+  <div class="mt-4">
+    <div class="mb-[7px] flex justify-between font-body text-[13px] font-semibold"><span>${label}</span><span class="font-extrabold text-primary">${val}%</span></div>
+    <div class="h-[9px] overflow-hidden rounded-full bg-track"><div class="h-full rounded-full bg-brand" style="width:${val}%"></div></div>
+  </div>`;
+const idRow = (icon,k,v,chev=false) => `
+  <div class="flex items-center gap-3 border-b border-line py-3.5 last:border-b-0">
+    <div class="grid h-[38px] w-[38px] place-items-center rounded-[11px] bg-white text-primary"><i data-lucide="${icon}" class="h-[18px] w-[18px]"></i></div>
+    <span class="font-body text-[13px] text-muted2">${k}</span>
+    <span class="ml-auto flex items-center gap-1.5 text-[13.5px] font-bold text-ink">${v}${chev?'<i data-lucide="chevron-right" class="h-[15px] w-[15px] text-muted"></i>':''}</span>
+  </div>`;
+const arow = (icon,title,meta,count,danger=false) => `
+  <div class="mt-2.5 flex items-center gap-3 rounded-[14px] bg-card p-3.5">
+    <div class="grid h-10 w-10 place-items-center rounded-[11px] bg-white ${danger?'text-danger':'text-primary'}"><i data-lucide="${icon}" class="h-[19px] w-[19px]"></i></div>
+    <div><div class="text-[14px] font-bold ${danger?'text-danger':''}">${title}</div>${meta?`<div class="mt-0.5 font-body text-[11.5px] text-muted">${meta}</div>`:''}</div>
+    ${count?`<div class="ml-auto text-[13px] font-extrabold text-primary">${count}</div>`:''}
+  </div>`;
+const settingRow = (icon,title,meta,trailing) => `
+  <div class="${CCARD} mt-2.5">
+    <div class="grid h-12 w-12 place-items-center rounded-tile bg-white text-primary shadow-tile"><i data-lucide="${icon}" class="h-[22px] w-[22px]"></i></div>
+    <div><div class="text-[15px] font-bold">${title}</div>${meta?`<div class="mt-0.5 font-body text-[12.5px] text-muted">${meta}</div>`:''}</div>
+    <div class="ml-auto">${trailing}</div>
+  </div>`;
+const toggle = (on) => `<div class="relative h-6 w-[42px] rounded-full ${on?'bg-primary':'bg-track'}"><div class="absolute top-[3px] ${on?'right-[3px]':'left-[3px]'} h-[18px] w-[18px] rounded-full bg-white"></div></div>`;
+
+const robot = `
+  <div class="robot">
+    <div class="r-antenna"></div><div class="r-arm l"></div><div class="r-arm r"></div>
+    <div class="r-head"></div>
+    <div class="r-visor"><div class="r-eye"></div><div class="r-eye"></div></div>
+    <div class="r-body"></div>
+    <div class="r-chest"><i data-lucide="sparkles" class="h-4 w-4"></i></div>
+  </div>`;
+
+/* ---------- screen inners ---------- */
+const homeInner = `
+  ${statusbar()}
+  <div class="${PAD}">
+    <div class="flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="${AVATAR} h-[46px] w-[46px] text-[16px]">AJ</div>
+        <div><div class="${SUB} text-[12px]">Hi 👋</div><div class="text-[16px] font-extrabold">Alice Johnson</div></div>
+      </div>
+      <div class="relative grid h-[46px] w-[46px] place-items-center rounded-full bg-white shadow-card"><i data-lucide="bell" class="h-5 w-5 text-ink"></i><span class="absolute right-3.5 top-3 h-[7px] w-[7px] rounded-full bg-primary"></span></div>
+    </div>
+    <div class="${HSCR} mt-5">Your Smart AI<br/>Language Coach</div>
+    <div class="mt-[18px] flex gap-2 overflow-hidden">
+      <div class="rounded-full bg-primary px-4 py-2.5 text-[13px] font-semibold text-white">All</div>
+      <div class="rounded-full bg-card px-4 py-2.5 text-[13px] font-semibold text-muted2">Speaking</div>
+      <div class="rounded-full bg-card px-4 py-2.5 text-[13px] font-semibold text-muted2">Reading</div>
+      <div class="rounded-full bg-card px-4 py-2.5 text-[13px] font-semibold text-muted2">Grammar</div>
+    </div>
+    <div class="mt-[18px] grid grid-cols-2 gap-3.5">
+      ${lcard("book-open","Reading","50% completed")}
+      ${lcard("headphones","Listening","40% completed")}
+      ${lcard("mic","Speaking","70% completed")}
+      ${lcard("messages-square","Conversation","80% completed")}
+    </div>
+  </div>
+  ${bnav(0)}`;
+
+const screens = [];
+const SCREEN = "relative flex w-[340px] min-h-[680px] flex-col overflow-hidden rounded-phone bg-white shadow-[0_30px_60px_-30px_rgba(30,30,34,0.4),0_0_0_1px_rgba(30,30,34,0.04)]";
+const SCREEN_T = SCREEN.replace("min-h-[680px]","min-h-[724px]");
+const phone = (num,name,tag,inner,tall=false) => `
+  <div class="w-[340px]">
+    <div class="mb-3.5 flex items-baseline gap-2.5 pl-1">
+      <span class="text-[13px] font-extrabold text-primary">${num}</span>
+      <span class="font-body text-[14px] font-semibold text-ink">${name}</span>
+      ${tag?`<span class="rounded-full bg-white px-2.5 py-0.5 font-body text-[11px] font-semibold text-muted">${tag}</span>`:''}
+    </div>
+    <div class="${tall?SCREEN_T:SCREEN}">${inner}</div>
+  </div>`;
+
+/* 01 Landing */
+screens.push(phone("01","Landing / Intro","public",`
+  ${statusbar()}
+  <div class="flex flex-1 flex-col px-[22px] pt-2 pb-[18px]">
+    <div class="flex items-center justify-between px-0.5 pt-1">
+      <div class="text-[19px] font-extrabold">Flexio<span class="text-primary">Lingua</span></div>
+      <div class="rounded-full bg-card px-3 py-1.5 font-body text-[12px] font-semibold text-muted2">EN · SR</div>
+    </div>
+    <div class="relative flex flex-1 flex-col items-center justify-center">
+      <div class="blob-bg"></div><div class="blob-bg2"></div>${robot}
+    </div>
+    <div class="flex justify-center gap-[18px]">
+      <div class="grid h-[60px] w-[60px] place-items-center rounded-full bg-white text-primary shadow-card"><i data-lucide="play-circle" class="h-6 w-6"></i></div>
+      <div class="grid h-[60px] w-[60px] place-items-center rounded-full bg-white text-primary shadow-card"><i data-lucide="layout-grid" class="h-6 w-6"></i></div>
+      <div class="grid h-[60px] w-[60px] place-items-center rounded-full bg-white text-primary shadow-card"><i data-lucide="users" class="h-6 w-6"></i></div>
+    </div>
+    <div class="mt-[22px] flex flex-col items-center gap-2.5 text-center">
+      <div class="${HSCR}">Smart Bot Powers<br/>Your Lessons</div>
+      <div class="${SUB} max-w-[250px]">AI tutor te vodi, personalizuje lekcije i prati napredak — voice ili text.</div>
+    </div>
+    <div class="mt-6 flex items-center gap-3">
+      <button class="${BTN_W} flex-1">Start Learning</button>
+      <div class="grid h-[54px] w-[54px] shrink-0 place-items-center rounded-full bg-brand text-white shadow-soft"><i data-lucide="arrow-right" class="h-[22px] w-[22px]"></i></div>
+    </div>
+  </div>`,true));
+
+/* 02 Sign In */
+screens.push(phone("02","Sign In","auth",`
+  ${statusbar()}
+  <div class="${PAD}">
+    <div class="pt-1.5"><i data-lucide="arrow-left" class="h-[22px] w-[22px]"></i></div>
+    <div class="${HSCR} mt-1.5 text-center">Sign In</div>
+    <div class="mt-[34px]"><label class="mb-2 block font-body text-[13px] font-semibold">Email Address</label><div class="${INPUT}"><span>Enter email address</span><i data-lucide="mail" class="ml-auto h-[18px] w-[18px] text-muted"></i></div></div>
+    <div class="mt-[18px]"><label class="mb-2 block font-body text-[13px] font-semibold">Password</label><div class="${INPUT}"><span>••••••••</span><i data-lucide="eye" class="ml-auto h-[18px] w-[18px] text-muted"></i></div></div>
+    <button class="${BTN_P} mt-[26px]">Continue</button>
+    <div class="${SUB} mt-[18px] text-center">Don't have an account? <b class="text-primary">Create Account</b></div>
+    <div class="mt-6 flex items-center gap-3 font-body text-[13px] text-muted before:h-px before:flex-1 before:bg-line after:h-px after:flex-1 after:bg-line">Or</div>
+    <div class="mt-[22px] flex justify-center gap-4">
+      <div class="grid h-[54px] w-[54px] place-items-center rounded-full bg-card font-body font-extrabold">G</div>
+      <div class="grid h-[54px] w-[54px] place-items-center rounded-full bg-card"><i data-lucide="apple" class="h-6 w-6"></i></div>
+      <div class="grid h-[54px] w-[54px] place-items-center rounded-full bg-card font-body font-extrabold text-[#1877f2]">f</div>
+    </div>
+  </div>`));
+
+/* 03 Sign Up */
+screens.push(phone("03","Sign Up","auth",`
+  ${statusbar()}
+  <div class="${PAD}">
+    <div class="pt-1.5"><i data-lucide="arrow-left" class="h-[22px] w-[22px]"></i></div>
+    <div class="${HSCR} mt-1.5 text-center">Create Account</div>
+    <div class="mt-7"><label class="mb-2 block font-body text-[13px] font-semibold">Full Name</label><div class="${INPUT}"><span>Alice Johnson</span><i data-lucide="user" class="ml-auto h-[18px] w-[18px] text-muted"></i></div></div>
+    <div class="mt-[18px]"><label class="mb-2 block font-body text-[13px] font-semibold">Email Address</label><div class="${INPUT}"><span>alice@email.com</span><i data-lucide="mail" class="ml-auto h-[18px] w-[18px] text-muted"></i></div></div>
+    <div class="mt-[18px]"><label class="mb-2 block font-body text-[13px] font-semibold">Password</label><div class="${INPUT}"><span>••••••••</span><i data-lucide="eye" class="ml-auto h-[18px] w-[18px] text-muted"></i></div></div>
+    <button class="${BTN_P} mt-6">Create Account</button>
+    <div class="${SUB} mt-4 text-center">By continuing you agree to our <b class="text-primary">Terms</b></div>
+    <div class="${SUB} mt-auto pb-4 text-center">Already have an account? <b class="text-primary">Sign In</b></div>
+  </div>`));
+
+/* 04 Home */
+screens.push(phone("04","Home · Coach","client",homeInner));
+
+/* 05 Tutor Slots */
+screens.push(phone("05","Dashboard · Tutor Slots","client",`
+  ${statusbar()}
+  <div class="${PAD}">
+    <div class="flex items-center justify-between pt-1">
+      <div><div class="${HSEC}">My Tutor Slots</div><div class="${SUB} text-[12px]">2 of 5 slots used</div></div>
+      <div class="grid h-[46px] w-[46px] place-items-center rounded-full bg-white shadow-card"><i data-lucide="plus" class="h-5 w-5 text-primary"></i></div>
+    </div>
+    <div class="mt-[18px] space-y-3.5">
+      ${slotCard("briefcase","Business English","Job Interview","Viktor","B1")}
+      ${slotCard("plane","Travel Talk","Travel","Maria","A2")}
+    </div>
+    <div class="mt-3.5 flex flex-col items-center gap-2 rounded-card border-2 border-dashed border-[#d7d3ec] p-[22px] text-primary">
+      <i data-lucide="plus-circle" class="h-[26px] w-[26px]"></i><div class="text-[14px] font-bold">Create Slot</div>
+    </div>
+    <div class="mt-3.5 text-center font-body text-[12px] text-muted">Slot limit: 2 / 5 used</div>
+  </div>
+  ${bnav(1)}`,true));
+
+/* 06 Create Slot */
+screens.push(phone("06","Create Slot","client",`
+  ${statusbar()}
+  <div class="${PAD}">
+    <div class="flex items-center gap-3 pt-1"><i data-lucide="arrow-left" class="h-[22px] w-[22px]"></i><div class="${HSEC}">Create Slot</div></div>
+    <div class="mt-[18px]"><label class="mb-2 block font-body text-[13px] font-semibold">Slot title</label><div class="${INPUT}"><span>Business English</span></div></div>
+    <div class="mt-[18px]"><label class="mb-2 block font-body text-[13px] font-semibold">Scenario</label><div class="flex flex-wrap gap-2">${chip("Business")}${chip("Everyday")}${chip("Job Interview",true)}${chip("Shopping")}${chip("Travel")}</div></div>
+    <div class="mt-[18px]"><label class="mb-2 block font-body text-[13px] font-semibold">Persona (Tutor)</label><div class="flex flex-wrap gap-2">${chip("Claudia")}${chip("Viktor",true)}${chip("Kiki")}${chip("Maria")}</div></div>
+    <div class="mt-[18px]"><label class="mb-2 block font-body text-[13px] font-semibold">Level</label><div class="flex flex-wrap gap-2">${chip("A1")}${chip("A2")}${chip("B1",true)}${chip("B2")}${chip("C1")}</div></div>
+    <button class="${BTN_P} mt-auto mb-[18px]">Create Slot</button>
+  </div>`,true));
+
+/* 07 Classroom */
+screens.push(phone("07","Classroom","client",`
+  ${statusbar()}
+  <div class="${PAD}">
+    <div class="flex items-center gap-3 pt-1"><i data-lucide="arrow-left" class="h-[22px] w-[22px]"></i><div><div class="${HSEC}">Classroom</div><div class="${SUB} text-[11.5px]">Business English · Viktor · B1</div></div></div>
+    <div class="mt-[18px] grid grid-cols-2 gap-3.5">
+      ${ccItem("messages-square","Conversation")}${ccItem("mic","Speaking")}
+      ${ccItem("headphones","Listening")}${ccItem("book-open","Reading")}
+      ${ccItem("pencil","Writing")}${ccItem("list-checks","Quizzes")}
+      ${ccItem("trending-up","Progress")}${ccItem("user-round","Profile")}
+    </div>
+    <div class="${CCARD} mt-3.5"><div class="${TILE}"><i data-lucide="settings" class="h-[23px] w-[23px]"></i></div><div><div class="text-[15px] font-bold">Settings</div><div class="font-body text-[12.5px] text-muted">Voice, language, notifications</div></div><i data-lucide="chevron-right" class="ml-auto h-5 w-5 text-muted"></i></div>
+  </div>`,true));
+
+/* 08 Conversation / Voice */
+screens.push(phone("08","Conversation · Voice","client",`
+  ${statusbar()}
+  <div class="flex flex-1 flex-col px-[22px] pt-2">
+    <div class="flex items-center justify-between pt-1">
+      <div class="flex items-center gap-3"><i data-lucide="arrow-left" class="h-[22px] w-[22px]"></i>
+        <div class="flex items-center gap-2"><div class="grid h-10 w-10 place-items-center rounded-full bg-gradient-to-br from-[#d9c8ff] to-[#b79bff] text-white"><i data-lucide="bot" class="h-5 w-5"></i></div><div><div class="text-[14px] font-extrabold">Viktor</div><div class="font-body text-[11px] text-success">● Listening…</div></div></div>
+      </div>
+      <i data-lucide="phone-off" class="h-5 w-5 text-danger"></i>
+    </div>
+    <div class="mt-3.5 flex gap-1 rounded-full bg-card p-1"><div class="flex-1 rounded-full bg-white py-2 text-center text-[12px] font-bold text-primary shadow-card">Voice</div><div class="flex-1 py-2 text-center text-[12px] font-bold text-muted2">Text</div></div>
+    <div class="flex flex-1 flex-col gap-3 py-3.5">
+      <div class="max-w-[78%] self-start rounded-[18px] rounded-bl-[6px] bg-card px-[15px] py-3 font-body text-[13.5px] leading-[1.5] text-ink">Hi Alice! Let's practice a job interview. Tell me about your last role.</div>
+      <div class="max-w-[78%] self-end rounded-[18px] rounded-br-[6px] bg-brand px-[15px] py-3 font-body text-[13.5px] leading-[1.5] text-white">I work like a designer for three years in a agency.<span class="mt-1.5 block border-t border-white/25 pt-1.5 text-[12px] font-semibold">✏︎ "I have worked as a designer for three years at an agency."</span></div>
+      <div class="max-w-[78%] self-start rounded-[18px] rounded-bl-[6px] bg-card px-[15px] py-3 font-body text-[13.5px] leading-[1.5] text-ink">Great! Small fix noted. Now — why do you want this job?</div>
+    </div>
+  </div>
+  <div class="flex items-center gap-3.5 px-[18px] pb-2.5 pt-3.5">
+    <div id="wave08" class="flex h-[42px] flex-1 items-center gap-1"></div>
+    <div class="relative grid h-16 w-16 shrink-0 place-items-center rounded-full bg-brand text-white shadow-[0_14px_30px_-10px_rgba(124,77,255,0.7)]"><i data-lucide="mic" class="h-[26px] w-[26px]"></i><span class="absolute -inset-2 rounded-full border-2 border-primary/35"></span></div>
+  </div>
+  <div class="mx-auto mb-2 h-[5px] w-[120px] rounded-[3px] bg-ink/85"></div>`,true));
+
+/* 09 Profile + Progress */
+screens.push(phone("09","Profile · Progress","client",`
+  ${statusbar()}
+  <div class="${PAD}">
+    <div class="flex items-center gap-3 pt-1"><i data-lucide="arrow-left" class="h-[22px] w-[22px]"></i><div class="${HSEC}">Profile</div></div>
+    <div class="mt-3.5 flex flex-col items-center gap-2">
+      <div class="relative"><div class="${AVATAR} h-[84px] w-[84px] text-[26px]">AJ</div><div class="absolute -bottom-0.5 -right-0.5 grid h-[30px] w-[30px] place-items-center rounded-full bg-brand text-white shadow-soft"><i data-lucide="pencil" class="h-3.5 w-3.5"></i></div></div>
+      <div class="text-[18px] font-extrabold">Alice Johnson</div>
+      <div class="${SUB} text-[12px]">Level B1 · 14-day streak 🔥</div>
+    </div>
+    <div class="${HSEC} mt-[22px] text-[16px]">Progress</div>
+    ${pbar("Grammar",78)}${pbar("Vocabulary",64)}${pbar("Pronunciation",52)}${pbar("Fluency",71)}${pbar("Communication",85)}
+  </div>`,true));
+
+/* 10 AI Tutor Identity */
+screens.push(phone("10","AI Tutor Identity","client",`
+  ${statusbar()}
+  <div class="${PAD}">
+    <div class="flex items-center gap-3 pt-1"><i data-lucide="arrow-left" class="h-[22px] w-[22px]"></i><div class="${HSEC}">AI Tutor Identity</div></div>
+    <div class="mt-4 flex flex-col items-center gap-2">
+      <div class="grid h-[78px] w-[78px] place-items-center rounded-[24px] bg-gradient-to-br from-[#efe9ff] to-[#d6c8fb] text-primary"><i data-lucide="bot" class="h-9 w-9"></i></div>
+      <div class="text-[18px] font-extrabold">Viktor</div><div class="${SUB} text-[12px]">Business · Direct & encouraging</div>
+    </div>
+    <div class="mt-[18px] rounded-card bg-card px-4 py-1">
+      ${idRow("user-round","Persona","Viktor")}
+      ${idRow("audio-lines","Voice","Deep · Male",true)}
+      ${idRow("file-text","Prompt","Custom",true)}
+      ${idRow("spell-check","Correction style","Gentle",true)}
+    </div>
+    <button class="${BTN_P} mt-auto mb-[18px]">Save Identity</button>
+  </div>`,true));
+
+/* 11 Success Drawer */
+screens.push(phone("11","Exercise Completed","drawer",`
+  ${statusbar()}
+  <div class="${PAD} opacity-50">
+    <div class="flex items-center gap-3 pt-1"><i data-lucide="arrow-left" class="h-[22px] w-[22px]"></i><div class="${HSEC}">Speaking · Lesson 4</div></div>
+    <div class="mt-[18px] h-[150px] rounded-[20px] bg-banner"></div>
+  </div>
+  <div class="absolute inset-0 bg-ink/45"></div>
+  <div class="relative mt-auto rounded-t-sheet bg-white px-6 pb-7 pt-3.5 text-center">
+    <div class="mx-auto mb-[18px] h-[5px] w-[46px] rounded-[3px] bg-[#e3e3ea]"></div>
+    <div class="mx-auto mb-[18px] mt-2 grid h-24 w-24 place-items-center">
+      <svg viewBox="0 0 96 96" fill="none" class="h-24 w-24"><path d="M48 4l9 7 11-2 5 10 10 5-2 11 7 9-7 9 2 11-10 5-5 10-11-2-9 7-9-7-11 2-5-10-10-5 2-11-7-9 7-9-2-11 10-5 5-10 11 2z" stroke="#7C4DFF" stroke-width="3.5" stroke-linejoin="round"/><path d="M36 49l8 8 16-18" stroke="#7C4DFF" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </div>
+    <div class="text-[21px] font-extrabold">Great job! Lesson completed</div>
+    <div class="${SUB} mt-1.5">+120 XP · Pronunciation improved</div>
+    <div class="mt-[18px] flex rounded-card bg-card"><div class="flex-1 p-[18px] text-center"><div class="text-[24px] font-extrabold">12</div><div class="font-body text-[12px] text-muted">Phrases learned</div></div><div class="flex-1 border-l border-line p-[18px] text-center"><div class="text-[24px] font-extrabold">92%</div><div class="font-body text-[12px] text-muted">Accuracy</div></div></div>
+    <button class="${BTN_P} mt-[18px]">Next Lesson</button>
+  </div>`,true).replace('class="'+SCREEN_T+'"','class="'+SCREEN_T+' justify-end"'));
+
+/* 12 Admin */
+screens.push(phone("12","Admin Panel","admin",`
+  ${statusbar()}
+  <div class="${PAD}">
+    <div class="flex items-center justify-between pt-1"><div class="${HSEC}">Manage</div><div class="inline-flex items-center gap-1.5 rounded-full bg-ink px-3 py-[5px] font-body text-[11px] font-bold text-white"><i data-lucide="shield" class="h-[13px] w-[13px]"></i>Admin</div></div>
+    ${arow("graduation-cap","Lessons","Reading, Listening, Speaking…","48")}
+    ${arow("users-round","Tutors / Personas","Claudia, Viktor, Kiki, Maria","4")}
+    ${arow("list-checks","Quizzes","A1–C1 question banks","120")}
+    ${arow("layout-grid","Scenarios","Business, Travel, Shopping…","5")}
+    ${arow("bar-chart-3","Students","Progress & slots","312")}
+    <button class="${BTN_P} mt-[18px]"><i data-lucide="plus" class="h-[18px] w-[18px]"></i> New Lesson</button>
+  </div>
+  ${bnav(3)}`,true));
+
+/* 13 Settings */
+screens.push(phone("13","Settings","client",`
+  ${statusbar()}
+  <div class="${PAD}">
+    <div class="flex items-center gap-3 pt-1"><i data-lucide="arrow-left" class="h-[22px] w-[22px]"></i><div class="${HSEC}">Settings</div></div>
+    <div class="mt-[18px] text-[14px] font-bold">Preferences</div>
+    ${settingRow("languages","App language","English · Srpski",'<div class="font-body text-[12px] font-bold text-primary">EN</div>')}
+    ${settingRow("volume-2","Voice replies","Tutor speaks answers",toggle(true))}
+    ${settingRow("bell","Notifications","Daily reminders",toggle(false))}
+    <div class="mt-5 text-[14px] font-bold">Account</div>
+    ${settingRow("bot","AI Tutor Identity","Persona, voice, prompt",'<i data-lucide="chevron-right" class="h-5 w-5 text-muted"></i>')}
+    <div class="${CCARD} mt-2.5"><div class="grid h-12 w-12 place-items-center rounded-tile bg-white text-danger shadow-tile"><i data-lucide="log-out" class="h-[22px] w-[22px]"></i></div><div class="text-[15px] font-bold text-danger">Log out</div></div>
+  </div>`,true));
+
+document.getElementById("gallery").innerHTML = screens.join("");
+
+/* desktop demo = Home app column at comfortable width */
+document.getElementById("desktop-stage").innerHTML =
+  `<div class="flex w-[440px] flex-col overflow-hidden rounded-[28px] bg-white shadow-[0_30px_60px_-30px_rgba(30,30,34,0.35)] ring-1 ring-black/5" style="min-height:560px">${homeInner}</div>`;
+
+/* waveform */
+const w = document.getElementById("wave08");
+if(w){ for(let i=0;i<22;i++){const s=document.createElement("span");s.className="flex-1 rounded-[3px] bg-primary opacity-80";s.style.height=(18+Math.abs(Math.sin(i*0.7))*24)+"px";w.appendChild(s);} }
+
+lucide.createIcons();
+</script>
+</body>
+</html>

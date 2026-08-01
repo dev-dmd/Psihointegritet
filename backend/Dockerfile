@@ -11,6 +11,9 @@ COPY pyproject.toml uv.lock README.md alembic.ini ./
 RUN uv sync --locked --no-dev --no-install-project
 
 COPY src ./src
+# Operator commands ship with the image: staff provisioning has to be runnable
+# against a deployed environment, not only from a developer machine.
+COPY scripts ./scripts
 RUN uv sync --locked --no-dev
 
 FROM python:3.14.6-slim AS runtime

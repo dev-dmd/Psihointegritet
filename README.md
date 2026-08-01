@@ -66,3 +66,5 @@ Backend: `uv sync --locked && uv run ruff format --check . && uv run ruff check 
 ### Poktretanje dev servera
 
 ./scripts/start-dev.sh
+
+adding roles: set -a; . ./.env.local; set +a; npm run roles:assign

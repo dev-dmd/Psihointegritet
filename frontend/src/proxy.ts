@@ -22,8 +22,18 @@ function isProtectedPath(pathname: string): boolean {
 
 export default clerkMiddleware(async (auth, request) => {
   if (isProtectedPath(request.nextUrl.pathname)) {
+    const signInUrl = new URL(SIGN_IN_URL, request.url);
+    // Clerk's <SignIn/> reads `redirect_url` and returns the user there after
+    // a successful sign-in, overriding signInFallbackRedirectUrl ("/nalog").
+    // Without it every protected route bounced back to /nalog regardless of
+    // where the visitor was actually headed (found during superadmin smoke
+    // testing, 2026-07-20 — affects /nalog, /radni-prostor, /superadmin).
+    signInUrl.searchParams.set(
+      "redirect_url",
+      request.nextUrl.pathname + request.nextUrl.search,
+    );
     await auth.protect({
-      unauthenticatedUrl: new URL(SIGN_IN_URL, request.url).toString(),
+      unauthenticatedUrl: signInUrl.toString(),
     });
   }
 });
