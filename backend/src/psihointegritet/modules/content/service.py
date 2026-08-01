@@ -42,9 +42,9 @@ from psihointegritet.modules.content.publication import (
     structural_findings,
 )
 from psihointegritet.modules.content.schemas import (
+    ContentDiscoveryMetadata,
     ContentFindingOut,
     ContentHealthOut,
-    ContentDiscoveryMetadata,
     ContentRevisionOut,
     CreateContentEntryRequest,
     PublicContentRevisionOut,
@@ -55,14 +55,14 @@ from psihointegritet.modules.content.schemas import (
     TransitionRequest,
     UpdateContentRevisionRequest,
 )
+from psihointegritet.modules.content.system_catalog import (
+    is_system_content_definition,
+    require_system_content_definition,
+)
 from psihointegritet.modules.content.taxonomy_models import (
     TaxonomyAxis,
     TaxonomyTerm,
     TaxonomyTermRevision,
-)
-from psihointegritet.modules.content.system_catalog import (
-    is_system_content_definition,
-    require_system_content_definition,
 )
 from psihointegritet.modules.guidance.authorization import StaffActor
 from psihointegritet.modules.identity.models import InternalUser
@@ -201,7 +201,7 @@ class ContentService:
             access_level_term_id=(
                 discovery.access_level_term_id if discovery is not None else None
             ),
-            related_content_entry_ids=relations,
+            related_content_entry_ids=list(relations),
         )
 
     async def _require_taxonomy_term(
@@ -213,9 +213,14 @@ class ContentService:
         field_path: str,
     ) -> TaxonomyTermRevision:
         term = await self._session.get(TaxonomyTerm, term_id)
-        if term is None or term.axis is not axis or term.organization_id not in (
-            None,
-            actor.organization_id,
+        if (
+            term is None
+            or term.axis is not axis
+            or term.organization_id
+            not in (
+                None,
+                actor.organization_id,
+            )
         ):
             raise ValueError("Izaberite aktivnu vrednost iz odgovarajuće Kompas liste.")
         tenant_revision = await self._session.scalar(
@@ -237,7 +242,9 @@ class ContentService:
                 )
             )
         if revision is None or revision.status is RevisionStatus.ARCHIVED:
-            raise ValueError(f"Izabrana Kompas vrednost za „{field_path}” nije objavljena i aktivna.")
+            raise ValueError(
+                f"Izabrana Kompas vrednost za „{field_path}” nije objavljena i aktivna."
+            )
         return revision
 
     async def _replace_discovery(
@@ -252,26 +259,53 @@ class ContentService:
         unique_audience_ids = list(dict.fromkeys(metadata.audience_term_ids))
         unique_goal_ids = list(dict.fromkeys(metadata.content_goal_term_ids))
         if metadata.topic_group_term_id is not None:
-            await self._require_taxonomy_term(actor, metadata.topic_group_term_id, TaxonomyAxis.TOPIC_GROUP, locale, "oblast")
+            await self._require_taxonomy_term(
+                actor, metadata.topic_group_term_id, TaxonomyAxis.TOPIC_GROUP, locale, "oblast"
+            )
         for term_id in unique_topic_ids:
-            topic_revision = await self._require_taxonomy_term(actor, term_id, TaxonomyAxis.TOPIC, locale, "teme")
-            if metadata.topic_group_term_id is not None and topic_revision.primary_parent_term_id != metadata.topic_group_term_id:
+            topic_revision = await self._require_taxonomy_term(
+                actor, term_id, TaxonomyAxis.TOPIC, locale, "teme"
+            )
+            if (
+                metadata.topic_group_term_id is not None
+                and topic_revision.primary_parent_term_id != metadata.topic_group_term_id
+            ):
                 raise ValueError("Svaka izabrana tema mora pripadati izabranoj oblasti.")
         for term_id in unique_audience_ids:
-            await self._require_taxonomy_term(actor, term_id, TaxonomyAxis.AUDIENCE, locale, "publika")
+            await self._require_taxonomy_term(
+                actor, term_id, TaxonomyAxis.AUDIENCE, locale, "publika"
+            )
         for term_id in unique_goal_ids:
-            await self._require_taxonomy_term(actor, term_id, TaxonomyAxis.CONTENT_GOAL, locale, "cilj sadržaja")
+            await self._require_taxonomy_term(
+                actor, term_id, TaxonomyAxis.CONTENT_GOAL, locale, "cilj sadržaja"
+            )
         if metadata.journey_intent_term_id is not None:
-            await self._require_taxonomy_term(actor, metadata.journey_intent_term_id, TaxonomyAxis.JOURNEY_INTENT, locale, "put korisnika")
+            await self._require_taxonomy_term(
+                actor,
+                metadata.journey_intent_term_id,
+                TaxonomyAxis.JOURNEY_INTENT,
+                locale,
+                "put korisnika",
+            )
         if metadata.content_format_term_id is not None:
-            await self._require_taxonomy_term(actor, metadata.content_format_term_id, TaxonomyAxis.CONTENT_FORMAT, locale, "format")
+            await self._require_taxonomy_term(
+                actor,
+                metadata.content_format_term_id,
+                TaxonomyAxis.CONTENT_FORMAT,
+                locale,
+                "format",
+            )
         if metadata.access_level_term_id is not None:
-            access = await self._require_taxonomy_term(actor, metadata.access_level_term_id, TaxonomyAxis.ACCESS_LEVEL, locale, "pristup")
+            access = await self._require_taxonomy_term(
+                actor, metadata.access_level_term_id, TaxonomyAxis.ACCESS_LEVEL, locale, "pristup"
+            )
             # The only currently public CMS renderer is public. Do not let an
             # editor select an entitlement label the route cannot enforce.
             access_term = await self._session.get(TaxonomyTerm, access.term_id)
             if access_term is None or access_term.stable_id != "public":
-                raise ValueError("Za postojeće CMS stranice trenutno je dostupan samo javni pristup.")
+                raise ValueError(
+                    "Za postojeće CMS stranice trenutno je dostupan samo javni pristup."
+                )
         related_entry_ids = list(dict.fromkeys(metadata.related_content_entry_ids))
         for target_entry_id in related_entry_ids:
             if target_entry_id == revision.entry_id:
@@ -284,7 +318,9 @@ class ContentService:
                 )
             )
             if target is None:
-                raise ValueError("Možete povezati samo postojeću uslugu ili program svoje organizacije.")
+                raise ValueError(
+                    "Možete povezati samo postojeću uslugu ili program svoje organizacije."
+                )
             published = await self._session.scalar(
                 select(ContentRevision.id).where(
                     ContentRevision.entry_id == target.id,
@@ -305,14 +341,19 @@ class ContentService:
             )
         )
         role_values = (
-            (ContentTaxonomyRole.TOPIC_GROUP, [metadata.topic_group_term_id] if metadata.topic_group_term_id else []),
+            (
+                ContentTaxonomyRole.TOPIC_GROUP,
+                [metadata.topic_group_term_id] if metadata.topic_group_term_id else [],
+            ),
             (ContentTaxonomyRole.TOPIC, unique_topic_ids),
             (ContentTaxonomyRole.AUDIENCE, unique_audience_ids),
             (ContentTaxonomyRole.CONTENT_GOAL, unique_goal_ids),
         )
         for role, term_ids in role_values:
             for term_id in term_ids:
-                self._session.add(ContentRevisionTaxonomyTerm(revision_id=revision.id, term_id=term_id, role=role))
+                self._session.add(
+                    ContentRevisionTaxonomyTerm(revision_id=revision.id, term_id=term_id, role=role)
+                )
         for target_entry_id in related_entry_ids:
             self._session.add(
                 ContentRevisionRelation(
@@ -626,10 +667,10 @@ class ContentService:
             ReviewDecisionRecord(capability=item.capability, outcome=item.outcome)
             for item in await self._decisions(revision.id)
         ]
-        findings = structural_findings(
-            revision.template, revision.slot_data
-        ) + authored_content_findings(entry, revision) + _discovery_findings(
-            await self._discovery(revision.id)
+        findings = (
+            structural_findings(revision.template, revision.slot_data)
+            + authored_content_findings(entry, revision)
+            + _discovery_findings(await self._discovery(revision.id))
         )
         required = effective_required_approvals(entry.content_type, revision.template, findings)
         missing = required - granted_capabilities(decisions)
@@ -838,7 +879,9 @@ def _discovery_findings(metadata: ContentDiscoveryMetadata) -> tuple[ContentFind
             rule_version="1",
             severity="warning",
             message="Sadržaj još nema kompletne Kompas metapodatke.",
-            remediation="Dopunite: " + ", ".join(missing) + ". Stranica može ostati objavljena, ali se neće prikazivati u Kompas preporukama.",
+            remediation="Dopunite: "
+            + ", ".join(missing)
+            + ". Stranica može ostati objavljena, ali se neće prikazivati u Kompas preporukama.",
             field_path="discovery",
         ),
     )

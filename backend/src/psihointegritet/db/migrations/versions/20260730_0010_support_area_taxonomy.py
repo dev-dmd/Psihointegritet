@@ -10,9 +10,8 @@ from __future__ import annotations
 import json
 from collections.abc import Sequence
 
-from alembic import op
 import sqlalchemy as sa
-
+from alembic import op
 
 revision: str = "20260730_0010"
 down_revision: str | None = "20260730_0009"

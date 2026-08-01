@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Annotated
 from uuid import UUID
 
 from fastapi import APIRouter, HTTPException, Query, status
@@ -47,7 +47,7 @@ from psihointegritet.shared.domain.publication import RevisionStatus
 router = APIRouter(prefix="/content/taxonomy", tags=["content-taxonomy"])
 public_router = APIRouter(prefix="/public/compass/taxonomy", tags=["public-taxonomy"])
 
-_ERROR_RESPONSES = {
+_ERROR_RESPONSES: dict[int | str, dict[str, object]] = {
     403: {"model": ApiProblem},
     404: {"model": ApiProblem},
     409: {"model": ApiProblem},
@@ -122,9 +122,9 @@ async def list_taxonomy_terms(
     session: DatabaseSession,
     settings: AppSettings,
     axis: TaxonomyAxis | None = None,
-    revision_status: RevisionStatus | None = Query(default=None, alias="status"),
-    query: str | None = Query(default=None, max_length=160),
-    locale: str = Query(default="sr-Latn", min_length=2, max_length=16),
+    revision_status: Annotated[RevisionStatus | None, Query(alias="status")] = None,
+    query: Annotated[str | None, Query(max_length=160)] = None,
+    locale: Annotated[str, Query(min_length=2, max_length=16)] = "sr-Latn",
 ) -> list[TaxonomyTermOut]:
     async with session.begin():
         actor = await _actor(session, settings, identity)
@@ -484,7 +484,7 @@ async def resolve_public_taxonomy_route(
     session: DatabaseSession,
     settings: AppSettings,
     locale: str = Query(default="sr-Latn", min_length=2, max_length=16),
-) -> Any:
+) -> PublicTaxonomyTermOut | RedirectResponse:
     try:
         async with session.begin():
             organization = await session.scalar(
@@ -498,6 +498,7 @@ async def resolve_public_taxonomy_route(
                 organization.id, route_kind, slug, locale
             )
             if is_alias:
+                assert output.canonical_path is not None  # noqa: S101 — guarded by resolve_public_route
                 return RedirectResponse(
                     url=output.canonical_path,
                     status_code=status.HTTP_308_PERMANENT_REDIRECT,

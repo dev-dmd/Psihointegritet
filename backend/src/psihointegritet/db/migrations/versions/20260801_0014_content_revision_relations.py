@@ -29,11 +29,21 @@ def upgrade() -> None:
         sa.PrimaryKeyConstraint("id"),
         sa.UniqueConstraint("revision_id", "target_entry_id", name="uq_content_revision_relation"),
     )
-    op.create_index("ix_content_revision_relations_revision_id", "content_revision_relations", ["revision_id"])
-    op.create_index("ix_content_revision_relations_target_entry_id", "content_revision_relations", ["target_entry_id"])
+    op.create_index(
+        "ix_content_revision_relations_revision_id", "content_revision_relations", ["revision_id"]
+    )
+    op.create_index(
+        "ix_content_revision_relations_target_entry_id",
+        "content_revision_relations",
+        ["target_entry_id"],
+    )
 
 
 def downgrade() -> None:
-    op.drop_index("ix_content_revision_relations_target_entry_id", table_name="content_revision_relations")
-    op.drop_index("ix_content_revision_relations_revision_id", table_name="content_revision_relations")
+    op.drop_index(
+        "ix_content_revision_relations_target_entry_id", table_name="content_revision_relations"
+    )
+    op.drop_index(
+        "ix_content_revision_relations_revision_id", table_name="content_revision_relations"
+    )
     op.drop_table("content_revision_relations")

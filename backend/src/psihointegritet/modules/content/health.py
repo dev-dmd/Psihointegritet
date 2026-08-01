@@ -359,7 +359,7 @@ def _validate_field(path: str, spec: SlotFieldSpec, value: object) -> list[Conte
     elif isinstance(spec, CtaListFieldSpec):
         for index, item in enumerate(values):
             findings.extend(_validate_cta(f"{path}[{index}]", spec, item))
-    elif isinstance(spec, RepeaterFieldSpec):
+    if isinstance(spec, RepeaterFieldSpec):  # pyright: ignore[reportUnnecessaryIsInstance]
         for index, raw_item in enumerate(values):
             item = _mapping(raw_item)
             item_path = f"{path}[{index}]"
@@ -388,7 +388,7 @@ def _validate_field(path: str, spec: SlotFieldSpec, value: object) -> list[Conte
                 findings.extend(
                     _validate_field(
                         f"{item_path}.{field_name}",
-                        cast(NonRepeaterFieldSpec, field_spec),
+                        cast(NonRepeaterFieldSpec, field_spec),  # pyright: ignore[reportUnnecessaryCast]
                         item.get(field_name, _MISSING),
                     )
                 )
@@ -512,7 +512,7 @@ def authored_content_findings(
                     )
                 )
             continue
-        if not isinstance(spec, EditableSlot):
+        if not isinstance(spec, EditableSlot):  # pyright: ignore[reportUnnecessaryIsInstance]
             continue
         if mode == "hidden" and spec.visibility != "toggleable":
             findings.append(

@@ -162,7 +162,7 @@ class CreateTaxonomyTermRequest(TaxonomyApiSchema):
     public_visible: bool = True
     compass_enabled: bool = True
     search_terms: list[str] = Field(default_factory=list, max_length=100)
-    related_topic_ids: list[UUID] = Field(default_factory=list, max_length=100)
+    related_topic_ids: list[UUID] = Field(default_factory=list, max_length=100)  # pyright: ignore[reportUnknownVariableType]
 
     @field_validator("stable_id")
     @classmethod

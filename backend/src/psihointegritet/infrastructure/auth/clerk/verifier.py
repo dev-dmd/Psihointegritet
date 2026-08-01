@@ -1,5 +1,4 @@
 import asyncio
-from typing import Any
 
 import jwt
 from jwt import InvalidTokenError, PyJWKClient, PyJWKClientError
@@ -43,7 +42,7 @@ class ClerkTokenVerifier:
         return _identity_claims(claims)
 
 
-def _identity_claims(claims: dict[str, Any]) -> IdentityClaims:
+def _identity_claims(claims: dict[str, object]) -> IdentityClaims:
     subject = claims.get("sub")
     if not isinstance(subject, str) or not subject:
         raise ClerkTokenVerificationError("Clerk session token has no subject")

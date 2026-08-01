@@ -45,13 +45,13 @@ class ContentDiscoveryMetadata(ApiSchema):
     """Controlled Kompas metadata attached to exactly one CMS revision."""
 
     topic_group_term_id: UUID | None = None
-    topic_term_ids: list[UUID] = Field(default_factory=list)
-    audience_term_ids: list[UUID] = Field(default_factory=list)
-    content_goal_term_ids: list[UUID] = Field(default_factory=list)
+    topic_term_ids: list[UUID] = Field(default_factory=list)  # pyright: ignore[reportUnknownVariableType]
+    audience_term_ids: list[UUID] = Field(default_factory=list)  # pyright: ignore[reportUnknownVariableType]
+    content_goal_term_ids: list[UUID] = Field(default_factory=list)  # pyright: ignore[reportUnknownVariableType]
     journey_intent_term_id: UUID | None = None
     content_format_term_id: UUID | None = None
     access_level_term_id: UUID | None = None
-    related_content_entry_ids: list[UUID] = Field(default_factory=list)
+    related_content_entry_ids: list[UUID] = Field(default_factory=list)  # pyright: ignore[reportUnknownVariableType]
 
 
 class ContentRevisionOut(ApiSchema):

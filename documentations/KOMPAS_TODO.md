@@ -24,13 +24,13 @@
 
 ### Statusi
 
-| Oznaka | Značenje |
-| --- | --- |
-| ✅ | Završeno |
-| 🟡 | Delimično |
-| ⬜ | Nije započeto |
-| 🚫 | Blokirano postojećom odlukom ili nedostajućim domenom |
-| ⏸️ | Namerno kasnije |
+| Oznaka | Značenje                                              |
+| ------ | ----------------------------------------------------- |
+| ✅     | Završeno                                              |
+| 🟡     | Delimično                                             |
+| ⬜     | Nije započeto                                         |
+| 🚫     | Blokirano postojećom odlukom ili nedostajućim domenom |
+| ⏸️     | Namerno kasnije                                       |
 
 ---
 
@@ -84,51 +84,51 @@ Kontrola mora stalno da dozvoli:
 
 ### 2.1 Šta već možemo ponovo koristiti
 
-| Postojeće | Stanje | Kako ga Kompas koristi |
-| --- | --- | --- |
-| `ContentEntry` + `ContentRevision` | Postoje, tenant-scoped, verzionisani i auditovani | Stabilan identitet i revision-bound metadata za sadržaj |
-| `ContentReviewDecision` + publication lifecycle | Postoje | Stručni/poslovni review i objava sadržaja |
-| `ContentProvider` + CMS override | Postoji za šest trenutnih `ContentType` vrednosti | Javni read-model objavljenih entiteta |
-| RichDoc + `.docx` import | Postoje | Autorski tok budućih članaka |
-| Content Health | Postoji | Publication validacija taksonomijskih referenci i metadata |
-| `therapist_matching_profiles` | Postoji, tenant-scoped | Intake autoritet za terapeute, uzrast, format, lokaciju i capability-je |
-| Intake matching v3 | Postoji | Jedini autoritet za uslugu/terapeuta |
-| Intake team queue + reassign | Postoje | Ljudsko preuzimanje/handoff slučaja |
-| `sessionStorage` obrazac | Postoji za booking summary | Kandidat za jednokratni Kompas ↔ Intake handoff |
-| Access decision iz ADR-018 | Ugovor postoji, puni ResourceAsset još ne | `public/registered/staff_only` granica za v1 |
-| K1 taxonomy registry + staff/public API | Implementirano, migracija čeka posebnu rollout/test fazu | DB autoritet za oblasti (`topic_group`), teme, publike, ciljeve i sistemske vrednosti |
+| Postojeće                                       | Stanje                                                   | Kako ga Kompas koristi                                                                |
+| ----------------------------------------------- | -------------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| `ContentEntry` + `ContentRevision`              | Postoje, tenant-scoped, verzionisani i auditovani        | Stabilan identitet i revision-bound metadata za sadržaj                               |
+| `ContentReviewDecision` + publication lifecycle | Postoje                                                  | Stručni/poslovni review i objava sadržaja                                             |
+| `ContentProvider` + CMS override                | Postoji za šest trenutnih `ContentType` vrednosti        | Javni read-model objavljenih entiteta                                                 |
+| RichDoc + `.docx` import                        | Postoje                                                  | Autorski tok budućih članaka                                                          |
+| Content Health                                  | Postoji                                                  | Publication validacija taksonomijskih referenci i metadata                            |
+| `therapist_matching_profiles`                   | Postoji, tenant-scoped                                   | Intake autoritet za terapeute, uzrast, format, lokaciju i capability-je               |
+| Intake matching v3                              | Postoji                                                  | Jedini autoritet za uslugu/terapeuta                                                  |
+| Intake team queue + reassign                    | Postoje                                                  | Ljudsko preuzimanje/handoff slučaja                                                   |
+| `sessionStorage` obrazac                        | Postoji za booking summary                               | Kandidat za jednokratni Kompas ↔ Intake handoff                                       |
+| Access decision iz ADR-018                      | Ugovor postoji, puni ResourceAsset još ne                | `public/registered/staff_only` granica za v1                                          |
+| K1 taxonomy registry + staff/public API         | Implementirano, migracija čeka posebnu rollout/test fazu | DB autoritet za oblasti (`topic_group`), teme, publike, ciljeve i sistemske vrednosti |
 
 ### 2.2 Šta još ne postoji
 
-| Nedostaje | Posledica |
-| --- | --- |
-| `ContentType.article` i article model | Tri kartice u `/znanje` su fallback/„u pripremi”, nisu objavljeni katalog |
-| Article template + javna ruta + Article JSON-LD | Kompas još nema pravi stručni članak koji može da preporuči |
-| Panel „Kompas” | K2 treba da omogući uređivanje oblasti, tema, publika, ciljeva i povezivanja nad K1 API-jem |
-| Revision-bound discovery metadata | CMS sadržaj nema `topicIds`, `journeyIntent`, `goalIds`, `audienceIds` |
-| Compass recommendation read-model/API | Nema autoritativnog filtriranja ni objašnjivih razloga |
-| Kanonske `/kompas/oblast/[slug]` i `/kompas/tema/[slug]` stranice | Oblast/tema još nemaju route identitet, javni agregacioni read-model i renderer |
-| Revisioned `CompassGuide` | Nema opcionog authored/approved vodiča za stručne tvrdnje o čestim kombinacijama |
-| `ResourceAsset` implementacija | PDF/radni list još nisu preporučivi asset entiteti |
-| Audio/video/knjiga katalog | Ne uvoditi placeholder modele |
-| Pretplate/kupovine | Blokirano do R5 (D-048) |
-| Dnevna soba / SavedItem | Zasebna O-23 odluka |
+| Nedostaje                                                         | Posledica                                                                                   |
+| ----------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| `ContentType.article` i article model                             | Tri kartice u `/znanje` su fallback/„u pripremi”, nisu objavljeni katalog                   |
+| Article template + javna ruta + Article JSON-LD                   | Kompas još nema pravi stručni članak koji može da preporuči                                 |
+| Panel „Kompas”                                                    | K2 treba da omogući uređivanje oblasti, tema, publika, ciljeva i povezivanja nad K1 API-jem |
+| Revision-bound discovery metadata                                 | CMS sadržaj nema `topicIds`, `journeyIntent`, `goalIds`, `audienceIds`                      |
+| Compass recommendation read-model/API                             | Nema autoritativnog filtriranja ni objašnjivih razloga                                      |
+| Kanonske `/kompas/oblast/[slug]` i `/kompas/tema/[slug]` stranice | Oblast/tema još nemaju route identitet, javni agregacioni read-model i renderer             |
+| Revisioned `CompassGuide`                                         | Nema opcionog authored/approved vodiča za stručne tvrdnje o čestim kombinacijama            |
+| `ResourceAsset` implementacija                                    | PDF/radni list još nisu preporučivi asset entiteti                                          |
+| Audio/video/knjiga katalog                                        | Ne uvoditi placeholder modele                                                               |
+| Pretplate/kupovine                                                | Blokirano do R5 (D-048)                                                                     |
+| Dnevna soba / SavedItem                                           | Zasebna O-23 odluka                                                                         |
 
 ### 2.3 Mesta na kojima stručni pojmovi danas postoje kao tekst ili zaseban rečnik
 
-| Mesto | Uloga | Da li je budući autoritet |
-| --- | --- | --- |
-| `frontend/src/features/guidance/taxonomy.ts` | Intake fallback registry | Ne za Kompas; kasnije generated snapshot ili DB adapter |
-| `backend/.../guidance/taxonomy.py` | Intake stabilni ID-jevi | Samo Intake ugovor |
-| `therapist_matching_profiles.areas` | Intake routing ID-jevi | Operativni Intake podatak |
-| `contracts/fixtures/taxonomy.v1.json` | Parity za Intake | Ugovor O-24a, ne Kompas katalog |
-| `frontend/src/content/therapists.ts::areas` | Javni čipovi profila | Ne; prezentacioni sadržaj |
-| `frontend/src/content/homepage.ts::reasons` | Početne javne kartice | Ne; budući potrošač DB grupa |
-| `frontend/src/content/homepage.ts::resources[].category` | Fallback kartice znanja | Ne |
-| `frontend/src/content/services.ts::supportAreas` | Javni putevi/usluge | Ne |
-| `frontend/src/content/company.ts::COMPANY_TOPICS` | B2B konfigurator | Zaseban B2B rečnik dok ADR ne odluči mapiranje |
-| CMS therapist `areas.items` slot | Javni tekst profila | Ne sme određivati recommendation logiku |
-| Workspace demo `data.ts::areas` | Preview/mock prikaz | Ne |
+| Mesto                                                    | Uloga                    | Da li je budući autoritet                               |
+| -------------------------------------------------------- | ------------------------ | ------------------------------------------------------- |
+| `frontend/src/features/guidance/taxonomy.ts`             | Intake fallback registry | Ne za Kompas; kasnije generated snapshot ili DB adapter |
+| `backend/.../guidance/taxonomy.py`                       | Intake stabilni ID-jevi  | Samo Intake ugovor                                      |
+| `therapist_matching_profiles.areas`                      | Intake routing ID-jevi   | Operativni Intake podatak                               |
+| `contracts/fixtures/taxonomy.v1.json`                    | Parity za Intake         | Ugovor O-24a, ne Kompas katalog                         |
+| `frontend/src/content/therapists.ts::areas`              | Javni čipovi profila     | Ne; prezentacioni sadržaj                               |
+| `frontend/src/content/homepage.ts::reasons`              | Početne javne kartice    | Ne; budući potrošač DB grupa                            |
+| `frontend/src/content/homepage.ts::resources[].category` | Fallback kartice znanja  | Ne                                                      |
+| `frontend/src/content/services.ts::supportAreas`         | Javni putevi/usluge      | Ne                                                      |
+| `frontend/src/content/company.ts::COMPANY_TOPICS`        | B2B konfigurator         | Zaseban B2B rečnik dok ADR ne odluči mapiranje          |
+| CMS therapist `areas.items` slot                         | Javni tekst profila      | Ne sme određivati recommendation logiku                 |
+| Workspace demo `data.ts::areas`                          | Preview/mock prikaz      | Ne                                                      |
 
 **Zaključak:** O-24a je rešio drift unutar Intake-a, ali nije napravio Kompas taksonomiju. Kompas mora dobiti zaseban, DB-backed katalog i eksplicitnu vezu ka Intake rečniku.
 
@@ -142,16 +142,16 @@ Tačan broj javnih grupa je trenutno sadržajni drift, ne arhitektonska blokada:
 
 Za svaki sadržaj se odvojeno definišu:
 
-| Osa | API/ugovorno ime | Primer | Pravilo |
-| --- | --- | --- | --- |
-| Šira oblast | `topicGroupId` | `stress-overload` | UI naziv za tehničku osu `topic_group`; jedna primarna oblast u v1 |
-| Konkretne teme | `topicIds` | `burnout`, `difficulty-resting` | Jedna ili više tema iz izabrane oblasti |
-| Put korisnika | `journeyIntent` | `explore`, `professional_support`, `both` | Tačno jedna zaključana sistemska vrednost |
-| Cilj sadržaja | `goalIds` | `understand`, `practical-step` | Jedan ili više kontrolisanih ciljeva |
-| Publika | `audienceIds` | `self`, `parent`, `adolescent` | Jedna ili više publika |
-| Format sadržaja | `contentFormat` | `article`, `worksheet` | Ne zvati samo `format`, jer Intake već koristi format rada |
-| Pristup | `accessPolicy` | `public`, `registered` | V1 samo vrednosti koje backend može stvarno da proveri |
-| Pretraživačke oznake | `searchTerms` | `sagorevanje`, `iscrpljenost` | Nikada recommendation autoritet |
+| Osa                  | API/ugovorno ime | Primer                                    | Pravilo                                                            |
+| -------------------- | ---------------- | ----------------------------------------- | ------------------------------------------------------------------ |
+| Šira oblast          | `topicGroupId`   | `stress-overload`                         | UI naziv za tehničku osu `topic_group`; jedna primarna oblast u v1 |
+| Konkretne teme       | `topicIds`       | `burnout`, `difficulty-resting`           | Jedna ili više tema iz izabrane oblasti                            |
+| Put korisnika        | `journeyIntent`  | `explore`, `professional_support`, `both` | Tačno jedna zaključana sistemska vrednost                          |
+| Cilj sadržaja        | `goalIds`        | `understand`, `practical-step`            | Jedan ili više kontrolisanih ciljeva                               |
+| Publika              | `audienceIds`    | `self`, `parent`, `adolescent`            | Jedna ili više publika                                             |
+| Format sadržaja      | `contentFormat`  | `article`, `worksheet`                    | Ne zvati samo `format`, jer Intake već koristi format rada         |
+| Pristup              | `accessPolicy`   | `public`, `registered`                    | V1 samo vrednosti koje backend može stvarno da proveri             |
+| Pretraživačke oznake | `searchTerms`    | `sagorevanje`, `iscrpljenost`             | Nikada recommendation autoritet                                    |
 
 Ne koristiti:
 
@@ -226,23 +226,23 @@ Otvoreno za Anju/tim:
 
 ### 3.4 Formati i pristup — cilj naspram izvršivog v1
 
-| Vrednost | Ciljni katalog | V1 status |
-| --- | --- | --- |
-| `article` | Da | Posle ADR-019 i pravog article toka |
-| `program` | Da | Kada postoji objavljeni entitet i card adapter |
-| `pdf` / `worksheet` | Da | Posle `ResourceAsset` vertikale iz ADR-018 |
-| `audio` | Da | ⏸️ Nema model/provider |
-| `video` | Da | ⏸️ `VideoAsset` namerno nije otvoren |
+| Vrednost            | Ciljni katalog | V1 status                                      |
+| ------------------- | -------------- | ---------------------------------------------- |
+| `article`           | Da             | Posle ADR-019 i pravog article toka            |
+| `program`           | Da             | Kada postoji objavljeni entitet i card adapter |
+| `pdf` / `worksheet` | Da             | Posle `ResourceAsset` vertikale iz ADR-018     |
+| `audio`             | Da             | ⏸️ Nema model/provider                         |
+| `video`             | Da             | ⏸️ `VideoAsset` namerno nije otvoren           |
 
 Knjiga, radionica, partner, klinika i affiliate preporuka nisu vrednosti ovog sistemskog format rečnika. Dobijaju svoj entitet/adapter ili kontrolisanu relation vrstu tek kada njihov domen bude formalno spreman.
 
-| Access vrednost | V1 | Kasnije |
-| --- | --- | --- |
-| `public` | Da | — |
-| `registered` | Da | — |
-| `staff_only` | Sistemska vrednost, ne javna Kompas kartica | — |
-| `subscriber` | Rezervisan; prikazati disabled „U pripremi”, ne upisivati | R5, aditivno |
-| `purchased` | Rezervisan; prikazati disabled „U pripremi”, ne upisivati | R5, aditivno |
+| Access vrednost | V1                                                        | Kasnije      |
+| --------------- | --------------------------------------------------------- | ------------ |
+| `public`        | Da                                                        | —            |
+| `registered`    | Da                                                        | —            |
+| `staff_only`    | Sistemska vrednost, ne javna Kompas kartica               | —            |
+| `subscriber`    | Rezervisan; prikazati disabled „U pripremi”, ne upisivati | R5, aditivno |
+| `purchased`     | Rezervisan; prikazati disabled „U pripremi”, ne upisivati | R5, aditivno |
 
 `contentFormat` treba vratiti u javnom API-ju, ali ga ne duplirati kao ručno polje kada se pouzdano izvodi iz tipa entiteta/asset-a.
 
@@ -252,13 +252,13 @@ Knjiga, radionica, partner, klinika i affiliate preporuka nisu vrednosti ovog si
 
 Kompas i Intake nemaju isti posao:
 
-| Kompas | Intake & Matching |
-| --- | --- |
+| Kompas                               | Intake & Matching                                        |
+| ------------------------------------ | -------------------------------------------------------- |
 | Široke javne oblasti (`topic_group`) | Pet stabilnih routing `SupportAreaId` vrednosti iz D-052 |
-| Konkretne sadržajne teme | Razlozi, usluge i terapeutski capability-ji |
-| Preporučuje sadržaj | Preporučuje uslugu/terapeuta |
-| Može raditi bez kompletnog izbora | Primenjuje hard constraints |
-| Ne rangira terapeute | Jedini autoritet rangiranja terapeuta |
+| Konkretne sadržajne teme             | Razlozi, usluge i terapeutski capability-ji              |
+| Preporučuje sadržaj                  | Preporučuje uslugu/terapeuta                             |
+| Može raditi bez kompletnog izbora    | Primenjuje hard constraints                              |
+| Ne rangira terapeute                 | Jedini autoritet rangiranja terapeuta                    |
 
 Primer:
 
@@ -641,15 +641,15 @@ Vraća:
 
 ### Greške
 
-| Slučaj | Ponašanje |
-| --- | --- |
-| Nepoznat ID u staff editoru | 422 sa `fieldPath`, ID-jem i jasnim uputstvom |
-| Arhiviran ID pri publish-u | Publication BLOCK finding |
-| Stara javna selekcija | 200 + `selectionAdjustments`, bez rušenja |
-| Nema rezultata | 200 + kontrolisani empty state |
-| Backend nedostupan | Neutralna poruka + link ka `/znanje` i Intake-u; bez hardkodovanog lažnog kataloga |
-| `staff_only` sadržaj | Nikada u javnom odgovoru |
-| Registered sadržaj anonimnom korisniku | Kartica samo ako politika dozvoli teaser; sadržaj ostaje zaključan backendom |
+| Slučaj                                 | Ponašanje                                                                          |
+| -------------------------------------- | ---------------------------------------------------------------------------------- |
+| Nepoznat ID u staff editoru            | 422 sa `fieldPath`, ID-jem i jasnim uputstvom                                      |
+| Arhiviran ID pri publish-u             | Publication BLOCK finding                                                          |
+| Stara javna selekcija                  | 200 + `selectionAdjustments`, bez rušenja                                          |
+| Nema rezultata                         | 200 + kontrolisani empty state                                                     |
+| Backend nedostupan                     | Neutralna poruka + link ka `/znanje` i Intake-u; bez hardkodovanog lažnog kataloga |
+| `staff_only` sadržaj                   | Nikada u javnom odgovoru                                                           |
+| Registered sadržaj anonimnom korisniku | Kartica samo ako politika dozvoli teaser; sadržaj ostaje zaključan backendom       |
 
 ---
 
@@ -858,29 +858,29 @@ Preporuka za v1:
 
 ### Oblasti (`topic_group`)
 
-| Polje | Primer |
-| --- | --- |
-| `proposedStableId` | `stress-overload` |
-| javni naziv | Stres i preopterećenost |
-| kratak opis | Plain-language opis za karticu |
-| redosled | 1 |
-| javno vidljiva | da |
-| aktivna u Kompasu | da |
-| ikona/asset | opciono |
-| lifecycle | draft |
+| Polje              | Primer                         |
+| ------------------ | ------------------------------ |
+| `proposedStableId` | `stress-overload`              |
+| javni naziv        | Stres i preopterećenost        |
+| kratak opis        | Plain-language opis za karticu |
+| redosled           | 1                              |
+| javno vidljiva     | da                             |
+| aktivna u Kompasu  | da                             |
+| ikona/asset        | opciono                        |
+| lifecycle          | draft                          |
 
 ### Teme
 
-| Polje | Primer |
-| --- | --- |
-| `proposedStableId` | `burnout` |
-| `topicGroupId` | `stress-overload` |
-| javni naziv | Burnout |
-| sinonimi | sagorevanje; iscrpljenost; preopterećenost |
-| put | oba |
-| povezane teme | opciono |
-| Intake veza | `anxiety_stress` |
-| napomena/reviewer | stručna napomena bez javne dijagnoze |
+| Polje              | Primer                                     |
+| ------------------ | ------------------------------------------ |
+| `proposedStableId` | `burnout`                                  |
+| `topicGroupId`     | `stress-overload`                          |
+| javni naziv        | Burnout                                    |
+| sinonimi           | sagorevanje; iscrpljenost; preopterećenost |
+| put                | oba                                        |
+| povezane teme      | opciono                                    |
+| Intake veza        | `anxiety_stress`                           |
+| napomena/reviewer  | stručna napomena bez javne dijagnoze       |
 
 Pravila unosa:
 
@@ -958,3 +958,10 @@ D-053, D-054 i ADR-022 Amandman 1 su usvojeni. Sledeće:
 2. Anjinu konačnu tabelu uneti kao stručne podatke čim stigne, bez menjanja arhitekture;
 3. završiti K3A katalog i K3B kanonske stranice/`CompassGuide` ugovor, zatim K4/K5 i tek tada javni K6;
 4. širiti formate i AI tek posle stvarnog osnovnog toka.
+
+---
+
+## Status test-faze — 2026-08-01 ✅ SVI ZELENI
+
+> CTO odluka (2026-08-01): pokrenuta kompletna test-faza. Vidi `TODO.md` §9 za detaljne rezultate.
+> Svi Kompas testovi prolaze: frontend 227 ✅ / backend 269 ✅ / tsc 0 / pyright 0 / eslint 0 / ruff 0.

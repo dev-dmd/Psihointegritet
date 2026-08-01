@@ -411,3 +411,10 @@
 **Novi workspace tab (CG-C1):** e2e auth test (redirect za neulogovane) po obrascu postojećih `workspace-auth` testova.
 **Parity (CG-A2/B6/B7/C1):** i vitest i pytest moraju proći nad **istim** fixture fajlom pre nego što se bilo koji CG-A/B zadatak označi ✅ — `legal-publication.v1.json`, `content-publication.v1.json`, `richdoc.v1.json`, `slot-schema.v1.json`.
 **Bezbednost uvoza (CG-B8):** `<script>`, `onerror=` i `javascript:` href ne smeju preživeti nijedan ulazni put (docx, rich paste, plain paste) — ovo je blokirajući test, ne upozorenje.
+
+---
+
+## Status test-faze — 2026-08-01 ✅ SVI ZELENI
+
+> CTO odluka (2026-08-01): pokrenuta kompletna test-faza. Vidi `TODO.md` §9 za detaljne rezultate.
+> Svi CMS testovi prolaze: frontend 227 ✅ / backend 269 ✅ / tsc 0 / pyright 0 / eslint 0 / ruff 0.

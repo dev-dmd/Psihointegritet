@@ -24,8 +24,8 @@ from psihointegritet.modules.content.taxonomy_models import (
     TaxonomyRouteKind,
     TaxonomyTerm,
     TaxonomyTermRelation,
-    TaxonomyTermRoute,
     TaxonomyTermRevision,
+    TaxonomyTermRoute,
     TaxonomyTermSearchTerm,
 )
 from psihointegritet.modules.content.taxonomy_schemas import (
@@ -40,10 +40,10 @@ from psihointegritet.modules.content.taxonomy_schemas import (
     TaxonomyIntakeLinkReviewRequest,
     TaxonomyIntakeLinkTransitionRequest,
     TaxonomyRelationOut,
-    TaxonomyRouteOut,
-    TaxonomyRouteSuggestionOut,
     TaxonomyReviewDecisionOut,
     TaxonomyReviewDecisionRequest,
+    TaxonomyRouteOut,
+    TaxonomyRouteSuggestionOut,
     TaxonomyTermOut,
     TaxonomyTransitionRequest,
     UpdateTaxonomyRevisionRequest,
@@ -1064,9 +1064,7 @@ class TaxonomyService:
         await self._session.refresh(revision)
         return await self._term_out(term, revision)
 
-    async def delete_revision(
-        self, actor: StaffActor, term_id: UUID, revision_id: UUID
-    ) -> None:
+    async def delete_revision(self, actor: StaffActor, term_id: UUID, revision_id: UUID) -> None:
         """Delete a tenant-owned revision on explicit administrator request.
 
         This is intentionally stronger than lifecycle archive: the caller has

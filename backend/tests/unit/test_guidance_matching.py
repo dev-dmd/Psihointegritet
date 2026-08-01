@@ -23,7 +23,6 @@ from psihointegritet.modules.guidance.taxonomy import (
     SupportAreaId,
 )
 
-
 TAXONOMY_FIXTURE = json.loads(
     (Path(__file__).resolve().parents[3] / "contracts" / "fixtures" / "taxonomy.v1.json").read_text(
         encoding="utf-8"

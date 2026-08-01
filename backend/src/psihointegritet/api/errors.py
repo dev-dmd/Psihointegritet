@@ -1,3 +1,5 @@
+from typing import cast
+
 from fastapi import FastAPI, Request, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
@@ -39,12 +41,13 @@ async def _handle_http_exception(_: Request, exc: Exception) -> JSONResponse:
     assert isinstance(exc, StarletteHTTPException)  # noqa: S101 — guarded by registration
     detail = exc.detail
     if isinstance(detail, dict):
-        title = str(detail.get("message") or detail.get("title") or "Zahtev nije uspeo.")
-        code = str(detail.get("code") or "http_error")
-        field_path_value = detail.get("fieldPath") or detail.get("field_path")
-        field_path = str(field_path_value) if field_path_value is not None else None
-        detail_value = detail.get("detail")
-        problem_detail = str(detail_value) if detail_value is not None else None
+        payload = cast(dict[str, object], detail)
+        title = str(payload.get("message") or payload.get("title") or "Zahtev nije uspeo.")
+        code = str(payload.get("code") or "http_error")
+        field_path_raw = payload.get("fieldPath") or payload.get("field_path")
+        field_path = str(field_path_raw) if field_path_raw is not None else None
+        detail_raw = payload.get("detail")
+        problem_detail = str(detail_raw) if detail_raw is not None else None
     else:
         title = str(detail)
         code = "http_error"

@@ -791,3 +791,189 @@ The following are prohibited:
 - auto-generating production schemas;
 - sensitive data in logs, analytics, URLs or error messages;
 - empty placeholder abstractions added “for future use” without a current contract.
+
+# Next.js 16+ Rendering Strategija (SEO, CMS i SaaS Dashboard)
+
+Ovaj dokument definiše precizna pravila kada se koristi Server-Side Rendering (SSR), kada Static Site Generation (SSG / ISR), a kada isključivo Client-Side Rendering (CSR) unutar Next.js 16+ App Router arhitekture. 
+
+Sve odluke su donete sa ciljem postizanja maksimalnog SEO ranga, performansi (Core Web Vitals) i ultra-brzog odziva SaaS kontrolnog panela.
+
+---
+
+## 🚀 Brza referentna matrica renderovanja
+
+| Tip Stranice / Funkcionalnost | Strategija Renderovanja | Razlog i SEO Uticaj |
+| :--- | :--- | :--- |
+| **Početna Stranica (Landing Page)** | **SSG / Static** (Sa parcijalnim hidratisanjem) | Maksimalan SEO score, trenutan LCP, idealno za marketing konverziju. |
+| **Blog & Stručni Tekstovi (CMS)** | **ISR (Incremental Static Regeneration)** | Statičke performanse sa pozadinskim osvežavanjem podataka bez rebuild-a. Vrhunski SEO. |
+| **Compass Search & Discovery** | **SSR (Server-Side Rendering)** + `Suspense` | Dinamički i personalizovani rezultati pretrage sa pgvector-a, indeksirani od strane Google-a. |
+| **SaaS Kontrolni Panel (Dashboard)** | **CSR (Client-Side Rendering)** unutar SSR Layout-a | Privatni podaci iza auth-a. SEO je nebitan. Fokus je na brzini interakcije. |
+| **Booking Engine (Zakazivanje)** | **Hybrid (SSR + CSR Real-time Lock)** | Termini se čitaju na serveru, ali se status i lock-ovanje vrše u realnom vremenu na klijentu. |
+| **Notify Me (Forme i Akcije)** | **React 19 Server Actions** (`useActionState`) | Nativno slanje podataka bez potrebe za klijentskim fetch petljama. |
+
+---
+
+## 1. Statičke stranice i CMS (Početna, Blog, Stručni Tekstovi)
+*   **Strategija:** `Static` i `ISR (Incremental Static Regeneration)`.
+*   **Arhitektonsko pravilo:** Sve CMS stranice moraju biti renderovane na serveru kao čist HTML. Koristi se `revalidate` tajmer kako bi se blog i tekstovi osvežili u pozadini kada admin unese izmene u CMS, bez potrebe za ponovnim pokretanjem CI/CD pipeline-a.
+
+```tsx
+// app/[tenant]/blog/[slug]/page.tsx
+import { Metadata } from 'next';
+import { getBlogPostBySlug } from '@/lib/cms-api';
+
+// Revalidacija stranice na svakih 30 minuta u pozadini (ISR)
+export const revalidate = 1800; 
+
+interface Props {
+  params: { tenant: string; slug: string };
+}
+
+// Generisanje SEO Meta podataka na serveru (Kritično za Google bota)
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const post = await getBlogPostBySlug(params.tenant, params.slug);
+  return {
+    title: `${post.title} | ${params.tenant} CMS`,
+    description: post.excerpt,
+    openGraph: { images: [post.coverImage] },
+  };
+}
+
+export default async function BlogPostPage({ params }: Props) {
+  const post = await getBlogPostBySlug(params.tenant, params.slug);
+
+  return (
+    <article className="prose mx-auto font-sans">
+      <h1>{post.title}</h1>
+      <div dangerouslySetInnerHTML={{ __html: post.content }} />
+    </article>
+  );
+}
+```
+
+---
+
+## 2. Compass Web Flow (Search and Discovery)
+*   **Strategija:** `Dynamic SSR` sa Naprednim `Suspense` modelom.
+*   **Arhitektonsko pravilo:** Pošto Compass platforma vrši kompleksne semantičke pretrage nad **pgvector** bazom podataka na osnovu korisničkih query parametara (URL filteri), stranica se mora renderovati na serveru za svaki zahtev kako bi Google mogao da indeksira specifične pretrage (npr. `/compass?search=intake-matching`). 
+*   Komponenta za pretragu mora biti umotana u `<Suspense>` kako bi se sprečilo blokiranje renderovanja cele stranice dok LLM / pgvector računaju rezultate.
+
+```tsx
+// app/[tenant]/compass/page.tsx
+import { Suspense } from 'react';
+import SearchResultsSkeleton from '@/components/compass/SearchResultsSkeleton';
+import CompassResultsList from '@/components/compass/CompassResultsList';
+
+interface SearchProps {
+  searchParams: { q?: string; category?: string };
+}
+
+export default async function CompassSearchPage({ searchParams }: SearchProps) {
+  const currentQuery = searchParams.q || '';
+
+  return (
+    <div className="container mx-auto px-4">
+      <h1 className="text-3xl font-bold font-sans">Compass Discovery Platforma</h1>
+      
+      {/* 
+        Ključni Next.js 16 / React 19 pattern: 
+        Stranica se odmah šalje korisniku sa Skeleton-om, a rezultati 
+        iz pgvector baze se 'strimuju' asinhrono čim FastAPI vrati odgovor.
+      */}
+      <Suspense key={currentQuery} fallback={<SearchResultsSkeleton />}>
+        <CompassResultsList query={currentQuery} />
+      </Suspense>
+    </div>
+  );
+}
+```
+
+---
+
+## 3. SaaS Kontrolni Panel (Dashboard i CRM)
+*   **Strategija:** `CSR` unutar zaštićenog SSR Layout-a ("use client" na leaf nivoima).
+*   **Arhitektonsko pravilo:** Kompletan raspored (Sidebar, Topbar) se renderuje na serveru. Međutim, interaktivne tabele, CRM pipeline-i i analitički grafikoni su **Client Components** (`"use client"`). Podaci se keširaju na klijentu pomoću `@tanstack/react-query`. SEO je ovde potpuno isključen (stranice su iza login zida).
+
+---
+
+## 4. Booking Engine (Sistem za zakazivanje slobodnih termina)
+*   **Strategija:** Hibridna (SSR za inicijalni prikaz kalendara + CSR / SSE za real-time stanje).
+*   **Arhitektonsko pravilo:** Inicijalna mreža slobodnih termina za tekući mesec se povlači na serveru (SSR) radi brzine otvaranja stranice. Onog trenutka kada korisnik klikne na termin, klijentska komponenta komunicira sa FastAPI-jem i Redis-om kako bi proverila i zaključala termin (Distributed Lock).
+
+---
+
+## 5. "Notify Me" i Forme (React 19 Server Actions)
+*   **Strategija:** `Server Actions` sa nativnim upravljanjem stanjem kroz React 19 hooks.
+*   **Arhitektonsko pravilo:** Prikupljanje imejlova za marketing kampanje i "Notify Me" funkcionalnosti na CMS-u se vrši direktno preko Server Akcija. Strogo je zabranjeno pisanje klijentskih `useEffect` i `fetch` funkcija za obične forme.
+
+```tsx
+// app/actions/notifications.ts
+'use server';
+
+import { z } from 'zod';
+
+const notifySchema = z.string().email("Unesite validnu email adresu.");
+
+export async function registerNotificationAction(prevState: any, formData: FormData) {
+  const emailInput = formData.get("email");
+  
+  // Validacija na serveru pomoću Zod-a prema standardu iz dokumenta
+  const validated = notifySchema.safeParse(emailInput);
+  if (!validated.success) {
+    return { success: false, error: validated.error.errors[0].message };
+  }
+
+  // Poziv našeg FastAPI backend-a sa servera na server (Bezbedno i brzo)
+  const response = await fetch(`${process.env.INTERNAL_API_URL}/api/v1/notify`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email: validated.data }),
+  });
+
+  if (!response.ok) {
+    return { success: false, error: "Greška na serveru. Pokušajte ponovo." };
+  }
+
+  return { success: true, error: null };
+}
+```
+
+Implementacija na klijentu (Leaf Node) uz korišćenje novog **React 19 `useActionState`** hook-a:
+
+```tsx
+// components/marketing/NotifyMeForm.tsx
+'use client';
+
+import { useActionState } from 'react';
+import { registerNotificationAction } from '@/app/actions/notifications';
+import { toast } from 'sonner'; // Toast obaveštenje prema specifikaciji
+
+export default function NotifyMeForm() {
+  //useActionState automatski prati pending stanje slanja forme
+  const [state, formAction, isPending] = useActionState(registerNotificationAction, {
+    success: false,
+    error: null,
+  });
+
+  if (state.success) {
+    toast.success("Uspešno ste se prijavili za obaveštenja!");
+  }
+
+  return (
+    <form action={formAction} className="flex gap-2">
+      <input 
+        type="email" 
+        name="email" 
+        placeholder="Unesite vaš email..." 
+        required 
+        className="input"
+      />
+      <button type="submit" disabled={isPending} className="btn">
+        {isPending ? "Prijavljivanje..." : "Obavesti me"}
+      </button>
+      {state.error && <p className="text-red-500 text-sm mt-1">{state.error}</p>}
+    </form>
+  );
+}
+```
+
