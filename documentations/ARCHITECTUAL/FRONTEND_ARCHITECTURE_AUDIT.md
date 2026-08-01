@@ -237,7 +237,25 @@ Architecture script syntax: valid
 
 ---
 
-## 6. Gate-ovi koji nisu mogli biti izvršeni
+## 6a. Izvršeni gate-ovi — 2026-08-01, Node 24.13.1
+
+Sve komande iz §6 su naknadno pokrenute u projektnom okruženju, prvo posle vraćanja obrisanog Prettier configa, pa ponovo posle refaktora iz §8 koraka 1–2:
+
+```text
+tsc --noEmit                 0 grešaka
+eslint . --max-warnings=0    0 grešaka, 0 upozorenja
+prettier --check .           bez razlika
+architecture:check           212 TSX fajlova, 5 baseline-ovanih
+vitest run                   227 prošlo, 1 preskočen
+next build                   ✅
+playwright test              60 prošlo
+```
+
+Detalji u `TODO.md` §9.
+
+---
+
+## 6. Gate-ovi koji nisu mogli biti izvršeni (istorijski — sandbox)
 
 Kompletna instalacija dependency-ja nije završena u sandbox okruženju.
 
@@ -274,33 +292,37 @@ Ove komande treba izvršiti u projektnom Node 24.13.1 okruženju pre merge-a.
 
 ## 7. Preostali arhitektonski dug
 
+> **Ažurirano 2026-08-01 — koraci 1 i 2 iz §8 su izvršeni i verifikovani punim gate-om na Node 24.13.1.** Odeljci ispod prikazuju stanje posle refaktora.
+
 ### 7.1 Velike komponente
 
-| Fajl | Linije | Procena |
-|---|---:|---|
-| `screen-kompas.tsx` | 1843 | kritičan kandidat za fazno razlaganje |
-| `screen-dokumenti.tsx` | 1128 | kritičan kandidat za query/editor hook-ove |
-| `taxonomy-term-editor.tsx` | 1004 | izdvojiti form state, mutation i sekcije |
-| `guidance-flow.tsx` | 967 | mrežni deo rešen; ekrane izdvojiti u component family |
-| `booking-request-form.tsx` | 659 | izdvojiti state/payload hook i korake |
-| `content-revision-editor.tsx` | 643 | query/mutation lifecycle izdvojiti iz editora |
-| `company-configurator-drawer.tsx` | 515 | izdvojiti workflow hook i ekrane |
+| Fajl | Bilo | Sada | Stanje |
+|---|---:|---:|---|
+| `screen-kompas.tsx` | 1843 | — | ✅ razložen u `screen-kompas/` (17 fajlova, najveći 236) |
+| `screen-dokumenti.tsx` | 1128 | — | ✅ razložen u `screen-dokumenti/` (6 fajlova, najveći 370) |
+| `taxonomy-term-editor.tsx` | 1004 | **983** | 🟡 mutation izdvojena; forma i sekcije ostaju |
+| `guidance-flow.tsx` | 967 | **963** | 🟡 mrežni deo rešen; ekrane izdvojiti u component family |
+| `booking-request-form.tsx` | 659 | 659 | 🟡 izdvojiti state/payload hook i korake |
+| `content-revision-editor.tsx` | 643 | **593** | 🟡 lifecycle izdvojen; polja/sekcije ostaju |
+| `company-configurator-drawer.tsx` | 515 | 517 | 🟡 izdvojiti workflow hook i ekrane (517 je Prettier reflow, ne rast) |
 
-Ovi fajlovi nisu bezbedno razbijani naslepo jer nemamo kompletan build/test gate u sandboxu. Gate sada sprečava njihov dalji rast.
+Baseline u `scripts/check-frontend-architecture.mjs` je smanjen na preostalih pet i sprečava njihov dalji rast.
 
 ### 7.2 Direktni TanStack Query pozivi u workspace UI-ju
 
-Sledeći legacy fajlovi i dalje direktno deklarišu `useQuery` ili `useMutation`:
+✅ **Zatvoreno 2026-08-01.** Nijedan `.tsx` fajl više ne deklariše `useQuery`/`useMutation` — provereno `grep`-om nad celim `src/`. `directQueryBaseline` u gate skripti je **prazan skup** i takav treba da ostane: novi unos tamo znači da je komponenta ponovo preuzela transport lifecycle koji pripada hook-u (Part E §28).
 
-- `screen-sadrzaj.tsx`;
-- `screen-klijenti.tsx`;
-- `content-revision-editor.tsx`;
-- `taxonomy-term-editor.tsx`;
-- `screen-dokumenti.tsx`;
-- `content-discovery-metadata.tsx`;
-- `screen-kompas.tsx`.
+Uvedeno pet feature hook modula pod `features/workspace/hooks/` (821 linija ukupno):
 
-Njihov sledeći refaktor treba da uvede feature hook-ove, bez menjanja backend ugovora.
+| Modul | Sadržaj |
+|---|---|
+| `use-content-entries.ts` | lista unosa, read-only relacije, otvaranje sistemske stranice sa 409 reconciliation-om |
+| `use-content-revision.ts` | Content Health, save/delete, `TransitionOutcome` unija (blocked \| moved), review |
+| `use-legal-documents.ts` | lista, `PublishOutcome` unija, advance, approval grant/revoke, save body, `.docx` preview, delete, create |
+| `use-taxonomy-registry.ts` | registar, cache upsert/invalidate, route suggest/confirm, term i link lifecycle, review, delete, create link, save term |
+| `use-intake-team-queue.ts` | Team Queue lista i preuzimanje slučaja |
+
+Uz to su uklonjena tri ručno vođena `loading` state-a (`lifecyclePending`, `docxImportingId`, `openingIdentity`) — sada se čitaju iz `isPending` odgovarajuće mutacije, kako Part E §30.1 i traži.
 
 ### 7.3 Runtime validacija postojećih API adaptera
 

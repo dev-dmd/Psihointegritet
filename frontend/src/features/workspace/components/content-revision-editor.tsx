@@ -1,6 +1,5 @@
 "use client";
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { Route } from "next";
 import Link from "next/link";
 import { useMemo, useState } from "react";
@@ -13,22 +12,24 @@ import { ActorBadge } from "@/components/panel/actor-badge";
 import { templateRegistry } from "@/lib/content-governance/limits";
 import { slotSpecRegistry } from "@/lib/content-governance/slot-schema";
 
-import {
-  ContentApiError,
-  checkContentPublishable,
-  deleteContentRevision,
-  fetchContentRevisionHealth,
-  recordContentReviewDecision,
-  transitionContentRevision,
-  updateContentRevision,
-  type ApiContentRevision,
+import type {
+  ApiContentPublishBlock,
+  ApiContentRevision,
 } from "../content-api";
 import {
   CONTENT_APPROVAL_LABELS,
   requiredContentApprovals,
 } from "../content-approval-policy";
 import { validateContentDraft } from "../content-editor-validation";
-import { CONTENT_ENTRIES_QUERY_KEY } from "../content-entries-query";
+import { contentErrorMessage } from "../hooks/use-content-entries";
+import {
+  useContentEntriesCache,
+  useContentReviewMutation,
+  useContentRevisionHealthQuery,
+  useContentTransitionMutation,
+  useDeleteContentRevisionMutation,
+  useSaveContentRevisionMutation,
+} from "../hooks/use-content-revision";
 import { usePanelErrors, type PanelErrorResource } from "../panel-errors";
 import { SlotEditor } from "./slot-editor";
 import { SeoPreviewPanel } from "./seo-preview-panel";
@@ -86,15 +87,15 @@ export function ContentRevisionEditor({
   publicRoute: string;
   onDeleted: () => void;
 }) {
-  const queryClient = useQueryClient();
   const { reportError, clearErrorsForResource } = usePanelErrors();
+  const { replaceEntry: replaceInCache, removeEntry } =
+    useContentEntriesCache();
   const [slotData, setSlotData] = useState<Record<string, unknown>>(() =>
     initialSlotData(entry),
   );
   const [seo, setSeo] = useState(entry.seo);
   const [discovery, setDiscovery] = useState(entry.discovery);
   const [pendingDelete, setPendingDelete] = useState(false);
-  const [lifecyclePending, setLifecyclePending] = useState(false);
 
   const definition = templateRegistry[entry.template];
   const slots = [...definition.requiredSlots, ...definition.optionalSlots];
@@ -107,17 +108,7 @@ export function ContentRevisionEditor({
     () => validateContentDraft(entry, slotData, seo),
     [entry, seo, slotData],
   );
-  const serverHealthQuery = useQuery({
-    queryKey: [
-      "content-health",
-      entry.entryId,
-      entry.revisionId,
-      entry.lockVersion,
-    ],
-    queryFn: () => fetchContentRevisionHealth(entry.entryId, entry.revisionId),
-    staleTime: 30_000,
-    retry: false,
-  });
+  const serverHealthQuery = useContentRevisionHealthQuery(entry);
 
   // Only draft/approved revisions are editable at all (mirrors the backend's
   // own `update_revision` guard); everything else needs CG-C4's lifecycle to
@@ -134,132 +125,91 @@ export function ContentRevisionEditor({
       tabLabel: TAB_LABEL,
       resource: resourceFor(entry),
       title,
-      description:
-        error instanceof ContentApiError
-          ? error.message
-          : "Zahtev nije uspeo. Pokušajte ponovo.",
+      description: contentErrorMessage(
+        error,
+        "Zahtev nije uspeo. Pokušajte ponovo.",
+      ),
       details: [],
     });
   };
 
   const replaceEntry = (next: ApiContentRevision) => {
     clearErrorsForResource(resourceFor(entry));
-    queryClient.setQueryData<ApiContentRevision[]>(
-      CONTENT_ENTRIES_QUERY_KEY,
-      (current) =>
-        (current ?? []).map((item) =>
-          item.entryId === next.entryId ? next : item,
-        ),
-    );
+    replaceInCache(next);
   };
 
-  const saveMutation = useMutation({
-    mutationFn: () =>
-      updateContentRevision(entry.entryId, entry.revisionId, {
-        lockVersion: entry.lockVersion,
-        slotData,
-        seo,
-        discovery,
-      }),
-    onSuccess: (next) => {
-      replaceEntry(next);
-    },
-    onError: (error: unknown) =>
+  /** Renders a publish block as panel errors: one entry per finding when the
+   * server returned findings, otherwise a single stage-level message. */
+  const reportPublishBlock = (block: ApiContentPublishBlock) => {
+    clearErrorsForResource(resourceFor(entry));
+    if (block.findings.length > 0) {
+      for (const finding of block.findings) {
+        reportError({
+          href: HREF,
+          tabLabel: TAB_LABEL,
+          resource: {
+            ...resourceFor(entry),
+            ruleId: finding.ruleId,
+            ...(finding.fieldPath ? { fieldPath: finding.fieldPath } : {}),
+          },
+          title: finding.message,
+          description: finding.remediation,
+          details: finding.requiresApproval
+            ? [
+                `Potrebno odobrenje: ${CONTENT_APPROVAL_LABELS[finding.requiresApproval]}.`,
+              ]
+            : [],
+        });
+      }
+      return;
+    }
+    reportError({
+      href: HREF,
+      tabLabel: TAB_LABEL,
+      resource: resourceFor(entry),
+      title: "Stranica još nije spremna za objavu",
+      description:
+        block.stage === "approvals"
+          ? "Nedostaju obavezne odluke pregleda."
+          : "Revizija mora prvo proći dozvoljeni lifecycle korak.",
+      details: block.missing.map((item) => CONTENT_APPROVAL_LABELS[item]),
+    });
+  };
+
+  const saveMutation = useSaveContentRevisionMutation(entry, {
+    onSaved: replaceEntry,
+    onFailed: (error) =>
       reportApiError(`Izmena nije sačuvana za „${publicRoute}”`, error),
   });
 
-  const transition = async (target: ApiContentRevision["status"]) => {
-    setLifecyclePending(true);
-    try {
-      if (target === "published") {
-        const block = await checkContentPublishable(
-          entry.entryId,
-          entry.revisionId,
-        );
-        if (block) {
-          clearErrorsForResource(resourceFor(entry));
-          if (block.findings.length > 0) {
-            for (const finding of block.findings) {
-              reportError({
-                href: HREF,
-                tabLabel: TAB_LABEL,
-                resource: {
-                  ...resourceFor(entry),
-                  ruleId: finding.ruleId,
-                  ...(finding.fieldPath
-                    ? { fieldPath: finding.fieldPath }
-                    : {}),
-                },
-                title: finding.message,
-                description: finding.remediation,
-                details: finding.requiresApproval
-                  ? [
-                      `Potrebno odobrenje: ${CONTENT_APPROVAL_LABELS[finding.requiresApproval]}.`,
-                    ]
-                  : [],
-              });
-            }
-          } else {
-            reportError({
-              href: HREF,
-              tabLabel: TAB_LABEL,
-              resource: resourceFor(entry),
-              title: "Stranica još nije spremna za objavu",
-              description:
-                block.stage === "approvals"
-                  ? "Nedostaju obavezne odluke pregleda."
-                  : "Revizija mora prvo proći dozvoljeni lifecycle korak.",
-              details: block.missing.map(
-                (item) => CONTENT_APPROVAL_LABELS[item],
-              ),
-            });
-          }
-          return;
-        }
+  const transitionMutation = useContentTransitionMutation(entry, {
+    onOutcome: (outcome) => {
+      if (outcome.kind === "blocked") {
+        reportPublishBlock(outcome.block);
+        return;
       }
-      replaceEntry(
-        await transitionContentRevision(
-          entry.entryId,
-          entry.revisionId,
-          target,
-        ),
-      );
-    } catch (error) {
-      reportApiError(`Promena statusa za „${publicRoute}” nije uspela`, error);
-    } finally {
-      setLifecyclePending(false);
-    }
-  };
+      replaceEntry(outcome.entry);
+    },
+    onFailed: (error) =>
+      reportApiError(`Promena statusa za „${publicRoute}” nije uspela`, error),
+  });
 
-  const review = async (capability: (typeof requiredApprovals)[number]) => {
-    setLifecyclePending(true);
-    try {
-      replaceEntry(
-        await recordContentReviewDecision(
-          entry.entryId,
-          entry.revisionId,
-          capability,
-        ),
-      );
-    } catch (error) {
-      reportApiError(`Odobrenje za „${publicRoute}” nije sačuvano`, error);
-    } finally {
-      setLifecyclePending(false);
-    }
-  };
+  const reviewMutation = useContentReviewMutation(entry, {
+    onRecorded: replaceEntry,
+    onFailed: (error) =>
+      reportApiError(`Odobrenje za „${publicRoute}” nije sačuvano`, error),
+  });
 
-  const deleteMutation = useMutation({
-    mutationFn: () => deleteContentRevision(entry.entryId, entry.revisionId),
-    onSuccess: () => {
+  const lifecyclePending =
+    transitionMutation.isPending || reviewMutation.isPending;
+
+  const deleteMutation = useDeleteContentRevisionMutation(entry, {
+    onRemoved: () => {
       clearErrorsForResource(resourceFor(entry));
-      queryClient.setQueryData<ApiContentRevision[]>(
-        CONTENT_ENTRIES_QUERY_KEY,
-        (current) =>
-          (current ?? []).filter((item) => item.entryId !== entry.entryId),
-      );
+      removeEntry(entry.entryId);
       onDeleted();
     },
-    onError: (error: unknown) => {
+    onFailed: (error) => {
       setPendingDelete(false);
       reportApiError(`CMS verzija za „${publicRoute}” nije uklonjena`, error);
     },
@@ -481,7 +431,7 @@ export function ContentRevisionEditor({
                   disabled={
                     lifecyclePending || decision?.outcome === "approved"
                   }
-                  onClick={() => void review(capability)}
+                  onClick={() => reviewMutation.mutate(capability)}
                   className="border-line-strong text-ink-70 disabled:bg-badge-ok-bg disabled:text-badge-ok cursor-pointer rounded-full border bg-transparent px-3.5 py-2 text-[13px] font-semibold disabled:cursor-default"
                 >
                   {CONTENT_APPROVAL_LABELS[capability]}
@@ -520,7 +470,7 @@ export function ContentRevisionEditor({
         <button
           type="button"
           disabled={!isEditable || saveMutation.isPending}
-          onClick={() => saveMutation.mutate()}
+          onClick={() => saveMutation.mutate({ slotData, seo, discovery })}
           className="bg-forest text-panel-canvas hover:bg-forest-hover cursor-pointer rounded-full border-0 px-5 py-2.5 text-[13px] font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-50"
         >
           {saveMutation.isPending ? "Čuvanje…" : "Sačuvaj"}
@@ -529,7 +479,7 @@ export function ContentRevisionEditor({
           <LifecycleButton
             label="Pošalji na pregled"
             disabled={lifecyclePending || isDirty}
-            onClick={() => void transition("in_review")}
+            onClick={() => transitionMutation.mutate("in_review")}
           />
         ) : null}
         {entry.status === "in_review" ? (
@@ -537,12 +487,12 @@ export function ContentRevisionEditor({
             <LifecycleButton
               label="Označi kao odobreno"
               disabled={lifecyclePending || isDirty}
-              onClick={() => void transition("approved")}
+              onClick={() => transitionMutation.mutate("approved")}
             />
             <LifecycleButton
               label="Vrati na doradu"
               disabled={lifecyclePending || isDirty}
-              onClick={() => void transition("draft")}
+              onClick={() => transitionMutation.mutate("draft")}
             />
           </>
         ) : null}
@@ -551,12 +501,12 @@ export function ContentRevisionEditor({
             <LifecycleButton
               label="Objavi"
               disabled={lifecyclePending || isDirty}
-              onClick={() => void transition("published")}
+              onClick={() => transitionMutation.mutate("published")}
             />
             <LifecycleButton
               label="Nova radna verzija"
               disabled={lifecyclePending || isDirty}
-              onClick={() => void transition("draft")}
+              onClick={() => transitionMutation.mutate("draft")}
             />
           </>
         ) : null}
@@ -564,14 +514,14 @@ export function ContentRevisionEditor({
           <LifecycleButton
             label="Arhiviraj"
             disabled={lifecyclePending || isDirty}
-            onClick={() => void transition("archived")}
+            onClick={() => transitionMutation.mutate("archived")}
           />
         ) : null}
         {entry.status === "archived" ? (
           <LifecycleButton
             label="Nova radna verzija"
             disabled={lifecyclePending || isDirty}
-            onClick={() => void transition("draft")}
+            onClick={() => transitionMutation.mutate("draft")}
           />
         ) : null}
         {entry.status === "draft" ? (

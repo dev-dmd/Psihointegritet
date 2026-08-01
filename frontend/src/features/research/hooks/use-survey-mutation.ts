@@ -2,10 +2,7 @@
 
 import { useMutation } from "@tanstack/react-query";
 
-import {
-  submitSurvey,
-  type SurveySubmissionPayload,
-} from "@/lib/api/survey";
+import { submitSurvey, type SurveySubmissionPayload } from "@/lib/api/survey";
 
 export const surveyMutationKey = ["public", "survey"] as const;
 

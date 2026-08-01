@@ -444,7 +444,9 @@ function CompanyConfiguratorDrawerContent({
               disabled={submitMutation.isPending || !contactValid}
               className="bg-forest text-canvas hover:bg-forest-hover mt-6 cursor-pointer rounded-full border-0 px-7 py-[15px] text-[15px] font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-50"
             >
-              {submitMutation.isPending ? "Šaljemo…" : "Pošaljite upit za program"}
+              {submitMutation.isPending
+                ? "Šaljemo…"
+                : "Pošaljite upit za program"}
             </button>
           </div>
         ) : null}

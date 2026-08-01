@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 
-import { ScreenKompas } from "@/features/workspace/components/screen-kompas";
+import { ScreenKompas } from "@/features/workspace/components/screen-kompas/screen-kompas";
 import { requireOrgAdmin } from "@/lib/auth/guards";
 
 export const metadata: Metadata = { title: "Kompas" };

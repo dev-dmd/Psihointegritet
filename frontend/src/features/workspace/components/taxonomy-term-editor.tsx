@@ -1,6 +1,5 @@
 "use client";
 
-import { useMutation } from "@tanstack/react-query";
 import type { FormEvent } from "react";
 import { useState } from "react";
 
@@ -8,12 +7,14 @@ import { Toggle } from "@/components/panel/toggle";
 import { cn } from "@/helpers/cn";
 
 import {
-  createTaxonomyTerm,
-  TaxonomyApiError,
+  taxonomyErrorMessage,
+  useSaveTaxonomyTermMutation,
+  type SaveTaxonomyTermVariables,
+} from "../hooks/use-taxonomy-registry";
+import {
   taxonomyFieldErrors,
   type TaxonomyAxis,
   type TaxonomyTerm,
-  updateTaxonomyRevision,
 } from "../taxonomy-api";
 import { LockIcon } from "./icons";
 
@@ -217,68 +218,9 @@ export function TaxonomyTermEditor({
       item.termId !== term?.termId,
   );
 
-  const saveMutation = useMutation({
-    mutationFn: async () => {
-      if (protectedTargetReason) {
-        throw new TaxonomyApiError(protectedTargetReason, 403);
-      }
-      const normalizedStableId = stableId.trim();
-      const normalizedLabel = publicLabel.trim();
-      const normalizedDescription = shortDescription.trim();
-      const normalizedInternalNote = internalExpertNote.trim() || null;
-      const normalizedIconKey =
-        visualMode === "icon" ? iconKey.trim() || null : null;
-      const normalizedAssetId =
-        visualMode === "asset" ? assetId.trim() || null : null;
-      const normalizedSearchTerms = parseSearchTerms(searchTermsText);
-      const normalizedSortOrder = Number(sortOrder);
-
-      if (term) {
-        return updateTaxonomyRevision(term.termId, term.revisionId, {
-          lockVersion: term.lockVersion,
-          publicLabel: normalizedLabel,
-          shortDescription: normalizedDescription,
-          internalExpertNote: normalizedInternalNote,
-          sortOrder: normalizedSortOrder,
-          iconKey: normalizedIconKey,
-          assetId: normalizedAssetId,
-          publicVisible,
-          compassEnabled,
-          searchTerms: normalizedSearchTerms,
-          ...(config.requiresTopicContext
-            ? {
-                primaryParentTermId,
-                journeyIntentTermId,
-                relatedTopicIds,
-              }
-            : {}),
-        });
-      }
-
-      return createTaxonomyTerm({
-        axis,
-        stableId: normalizedStableId,
-        locale: "sr-Latn",
-        publicLabel: normalizedLabel,
-        shortDescription: normalizedDescription,
-        internalExpertNote: normalizedInternalNote,
-        sortOrder: normalizedSortOrder,
-        iconKey: normalizedIconKey,
-        assetId: normalizedAssetId,
-        publicVisible,
-        compassEnabled,
-        searchTerms: normalizedSearchTerms,
-        ...(config.requiresTopicContext
-          ? {
-              primaryParentTermId,
-              journeyIntentTermId,
-              relatedTopicIds,
-            }
-          : {}),
-      });
-    },
-    onSuccess: onSaved,
-    onError: (error) => {
+  const saveMutation = useSaveTaxonomyTermMutation({
+    onSaved,
+    onFailed: (error) => {
       const apiFieldErrors = taxonomyFieldErrors(error);
       const [field, message] = Object.entries(apiFieldErrors)[0] ?? [];
       if (field && message) {
@@ -286,12 +228,49 @@ export function TaxonomyTermEditor({
         return;
       }
       setServerError(
-        error instanceof TaxonomyApiError || error instanceof Error
-          ? error.message
-          : "Izmena nije sačuvana. Pokušajte ponovo.",
+        taxonomyErrorMessage(error, "Izmena nije sačuvana. Pokušajte ponovo."),
       );
     },
   });
+
+  /** Builds the wire payload from the current form state. Stable ID and axis
+   * only travel on create — the server has no update path for either. */
+  const buildSavePayload = (): SaveTaxonomyTermVariables => {
+    const shared = {
+      publicLabel: publicLabel.trim(),
+      shortDescription: shortDescription.trim(),
+      internalExpertNote: internalExpertNote.trim() || null,
+      sortOrder: Number(sortOrder),
+      iconKey: visualMode === "icon" ? iconKey.trim() || null : null,
+      assetId: visualMode === "asset" ? assetId.trim() || null : null,
+      publicVisible,
+      compassEnabled,
+      searchTerms: parseSearchTerms(searchTermsText),
+      ...(config.requiresTopicContext
+        ? { primaryParentTermId, journeyIntentTermId, relatedTopicIds }
+        : {}),
+    };
+
+    if (term) {
+      return {
+        create: null,
+        update: {
+          termId: term.termId,
+          revisionId: term.revisionId,
+          input: { lockVersion: term.lockVersion, ...shared },
+        },
+      };
+    }
+    return {
+      create: {
+        axis,
+        stableId: stableId.trim(),
+        locale: "sr-Latn",
+        ...shared,
+      },
+      update: null,
+    };
+  };
   const searchTermCount = parseSearchTerms(searchTermsText).length;
 
   if (protectedTargetReason) {
@@ -393,7 +372,7 @@ export function TaxonomyTermEditor({
       );
       return;
     }
-    saveMutation.mutate();
+    saveMutation.mutate(buildSavePayload());
   };
 
   return (

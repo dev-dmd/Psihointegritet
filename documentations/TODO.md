@@ -28,9 +28,12 @@
 **Obavezni redosled rada (od 2026-08-01):**
 
 1. Implementirati potrebnu izmenu.
-2. Pokrenuti `npx tsc --noEmit` + `npm run lint` + `npm test` (frontend); `ruff check` + `pyright` + `pytest` (backend).
+2. Pokrenuti `npx tsc --noEmit` + `npm run lint` + `npm run format:check` + `npm run architecture:check` + `npm test` (frontend); `ruff check` + `ruff format --check` + `pyright` + `pytest` (backend).
 3. Popraviti sve crvene testove pre nego što se izmena smatra gotovom.
-4. Acceptance, regresija i performance rade se u posebnoj test-fazi po potrebi.
+4. `npm run build` i `npm run test:e2e` pre merge-a, ne posle svake izmene. `pytest` traži dignut `docker compose up -d postgres redis` (vidi §9).
+5. Acceptance, regresija i performance rade se u posebnoj test-fazi po potrebi.
+
+> **Dopuna 2026-08-01 (drugi prolaz):** `format:check` i `architecture:check` su dodati u korak 2 zato što je prvi prolaz test-faze prijavio „svi zeleni" dok je `format:check` bio crven — nije bio na listi, pa nije ni pokrenut. Pun obavezni gate je `ARCHITECTURAL_RULES_NEXTJS_REACT_QUERY_v1.1.md` §23/§41.
 
 **Automatski testovi su vraćeni u redovan razvojni tok.** Prethodna odluka (2026-07-17) je poništena.
 
@@ -45,7 +48,9 @@
 | `CLAUDE_CODE_MASTER_PLAN_v1_0.md`             | Sekvenca, obim, kriterijumi prihvatanja. T1–T15, S1–S12, gates §12  |
 | `Psihointegritet_Razvojni_Proposal_v1_1.docx` | Poslovni dogovor sa Anjom: faze, budžet, njena lista odluka §4      |
 | `IZMENE_POSTOJECEG_PROJEKTA_v1_0.md`          | Šta se menja u postojećem; redosled izvršenja §8                    |
-| `ARCHITECTURAL_RULES_REVISED.md`              | Kvalitet koda, optimizacija, najbolja praksa, §24 completion report |
+| `ARCHITECTUAL/ARCHITECTURAL_RULES_NEXTJS_REACT_QUERY_v1.1.md` | Kvalitet koda, optimizacija, najbolja praksa, §24 completion report, §23/§41 gate |
+
+> **Verzija pravila (2026-08-01):** obavezujuća je **v1.1** u `documentations/ARCHITECTUAL/`. `ARCHITECTURAL_RULES_REVISED.md` u korenu `documentations/` je v1.0 — identičan Delovima A–D, ali bez **Part E** (Next.js 16 / React 19 frontend implementaciona pravila: smer zavisnosti, colocation, TanStack Query standard, hook pravila, Server/Client granice, render strategija, `next/image`/`next/link`, dekompozicija, DoD za refaktor). Gde v1.0 i v1.1 govore isto, svejedno je; gde v1.1 ima Part E, on važi. Prethodni naziv `ARCHITECTURAL_RULES_REVISED.md` ostaje samo kao istorijska referenca.
 
 ### Aktivni, ali podređeni
 
@@ -506,6 +511,32 @@ Dokazuje `SlotSpec` registar koji pravni tok ne dokazuje (`legal_page` ima samo 
 
 ---
 
+## 5E. RLS i multi-tenant izolacija — bezbednosni milestone
+
+> **Gde piše:** **ADR-023** · **D-055** · O-25 · `RLS_MIGRATION_INVENTORY_v0.1.md` · Rules v1.1 §11/§17/§20
+> **Status:** dokumentacija zatvorena 2026-08-01; kod nije počet. **Nije hitno** — planirano posle frontend duga i K3B.
+> ⚠️ **Ne implementirati usput u CMS, Kompas, Intake ili Booking PR-u.** Menja bezbednosnu granicu sistema.
+
+**Zatečeno stanje (mereno 2026-08-01 na živoj bazi):** 31 tabela · 11 sa `organization_id` · **0 sa RLS-om** · **0 polisa** · runtime nalog `psihointegritet` je `rolsuper=t`, `rolbypassrls=t` **i vlasnik svih tabela**. Izolacija danas počiva isključivo na 42 eksplicitna `organization_id` filtera u `modules/`.
+
+**Zaključano:** `organization_id` ostaje granica; `tenant_id` se ne uvodi; migracije 0001–0014 se ne diraju; `company_accounts` dolazi **iznad** i **posle** (D-055).
+
+| ID       | Zadatak                                                                                                                     | PR | Status | Napomena                                                                                                                                        |
+| -------- | --------------------------------------------------------------------------------------------------------------------------- | -- | ------ | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| RLS-0    | **ADR-023 (+ Amandman 1) + inventar + D-055 + O-25 + O-26**                                                                | —  | ✅     | **2026-08-01.** Pet klasifikacija, četiri DB uloge, **polise po komandi**, trigger sloj za mešane roditelje, 15 testova, tri PR-a               |
+| RLS-1    | **Preduslovi:** primeniti `20260801_0013`/`0014` lokalno, uskladiti lokalnu/test/head šemu, rešiti ili izuzeti **D19** drift | 0  | ⬜     | Lokalna baza je na `20260731_0012` — dve iza head-a; `pytest` to ne otkriva jer integracioni testovi grade svoju šemu                          |
+| RLS-2    | **Četiri DB uloge** + razdvojeni URL-ovi + startup guard koji **imenuje tačan objekat**                                     | 1  | ⬜     | Kriterijum: aplikacija radi kao `psihointegritet_app`, a testovi dokazuju da RLS **još ne štiti** — očekivano stanje ovog PR-a                  |
+| RLS-3    | **Denormalizacija 17 child tabela** + backfill + tranzitivni composite FK + **trigger sloj** (§5.5) + `taxonomy_publication_events` (§5.6) | 2  | ⬜     | Kriterijum: postojeći tokovi rade i **nijedno dete ne može da odluta u drugu organizaciju** — dokazano testom, ne pregledom koda                |
+| RLS-4    | **Polise po komandi + `ENABLE`/`FORCE`** po grupama (CMS/pravni → therapist → Intake → `consent_records` → taxonomy → ostalo) | 3  | ⬜     | Mešane tabele dobijaju **četiri polise**, ne jednu `FOR ALL`: globalno čitljivo nije globalno upisivo                                            |
+| RLS-5    | **15 integracionih testova** u `tests/security/` kao `psihointegritet_app`                                                  | 3  | ⬜     | Kriterijum: **namerno uklonjen aplikacioni filter i dalje ne curi podatke.** `tests/integration/conftest.py:22` se danas povezuje kao vlasnik — svi testovi bi prošli lažno |
+| RLS-6    | **Staging rollout** + provera Railway role atributa + ručna provera CMS/taxonomy/Intake/javnih ruta                        | 3  | ⬜     | Railway provisioned korisnik je po pravilu vlasnik baze — mora se proveriti, ne pretpostaviti                                                    |
+
+**Zaključano Amandmanom 1 (2026-08-01):** globalno čitljivo **nije** globalno upisivo (polise po komandi) · deca mešanih roditelja imaju četiri pravila i **trigger** kao stvarni enforcement · `taxonomy_publication_events` traži „tačno jedan roditelj" i pravilo za buduće insert-e · startup guard imenuje objekat · `BYPASSRLS` se ne dodeljuje nikome, a `SET ROLE` na vlasnika **sam po sebi ne pomaže pod `FORCE`**.
+
+**Izvan ovog milestone-a:** `company_accounts` iznad organizacije (D-055, zaseban PR posle stabilizacije) · `legal_entities` · `client_companies` (R4) · custom domeni i domain resolver (ADR-023 §6.3) · cross-organization pristup (**O-25**) · ponašanje globalnih termina pri izmeni/arhiviranju/override-u (**O-26**).
+
+---
+
 ## 5A. MVP Demo paket — za sastanak sa Anjom i timom
 
 > **Gde piše:** `PSIHOINTEGRITET_INTAKE_MATCHING_ENGINE_v0.1.md` · odluke D-021…D-024 · zahtev CTO 2026-07-18
@@ -670,6 +701,8 @@ Dokazuje `SlotSpec` registar koji pravni tok ne dokazuje (`legal_page` ima samo 
 | D15     | Nema `conftest.py`; `testcontainers` je dev zavisnost ali se ne koristi — nijedan test ne dira bazu                                                                                                                                                                                                                                                                                                                                                                                                                                                     | `backend/tests/`                                      | ⚪ rešava M2.1                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
 | **D19** | **Schema drift između migracija 0001–0003 i trenutnih Intake/identity modela.** `alembic check` prijavljuje: kolone koje su u bazi `VARCHAR` a modeli ih deklarišu kao `Enum` (`consent_records.kind`, `guidance_sessions.state`, `intake_cases.status/submission_kind`, `organization_memberships.role/status`, …), unique constraint-e koje modeli sada izražavaju kao unique indekse (`intake_assignments`, `intake_contacts`, `intake_free_texts`, `internal_users`, `organizations`) i **kolonu `intake_cases.age_group` koje u modelu više nema** | `backend/src/psihointegritet/db/migrations/versions/` | 🟠 Otkriveno 2026-07-26 pri pisanju migracije 0004. **Nije uključeno u 0004** — autogenerate bi tu emitovao `DROP COLUMN intake_cases.age_group`, što bi na stagingu uništilo Intake podatke. Traži zasebnu, pregledanu migraciju sa odlukom šta sa `age_group` (migrirati u `subject_age_band` ili namerno odbaciti). Do tada `alembic check` nije čist, pa **ne može biti CI gate**. ⚠️ **Enum deo ovog drifta je bio stvaran runtime bug, ne kozmetika — vidi D21.** Ostaje samo VARCHAR↔Enum tip u šemi (bezopasno, `native_enum=False` je i tako VARCHAR), unique constraint↔index i `age_group` |
 | **D20** | **Enum kolone su upisivale IME člana umesto vrednosti**, pa je parcijalni unique index `WHERE status = 'published'` bio potpuno inertan — garancija „jedna objavljena revizija" iz D-045 **nije postojala** na nivou baze                                                                                                                                                                                                                                                                                                                               | `modules/{privacy,content}/models.py`                 | ✅ **REŠENO 2026-07-26.** SQLAlchemy `Enum(StrEnum)` po default-u persistira `.name`; dokazano ORM round-tripom (druga objavljena revizija je prošla). Uveden `shared/types/sa_enum.py::value_enum` sa `values_callable`; 10 regresionih testova bez baze čuva da svaka enum kolona persistira male vrednosti                                                                                                                                                                                                                                                                                         |
+| **D22** | 🔴 **Runtime DB nalog je superuser, ima `BYPASSRLS` i vlasnik je svih tabela.** `psihointegritet` (`rolsuper=t`, `rolbypassrls=t`, vlasnik 31/31 tabele) koristi se istovremeno kao `DATABASE_URL` i `MIGRATION_DATABASE_URL` u `compose.yaml` i na Railway-u. Posledica: izolacija podataka počiva **isključivo** na 42 eksplicitna `organization_id` filtera — jedan zaboravljen filter u bilo kom novom upitu vraća podatke druge organizacije. Uz to, bilo koja RLS polisa uključena pre izmene uloga bila bi **potpuno inertna**, tj. proizvela bi izgled zaštite bez zaštite | `compose.yaml:39-40` · Railway env · `db/session.py` | 🟠 Otkriveno 2026-08-01 pri pripremi ADR-023. **Nije regresija nego zatečeno stanje od početka.** Rešava RLS-2 (§5E): četiri odvojene uloge + startup guard. Do tada nijedna polisa se ne piše — inertan RLS je gori od nepostojećeg jer navodi na preskakanje eksplicitnog filtera |
+| **D23** | **Lokalna development baza je dve migracije iza head-a** — `20260731_0012` naspram `20260801_0014`. `pytest` to ne otkriva jer integracioni testovi grade sopstvenu šemu, pa drift ostaje nevidljiv dok neko ručno ne pokrene aplikaciju | lokalni Postgres (`compose` `postgres_data` volume) | ⚪ Otkriveno 2026-08-01. Zatvara RLS-1; nije uticalo ni na jedan zeleni gate |
 | **D21** | 🔴 **`therapist_matching_profiles` se nije mogao pročitati kroz ORM.** Migracija 0001 je seedovala **male** vrednosti (`available`, `accepting`, `active`), a guidance/identity modeli su očekivali velika imena → svako ORM čitanje pucalo je sa `LookupError: 'available' is not among the defined enum values`                                                                                                                                                                                                                                       | `modules/{guidance,identity}/models.py`               | ✅ **REŠENO 2026-07-26.** Otkriveno kad je `provision_staff --list` pukao na pravoj bazi. **Posledica pre ispravke:** IM-2 (matching adapter) i IM-3 (Team Queue) su prijavljeni kao gotovi, ali bi **pukli pri prvom stvarnom pozivu** protiv migrirane baze — unit testovi bez baze to nisu mogli uhvatiti. Primenjen isti `value_enum` na 16 kolona; **bez migracije i bez popravke podataka**, jer su seedovani podaci već bili ispravni. Uveden `tests/integration/` sa pravim PostgreSQL-om (§22) da se ovakav razmak model↔baza više ne provuče                                                |
 
 ---
@@ -720,15 +753,21 @@ Dokazuje `SlotSpec` registar koji pravni tok ne dokazuje (`legal_page` ima samo 
 ## 9. Status test-faze — 2026-08-01 ✅ SVI ZELENI
 
 > **CTO odluka (2026-08-01):** Pokrenuta kompletna test-faza. Prethodna odluka o neradu testova (§0A) je poništena. Testovi se vraćaju u redovan razvojni tok.
+>
+> **Drugi prolaz (2026-08-01, isti dan) — tabela dopunjena na pun gate iz Rules §23/§41.** Prvi prolaz je izostavio četiri obavezne provere: `format:check`, `architecture:check`, `build` i `test:e2e`. Od njih je `format:check` bio **crven**, pa „svi zeleni" nije bilo tačno dok to nije zatvoreno — detalji ispod. E2E je pokrenut **prvi put ikada**.
 
-### Frontend — `/frontend`
+### Frontend — `/frontend` (Node 24.13.1 · npm 11.14.1)
 
-| Provera                            | Rezultat                                       |
-| ---------------------------------- | ---------------------------------------------- |
-| `npx tsc --noEmit`                 | ✅ 0 grešaka                                   |
-| `npx eslint --max-warnings=0 src/` | ✅ 0 grešaka, 0 upozorenja                     |
-| `npx vitest run`                   | ✅ 25 fajlova, 227 prošlo, 1 preskočen         |
-| `npm run content:check`            | ✅ 0 errora, 35 upozorenja (OG slike fallback) |
+| Provera                          | Rezultat                                              |
+| -------------------------------- | ----------------------------------------------------- |
+| `npx tsc --noEmit`               | ✅ 0 grešaka                                          |
+| `npx eslint . --max-warnings=0`  | ✅ 0 grešaka, 0 upozorenja                            |
+| `npx prettier --check .`         | ✅ posle popravke (bilo ❌ 13 fajlova — vidi ispod)   |
+| `npm run architecture:check`     | ✅ 194 TSX fajla; 7 baseline-ovanih fajlova duga       |
+| `npx vitest run`                 | ✅ 25 fajlova, 227 prošlo, 1 preskočen                |
+| `npm run build`                  | ✅                                                     |
+| `npx playwright test`            | ✅ **60 prošlo** (prvo pokretanje e2e uopšte)         |
+| `npm run content:check`          | ✅ 0 errora, 35 upozorenja (OG slike fallback)        |
 
 ### Backend — `/backend`
 
@@ -738,6 +777,18 @@ Dokazuje `SlotSpec` registar koji pravni tok ne dokazuje (`legal_page` ima samo 
 | `uv run ruff format --check` | ✅ 122 files already formatted          |
 | `uv run pyright`             | ✅ 0 errors, 0 warnings, 0 informations |
 | `uv run pytest`              | ✅ 269 prošlo, 1 preskočen              |
+
+> ⚠️ **`pytest` traži dignut `docker compose up -d postgres redis`.** Bez njih tri contract testa u `tests/contract/test_intake_capabilities_api.py` padaju sa `ConnectionRefusedError` (`/api/v1/public/intake/capabilities` sada čita registar dokumenata iz baze po LD-6), a 26 integracionih testova se preskače. Broj 269/1 važi samo sa dignutom bazom; sa ugašenom je 241 prošlo / 26 preskočeno / 3 pala. To je okruženje, ne regresija.
+
+### Nalaz drugog prolaza — obrisan Prettier config
+
+Commit `241d1e0` („reviewed revison code and fixed") je **obrisao `frontend/.prettierrc.json` i `frontend/.prettierignore`**, koji su postojali od `c151160`. Posledice dok to nije primećeno:
+
+- `prettier-plugin-tailwindcss@^0.8.0` je ostao u `devDependencies` ali se **nije učitavao** — sortiranje Tailwind klasa više nije bilo sprovođeno;
+- `src/types/api.generated.ts` (generisan fajl) i `test-results/` (Playwright artefakt) su ulazili u `format:check`;
+- 13 fajlova iz refaktora je ostalo neformatirano, pa je gate bio crven.
+
+Oba fajla su vraćena u originalnom sadržaju. Provereno da vraćanje plugina **ne menja nijedan dodatni fajl** (i sa i bez njega — istih 13), pa nema skrivenog masovnog reformatiranja Tailwind klasa.
 
 ### Izmene u kodu tokom test-faze
 
@@ -749,13 +800,43 @@ Dokazuje `SlotSpec` registar koji pravni tok ne dokazuje (`legal_page` ima samo 
 - `modules/content/taxonomy_schemas.py`: jedan `# pyright: ignore[reportUnknownVariableType]` za `Field(default_factory=list)`
 - `modules/content/service.py`: `related_content_entry_ids=list(relations)` — konverzija `Sequence` u `list`
 
+**Ulogovani browser smoke (2026-08-01, posle razlaganja) — ✅ prošao dva puta.**
+
+`node scripts/smoke-cms-authenticated.mjs <user_id>` pokrenut kao **Anja** (`org_admin` + `therapist`) i kao **D-051 superadmin** (bez membership reda, kroz `resolve_staff_actor`). Sedam koraka po prolazu: Clerk prijava → Sadržaj se učitava → sistemska stranica otvorena i lenjo registrovana (201) → izmena sačuvana kroz UI (PATCH 200) → zastareo `lockVersion` vraća **409** → Dokumenti renderuju listu, gate banner i akcije → Kompas renderuje registar, sistemske opcije i tabove. Kreirana radna verzija obrisana (204) u oba prolaza; **nijedan nov rezidualni unos**.
+
+> ⚠️ **Skripta je bila zastarela, ne kod.** Vozila je „Nova stranica" + „Slug" create formu na `/radni-prostor/sadrzaj` koju je **zadatak 1.10 uklonio 2026-07-30** (katalog je fiksan, backend odbija identitete van njega). Dokaz da nije reč o regresiji refaktora: `"Nova stranica"` ne postoji u `screen-sadrzaj.tsx` ni u `content-entry-list.tsx` **ni u HEAD verziji pre razlaganja**, a skripta nije dirana od commita `4e44208`. Prepisana je na stvarni tok i proširena na dva razložena panela.
+
+**Uz to zatvoren D23:** lokalna dev baza je podignuta sa `20260731_0012` na `20260801_0014` (`alembic upgrade head`, uz prethodni `pg_dump -Fc` backup). Bez toga bi smoke pao na `discovery`/`relations` kolonama.
+
+**Poznata dev rezidua (ne diram bez naloga):** 9 `content_entries` redova bez ijedne revizije — 8 `cms-smoke-*` iz starih prolaza stare skripte i jedan `static_page/individualna-psihoterapija`. Panel ih već prikazuje kao „ranijih unosa nije u sistemskom katalogu".
+
+**Treći prolaz (2026-08-01) — frontend arhitektonski dug, koraci 1 i 2 iz `ARCHITECTUAL/FRONTEND_ARCHITECTURE_AUDIT.md` §8:**
+
+- **Pet feature hook modula** pod `frontend/src/features/workspace/hooks/` (821 linija): `use-content-entries` · `use-content-revision` · `use-legal-documents` · `use-taxonomy-registry` · `use-intake-team-queue`. **Nijedan `.tsx` više ne deklariše `useQuery`/`useMutation`**; `directQueryBaseline` u gate skripti je sada prazan skup.
+- **`screen-kompas.tsx` (1843) razložen** u `components/screen-kompas/` — 17 fajlova, najveći 236 linija (`term-card.tsx`). Izdvojeni `constants.ts`/`types.ts`/`helpers.ts` i po jedan fajl za svaku karticu, listu, lifecycle kontrolu i review red. Duplirano lifecycle dugme za termine i Intake veze objedinjeno u `lifecycle-button.tsx`.
+- **`screen-dokumenti.tsx` (1128) razložen** u `components/screen-dokumenti/` — 6 fajlova, najveći 370 (`legal-document-card.tsx`); orkestrator je 341.
+- **Tri ručno vođena loading state-a uklonjena** (`lifecyclePending`, `docxImportingId`, `openingIdentity`) — čitaju se iz `isPending` mutacije (Part E §30.1).
+- **Dve `blocked | moved` discriminated unije** (`TransitionOutcome`, `PublishOutcome`) zamenile su hand-rolled `try/catch` + `setState` tokove: blokirana objava je sada **uspešan ishod koji nosi razlog**, a ne bačena greška, pa panel ostaje upotrebljiv.
+- **Ispravljen zatečen defekt pri izdvajanju:** `RouteGovernanceControls` je lokalnu proveru sluga radio bacanjem `TaxonomyApiError` iz `mutationFn`-a; sada se oblik proverava pre zahteva, bez slanja poznato-lošeg payload-a serveru.
+- **Baseline smanjen** sa 7 na 5 fajlova; `content-revision-editor.tsx` 643→593, `taxonomy-term-editor.tsx` 1004→983.
+- **Pun gate ponovo zelen** posle refaktora: `tsc` 0 · `eslint` 0 · `prettier --check` bez razlika · `architecture:check` 212 TSX · `vitest` 227/1 · `next build` ✅ · `playwright` **60 prošlo**.
+
+**Drugi prolaz (2026-08-01):**
+
+- `frontend/.prettierrc.json` i `frontend/.prettierignore` — vraćeni (obrisao ih `241d1e0`)
+- `prettier --write` nad 13 fajlova; jedini fajl sa velikom razlikom je `content-discovery-metadata.tsx` (144 → 301 linija, čisto prelamanje na 80 znakova, bez promene logike)
+- `scripts/check-frontend-architecture.mjs` — baseline brojevi ponovo usidreni nad formatiranim izvorom: `guidance-flow.tsx` 967 → **963** (smanjen), `company-configurator-drawer.tsx` 515 → **517**. Razlog upisan u komentar iznad mape. Nijedna odgovornost nije ušla ni izašla iz tih fajlova; oba su ionako na listi za dekompoziciju.
+
 ### Ukupno
 
-| Metrika                   | Vrednost  |
-| ------------------------- | --------- |
-| Frontend unit testova     | 227 ✅    |
-| Backend unit testova      | 269 ✅    |
-| TypeScript typecheck      | 0 grešaka |
-| Python typecheck (strict) | 0 grešaka |
-| Lint (ESLint + Ruff)      | 0 grešaka |
-| Format (Prettier + Ruff)  | 0 razlika |
+| Metrika                   | Vrednost      |
+| ------------------------- | ------------- |
+| Frontend unit testova     | 227 ✅        |
+| Frontend e2e testova      | 60 ✅         |
+| Backend testova           | 269 ✅        |
+| TypeScript typecheck      | 0 grešaka     |
+| Python typecheck (strict) | 0 grešaka     |
+| Lint (ESLint + Ruff)      | 0 grešaka     |
+| Format (Prettier + Ruff)  | 0 razlika     |
+| Architecture gate         | ✅ 194 TSX    |
+| `next build`              | ✅            |

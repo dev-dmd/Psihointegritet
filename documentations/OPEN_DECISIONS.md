@@ -221,6 +221,48 @@ O-24 više nije otvorena arhitektonska blokada. Implementacija se prati u `KOMPA
 
 ---
 
+### O-25 · Cross-organization pristup za platformskog operatera _(novo 2026-08-01)_
+
+> **Gde piše:** ADR-023 §6.5, §12 · D-051 · D-055 · **Blokira:** treći RLS PR (polise) samo ako se do tada pojavi druga organizacija; danas ne blokira ništa
+
+**Šta znamo:** D-051 daje platformskom superadminu pun staff kapacitet (`org_admin` + `therapist`) **unutar tenant-a**, kroz `internal_users.is_superadmin` i `resolve_staff_actor`. Danas **ne postoji nijedan cross-organization put** — svako razrešavanje organizacije ide kroz `settings.default_organization_slug = "psihointegritet"` i postoji tačno jedna organizacija. Dakle trenutno nema šta da se auditira.
+
+**Zašto je ipak otvorena stavka:** čim postoji druga organizacija, „superadmin vidi sve" prestaje da bude bezopasno. ADR-023 zaključava da runtime konekcija **nikad** nema `BYPASSRLS` i da se svakodnevne polise ne šire na `organization_id IN (...)`, pa cross-organization pristup mora dobiti eksplicitan, zaseban put — a taj put niko još nije opisao.
+
+**Traži se od CTO:**
+
+1. Da li platformski operater uopšte sme da čita operativne podatke druge organizacije, ili samo agregate i dijagnostiku.
+2. Ako sme — kroz šta: impersonation/support sesija sa vremenskim ograničenjem, namenska procedura, ili poseban servisni tok.
+3. Šta se beleži: ko, kada, zašto, kojoj organizaciji, i koliko dugo se taj zapis čuva.
+4. Da li se to gradi kao proširenje D-051 ili kao zaseban `PlatformRole` model — ADR-023 §12 preporučuje proširenje, da ne postoje dva paralelna modela uloga.
+
+**Dok ne stigne:** superadmin ostaje ograničen na `default_organization_slug`, bez cross-organization koda, bez `BYPASSRLS`, bez „vidi sve" polise. Prva organizacija koja se doda **pre** ove odluke mora se tretirati kao blokada, ne kao sitnica.
+
+**Smer koji je već potvrđen (CTO, 2026-08-01), ostaje da se razradi:** ne uvoditi `BYPASSRLS` u normalnu aplikaciju · napraviti eksplicitnu support/platform-admin sesiju · **zahtevati razlog pristupa** · auditovati organizaciju, korisnika, vreme i akcije · po mogućnosti vremenski ograničiti pristup.
+
+---
+
+### O-26 · Ponašanje globalnih taxonomy termina prema organizaciji _(novo 2026-08-01)_
+
+> **Gde piše:** ADR-023 §7.3.1 · D-053/ADR-022 · `RLS_MIGRATION_INVENTORY_v0.1.md` §3 · **Blokira:** organizacijsko prilagođavanje sistemskih termina; ne blokira RLS rollout
+
+**Šta znamo:** `taxonomy_terms` i `taxonomy_term_revisions` su mešane tabele — 17 od 19 odnosno 17 od 17 redova su **globalni sistemski termini** (D-053 system ose i D-052 `support_area` seed), vidljivi svakoj organizaciji. ADR-023 §7.3 zaključava da runtime te redove **sme da čita, ali ne sme da kreira, menja ni briše**. To je bezbednosno dovoljno i ne čeka ovu odluku.
+
+**Šta nije odlučeno** — šest situacija koje će se pojaviti čim postoji druga organizacija:
+
+1. Šta se dešava kad organizacija hoće **drugu javnu labelu** za globalan termin.
+2. Ko i kako **arhivira** globalan termin koji koristi više organizacija.
+3. Da li organizacija sme da **kopira** globalan termin u sopstveni managed termin, i šta se tada dešava sa referencama.
+4. Šta znači **`UPDATE`/`DELETE` globalnog termina** iz platformskog toka — ko ga odobrava.
+5. Da li postoji **organization override** globalnog termina i, ako postoji, kao zaseban red ili kao polje.
+6. Šta se prikazuje kad override postoji a globalni termin se u međuvremenu promeni.
+
+**Predloženi smer (nije usvojen):** organizacija **ne menja globalan termin direktno**, nego dobija zaseban povezan override zapis — globalni sistemski termin + opciona organization-specific prezentaciona konfiguracija. Tako promena Anjine javne labele ne menja termin svim budućim klijentima platforme, a sistemski registar ostaje jedan.
+
+**Dok ne stigne:** bez override modela, bez kolone za organizacijsku labelu, bez koda. Zabrana upisa iz §7.3 je jedina važeća polovina ugovora.
+
+---
+
 ## 🟡 Pre Faze 2
 
 ### O-08 · S7 — Pravila otkazivanja
