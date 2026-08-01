@@ -30,8 +30,10 @@ export function Hero() {
               Stručna podrška za bolje razumevanje sebe i svojih odnosa.
             </h1>
             <p className="text-coffee/75 max-w-[560px] text-[16.5px] leading-[1.65]">
-              Psihointegritet povezuje psihoterapiju, savetovanje, edukativne
-              sadržaje, radionice i programe ličnog razvoja — online i uživo.
+              Psihointegritet je digitalni centar za mentalno zdravlje koji povezuje stručnu podršku,
+edukaciju i lični razvoj. To nije samo mjesto za zakazivanje psihoterapije, već prostor u kojem
+možete istraživati teme koje vas zanimaju, bolje razumjeti sebe i, kada budete spremni,
+povezati se sa stručnom osobom.
             </p>
             <div className="mt-6 flex flex-wrap items-center gap-3 md:mt-8">
               <ButtonLink
