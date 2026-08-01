@@ -14,6 +14,7 @@ import {
 import { storeBookingSummary } from "@/features/booking/booking-summary-storage";
 import type { BookingSummary } from "@/features/booking/booking-types";
 import { cn } from "@/helpers/cn";
+import { QueryProvider } from "@/providers/query-provider";
 
 import {
   ADULT_SUBJECT_AGE_BAND,
@@ -34,11 +35,10 @@ import {
 import { IntakeRequestForm } from "./intake-request-form";
 import { intakeFeatureFlags } from "./intake-feature-flags";
 import {
-  fetchAuthoritativeIntakeMatch,
-  fetchPublicIntakeCapabilities,
-  type PublicIntakeCapabilities,
-  type PublicIntakeSubmissionKind,
-} from "./public-intake-api";
+  useAuthoritativeIntakeMatch,
+  usePublicIntakeCapabilities,
+} from "./hooks/use-public-intake-queries";
+import type { PublicIntakeSubmissionKind } from "./public-intake-api";
 
 export type GuidanceFlowEntry = "chooser" | "quiz" | "page";
 type Screen =
@@ -63,7 +63,19 @@ interface GuidanceFlowProps {
  * Intake flag is off; when it is on, matching and submission move through the
  * backend-owned contract.
  */
-export function GuidanceFlow({ entry, surface, onClose }: GuidanceFlowProps) {
+export function GuidanceFlow(props: GuidanceFlowProps) {
+  return (
+    <QueryProvider>
+      <GuidanceFlowContent {...props} />
+    </QueryProvider>
+  );
+}
+
+function GuidanceFlowContent({
+  entry,
+  surface,
+  onClose,
+}: GuidanceFlowProps) {
   const [screen, setScreen] = useState<Screen>(
     entry === "page" ? "intro" : entry === "chooser" ? "chooser" : "questions",
   );
@@ -71,28 +83,11 @@ export function GuidanceFlow({ entry, surface, onClose }: GuidanceFlowProps) {
   const [answers, setAnswers] = useState<IntakeAnswers>(emptyIntakeAnswers);
   const [submissionIntent, setSubmissionIntent] =
     useState<SubmissionIntent | null>(null);
-  const [authoritativeMatch, setAuthoritativeMatch] = useState<{
-    key: string;
-    result: IntakeMatchResult;
-  } | null>(null);
-  const [matchingErrorKey, setMatchingErrorKey] = useState<string | null>(null);
   const [matchAttempt, setMatchAttempt] = useState(0);
-  const [capabilities, setCapabilities] =
-    useState<PublicIntakeCapabilities | null>(null);
   const advanceTimer = useRef<number | null>(null);
   const headingRef = useRef<HTMLHeadingElement | null>(null);
-
-  useEffect(() => {
-    const controller = new AbortController();
-    void fetchPublicIntakeCapabilities(controller.signal)
-      .then((next) => {
-        if (!controller.signal.aborted) setCapabilities(next);
-      })
-      .catch(() => {
-        if (!controller.signal.aborted) setCapabilities(null);
-      });
-    return () => controller.abort();
-  }, []);
+  const capabilitiesQuery = usePublicIntakeCapabilities();
+  const capabilities = capabilitiesQuery.data ?? null;
 
   useEffect(() => {
     return () => {
@@ -109,10 +104,6 @@ export function GuidanceFlow({ entry, surface, onClose }: GuidanceFlowProps) {
     () => (screen === "result" ? evaluateIntake(answers) : null),
     [screen, answers],
   );
-  const matchingRequestKey = useMemo(
-    () => JSON.stringify({ answers, matchAttempt }),
-    [answers, matchAttempt],
-  );
   const productionIntakeEnabled =
     intakeFeatureFlags.matchingEnabled &&
     intakeFeatureFlags.sensitiveSubmissionEnabled &&
@@ -120,30 +111,15 @@ export function GuidanceFlow({ entry, surface, onClose }: GuidanceFlowProps) {
     capabilities.sensitiveSubmissionEnabled &&
     Boolean(capabilities.dataProcessingNoticeVersion) &&
     Boolean(capabilities.requestAcknowledgementVersion);
+  const authoritativeMatchQuery = useAuthoritativeIntakeMatch(
+    answers,
+    productionIntakeEnabled && screen === "result",
+    matchAttempt,
+  );
   const result = productionIntakeEnabled
-    ? authoritativeMatch?.key === matchingRequestKey
-      ? authoritativeMatch.result
-      : null
+    ? authoritativeMatchQuery.data ?? null
     : localResult;
-  const matchingError = matchingErrorKey === matchingRequestKey;
-
-  useEffect(() => {
-    if (!productionIntakeEnabled || screen !== "result") return;
-
-    const controller = new AbortController();
-    void fetchAuthoritativeIntakeMatch(answers, controller.signal)
-      .then((next) => {
-        if (!controller.signal.aborted) {
-          setAuthoritativeMatch({ key: matchingRequestKey, result: next });
-        }
-      })
-      .catch(() => {
-        if (!controller.signal.aborted) {
-          setMatchingErrorKey(matchingRequestKey);
-        }
-      });
-    return () => controller.abort();
-  }, [answers, matchingRequestKey, productionIntakeEnabled, screen]);
+  const matchingError = authoritativeMatchQuery.isError;
 
   useEffect(() => {
     headingRef.current?.focus();

@@ -36,16 +36,16 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <AuthProvider>
-      <html
-        lang="sr-Latn"
-        className={`${newsreader.variable} ${instrumentSans.variable} h-full antialiased`}
-      >
-        <body className="flex min-h-full flex-col">
+    <html
+      lang="sr-Latn"
+      className={`${newsreader.variable} ${instrumentSans.variable} h-full antialiased`}
+    >
+      <body className="flex min-h-full flex-col">
+        <AuthProvider>
           {children}
           <ToastProvider />
-        </body>
-      </html>
-    </AuthProvider>
+        </AuthProvider>
+      </body>
+    </html>
   );
 }

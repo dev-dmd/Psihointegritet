@@ -19,6 +19,7 @@ export const bookingLocations = [
   { value: "leskovac", label: "Leskovac" },
 ] as const;
 export type BookingLocation = (typeof bookingLocations)[number]["value"];
+export type BookingLocationLabel = (typeof bookingLocations)[number]["label"];
 
 export interface BookingContext {
   serviceSlug: string | null;
@@ -123,8 +124,10 @@ export function therapistsForService(serviceSlug: string) {
   );
 }
 
-export function locationLabel(location: BookingLocation): string {
-  return bookingLocations.find((item) => item.value === location)?.label ?? "";
+export function locationLabel(
+  location: BookingLocation,
+): BookingLocationLabel {
+  return location === "nis" ? "Niš" : "Leskovac";
 }
 
 export function therapistWorksAtLocation(

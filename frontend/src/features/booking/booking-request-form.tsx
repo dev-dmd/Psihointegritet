@@ -16,6 +16,8 @@ import {
   therapistsForService,
 } from "@/features/booking/booking-context";
 import { consumeBookingSummary } from "@/features/booking/booking-summary-storage";
+import { useBookingRequestMutation } from "@/features/booking/hooks/use-booking-request-mutation";
+import { QueryProvider } from "@/providers/query-provider";
 import type { BookingSummary } from "@/features/booking/booking-types";
 
 export type { BookingSummary } from "@/features/booking/booking-types";
@@ -61,6 +63,14 @@ function initialContextFromProps({
  * management remain in the future backend Booking Engine.
  */
 export function BookingRequestForm(props: BookingRequestFormProps) {
+  return (
+    <QueryProvider>
+      <BookingRequestFormContent {...props} />
+    </QueryProvider>
+  );
+}
+
+function BookingRequestFormContent(props: BookingRequestFormProps) {
   const context = initialContextFromProps(props);
   const [started, setStarted] = useState(
     context.serviceSlug !== null || context.therapistSlug !== null,
@@ -86,13 +96,13 @@ export function BookingRequestForm(props: BookingRequestFormProps) {
   const [message, setMessage] = useState("");
   const [bookingRulesAccepted, setBookingRulesAccepted] = useState(false);
   const [website, setWebsite] = useState("");
-  const [sending, setSending] = useState(false);
   const [done, setDone] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectionMessage, setSelectionMessage] = useState<string | null>(null);
   const [storedSummary] = useState<BookingSummary | undefined>(() =>
     props.summary ? undefined : consumeBookingSummary(),
   );
+  const submitMutation = useBookingRequestMutation();
 
   const summary = props.summary ?? storedSummary;
   const selectedService = useMemo(
@@ -175,7 +185,7 @@ export function BookingRequestForm(props: BookingRequestFormProps) {
               )
             : bookingRulesAccepted;
 
-  const submit = async () => {
+  const submit = () => {
     if (
       !selectedService ||
       !format ||
@@ -189,41 +199,35 @@ export function BookingRequestForm(props: BookingRequestFormProps) {
       return;
     }
 
-    setSending(true);
     setError(null);
-    try {
-      const response = await fetch("/api/booking-request", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          therapistSlug,
-          serviceSlug: selectedService.slug,
-          format,
-          location:
-            format === "uzivo" && location ? locationLabel(location) : null,
-          preferredDate,
-          preferredTime,
-          alternativeDate: alternativeDate || undefined,
-          name: name.trim(),
-          email: email.trim(),
-          phone: phone.trim() || undefined,
-          replyPreference,
-          message: message.trim() || undefined,
-          bookingRulesAccepted,
-          source: context.source ?? undefined,
-          website,
-          ...(summary ? { summary } : {}),
-        }),
-      });
-      if (!response.ok) throw new Error("send-failed");
-      setDone(true);
-    } catch {
-      setError(
-        "Slanje trenutno nije uspelo. Pokušajte ponovo za koji trenutak.",
-      );
-    } finally {
-      setSending(false);
-    }
+    submitMutation.mutate(
+      {
+        therapistSlug,
+        serviceSlug: selectedService.slug,
+        format,
+        location:
+          format === "uzivo" && location ? locationLabel(location) : null,
+        preferredDate,
+        preferredTime,
+        ...(alternativeDate ? { alternativeDate } : {}),
+        name: name.trim(),
+        email: email.trim(),
+        ...(phone.trim() ? { phone: phone.trim() } : {}),
+        replyPreference,
+        ...(message.trim() ? { message: message.trim() } : {}),
+        bookingRulesAccepted: true,
+        ...(context.source ? { source: context.source } : {}),
+        website,
+        ...(summary ? { summary } : {}),
+      },
+      {
+        onSuccess: () => setDone(true),
+        onError: () =>
+          setError(
+            "Slanje trenutno nije uspelo. Pokušajte ponovo za koji trenutak.",
+          ),
+      },
+    );
   };
 
   if (done) {
@@ -642,11 +646,11 @@ export function BookingRequestForm(props: BookingRequestFormProps) {
         ) : (
           <button
             type="button"
-            disabled={!canContinue || sending}
+            disabled={!canContinue || submitMutation.isPending}
             onClick={submit}
             className="bg-forest text-canvas hover:bg-forest-hover min-h-11 cursor-pointer rounded-full border-0 px-6 text-[14px] font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-50"
           >
-            {sending ? "Šaljemo..." : "Pošaljite zahtev"}
+            {submitMutation.isPending ? "Šaljemo..." : "Pošaljite zahtev"}
           </button>
         )}
       </div>

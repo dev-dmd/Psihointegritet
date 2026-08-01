@@ -33,7 +33,11 @@ describe("BookingRequestForm", () => {
 
   it("requires acknowledgement before sending and then shows the success state", async () => {
     const user = userEvent.setup();
-    const fetchMock = vi.fn().mockResolvedValue({ ok: true });
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      headers: new Headers({ "content-type": "application/json" }),
+      json: vi.fn().mockResolvedValue({ ok: true }),
+    });
     vi.stubGlobal("fetch", fetchMock);
     const matchingSummary = {
       answers: [{ question: "Razlog", answer: "Burnout" }],

@@ -22,7 +22,7 @@ export function TherapistHeroSection({ therapist }: { therapist: Therapist }) {
             src={therapist.image}
             alt={therapist.name}
             fill
-            priority
+            preload
             sizes="(min-width: 768px) 42vw, 100vw"
             className="object-cover"
           />
