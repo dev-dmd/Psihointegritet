@@ -6,7 +6,6 @@
 
 # Node / Next.js
 node_modules/
-.dump
 frontend/.next/
 frontend/out/
 frontend/coverage/
@@ -37,6 +36,8 @@ Thumbs.db
 .idea/
 .vscode/
 .claude/
+.dump/
+.smartercode/
 
 # Dokumentacija — .md se verzioniše; binarni izvornici (DOCX/PDF) ostaju van gita
 documentations/*.docx

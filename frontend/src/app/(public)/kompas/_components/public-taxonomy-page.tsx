@@ -17,6 +17,8 @@ import type {
   RoutablePublicTaxonomyTerm,
 } from "@/lib/compass/types";
 
+import { CompassSupportSection } from "@/features/compass/sections/compass-support-section";
+
 import { CompassPageHero } from "./compass-page-hero";
 import { CompassContentCard } from "./content-card";
 
@@ -204,6 +206,8 @@ export function PublicTaxonomyPage({
               Želim stručnu pomoć
             </Link>
           </section>
+
+          <CompassSupportSection />
         </div>
       </section>
     </>
