@@ -11,6 +11,7 @@ from psihointegritet.modules.guidance import models as guidance_models
 from psihointegritet.modules.identity import models as identity_models
 from psihointegritet.modules.organizations import models as organization_models
 from psihointegritet.modules.privacy import models as privacy_models
+from psihointegritet.modules.research import models as research_models
 
 # Alembic needs each mapped module imported before it reads Base.metadata.
 # A module missing from this tuple is invisible to autogenerate: its tables
@@ -22,6 +23,7 @@ MODEL_MODULES = (
     identity_models,
     organization_models,
     privacy_models,
+    research_models,
 )
 
 config = context.config

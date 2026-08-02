@@ -808,6 +808,74 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/public/research/submissions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Submit Research Survey */
+        post: operations["submit_research_survey"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/public/research/surveys/{stable_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Public Survey */
+        get: operations["get_public_survey"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/research/overview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Research Overview */
+        get: operations["get_research_overview"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/research/surveys/{stable_id}/results": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Research Results */
+        get: operations["get_research_results"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/health": {
         parameters: {
             query?: never;
@@ -1483,6 +1551,15 @@ export interface components {
             /** Findings */
             findings: components["schemas"]["RichDocFindingOut"][];
         };
+        /** OptionTallyOut */
+        OptionTallyOut: {
+            /** Count */
+            count: number;
+            /** Label */
+            label: string;
+            /** Optionid */
+            optionId: string;
+        };
         /**
          * PublicContentRevisionOut
          * @description Published CMS override without staff identity or edit metadata.
@@ -1610,6 +1687,19 @@ export interface components {
             /** Slug */
             slug: string;
         };
+        /**
+         * PublicSurveyOut
+         * @description Published question set for the drawer. Never exposes submissions.
+         */
+        PublicSurveyOut: {
+            schema: components["schemas"]["SurveyQuestionSchema"];
+            /** Stableid */
+            stableId: string;
+            /** Title */
+            title: string;
+            /** Version */
+            version: number;
+        };
         /** PublicTaxonomyOut */
         PublicTaxonomyOut: {
             /** Locale */
@@ -1664,6 +1754,15 @@ export interface components {
             /** Slug */
             slug: string;
         };
+        /** QuestionTallyOut */
+        QuestionTallyOut: {
+            /** Options */
+            options: components["schemas"]["OptionTallyOut"][];
+            /** Prompt */
+            prompt: string;
+            /** Questionid */
+            questionId: string;
+        };
         /** ReassignIntakeCaseRequest */
         ReassignIntakeCaseRequest: {
             /**
@@ -1697,6 +1796,28 @@ export interface components {
          * @enum {string}
          */
         RequesterRole: "self_adult" | "guardian" | "adolescent_16_17" | "information_only";
+        /** ResearchOverviewOut */
+        ResearchOverviewOut: {
+            /** Surveys */
+            surveys: components["schemas"]["SurveyResultsOut"][];
+        };
+        /**
+         * ResearchSubmissionSurface
+         * @description Where the drawer was rendered — not who rendered it.
+         * @enum {string}
+         */
+        ResearchSubmissionSurface: "research-drawer" | "compass-feedback";
+        /**
+         * ResearchSubmissionTrigger
+         * @description What opened the drawer. Coarse by design; never a session identifier.
+         * @enum {string}
+         */
+        ResearchSubmissionTrigger: "manual" | "after-results" | "finish";
+        /**
+         * ResearchSurveyStatus
+         * @enum {string}
+         */
+        ResearchSurveyStatus: "draft" | "published" | "archived";
         /** ReviewDecisionOut */
         ReviewDecisionOut: {
             capability: components["schemas"]["ApprovalCapability"];
@@ -1767,6 +1888,32 @@ export interface components {
          * @enum {string}
          */
         SubjectAgeBand: "under_12" | "12_15" | "16_17" | "adult";
+        /** SubmitResearchRequest */
+        SubmitResearchRequest: {
+            /** Answers */
+            answers: components["schemas"]["SurveyAnswer"][];
+            /**
+             * Locale
+             * @default sr-Latn
+             */
+            locale: string;
+            surface: components["schemas"]["ResearchSubmissionSurface"];
+            /** Surveystableid */
+            surveyStableId: string;
+            trigger: components["schemas"]["ResearchSubmissionTrigger"];
+        };
+        /** SubmitResearchResponse */
+        SubmitResearchResponse: {
+            /**
+             * Submissionid
+             * Format: uuid
+             */
+            submissionId: string;
+            /** Surveystableid */
+            surveyStableId: string;
+            /** Surveyversion */
+            surveyVersion: number;
+        };
         /** SuggestTaxonomyRouteRequest */
         SuggestTaxonomyRouteRequest: {
             /**
@@ -1774,6 +1921,92 @@ export interface components {
              * @default sr-Latn
              */
             locale: string;
+        };
+        /** SurveyAnswer */
+        SurveyAnswer: {
+            /** Optionids */
+            optionIds: string[];
+            /** Questionid */
+            questionId: string;
+        };
+        /** SurveyOption */
+        SurveyOption: {
+            /** Label */
+            label: string;
+            /** Optionid */
+            optionId: string;
+        };
+        /** SurveyQuestion */
+        SurveyQuestion: {
+            /**
+             * Multi
+             * @default false
+             */
+            multi: boolean;
+            /**
+             * Optional
+             * @default false
+             */
+            optional: boolean;
+            /** Options */
+            options: components["schemas"]["SurveyOption"][];
+            /** Prompt */
+            prompt: string;
+            /** Questionid */
+            questionId: string;
+        };
+        /**
+         * SurveyQuestionSchema
+         * @description The `question_schema` JSON payload of one survey version.
+         */
+        SurveyQuestionSchema: {
+            /**
+             * Allowsfreetext
+             * @default false
+             */
+            allowsFreeText: boolean;
+            /** Introdescription */
+            introDescription: string;
+            /** Introtitle */
+            introTitle: string;
+            /** Questions */
+            questions: components["schemas"]["SurveyQuestion"][];
+            /**
+             * Schemaversion
+             * @default 1
+             */
+            schemaVersion: number;
+        };
+        /**
+         * SurveyResultsOut
+         * @description Per-survey-version panel view. Versions are never merged into one
+         *     percentage: a changed question set makes the older answers a different
+         *     measurement.
+         */
+        SurveyResultsOut: {
+            /** Firstsubmissionat */
+            firstSubmissionAt: string | null;
+            /** Lastsubmissionat */
+            lastSubmissionAt: string | null;
+            /** Questions */
+            questions: components["schemas"]["QuestionTallyOut"][];
+            /** Stableid */
+            stableId: string;
+            status: components["schemas"]["ResearchSurveyStatus"];
+            /** Submissioncount */
+            submissionCount: number;
+            /** Surfaces */
+            surfaces: {
+                [key: string]: number;
+            };
+            /** Title */
+            title: string;
+            /** Triggers */
+            triggers: {
+                [key: string]: number;
+            };
+            /** Version */
+            version: number;
         };
         /**
          * TaxonomyAxis
@@ -4317,6 +4550,202 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    submit_research_survey: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SubmitResearchRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SubmitResearchResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+        };
+    };
+    get_public_survey: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                stable_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicSurveyOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+        };
+    };
+    get_research_overview: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResearchOverviewOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+        };
+    };
+    get_research_results: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                stable_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SurveyResultsOut"][];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
                 };
             };
         };

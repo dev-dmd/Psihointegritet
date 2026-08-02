@@ -5,6 +5,7 @@ import {
   compassListDiscoverability,
   createCompassMetadata,
 } from "@/lib/compass/discoverability";
+import { withFallbackTerms } from "@/features/compass/fallback-taxonomy";
 import { getPublicTaxonomy } from "@/lib/compass/public-taxonomy";
 import { publicTermsForRouteKind } from "@/lib/compass/taxonomy-view";
 
@@ -17,7 +18,10 @@ export default async function CompassAreasPage() {
   return (
     <PublicTaxonomyListPage
       routeKind="oblast"
-      terms={publicTermsForRouteKind(collection, "oblast")}
+      terms={withFallbackTerms(
+        publicTermsForRouteKind(collection, "oblast"),
+        "oblast",
+      )}
     />
   );
 }

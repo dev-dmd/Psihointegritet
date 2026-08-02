@@ -10,6 +10,7 @@ import { Therapists } from "@/components/sections/therapists";
 import { TrustStrip } from "@/components/sections/trust-strip";
 import { Workshop } from "@/components/sections/workshop";
 import { JsonLd } from "@/components/shared/json-ld";
+import { CompassCtaSection } from "@/features/compass/cta/compass-cta-section";
 import {
   jsonLdForRoute,
   metadataForRoute,
@@ -28,6 +29,9 @@ export default async function HomePage() {
       <JsonLd data={jsonLdForRoute("/", provider)} />
       <Hero />
       <TrustStrip />
+      <CompassCtaSection
+        previewEnabled={process.env.NEXT_PUBLIC_COMPASS_CTA_PREVIEW === "true"}
+      />
       <Reasons />
       <SupportPaths />
       <Therapists />

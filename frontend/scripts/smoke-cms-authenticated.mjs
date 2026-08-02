@@ -161,7 +161,10 @@ try {
     .getByRole("heading", { name: "Dokumenti i saglasnosti", exact: true })
     .waitFor();
   await page.getByRole("button", { name: "Nova stranica" }).waitFor();
-  await page.getByText(/Intake (prima|ne prima) zahteve/).first().waitFor();
+  await page
+    .getByText(/Intake (prima|ne prima) zahteve/)
+    .first()
+    .waitFor();
   ok("Dokumenti: lista, gate banner i akcije renderuju");
 
   // ---- Kompas ----------------------------------------------------------

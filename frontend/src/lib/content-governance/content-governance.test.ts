@@ -55,8 +55,20 @@ describe("content governance contract", () => {
     expect(isKnownPublicRoute(path)).toBe(false);
   });
 
-  it("does not register the Kompas landing page before its F3 renderer exists", () => {
-    expect(isKnownPublicRoute("/kompas")).toBe(false);
+  it("registers the Kompas landing page now that its renderer exists", () => {
+    // Flipped deliberately: this guard held while `/kompas` had no page file.
+    // `app/(public)/kompas/page.tsx` now renders the hero and the starting
+    // view, so registering the route no longer points at a 404.
+    expect(isKnownPublicRoute("/kompas")).toBe(true);
+  });
+
+  it("keeps the canonical taxonomy patterns registered", () => {
+    // ⚠️ These two are registered but have no page file yet — they land with
+    // K3B. Until then `isKnownPublicRoute` is true for a URL that 404s, which
+    // is exactly what the `/kompas` guard above used to prevent. This test
+    // documents the gap rather than hiding it.
+    expect(isKnownPublicRoute("/kompas/oblast/anksioznost")).toBe(true);
+    expect(isKnownPublicRoute("/kompas/tema/napadi-panike")).toBe(true);
   });
 
   it("allows only the locked publication lifecycle transitions", () => {
