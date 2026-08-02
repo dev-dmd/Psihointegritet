@@ -10,6 +10,7 @@ export const headerNavLinks: SiteNavLink[] = [
   { label: "Usluge", href: "/usluge" },
   { label: "Radionice", href: "/radionice" },
   { label: "Znanje i resursi", href: "/znanje" },
+  { label: "Kompas", href: "/kompas" },
   { label: "O nama", href: "/o-nama" },
 ];
 

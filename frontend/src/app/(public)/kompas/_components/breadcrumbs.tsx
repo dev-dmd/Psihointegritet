@@ -9,7 +9,7 @@ interface CompassBreadcrumbsProps {
 
 export function CompassBreadcrumbs({ items }: CompassBreadcrumbsProps) {
   return (
-    <nav aria-label="Putanja" className="mb-3.5 text-[12px]">
+    <nav aria-label="Putanja" className="mt-4 mb-6 text-[12px]">
       <ol className="flex flex-wrap items-center gap-y-1">
         {items.map((item, index) => {
           const isCurrent = index === items.length - 1;
