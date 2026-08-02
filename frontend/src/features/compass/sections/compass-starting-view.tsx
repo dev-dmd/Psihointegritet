@@ -1,14 +1,22 @@
-import { SectionHeading } from "@/components/ui/section-heading";
+import type { Route } from "next";
+import Link from "next/link";
 
+import { CompassStartQuestionsButton } from "./compass-start-questions-button";
 import { allFallbackTopics, type CompassRegistry } from "../fallback-registry";
 
 /**
- * „Polazni prikaz" — what a visitor sees before answering anything.
+ * „Polazni prikaz" — the package of areas and topics shown by default.
+ *
+ * This is what a visitor gets without answering anything: the same view the
+ * sheet falls back to when the answer is „Nisam siguran/na šta mi se događa" or
+ * the flow is abandoned. That makes every area and topic here a **link**, not
+ * decoration — landing on `/kompas` directly has to lead somewhere, otherwise
+ * the page is a dead end for exactly the people least able to phrase a query.
  *
  * Reads the registry resolved by the server (published API, otherwise the
- * checked-in fallback). Content sections render their designed empty state: no
- * public endpoint returns content filtered by taxonomy term yet, so nothing is
- * fabricated to fill the grid.
+ * checked-in fallback). The content section renders its designed empty state:
+ * no public endpoint returns content filtered by taxonomy term yet, so nothing
+ * is fabricated to fill the grid.
  */
 export function CompassStartingView({
   registry,
@@ -20,98 +28,113 @@ export function CompassStartingView({
   const topics = allFallbackTopics(registry).slice(0, 12);
 
   return (
-    <>
-      <section id={id} className="scroll-mt-24 px-5 pt-[72px] md:px-8 md:pt-24">
-        <div className="bg-meadow/30 rounded-panel px-6 py-7 md:px-8 md:py-8">
-          <p className="text-forest max-w-[62ch] font-serif text-[19px] leading-[1.5] md:text-[21px]">
-            Ne morate odmah znati kako da objasnite ono što vam se događa.
-          </p>
-          <p className="text-coffee/70 mt-3 max-w-[62ch] text-[14px] leading-[1.65]">
-            Počnite od oblasti koja vam zvuči najbliže. Uvek možete da se
-            vratite i promenite izbor.
-          </p>
-        </div>
+    <div className="mx-auto max-w-[1536px] px-5 pt-3 pb-[72px] md:px-8 md:pb-24">
+      <section
+        id={id}
+        aria-labelledby={`${id}-title`}
+        className="bg-meadow/28 scroll-mt-24 rounded-[22px] px-5 py-[22px] md:px-8 md:py-7"
+      >
+        <h2
+          id={`${id}-title`}
+          className="text-forest font-serif text-[22px] leading-[1.15] font-normal md:text-[32px]"
+        >
+          Polazni prikaz
+        </h2>
+        <p className="text-coffee/78 mt-2.5 max-w-[60ch] text-[14.5px] leading-[1.7] text-pretty">
+          Bez odgovora na pitanja, ovde su sve oblasti i teme koje trenutno
+          postoje na platformi. Krenite od onoga što vam zvuči najbliže —
+          pitanja možete pokrenuti kad god poželite.
+        </p>
+        <CompassStartQuestionsButton />
       </section>
 
-      <section className="px-5 pt-[56px] md:px-8 md:pt-20">
-        <SectionHeading
-          eyebrow="Oblasti"
-          title="Od čega želite da počnete?"
-          description="Redosled dolazi iz registra i nije rangiranje po važnosti."
-        />
+      <section
+        aria-labelledby="kompas-polazni-oblasti"
+        className="bg-surface mt-3 rounded-[22px] px-5 py-[22px] md:px-8 md:py-7"
+      >
+        <div className="flex flex-wrap items-baseline gap-2.5">
+          <h2
+            id="kompas-polazni-oblasti"
+            className="text-forest font-serif text-[24px] font-normal"
+          >
+            Oblasti
+          </h2>
+          <Link
+            href="/kompas/oblasti"
+            className="text-forest hover:text-forest-soft ml-auto text-[13.5px] underline underline-offset-[3px]"
+          >
+            Sve oblasti →
+          </Link>
+        </div>
 
-        <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {registry.areas.map((area, index) => (
-            <article
+        <div className="mt-4 grid [grid-template-columns:repeat(auto-fit,minmax(230px,1fr))] gap-2">
+          {registry.areas.map((area) => (
+            <Link
               key={area.stableId}
-              className="rounded-card border-line bg-surface flex flex-col gap-3 border px-6 py-6"
+              href={`/kompas/oblast/${area.slug}` as Route}
+              className="border-line bg-surface hover:border-coffee/25 hover:shadow-card-hover flex flex-col gap-1 rounded-[14px] border px-4 py-3.5 transition-[border-color,box-shadow]"
             >
-              <div className="text-sage flex items-center justify-between font-serif text-[13px] italic">
-                {String(index + 1).padStart(2, "0")}
-                <span
-                  aria-hidden
-                  className="border-line-strong text-forest grid h-7 w-7 place-items-center rounded-full border text-[12px] not-italic"
-                >
-                  →
-                </span>
-              </div>
-
-              <h3 className="text-forest font-serif text-[21px] leading-[1.2]">
-                {area.label}
-              </h3>
-
-              <p className="text-coffee/62 text-[13.5px] leading-[1.55]">
+              <span className="text-forest text-[15px]">{area.label}</span>
+              <span className="text-coffee/60 text-[12.5px] leading-[1.5]">
                 {area.description}
-              </p>
-
-              {area.topics.length > 0 ? (
-                <ul className="mt-1 flex flex-wrap gap-1.5">
-                  {area.topics.slice(0, 3).map((topic) => (
-                    <li
-                      key={topic.stableId}
-                      className="border-line-strong text-coffee/70 rounded-full border px-2.5 py-1 text-[11.5px]"
-                    >
-                      {topic.label}
-                    </li>
-                  ))}
-                </ul>
-              ) : null}
-
-              <p className="text-ink-45 mt-auto pt-2 text-[11.5px]">
+              </span>
+              <span className="text-sage text-[11px] tracking-[0.06em] uppercase">
                 {area.topics.length} tema
-              </p>
-            </article>
+              </span>
+            </Link>
           ))}
         </div>
       </section>
 
       {topics.length > 0 ? (
-        <section className="px-5 pt-[56px] md:px-8 md:pt-20">
-          <SectionHeading
-            eyebrow="Teme"
-            title="Konkretnije teme"
-            description="Uža tema unutar oblasti — korisna kada već znate šta vas najviše zaokuplja."
-          />
-          <ul className="mt-6 flex flex-wrap gap-2">
+        <section
+          aria-labelledby="kompas-polazni-teme"
+          className="bg-surface mt-3 rounded-[22px] px-5 py-[22px] md:px-8 md:py-7"
+        >
+          <div className="flex flex-wrap items-baseline gap-2.5">
+            <h2
+              id="kompas-polazni-teme"
+              className="text-forest font-serif text-[24px] font-normal"
+            >
+              Aktuelne teme
+            </h2>
+            <Link
+              href="/kompas/teme"
+              className="text-forest hover:text-forest-soft ml-auto text-[13.5px] underline underline-offset-[3px]"
+            >
+              Sve teme →
+            </Link>
+          </div>
+
+          <ul className="mt-4 flex flex-wrap gap-2">
             {topics.map((topic) => (
-              <li
-                key={topic.stableId}
-                className="border-line-strong text-coffee/75 rounded-full border px-4 py-2.5 text-[13px]"
-              >
-                {topic.label}
+              <li key={topic.stableId}>
+                <Link
+                  href={`/kompas/tema/${topic.slug}` as Route}
+                  className="border-line-strong bg-coffee/3 text-forest hover:border-coffee/30 inline-flex min-h-11 items-center rounded-full border px-4 text-[13.5px] transition-colors"
+                >
+                  {topic.label}
+                </Link>
               </li>
             ))}
           </ul>
         </section>
       ) : null}
 
-      <section className="px-5 pt-[56px] pb-[72px] md:px-8 md:pt-20 md:pb-24">
-        <SectionHeading
-          eyebrow="Sadržaji"
-          title="Dostupno bez odgovora na pitanja"
-          description="Javno dostupni sadržaji koji ne traže nalog."
-        />
-        <div className="border-line-strong rounded-panel mt-6 border border-dashed px-6 py-10 text-center">
+      <section
+        aria-labelledby="kompas-polazni-sadrzaj"
+        className="bg-surface mt-3 rounded-[22px] px-5 py-[22px] md:px-8 md:py-7"
+      >
+        <h2
+          id="kompas-polazni-sadrzaj"
+          className="text-forest mb-1 font-serif text-[24px] font-normal"
+        >
+          Dostupno bez odgovora na pitanja
+        </h2>
+        <p className="text-coffee/60 mb-4 text-[13.5px]">
+          Javno objavljeni sadržaji, poređani redosledom iz registra.
+        </p>
+        <div className="border-line-strong rounded-[18px] border border-dashed px-6 py-10 text-center">
           <p className="text-coffee text-[14.5px] font-semibold">
             Još nema objavljenih sadržaja
           </p>
@@ -121,6 +144,6 @@ export function CompassStartingView({
           </p>
         </div>
       </section>
-    </>
+    </div>
   );
 }

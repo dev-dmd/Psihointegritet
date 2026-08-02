@@ -73,6 +73,10 @@
   --color-kompas-on-meadow: #22301f; /* text on a meadow button */
   --color-kompas-clay: #8a4a2b; /* warm scheme accent */
   --color-kompas-ochre: #b06a3f; /* cream scheme accent */
+  /* The CTA band lifts on hover; neither depth matches an existing shadow
+     token, and both must stay identical across all five schemes. */
+  --shadow-kompas-band: 0 14px 34px rgba(58, 46, 40, 0.14);
+  --shadow-kompas-band-hover: 0 26px 60px rgba(58, 46, 40, 0.24);
   /* Panel radii */
   --radius-tile: 14px;
   --radius-stat: 18px;

@@ -345,15 +345,6 @@ export function CompassQuiz({
         <div className="mx-auto flex max-w-[760px] flex-wrap items-center gap-2.5">
           <button
             type="button"
-            onClick={goBack}
-            disabled={history.length === 0}
-            aria-label="Nazad na prethodno pitanje"
-            className="border-forest/35 text-forest hover:bg-meadow/25 disabled:border-line-strong disabled:text-ink-45 grid h-11 w-11 shrink-0 cursor-pointer place-items-center rounded-full border transition-colors disabled:cursor-not-allowed disabled:hover:bg-transparent"
-          >
-            <span aria-hidden>←</span>
-          </button>
-          <button
-            type="button"
             onClick={advance}
             className="border-forest text-forest hover:bg-meadow/30 min-h-11 cursor-pointer rounded-full border px-4 text-[13.5px] font-semibold transition-colors"
           >
@@ -372,8 +363,17 @@ export function CompassQuiz({
 
           <button
             type="button"
+            onClick={goBack}
+            disabled={history.length === 0}
+            aria-label="Nazad na prethodno pitanje"
+            className="border-forest/35 text-forest hover:bg-meadow/25 disabled:border-line-strong disabled:text-ink-45 ml-auto grid h-11 w-11 shrink-0 cursor-pointer place-items-center rounded-full border transition-colors disabled:cursor-not-allowed disabled:hover:bg-transparent"
+          >
+            <span aria-hidden>←</span>
+          </button>
+          <button
+            type="button"
             onClick={() => setStage("results")}
-            className="text-forest hover:text-forest-soft ml-auto min-h-11 cursor-pointer text-[13.5px] font-semibold underline underline-offset-4"
+            className="text-forest hover:text-forest-soft min-h-11 cursor-pointer text-[13.5px] font-semibold underline underline-offset-4"
           >
             {hasCompassSelection(selection)
               ? "Prikaži preporuke sada"

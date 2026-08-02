@@ -82,8 +82,8 @@
             </div>
           </section>
 
-          <section style="padding: 30px 0 0;">
-            <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin: 0 20px 12px; padding: 10px 12px; border-radius: 14px; border: 1px dashed rgba(58,46,40,0.2); background: rgba(255,255,255,0.5);">
+          <section style="padding: 30px 20px 0;">
+            <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin: 0 0 12px; padding: 10px 12px; border-radius: 14px; border: 1px dashed rgba(58,46,40,0.2); background: rgba(255,255,255,0.5);">
               <span style="font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: rgba(58,46,40,0.65);">Kontrola za pregled · nije deo stranice</span>
               <div style="display: flex; gap: 4px; margin-left: auto;">
                 <sc-for list="{{ ctaVariants }}" as="v" hint-placeholder-count="3">
@@ -101,33 +101,48 @@
             </div>
 
             <sc-if value="{{ ctaIsA }}" hint-placeholder-val="{{ true }}">
-              <div data-cta="banner" style="{{ ctaBandStyle }}">
-                <div style="{{ ctaGlowStyle }}"></div>
+              <x-import component-from-global-scope="PsihointegritetUI.Reveal" hint-size="100%,300px">
+              <div data-cta="banner" style="{{ ctaBandStyle }}" style-hover="transform: translateY(-4px); box-shadow: 0 26px 60px rgba(58,46,40,0.24)">
+                <div style="{{ ctaAurora1 }}"></div>
+                <div style="{{ ctaAurora2 }}"></div>
+                <div style="{{ ctaAurora3 }}"></div>
                 <div style="{{ ctaRingStyle }}"></div>
-                <div style="position: relative; display: grid; gap: 22px; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); align-items: center; padding: 26px 20px; max-width: 1180px; margin: 0 auto;">
-                  <div style="display: flex; justify-content: center;">
-                    <img src="assets/kompas-logo.png" alt="Kompas mentalnog zdravlja" style="width: clamp(130px, 26cqi, 200px); height: auto; filter: drop-shadow(0 18px 34px rgba(0,0,0,0.28));">
+                <div style="{{ ctaRing2Style }}"></div>
+                <div style="{{ ctaRing3Style }}"></div>
+                <div style="{{ ctaCornerBR }}"></div>
+                <div style="{{ ctaGridStyle }}">
+                  <div style="display: flex; align-items: center; justify-content: center; padding: 6px;">
+                    <div style="{{ ctaLogoBoxStyle }}">
+                      <span style="{{ ctaGlassHalo1 }}"></span>
+                      <span style="{{ ctaGlassHalo2 }}"></span>
+                      <img src="assets/kompas-logo.png" alt="Kompas mentalnog zdravlja" style="{{ ctaLogoStyle }}">
+                    </div>
                   </div>
                   <div style="{{ ctaPanelStyle }}">
-                    <div style="display: grid; gap: 18px; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));">
+                    <div style="display: grid; gap: 18px; align-items: stretch; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));">
                       <div>
                         <h3 style="{{ ctaTitleStyle }}"><em style="{{ ctaTitleAccentStyle }}">Kompas</em> mentalnog zdravlja</h3>
                         <p style="{{ ctaBodyStyle }}">Odgovorite na nekoliko kratkih pitanja kako bismo vam predložili sadržaje koji bi vam trenutno mogli biti korisni. Kompas nije dijagnostički alat.</p>
                       </div>
                       <div style="{{ ctaAsideStyle }}">
                         <p style="{{ ctaAsideTextStyle }}">Pomaže vam da razumete svoju situaciju i usmerava vas ka edukativnom sadržaju i alatima.</p>
-                        <button type="button" onClick="{{ goKompas }}" style="{{ ctaBtnStyle }}">Pokreni Kompas<span style="font-size: 15px;">→</span></button>
+                        <button type="button" onClick="{{ goKompas }}" style="{{ ctaBtnAStyle }}">Pokreni Kompas<span style="font-size: 15px;">→</span></button>
                       </div>
                     </div>
                   </div>
                 </div>
               </div>
+              </x-import>
             </sc-if>
 
             <sc-if value="{{ ctaIsB }}" hint-placeholder-val="{{ true }}">
-              <div data-cta="banner" style="{{ ctaBandStyle }}">
-                <div style="{{ ctaGlowStyle }}"></div>
+              <x-import component-from-global-scope="PsihointegritetUI.Reveal" hint-size="100%,300px">
+              <div data-cta="banner" style="{{ ctaBandStyle }}" style-hover="transform: translateY(-4px); box-shadow: 0 26px 60px rgba(58,46,40,0.24)">
+                <div style="{{ ctaAurora1 }}"></div>
+                <div style="{{ ctaAurora2 }}"></div>
                 <div style="{{ ctaRingStyle }}"></div>
+                <div style="{{ ctaRing3Style }}"></div>
+                <div style="{{ ctaCornerBR }}"></div>
                 <div style="position: relative; display: flex; flex-direction: column; align-items: center; gap: 16px; padding: 34px 22px 30px; max-width: 720px; margin: 0 auto; text-align: center;">
                   <img src="assets/kompas-logo.png" alt="" style="width: 88px; height: auto; filter: drop-shadow(0 14px 26px rgba(0,0,0,0.3));">
                   <h3 style="{{ ctaTitleStyle }}"><em style="{{ ctaTitleAccentStyle }}">Kompas</em> mentalnog zdravlja</h3>
@@ -140,25 +155,33 @@
                   </div>
                 </div>
               </div>
+              </x-import>
             </sc-if>
 
             <sc-if value="{{ ctaIsC }}" hint-placeholder-val="{{ true }}">
-              <div data-cta="banner" style="{{ ctaBandStyle }}">
+              <x-import component-from-global-scope="PsihointegritetUI.Reveal" hint-size="100%,180px">
+              <div data-cta="banner" style="{{ ctaBandStyle }}" style-hover="transform: translateY(-4px); box-shadow: 0 26px 60px rgba(58,46,40,0.24)">
+                <div style="{{ ctaAurora1 }}"></div>
+                <div style="{{ ctaAurora2 }}"></div>
+                <div style="{{ ctaAurora3 }}"></div>
                 <div style="{{ ctaRingStyle }}"></div>
-                <div style="position: relative; display: flex; flex-wrap: wrap; align-items: center; gap: 16px 20px; padding: 18px 20px; max-width: 1180px; margin: 0 auto;">
+                <div style="{{ ctaRing3Style }}"></div>
+                <div style="{{ ctaCornerBR }}"></div>
+                <div style="position: relative; display: flex; flex-wrap: wrap; align-items: center; gap: 16px 20px; padding: 18px 20px; max-width: 1536px; margin: 0 auto;">
                   <div style="{{ ctaBadgeStyle }}">
                     <img src="assets/kompas-logo.png" alt="" style="width: 100%; height: auto;">
                   </div>
                   <div style="flex: 1 1 240px; min-width: 200px;">
                     <h3 style="{{ ctaStripTitleStyle }}"><em style="{{ ctaTitleAccentStyle }}">Kompas</em> mentalnog zdravlja</h3>
                     <p style="{{ ctaStripBodyStyle }}">Kratka pitanja koja vas usmeravaju ka sadržaju i alatima. Bez dijagnoze.</p>
+                    <p style="{{ ctaStripMetaStyle }}">≈ 2 min · možete preskočiti</p>
                   </div>
                   <div style="{{ ctaStripAsideStyle }}">
-                    <span style="{{ ctaStripMetaStyle }}">≈ 2 min · možete preskočiti</span>
-                    <button type="button" onClick="{{ goKompas }}" style="{{ ctaBtnStyle }}">Pokreni Kompas<span style="font-size: 15px;">→</span></button>
+                    <button type="button" onClick="{{ goKompas }}" style="{{ ctaBtnCStyle }}">Pokreni Kompas<span style="font-size: 15px;">→</span></button>
                   </div>
                 </div>
               </div>
+              </x-import>
             </sc-if>
           </section>
         </main>
@@ -185,53 +208,6 @@
               <p style="margin: 0; font-size: 13px; line-height: 1.55; color: rgba(58,46,40,0.7);"><strong style="font-weight: 500; color: var(--color-forest);">Možete stati.</strong> Preporuke dobijate i na osnovu dela odgovora.</p>
             </div>
           </section>
-
-          <sc-if value="{{ modeQuestions }}" hint-placeholder-val="{{ true }}">
-            <section style="margin-top: 12px; padding: 22px 20px 20px; border-radius: 22px; background: #ffffff; animation: komFade .35s ease both;">
-              <div style="display: flex; align-items: center; gap: 10px;">
-                <img src="assets/kompas-logo.png" alt="" style="width: 26px; height: 26px;">
-                <span style="font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: rgba(58,46,40,0.65);">Kompas</span>
-                <span style="margin-left: auto; font-size: 12px; color: rgba(58,46,40,0.65);">Pitanja su opciona</span>
-              </div>
-              <div style="display: flex; gap: 5px; margin: 14px 0 20px;">
-                <sc-for list="{{ qProgress }}" as="p" hint-placeholder-count="5">
-                  <span style="{{ p.style }}"></span>
-                </sc-for>
-              </div>
-
-              <sc-if value="{{ hasAnswered }}" hint-placeholder-val="{{ true }}">
-                <div style="display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 18px;">
-                  <sc-for list="{{ answered }}" as="a" hint-placeholder-count="2">
-                    <button type="button" onClick="{{ a.edit }}" style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border: 1px solid rgba(58,46,40,0.12); border-radius: 999px; background: rgba(58,46,40,0.04); font-size: 12px; color: var(--color-forest); cursor: pointer;">{{ a.label }}<span style="opacity: 0.5;">izmeni</span></button>
-                  </sc-for>
-                </div>
-              </sc-if>
-
-              <h2 style="margin: 0; font-family: var(--font-newsreader), Georgia, serif; font-weight: 400; font-size: clamp(22px, 4.4cqi, 32px); line-height: 1.2; color: var(--color-forest); text-wrap: pretty;">{{ q.title }}</h2>
-              <sc-if value="{{ qHasHint }}" hint-placeholder-val="{{ true }}">
-                <p style="margin: 8px 0 0; font-size: 13.5px; color: rgba(58,46,40,0.6);">{{ q.hint }}</p>
-              </sc-if>
-
-              <div style="display: grid; gap: 8px; margin-top: 18px;">
-                <sc-for list="{{ qOptions }}" as="o" hint-placeholder-count="5">
-                  <button type="button" onClick="{{ o.pick }}" style="{{ o.style }}">
-                    <span style="{{ o.markStyle }}">{{ o.mark }}</span>
-                    <span style="display: flex; flex-direction: column; gap: 3px;">{{ o.label }}<span style="font-size: 12.5px; line-height: 1.45; color: rgba(58,46,40,0.68);">{{ o.note }}</span></span>
-                  </button>
-                </sc-for>
-              </div>
-
-              <sc-if value="{{ qHasNote }}" hint-placeholder-val="{{ true }}">
-                <p style="margin: 12px 0 0; padding: 10px 14px; border-radius: 12px; background: rgba(209,164,140,0.18); font-size: 12.5px; color: var(--color-coffee);">{{ q.note }}</p>
-              </sc-if>
-
-              <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 22px;">
-                <button type="button" onClick="{{ qPrev }}" style="padding: 13px 18px; min-height: 48px; border: 1px solid rgba(58,46,40,0.16); border-radius: 999px; background: transparent; font-size: 14px; color: var(--color-forest); cursor: pointer;">Nazad</button>
-                <button type="button" onClick="{{ qSkipOne }}" style="padding: 13px 14px; min-height: 48px; border: 0; background: none; font-size: 13.5px; color: rgba(58,46,40,0.6); text-decoration: underline; text-underline-offset: 3px; cursor: pointer;">Preskoči ovo pitanje</button>
-                <button type="button" onClick="{{ qNext }}" style="{{ qNextStyle }}">{{ qNextLabel }}<span>→</span></button>
-              </div>
-            </section>
-          </sc-if>
 
           <section style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; margin-top: 12px; padding: 14px 18px; border-radius: 18px; background: rgba(255,255,255,0.6); border: 1px solid rgba(58,46,40,0.08);">
             <span style="font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: rgba(58,46,40,0.68);">Uvek dostupno</span>
@@ -722,6 +698,64 @@
     </div>
   </div>
 
+  <sc-if value="{{ modeQuestions }}" hint-placeholder-val="{{ false }}">
+    <div style="position: fixed; left: 0; right: 0; bottom: 0; z-index: 85;">
+      <div role="dialog" aria-label="Kompas pitanja" style="{{ qSheetStyle }}">
+        <div style="display: flex; flex-direction: column; align-items: center; flex: none; padding-top: 6px;">
+          <button type="button" onPointerDown="{{ qDragStart }}" onKeyDown="{{ qDragKey }}" aria-label="Prevucite da promenite visinu" title="Prevucite da promenite visinu" style="{{ qGrabStyle }}"><span style="{{ qGrabBarStyle }}"></span></button>
+        </div>
+        <div style="display: flex; align-items: center; gap: 10px; flex: none; padding: 0 20px 12px;">
+          <img src="assets/kompas-logo.png" alt="" style="width: 26px; height: 26px;">
+          <span style="font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: rgba(58,46,40,0.65);">Kompas</span>
+          <span style="font-size: 12px; color: rgba(58,46,40,0.55);">Pitanja su opciona</span>
+          <span style="margin-left: auto; font-size: 11px; letter-spacing: 0.06em; color: rgba(58,46,40,0.4);">{{ qHeightLabel }}</span>
+          <button type="button" onClick="{{ closeQuiz }}" aria-label="Zatvori pitanja" style="display: grid; place-items: center; width: 38px; height: 38px; flex: none; border: 1px solid rgba(58,46,40,0.14); border-radius: 50%; background: #fff; font-size: 15px; color: var(--color-coffee); cursor: pointer;">✕</button>
+        </div>
+        <div style="display: flex; gap: 5px; flex: none; padding: 0 20px 16px;">
+          <sc-for list="{{ qProgress }}" as="p" hint-placeholder-count="5">
+            <span style="{{ p.style }}"></span>
+          </sc-for>
+        </div>
+
+        <div style="flex: 1 1 auto; overflow: auto; padding: 0 20px 18px;">
+          <div style="max-width: 720px; margin: 0 auto;">
+            <sc-if value="{{ hasAnswered }}" hint-placeholder-val="{{ true }}">
+              <div style="display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 18px;">
+                <sc-for list="{{ answered }}" as="a" hint-placeholder-count="2">
+                  <button type="button" onClick="{{ a.edit }}" style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border: 1px solid rgba(58,46,40,0.12); border-radius: 999px; background: rgba(58,46,40,0.04); font-size: 12px; color: var(--color-forest); cursor: pointer;">{{ a.label }}<span style="opacity: 0.5;">izmeni</span></button>
+                </sc-for>
+              </div>
+            </sc-if>
+
+            <h2 style="margin: 0; font-family: var(--font-newsreader), Georgia, serif; font-weight: 400; font-size: clamp(21px, 2.6vw, 28px); line-height: 1.22; color: var(--color-forest); text-wrap: pretty;">{{ q.title }}</h2>
+            <sc-if value="{{ qHasHint }}" hint-placeholder-val="{{ true }}">
+              <p style="margin: 8px 0 0; font-size: 13.5px; color: rgba(58,46,40,0.6);">{{ q.hint }}</p>
+            </sc-if>
+
+            <div style="display: grid; gap: 8px; margin-top: 18px;">
+              <sc-for list="{{ qOptions }}" as="o" hint-placeholder-count="5">
+                <button type="button" onClick="{{ o.pick }}" style="{{ o.style }}">
+                  <span style="{{ o.markStyle }}">{{ o.mark }}</span>
+                  <span style="display: flex; flex-direction: column; gap: 3px;">{{ o.label }}<span style="font-size: 12.5px; line-height: 1.45; color: rgba(58,46,40,0.68);">{{ o.note }}</span></span>
+                </button>
+              </sc-for>
+            </div>
+
+            <sc-if value="{{ qHasNote }}" hint-placeholder-val="{{ true }}">
+              <p style="margin: 12px 0 0; padding: 10px 14px; border-radius: 12px; background: rgba(209,164,140,0.18); font-size: 12.5px; color: var(--color-coffee);">{{ q.note }}</p>
+            </sc-if>
+          </div>
+        </div>
+
+        <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 10px; flex: none; padding: 14px 20px 18px; border-top: 1px solid rgba(58,46,40,0.1); background: rgba(255,255,255,0.6);">
+          <button type="button" onClick="{{ qPrev }}" style="padding: 13px 18px; min-height: 48px; border: 1px solid rgba(58,46,40,0.16); border-radius: 999px; background: transparent; font-size: 14px; color: var(--color-forest); cursor: pointer;">Nazad</button>
+          <button type="button" onClick="{{ qSkipOne }}" style="padding: 13px 14px; min-height: 48px; border: 0; background: none; font-size: 13.5px; color: rgba(58,46,40,0.6); text-decoration: underline; text-underline-offset: 3px; cursor: pointer;">Preskoči ovo pitanje</button>
+          <button type="button" onClick="{{ qNext }}" style="{{ qNextStyle }}">{{ qNextLabel }}<span>→</span></button>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
   <sc-if value="{{ feedbackBanner }}" hint-placeholder-val="{{ false }}">
     <div style="position: fixed; left: 12px; right: 12px; bottom: 14px; z-index: 70; display: flex; justify-content: center; pointer-events: none;">
       <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; max-width: 640px; padding: 16px 18px; border-radius: 20px; background: #ffffff; box-shadow: 0 24px 64px rgba(58,46,40,0.22); pointer-events: auto; animation: komSheet .3s ease both;">
@@ -911,11 +945,16 @@ const TEMA_DESC = {
 };
 
 const SCHEMES = {
-  coffee: { label: 'Coffee', dot: '#3a2e28', bg: '#3a2e28', panel: 'rgba(255,255,255,0.05)', panelBorder: 'rgba(245,239,230,0.16)', title: '#f5efe6', accent: '#ffa676', body: 'rgba(245,239,230,0.74)', btnBg: '#1f1917', btnFg: '#f5efe6', rule: 'rgba(245,239,230,0.18)', glow: 'rgba(255,166,118,0.16)' },
-  forest: { label: 'Forest', dot: '#2e3b2e', bg: '#2e3b2e', panel: 'rgba(255,255,255,0.06)', panelBorder: 'rgba(198,213,168,0.22)', title: '#f2f5ec', accent: '#c6d5a8', body: 'rgba(242,245,236,0.76)', btnBg: '#c6d5a8', btnFg: '#22301f', rule: 'rgba(198,213,168,0.24)', glow: 'rgba(198,213,168,0.14)' },
-  sage: { label: 'Sage', dot: '#c6d5a8', bg: '#c6d5a8', panel: 'rgba(255,255,255,0.34)', panelBorder: 'rgba(46,59,46,0.16)', title: '#24311f', accent: '#4e5f4c', body: 'rgba(36,49,31,0.78)', btnBg: '#2e3b2e', btnFg: '#f2f5ec', rule: 'rgba(46,59,46,0.18)', glow: 'rgba(255,255,255,0.4)' },
-  warm: { label: 'Warm', dot: '#d1a48c', bg: '#d1a48c', panel: 'rgba(255,255,255,0.26)', panelBorder: 'rgba(58,46,40,0.16)', title: '#3a2e28', accent: '#8a4a2b', body: 'rgba(58,46,40,0.78)', btnBg: '#3a2e28', btnFg: '#f5efe6', rule: 'rgba(58,46,40,0.18)', glow: 'rgba(255,255,255,0.34)' },
-  cream: { label: 'Cream', dot: '#f0e9df', bg: '#f0e9df', panel: 'rgba(255,255,255,0.7)', panelBorder: 'rgba(58,46,40,0.1)', title: '#2e3b2e', accent: '#b06a3f', body: 'rgba(58,46,40,0.74)', btnBg: '#2e3b2e', btnFg: '#f2f5ec', rule: 'rgba(58,46,40,0.12)', glow: 'rgba(209,164,140,0.28)' }
+  coffee: { label: 'Coffee', dot: '#3a2e28', bg: '#3a2e28', panel: 'rgba(255,255,255,0.05)', panelBorder: 'rgba(245,239,230,0.16)', title: '#f5efe6', accent: '#ffa676', body: 'rgba(245,239,230,0.74)', btnBg: '#1f1917', btnFg: '#f5efe6', rule: 'rgba(245,239,230,0.18)', glow: 'rgba(255,166,118,0.16)',
+    aurora: 'rgba(209,164,140,0.26)', aurora2: 'rgba(198,213,168,0.16)', glass: 'rgba(245,239,230,0.07)', glass2: 'rgba(255,166,118,0.09)', glassRule: 'rgba(245,239,230,0.2)' },
+  forest: { label: 'Forest', dot: '#2e3b2e', bg: '#2e3b2e', panel: 'rgba(255,255,255,0.06)', panelBorder: 'rgba(198,213,168,0.22)', title: '#f2f5ec', accent: '#c6d5a8', body: 'rgba(242,245,236,0.76)', btnBg: '#c6d5a8', btnFg: '#22301f', rule: 'rgba(198,213,168,0.24)', glow: 'rgba(198,213,168,0.14)',
+    aurora: 'rgba(198,213,168,0.24)', aurora2: 'rgba(209,164,140,0.16)', glass: 'rgba(242,245,236,0.08)', glass2: 'rgba(198,213,168,0.12)', glassRule: 'rgba(198,213,168,0.26)' },
+  sage: { label: 'Sage', dot: '#c6d5a8', bg: '#c6d5a8', panel: 'rgba(255,255,255,0.34)', panelBorder: 'rgba(46,59,46,0.16)', title: '#24311f', accent: '#4e5f4c', body: 'rgba(36,49,31,0.78)', btnBg: '#2e3b2e', btnFg: '#f2f5ec', rule: 'rgba(46,59,46,0.18)', glow: 'rgba(255,255,255,0.4)',
+    aurora: 'rgba(255,255,255,0.5)', aurora2: 'rgba(209,164,140,0.3)', glass: 'rgba(255,255,255,0.32)', glass2: 'rgba(46,59,46,0.08)', glassRule: 'rgba(255,255,255,0.5)' },
+  warm: { label: 'Warm', dot: '#d1a48c', bg: '#d1a48c', panel: 'rgba(255,255,255,0.26)', panelBorder: 'rgba(58,46,40,0.16)', title: '#3a2e28', accent: '#8a4a2b', body: 'rgba(58,46,40,0.78)', btnBg: '#3a2e28', btnFg: '#f5efe6', rule: 'rgba(58,46,40,0.18)', glow: 'rgba(255,255,255,0.34)',
+    aurora: 'rgba(255,255,255,0.44)', aurora2: 'rgba(198,213,168,0.28)', glass: 'rgba(255,255,255,0.28)', glass2: 'rgba(58,46,40,0.07)', glassRule: 'rgba(255,255,255,0.46)' },
+  cream: { label: 'Cream', dot: '#f0e9df', bg: '#f0e9df', panel: 'rgba(255,255,255,0.7)', panelBorder: 'rgba(58,46,40,0.1)', title: '#2e3b2e', accent: '#b06a3f', body: 'rgba(58,46,40,0.74)', btnBg: '#2e3b2e', btnFg: '#f2f5ec', rule: 'rgba(58,46,40,0.12)', glow: 'rgba(209,164,140,0.28)',
+    aurora: 'rgba(209,164,140,0.34)', aurora2: 'rgba(198,213,168,0.32)', glass: 'rgba(255,255,255,0.6)', glass2: 'rgba(209,164,140,0.18)', glassRule: 'rgba(255,255,255,0.8)' }
 };
 const SCHEME_KEYS = ['coffee', 'forest', 'sage', 'warm', 'cream'];
 
@@ -942,7 +981,8 @@ class Component extends DCLogic {
     temeQuery: '', drawer: null, feedbackBanner: false, feedbackSeen: false,
     fb: { relevantnost: null, sledeci: null, nedostajalo: [], strucna: null, poslato: false },
     handoffOpts: { oblast: true, teme: true, publika: true, put: true },
-    handoffDone: false, cardSignal: {}, adminStep: 0, admin: null
+    handoffDone: false, cardSignal: {}, adminStep: 0, admin: null,
+    qh: 60, qDragging: false
   };
 
   syncProps() {
@@ -977,8 +1017,35 @@ class Component extends DCLogic {
   scheme() { return SCHEMES[SCHEME_KEYS[this.state.schemeIdx]]; }
   stepScheme = (d) => this.setState(s => ({ schemeIdx: (s.schemeIdx + d + SCHEME_KEYS.length) % SCHEME_KEYS.length }));
 
+  // ——— questions drawer sizing
+  qDragStart = (e) => {
+    if (e.preventDefault) e.preventDefault();
+    const startY = e.clientY, startH = this.state.qh || 60;
+    const vh = (typeof window !== 'undefined' ? window.innerHeight : 800);
+    const move = (ev) => {
+      const delta = (startY - ev.clientY) / vh * 100;
+      this.setState({ qh: Math.min(94, Math.max(28, startH + delta)) });
+    };
+    const up = () => {
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', up);
+      this.setState({ qDragging: false });
+    };
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', up);
+    this.setState({ qDragging: true });
+  };
+  qDragKey = (e) => {
+    if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+      e.preventDefault();
+      const d = e.key === 'ArrowUp' ? 6 : -6;
+      this.setState(s => ({ qh: Math.min(94, Math.max(28, (s.qh || 60) + d)) }));
+    }
+  };
+
   // ——— questions
   startQuiz = () => this.setState({ mode: 'questions', qIndex: 0 });
+  closeQuiz = () => this.setState(s => ({ mode: (s.oblast || s.teme.length || s.publika || s.ciljevi.length || s.put) ? 'rezultat' : 'intro' }));
   skipQuiz = () => this.setState({ mode: 'polazni' });
   showResults = () => this.setState({ mode: 'rezultat' });
   editAnswers = () => this.setState({ mode: 'questions', qIndex: 0 });
@@ -1221,7 +1288,7 @@ class Component extends DCLogic {
       navRoutes: ROUTES.map(r => ({ label: r.label, style: this.chromeBtn(r.id === s.route), go: () => this.go(r.id) })),
       setMobile: this.setMobile, setDesktop: this.setDesktop,
       mobileBtnStyle: this.chromeBtn(isMobile), desktopBtnStyle: this.chromeBtn(!isMobile),
-      frameStyle: { width: '100%', maxWidth: isMobile ? '412px' : '1280px', minHeight: '80vh', paddingBottom: '10px',
+      frameStyle: { width: '100%', maxWidth: isMobile ? '412px' : '1536px', minHeight: '80vh', paddingBottom: '10px',
         containerType: 'inline-size', background: 'var(--color-canvas)', borderRadius: isMobile ? '30px' : '22px',
         boxShadow: '0 24px 64px rgba(58,46,40,0.16)', overflow: 'clip' },
 
@@ -1242,23 +1309,42 @@ class Component extends DCLogic {
           border: i === s.schemeIdx ? '2px solid var(--color-forest)' : '1px solid rgba(58,46,40,0.18)', outline: i === s.schemeIdx ? '2px solid rgba(198,213,168,0.6)' : 'none', outlineOffset: '1px' } })),
       prevScheme: () => this.stepScheme(-1), nextScheme: () => this.stepScheme(1), schemeLabel: sc.label,
       ctaIsA: s.ctaVariant === 'A', ctaIsB: s.ctaVariant === 'B', ctaIsC: s.ctaVariant === 'C',
-      ctaBandStyle: { position: 'relative', overflow: 'hidden', background: sc.bg, marginTop: '4px' },
+      ctaBandStyle: { position: 'relative', overflow: 'hidden', background: sc.bg, marginTop: '4px', borderRadius: '24px',
+        boxShadow: '0 14px 34px rgba(58,46,40,0.14)', transition: 'transform .45s cubic-bezier(.22,1,.36,1), box-shadow .45s ease' },
       ctaGlowStyle: { position: 'absolute', left: '-8%', top: '-40%', width: '52%', paddingBottom: '52%', borderRadius: '50%', background: 'radial-gradient(circle, ' + sc.glow + ' 0%, transparent 68%)' },
-      ctaRingStyle: { position: 'absolute', right: '-12%', bottom: '-70%', width: '58%', paddingBottom: '58%', borderRadius: '50%', border: '1px solid ' + sc.rule, opacity: 0.7 },
-      ctaPanelStyle: { position: 'relative', padding: '22px', borderRadius: '20px', background: sc.panel, border: '1px solid ' + sc.panelBorder },
+      ctaRingStyle: { position: 'absolute', right: '-12%', bottom: '-70%', width: '58%', paddingBottom: '58%', borderRadius: '50%', border: '1px solid ' + sc.rule, opacity: 0.4 },
+      ctaAurora1: { position: 'absolute', left: isMobile ? '-32%' : '-14%', top: isMobile ? '-16%' : '-46%', width: isMobile ? '88%' : '62%', paddingBottom: isMobile ? '88%' : '62%', borderRadius: '48% 52% 60% 40% / 55% 45% 55% 45%', background: 'radial-gradient(circle at 40% 40%, ' + sc.glow + ' 0%, transparent 70%)', filter: 'blur(26px)' },
+      ctaAurora2: { position: 'absolute', right: isMobile ? '-22%' : '4%', top: isMobile ? '-12%' : '-30%', width: isMobile ? '74%' : '46%', paddingBottom: isMobile ? '74%' : '46%', borderRadius: '58% 42% 40% 60% / 42% 58% 42% 58%', background: 'radial-gradient(circle at 60% 50%, ' + sc.aurora + ' 0%, transparent 72%)', filter: 'blur(34px)', opacity: 0.9 },
+      ctaAurora3: { position: 'absolute', left: isMobile ? '6%' : '32%', bottom: isMobile ? '-26%' : '-52%', width: isMobile ? '84%' : '52%', paddingBottom: isMobile ? '84%' : '52%', borderRadius: '45% 55% 52% 48% / 60% 40% 60% 40%', background: 'radial-gradient(circle at 50% 40%, ' + sc.aurora2 + ' 0%, transparent 74%)', filter: 'blur(40px)', opacity: 0.85 },
+      ctaLogoBoxStyle: { position: 'relative', display: 'grid', placeItems: 'center', width: isMobile ? '200px' : 'min(288px, 100%)', maxWidth: '100%', aspectRatio: '1' },
+      ctaGlassHalo1: { position: 'absolute', inset: 0, aspectRatio: '1', borderRadius: '50%', background: sc.glass, border: '1px solid ' + sc.glassRule, backdropFilter: 'blur(14px)', WebkitBackdropFilter: 'blur(14px)' },
+      ctaGlassHalo2: { position: 'absolute', inset: '11%', aspectRatio: '1', borderRadius: '50%', background: sc.glass2, border: '1px solid ' + sc.glassRule, backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)' },
+      ctaGlass1: { position: 'absolute', left: '4%', top: '14%', width: 'clamp(90px, 15cqi, 168px)', aspectRatio: '1', borderRadius: '50%', background: sc.glass, border: '1px solid ' + sc.glassRule, backdropFilter: 'blur(14px)', WebkitBackdropFilter: 'blur(14px)' },
+      ctaGlass2: { position: 'absolute', left: '17%', bottom: '8%', width: 'clamp(56px, 9cqi, 104px)', aspectRatio: '1', borderRadius: '50%', background: sc.glass2, border: '1px solid ' + sc.glassRule, backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)' },
+      ctaRing2Style: { position: 'absolute', left: '-6%', bottom: '-46%', width: '40%', paddingBottom: '40%', borderRadius: '50%', border: '1px solid ' + sc.rule, opacity: 0.32 },
+      ctaRing3Style: { position: 'absolute', right: '6%', top: '-18%', width: '26%', paddingBottom: '26%', borderRadius: '50%', border: '1px dashed ' + sc.rule, opacity: 0.28 },
+      ctaCornerTL: { position: 'absolute', left: '18px', top: '16px', width: '76px', height: '48px', borderTop: '1px solid ' + sc.rule, borderLeft: '1px solid ' + sc.rule, borderTopLeftRadius: '26px 44px', transform: 'skewX(-9deg)', opacity: 0.75 },
+      ctaCornerBR: { position: 'absolute', right: '18px', bottom: '16px', width: '96px', height: '54px', borderBottom: '1px solid ' + sc.rule, borderRight: '1px solid ' + sc.rule, borderBottomRightRadius: '40px 22px', transform: 'skewY(-6deg)', opacity: 0.4 },
+      ctaGridStyle: { position: 'relative', display: 'grid', gap: isMobile ? '10px' : '26px', alignItems: isMobile ? 'center' : 'stretch', padding: isMobile ? '26px 18px' : '38px 30px',
+        gridTemplateColumns: isMobile ? '1fr' : 'minmax(180px, 1fr) 2fr', maxWidth: '1536px', margin: '0 auto' },
+      ctaLogoStyle: { position: 'relative', width: '66%', height: 'auto',
+        filter: 'drop-shadow(0 22px 42px rgba(0,0,0,0.32))' },
+      ctaPanelStyle: { position: 'relative', display: 'flex', flexDirection: 'column', justifyContent: 'center', height: '100%', padding: isMobile ? '20px' : '26px', borderRadius: '20px', background: sc.panel, border: '1px solid ' + sc.panelBorder },
       ctaTitleStyle: { margin: 0, fontFamily: 'var(--font-newsreader), Georgia, serif', fontWeight: 400, fontSize: 'clamp(24px, 4.4cqi, 36px)', lineHeight: 1.12, color: sc.title },
       ctaTitleAccentStyle: { fontStyle: 'normal', fontWeight: 500, color: sc.accent },
       ctaBodyStyle: { margin: '12px 0 0', fontSize: '14px', lineHeight: 1.65, color: sc.body, textWrap: 'pretty' },
-      ctaAsideStyle: { display: 'flex', flexDirection: 'column', gap: '16px', paddingLeft: '18px', borderLeft: '1px solid ' + sc.rule },
+      ctaAsideStyle: { display: 'flex', flexDirection: 'column', gap: '16px', height: '100%', justifyContent: 'space-between', alignItems: isMobile ? 'center' : 'stretch', textAlign: isMobile ? 'center' : 'left', paddingLeft: isMobile ? 0 : '18px', paddingTop: isMobile ? '16px' : 0, borderLeft: isMobile ? 'none' : '1px solid ' + sc.rule, borderTop: isMobile ? '1px solid ' + sc.rule : 'none' },
       ctaAsideTextStyle: { margin: 0, fontSize: '14px', lineHeight: 1.6, color: sc.body },
       ctaBtnStyle: ctaBtn,
       ctaBtnCenterStyle: Object.assign({}, ctaBtn, { alignSelf: 'center' }),
+      ctaBtnAStyle: Object.assign({}, ctaBtn, { alignSelf: 'center', marginTop: isMobile ? '2px' : '10px' }),
+      ctaBtnCStyle: Object.assign({}, ctaBtn, isMobile ? { width: '100%', justifyContent: 'center', alignSelf: 'stretch' } : {}),
       ctaMetaRowStyle: { display: 'flex', width: '100%', flexWrap: 'wrap', justifyContent: 'center', gap: '8px 18px', marginTop: '4px', paddingTop: '14px', borderTop: '1px solid ' + sc.rule, fontSize: '12px', letterSpacing: '0.03em', color: sc.body },
       ctaStripTitleStyle: { margin: 0, fontFamily: 'var(--font-newsreader), Georgia, serif', fontWeight: 400, fontSize: 'clamp(20px, 2.6cqi, 26px)', lineHeight: 1.18, color: sc.title },
       ctaStripBodyStyle: { margin: '6px 0 0', fontSize: '13.5px', lineHeight: 1.55, color: sc.body },
       ctaBadgeStyle: { flex: 'none', width: '76px', height: '76px', display: 'grid', placeItems: 'center', padding: '8px', borderRadius: '50%', background: sc.panel, border: '1px solid ' + sc.panelBorder },
-      ctaStripAsideStyle: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '12px 16px', marginLeft: 'auto' },
-      ctaStripMetaStyle: { fontSize: '12px', color: sc.body },
+      ctaStripAsideStyle: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '12px 16px', marginLeft: isMobile ? 0 : 'auto', width: isMobile ? '100%' : 'auto' },
+      ctaStripMetaStyle: { margin: '8px 0 0', fontSize: '12.5px', letterSpacing: '0.02em', color: sc.body, opacity: 0.85 },
 
       showNav: !isMobile, showMenu: isMobile, showChrome: (this.props || {}).showChrome !== false,
 
@@ -1269,6 +1355,16 @@ class Component extends DCLogic {
       startQuiz: this.startQuiz, skipQuiz: this.skipQuiz, showResultsNow: this.showResults,
       resetQuiz: this.resetQuiz, editAnswers: this.editAnswers, openHandoff: this.openHandoff, endExploring: this.endExploring,
       handoffDone: s.handoffDone,
+
+      closeQuiz: this.closeQuiz, qDragStart: this.qDragStart, qDragKey: this.qDragKey,
+      qSheetStyle: { position: 'relative', display: 'flex', flexDirection: 'column', width: '100%', height: (s.qh || 60) + 'dvh',
+        minHeight: '240px', borderRadius: '26px 26px 0 0', background: 'var(--color-panel-canvas)',
+        boxShadow: '0 -18px 54px rgba(36,28,24,0.26)', overflow: 'hidden',
+        animation: 'komSheet .32s cubic-bezier(.22,1,.36,1) both', touchAction: 'none' },
+      qGrabStyle: { display: 'flex', justifyContent: 'center', alignItems: 'center', width: '100%', height: '30px', flex: 'none',
+        border: 0, background: 'transparent', cursor: s.qDragging ? 'grabbing' : 'grab', touchAction: 'none' },
+      qGrabBarStyle: { width: '56px', height: '5px', borderRadius: '999px', background: s.qDragging ? 'var(--color-forest)' : 'rgba(58,46,40,0.24)' },
+      qHeightLabel: Math.round(s.qh || 60) + ' dvh',
 
       q: q, qOptions: qOptions, qHasHint: !!q.hint, qHasNote: !!q.note, hasAnswered: answered.length > 0,
       qProgress: [0, 1, 2, 3, 4].map(i => ({ style: { flex: 1, height: '3px', borderRadius: '999px',

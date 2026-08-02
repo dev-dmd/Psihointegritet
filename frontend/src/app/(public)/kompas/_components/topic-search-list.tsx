@@ -2,24 +2,45 @@
 
 import { useDeferredValue, useId, useState } from "react";
 
+import { countSr } from "@/helpers/plural-sr";
+import type { CompassBreadcrumb } from "@/lib/compass/discoverability";
 import type { RoutablePublicTaxonomyTerm } from "@/lib/compass/types";
 
-import { TaxonomyLinkCard } from "./taxonomy-link-card";
+import { CompassPageHero } from "./compass-page-hero";
+import { TopicCard } from "./topic-card";
 
 export interface TopicSearchItem {
   term: RoutablePublicTaxonomyTerm;
   parentLabel?: string;
-}
-
-interface TopicSearchListProps {
-  items: readonly TopicSearchItem[];
+  parentPath?: string;
 }
 
 function normalized(value: string): string {
   return value.trim().toLocaleLowerCase("sr-Latn");
 }
 
-export function TopicSearchList({ items }: TopicSearchListProps) {
+/**
+ * `/kompas/teme` — hero, search and results in one island.
+ *
+ * The search field lives inside the hero while the results live below it, so
+ * both sit under the same state. Filtering is local over the already-loaded
+ * public set — the design's own note — which is why there is no request per
+ * keystroke and no debounce; `useDeferredValue` keeps typing responsive while
+ * the list re-renders.
+ *
+ * The query deliberately never reaches the URL: a Kompas topic someone searched
+ * for is exactly the kind of thing that must not end up in a shared link, a
+ * browser history entry or a referrer header.
+ */
+export function TopicSearchList({
+  breadcrumbs,
+  lead,
+  items,
+}: {
+  breadcrumbs: readonly CompassBreadcrumb[];
+  lead: string;
+  items: readonly TopicSearchItem[];
+}) {
   const inputId = useId();
   const [query, setQuery] = useState("");
   const deferredQuery = useDeferredValue(query);
@@ -36,45 +57,71 @@ export function TopicSearchList({ items }: TopicSearchListProps) {
     : items;
 
   return (
-    <div>
-      <div className="max-w-[620px]">
-        <label
-          htmlFor={inputId}
-          className="text-forest mb-2 block text-[14px] font-semibold"
-        >
-          Pretražite teme
-        </label>
-        <input
-          id={inputId}
-          type="search"
-          value={query}
-          onChange={(event) => setQuery(event.target.value)}
-          placeholder="Naziv teme ili pojam"
-          className="border-coffee/18 bg-surface text-coffee placeholder:text-coffee/45 focus:border-sage focus:ring-sage/25 min-h-12 w-full rounded-2xl border px-4 outline-none focus:ring-4"
-        />
-      </div>
-
-      <p aria-live="polite" className="text-coffee/60 mt-4 text-sm">
-        {filtered.length === 1
-          ? "Pronađena je 1 tema."
-          : `Pronađeno je ${filtered.length} tema.`}
-      </p>
-
-      {filtered.length ? (
-        <div className="mt-7 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {filtered.map(({ term, parentLabel }) => (
-            <TaxonomyLinkCard
-              key={term.stableId}
-              term={term}
-              {...(parentLabel ? { parentLabel } : {})}
-            />
-          ))}
+    <>
+      <CompassPageHero
+        breadcrumbs={breadcrumbs}
+        eyebrow="Kompas"
+        title="Teme"
+        lead={lead}
+      >
+        <div className="mt-5 flex flex-wrap items-center gap-2.5">
+          <label htmlFor={inputId} className="sr-only">
+            Pretraga tema
+          </label>
+          <input
+            id={inputId}
+            type="search"
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder="Npr. granice, panika, roditeljstvo…"
+            className="border-coffee/16 bg-surface text-coffee placeholder:text-coffee/45 focus:border-sage focus:ring-sage/25 min-h-12 min-w-[200px] flex-[1_1_240px] rounded-full border px-[18px] text-[14.5px] outline-none focus:ring-4"
+          />
+          <button
+            type="button"
+            onClick={() => setQuery("")}
+            disabled={query === ""}
+            className="border-coffee/14 text-forest hover:border-coffee/35 disabled:text-coffee/35 min-h-12 cursor-pointer rounded-full border px-[18px] text-[13.5px] transition-colors disabled:cursor-not-allowed"
+          >
+            Poništi
+          </button>
+          <span aria-live="polite" className="text-coffee/68 text-[12.5px]">
+            {filtered.length === items.length
+              ? countSr(items.length, "tema", "teme", "tema")
+              : `${filtered.length} od ${countSr(items.length, "teme", "teme", "tema")}`}
+          </span>
         </div>
-      ) : (
-        <p className="bg-meadow/20 text-coffee/72 mt-7 rounded-[20px] px-5 py-6 text-[15px]">
-          Nema objavljene teme koja odgovara toj pretrazi.
-        </p>
-      )}
-    </div>
+      </CompassPageHero>
+
+      <div className="mt-3 grid [grid-template-columns:repeat(auto-fit,minmax(260px,1fr))] gap-2">
+        {filtered.map(({ term, parentLabel, parentPath }) => (
+          <TopicCard
+            key={term.stableId}
+            term={term}
+            contentCount={null}
+            {...(parentLabel ? { parentLabel } : {})}
+            {...(parentPath ? { parentPath } : {})}
+          />
+        ))}
+
+        {filtered.length === 0 ? (
+          <div className="border-coffee/20 bg-surface/60 col-span-full rounded-[18px] border border-dashed px-5 py-[26px] text-center">
+            <p className="text-forest mb-3 text-[14.5px]">
+              {items.length === 0
+                ? "Trenutno nema objavljenih tema."
+                : "Nema tema koje odgovaraju pretrazi."}
+            </p>
+            {items.length > 0 ? (
+              <button
+                type="button"
+                onClick={() => setQuery("")}
+                className="border-coffee/16 text-forest hover:border-coffee/35 min-h-11 cursor-pointer rounded-full border px-[18px] text-[13.5px] transition-colors"
+              >
+                Prikaži sve teme
+              </button>
+            ) : null}
+          </div>
+        ) : null}
+      </div>
+    </>
   );
 }

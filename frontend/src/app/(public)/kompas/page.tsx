@@ -1,5 +1,6 @@
 import { CompassExitFeedback } from "@/features/compass/feedback/compass-exit-feedback";
 import { compassFallbackRegistry } from "@/features/compass/fallback-registry";
+import { CompassAlwaysAvailable } from "@/features/compass/sections/compass-always-available";
 import { CompassHero } from "@/features/compass/sections/compass-hero";
 import { CompassStartingView } from "@/features/compass/sections/compass-starting-view";
 import { metadataForRoute } from "@/lib/content-governance/discoverability";
@@ -22,6 +23,7 @@ export default async function CompassPage() {
   return (
     <>
       <CompassHero areasHref={`#${STARTING_VIEW_ID}`} />
+      <CompassAlwaysAvailable startingViewId={STARTING_VIEW_ID} />
       <CompassStartingView
         registry={compassFallbackRegistry}
         id={STARTING_VIEW_ID}

@@ -2,10 +2,7 @@ import type { Route } from "next";
 import Link from "next/link";
 
 import { JsonLd } from "@/components/shared/json-ld";
-import { PageHero } from "@/components/shared/page-hero";
-import { ArrowLink } from "@/components/ui/arrow-link";
-import { ButtonLink } from "@/components/ui/button-link";
-import { Eyebrow } from "@/components/ui/eyebrow";
+import { countSr } from "@/helpers/plural-sr";
 import {
   compassBreadcrumbJsonLd,
   compassPageDiscoverability,
@@ -20,8 +17,8 @@ import type {
   RoutablePublicTaxonomyTerm,
 } from "@/lib/compass/types";
 
-import { CompassBreadcrumbs } from "./breadcrumbs";
-import { TaxonomyLinkCard } from "./taxonomy-link-card";
+import { CompassPageHero } from "./compass-page-hero";
+import { CompassContentCard } from "./content-card";
 
 interface PublicTaxonomyPageProps {
   aggregate: PublicTaxonomyPageAggregate;
@@ -40,6 +37,19 @@ function uniqueRoutableTopics(
   });
 }
 
+/**
+ * `/kompas/oblast/[slug]` and `/kompas/tema/[slug]`.
+ *
+ * Both are stacked cards inside the site container, not a two-column layout:
+ * the aside that used to hold „Pripada oblasti" duplicated the breadcrumb, and
+ * on a page whose whole job is to offer a next step, the ways onward belong in
+ * the reading flow rather than in a column people scroll past.
+ *
+ * An area with no published content renders the designed empty state and still
+ * offers related areas and professional help. That is the common case today —
+ * the registry has no published content links at all — so the empty state is
+ * the page, not an edge case.
+ */
 export function PublicTaxonomyPage({
   aggregate,
   routeKind,
@@ -48,6 +58,7 @@ export function PublicTaxonomyPage({
   const term = routablePublicTerm(aggregate.term, routeKind);
   if (!term) throw new Error("Compass page received a non-routable term.");
 
+  const isArea = routeKind === "oblast";
   const parent = aggregate.parent
     ? routablePublicTerm(aggregate.parent, "oblast")
     : null;
@@ -60,159 +71,141 @@ export function PublicTaxonomyPage({
     return view ? [view] : [];
   });
 
+  const meta = [
+    isArea ? countSr(children.length, "tema", "teme", "tema") : null,
+    countSr(
+      contentCards.length,
+      "objavljen sadržaj",
+      "objavljena sadržaja",
+      "objavljenih sadržaja",
+    ),
+  ]
+    .filter((part): part is string => part !== null)
+    .join(" · ");
+
   return (
     <>
       <JsonLd data={compassBreadcrumbJsonLd(record)} />
-      <PageHero id={routeKind === "oblast" ? "oblast" : "tema"}>
-        <CompassBreadcrumbs items={record.breadcrumbs} />
-        <div className="max-w-[780px]">
-          <Eyebrow className="mb-4">
-            Kompas · {routeKind === "oblast" ? "Oblast" : "Tema"}
-          </Eyebrow>
-          <h1 className="text-forest mb-5 font-serif text-[clamp(34px,8.5vw,56px)] leading-[1.04] font-normal tracking-[-0.015em] text-pretty">
-            {term.publicLabel}
-          </h1>
-          {term.shortDescription ? (
-            <p className="text-coffee/75 max-w-[700px] text-[17px] leading-[1.7]">
-              {term.shortDescription}
+
+      <section id="vrh" className="scroll-mt-24 pt-6">
+        <div className="mx-auto max-w-[1536px] px-5 pb-[72px] md:px-8 md:pb-24">
+          <CompassPageHero
+            breadcrumbs={record.breadcrumbs}
+            eyebrow={isArea ? "Oblast" : "Tema"}
+            title={term.publicLabel}
+            lead={term.shortDescription}
+            tone={isArea ? "meadow" : "surface"}
+          >
+            <p className="text-coffee/70 mt-4 text-[12px] tracking-[0.06em] uppercase">
+              {meta}
             </p>
-          ) : null}
-        </div>
-      </PageHero>
+          </CompassPageHero>
 
-      <div className="mx-auto max-w-[1120px] px-5 py-[64px] md:px-8 md:py-24">
-        <div className="grid gap-12 lg:grid-cols-[minmax(0,8fr)_minmax(280px,4fr)]">
-          <div className="space-y-16">
-            {children.length ? (
-              <section aria-labelledby="kompas-children-title">
-                <Eyebrow className="mb-4">Objavljene teme</Eyebrow>
-                <h2
-                  id="kompas-children-title"
-                  className="text-forest font-serif text-[clamp(30px,7vw,44px)] leading-tight font-normal"
-                >
-                  Teme u ovoj oblasti
-                </h2>
-                <div className="mt-7 grid gap-5 sm:grid-cols-2">
-                  {children.map((child) => (
-                    <TaxonomyLinkCard key={child.stableId} term={child} />
-                  ))}
-                </div>
-              </section>
-            ) : null}
-
-            {contentCards.length ? (
-              <section aria-labelledby="kompas-content-title">
-                <Eyebrow className="mb-4">Dostupno za čitanje</Eyebrow>
-                <h2
-                  id="kompas-content-title"
-                  className="text-forest font-serif text-[clamp(30px,7vw,44px)] leading-tight font-normal"
-                >
-                  Povezani sadržaji
-                </h2>
-                <div className="mt-7 grid gap-5 sm:grid-cols-2">
-                  {contentCards.map((card) => (
-                    <article
-                      key={card.itemKey}
-                      className="bg-meadow/20 flex h-full flex-col rounded-[22px] p-6"
-                    >
-                      <p className="text-sage text-[12px] font-semibold tracking-[0.12em] uppercase">
-                        {card.accessLevel === "public" ? "Javno dostupno" : ""}
-                      </p>
-                      <h3 className="text-forest mt-2 font-serif text-[25px] leading-tight font-normal">
-                        {card.title}
-                      </h3>
-                      {card.description ? (
-                        <p className="text-coffee/72 mt-3 flex-1 text-[14.5px] leading-[1.65]">
-                          {card.description}
-                        </p>
-                      ) : (
-                        <div className="flex-1" />
-                      )}
-                      <ArrowLink href={card.href} className="mt-6">
-                        Pogledajte sadržaj
-                      </ArrowLink>
-                    </article>
-                  ))}
-                </div>
-              </section>
-            ) : null}
-
-            {related.length ? (
-              <section aria-labelledby="kompas-related-title">
-                <Eyebrow className="mb-4">Nastavite istraživanje</Eyebrow>
-                <h2
-                  id="kompas-related-title"
-                  className="text-forest font-serif text-[clamp(30px,7vw,44px)] leading-tight font-normal"
-                >
-                  Povezane teme
-                </h2>
-                <ul className="border-coffee/10 mt-6 divide-y border-y">
-                  {related.map((item) => (
-                    <li key={item.stableId}>
-                      <Link
-                        href={item.canonicalPath as Route}
-                        className="text-forest hover:text-sage flex min-h-14 items-center justify-between gap-4 py-3 font-semibold transition-colors"
-                      >
-                        <span>{item.publicLabel}</span>
-                        <span aria-hidden>→</span>
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              </section>
-            ) : null}
-
-            {!children.length && !contentCards.length && !related.length ? (
-              <p className="bg-meadow/20 text-coffee/72 rounded-[20px] px-5 py-6 text-[15px] leading-[1.65]">
-                Za ovu temu trenutno nema dodatnih objavljenih sadržaja.
-              </p>
-            ) : null}
-          </div>
-
-          <aside className="space-y-5">
-            {parent ? (
-              <section className="border-coffee/10 bg-surface rounded-[22px] border p-6">
-                <p className="text-coffee/55 text-[12px] font-semibold tracking-[0.12em] uppercase">
-                  Pripada oblasti
-                </p>
-                <ArrowLink href={parent.canonicalPath} className="mt-3">
-                  {parent.publicLabel}
-                </ArrowLink>
-              </section>
-            ) : null}
-
-            <section className="bg-forest text-canvas rounded-[22px] p-6">
-              <h2 className="font-serif text-[27px] leading-tight font-normal">
-                Želite stručnu pomoć?
-              </h2>
-              <p className="text-canvas/75 mt-3 text-[14.5px] leading-[1.65]">
-                Nastavite ka izboru podrške i proverite koji sledeći korak vam
-                odgovara.
-              </p>
-              <ButtonLink
-                href="/pronadji-podrsku"
-                variant="light"
-                className="mt-6"
+          {isArea && children.length > 0 ? (
+            <section
+              aria-labelledby="kompas-children-title"
+              className="bg-surface mt-3 rounded-[22px] px-5 py-[22px] md:px-8 md:py-7"
+            >
+              <h2
+                id="kompas-children-title"
+                className="text-forest mb-4 font-serif text-[24px] font-normal"
               >
-                Pronađite podršku
-              </ButtonLink>
+                Teme u ovoj oblasti
+              </h2>
+              <div className="grid [grid-template-columns:repeat(auto-fit,minmax(250px,1fr))] gap-2">
+                {children.map((child) => (
+                  <Link
+                    key={child.stableId}
+                    href={child.canonicalPath as Route}
+                    className="border-coffee/10 bg-surface hover:border-coffee/25 hover:shadow-card-hover flex flex-col gap-1.5 rounded-[16px] border p-4 transition-[border-color,box-shadow]"
+                  >
+                    <span className="text-forest font-serif text-[19px]">
+                      {child.publicLabel}
+                    </span>
+                    {child.shortDescription ? (
+                      <span className="text-coffee/62 text-[13px] leading-[1.55]">
+                        {child.shortDescription}
+                      </span>
+                    ) : null}
+                  </Link>
+                ))}
+              </div>
             </section>
+          ) : null}
+
+          <section
+            aria-labelledby="kompas-content-title"
+            className="bg-surface mt-3 rounded-[22px] px-5 py-[22px] md:px-8 md:py-7"
+          >
+            <h2
+              id="kompas-content-title"
+              className="text-forest mb-4 font-serif text-[24px] font-normal"
+            >
+              {isArea ? "Objavljeni sadržaji" : "Sadržaji uz ovu temu"}
+            </h2>
+
+            {contentCards.length > 0 ? (
+              <div className="grid [grid-template-columns:repeat(auto-fit,minmax(260px,1fr))] gap-2.5">
+                {contentCards.map((card) => (
+                  <CompassContentCard key={card.itemKey} card={card} />
+                ))}
+              </div>
+            ) : (
+              <div className="border-coffee/20 bg-coffee/3 rounded-[18px] border border-dashed p-[22px]">
+                <p className="text-forest mb-2 text-[14.5px]">
+                  {isArea
+                    ? "Za ovu oblast još nema objavljenih sadržaja."
+                    : "Za ovu temu još nema objavljenih sadržaja."}
+                </p>
+                <p className="text-coffee/60 text-[13px] leading-[1.6]">
+                  {isArea
+                    ? "Prikazuju se čim budu objavljeni u registru. U međuvremenu pogledajte srodne oblasti ili zatražite stručnu podršku."
+                    : "Pogledajte druge teme u oblasti ili zatražite stručnu podršku."}
+                </p>
+              </div>
+            )}
+          </section>
+
+          <section className="bg-surface/60 border-line mt-3 flex flex-wrap items-center gap-2.5 rounded-[22px] border p-5">
+            <span className="text-coffee/68 w-full text-[11px] tracking-[0.14em] uppercase">
+              {isArea ? "Srodne oblasti" : "Druge teme u oblasti"}
+            </span>
+
+            {related.map((item) => (
+              <Link
+                key={item.stableId}
+                href={item.canonicalPath as Route}
+                className="border-coffee/12 bg-surface text-forest hover:border-coffee/30 inline-flex min-h-11 items-center rounded-full border px-4 text-[13.5px] transition-colors"
+              >
+                {item.publicLabel}
+              </Link>
+            ))}
+
+            {parent ? (
+              <Link
+                href={parent.canonicalPath as Route}
+                className="border-coffee/12 bg-surface text-forest hover:border-coffee/30 inline-flex min-h-11 items-center rounded-full border px-4 text-[13.5px] transition-colors"
+              >
+                Cela oblast: {parent.publicLabel}
+              </Link>
+            ) : null}
 
             <Link
-              href={
-                (routeKind === "oblast"
-                  ? "/kompas/oblasti"
-                  : "/kompas/teme") as Route
-              }
-              className="text-forest hover:text-sage inline-flex min-h-11 items-center font-semibold underline underline-offset-4"
+              href={(isArea ? "/kompas/oblasti" : "/kompas/teme") as Route}
+              className="text-forest hover:text-forest-soft inline-flex min-h-11 items-center px-2 text-[13.5px] underline underline-offset-[3px]"
             >
-              {routeKind === "oblast"
-                ? "Sve objavljene oblasti"
-                : "Sve objavljene teme"}
+              {isArea ? "Sve oblasti" : "Sve teme"}
             </Link>
-          </aside>
+
+            <Link
+              href="/pronadji-podrsku"
+              className="border-forest text-forest hover:bg-meadow/30 ml-auto inline-flex min-h-[46px] items-center rounded-full border px-[18px] text-[13.5px] transition-colors"
+            >
+              Želim stručnu pomoć
+            </Link>
+          </section>
         </div>
-      </div>
+      </section>
     </>
   );
 }

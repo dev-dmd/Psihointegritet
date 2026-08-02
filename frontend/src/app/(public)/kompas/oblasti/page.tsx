@@ -22,6 +22,10 @@ export default async function CompassAreasPage() {
         publicTermsForRouteKind(collection, "oblast"),
         "oblast",
       )}
+      topics={withFallbackTerms(
+        publicTermsForRouteKind(collection, "tema"),
+        "tema",
+      )}
     />
   );
 }

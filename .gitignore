@@ -6,6 +6,7 @@
 
 # Node / Next.js
 node_modules/
+.dump
 frontend/.next/
 frontend/out/
 frontend/coverage/

@@ -1,5 +1,12 @@
 import { render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+
+// The areas hero carries the sheet launcher, which reads the app router. These
+// tests render components in isolation, so the router is stubbed rather than a
+// whole app shell mounted around them.
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ push: vi.fn() }),
+}));
 
 import type {
   PublicTaxonomyPageAggregate,
@@ -71,15 +78,22 @@ describe("public Compass page renderers", () => {
         level: 1,
       }),
     ).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /Sagorevanje/ })).toHaveAttribute(
+      "href",
+      "/kompas/tema/sagorevanje",
+    );
+    expect(screen.getByRole("link", { name: /Otvori/ })).toHaveAttribute(
+      "href",
+      "/usluge/individualna-psihoterapija",
+    );
     expect(
-      screen.getByRole("link", { name: /Istražite temu/ }),
-    ).toHaveAttribute("href", "/kompas/tema/sagorevanje");
-    expect(
-      screen.getByRole("link", { name: /Pogledajte sadržaj/ }),
-    ).toHaveAttribute("href", "/usluge/individualna-psihoterapija");
-    expect(
-      screen.getByRole("link", { name: "Pronađite podršku" }),
+      screen.getByRole("link", { name: "Želim stručnu pomoć" }),
     ).toHaveAttribute("href", "/pronadji-podrsku");
+    // The area's own meta line counts what is actually on the page.
+    expect(
+      screen.getByText("1 tema · 1 objavljen sadržaj"),
+    ).toBeInTheDocument();
+    expect(screen.getByText("Javno dostupno")).toBeInTheDocument();
 
     const jsonLd = container.querySelector(
       'script[type="application/ld+json"]',
@@ -100,10 +114,44 @@ describe("public Compass page renderers", () => {
     expect(
       screen.getByRole("heading", { name: "Teme", level: 1 }),
     ).toBeInTheDocument();
-    expect(screen.getByLabelText("Pretražite teme")).toBeInTheDocument();
-    expect(screen.getByText("Stres i preopterećenost")).toBeInTheDocument();
+    expect(screen.getByLabelText("Pretraga tema")).toBeInTheDocument();
+    // The parent area is a link, so a recognised area widens the search in one
+    // click instead of a back navigation.
     expect(
-      screen.getByRole("link", { name: /Istražite temu/ }),
-    ).toHaveAttribute("href", "/kompas/tema/sagorevanje");
+      screen.getByRole("link", { name: "Stres i preopterećenost" }),
+    ).toHaveAttribute("href", "/kompas/oblast/stres");
+    expect(screen.getByRole("link", { name: "Sagorevanje" })).toHaveAttribute(
+      "href",
+      "/kompas/tema/sagorevanje",
+    );
+  });
+
+  it("lists areas with an ordinal, their topics and a content-count meta line", () => {
+    render(
+      <PublicTaxonomyListPage
+        routeKind="oblast"
+        terms={[area]}
+        topics={[topic]}
+      />,
+    );
+
+    expect(
+      screen.getByRole("heading", { name: "Oblasti", level: 1 }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("link", {
+        name: "Otvori oblast Stres i preopterećenost",
+      }),
+    ).toHaveAttribute("href", "/kompas/oblast/stres");
+    // The topic chip on the area card is its own route in.
+    expect(screen.getByRole("link", { name: "Sagorevanje" })).toHaveAttribute(
+      "href",
+      "/kompas/tema/sagorevanje",
+    );
+    // No public endpoint returns per-term content counts yet, so the card says
+    // so rather than claiming zero.
+    expect(
+      screen.getByText("1 tema · sadržaji u pripremi"),
+    ).toBeInTheDocument();
   });
 });
