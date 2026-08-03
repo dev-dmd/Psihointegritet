@@ -811,7 +811,7 @@ Preporuka za v1:
 
 - [x] **K3A.1** ADR-019 usvojen 2026-08-03: `article` tip, identitet, `/znanje/<slug>`, javni potpis odvojen od operatera, izvori, SEO/JSON-LD, pristup, `EDIT-0xx` provera i pravilo četiri oka.
 - [x] **K3A.2** ADR-021 usvojen 2026-08-03: recept je imenovan i verzionisan skup sekcija sa **fiksnim** redosledom renderovanja; autor bira koje sekcije postoje, ne kojim redom. Prvi i jedini potrošač je `article-v1`. AI generisanje nije deo ovog koraka.
-- [ ] **K3A.3** Dodati `ContentType.article`/`article_detail` template, registre, limite i parity fixtures.
+- [x] **K3A.3** `ContentType.article` i `article_detail` postoje sa svih osam sekcija recepta `article-v1`, novim `articleBody` limitom (24000) i matricom odobrenja `clinical` + `business`. Telo je u postojećem `slot_data`, pa **nije trebala nijedna migracija** — `alembic check` ostaje čist. Uvedena je i nova vrsta polja `boolean` za `standalone` potvrdu, jer odsustvo odgovora ne sme da se čita kao „ne”. Parity fixture je regenerisan (9 → 10 šablona) i oba loadera prolaze nad istim fajlom.
 - [ ] **K3A.4** Završiti stvarni `.docx → RichDoc → segmenti → metadata → review → approve → publish → public article` tok.
 - [ ] **K3A.5** Potvrditi koji postojeći `service`/`program` entiteti imaju discovery card adapter.
 - [ ] **K3A.6** Kompas granica na **dva** mesta: backend eligibility (`compass_service.py:222-225`) i frontend projekcija kartice (`lib/compass/taxonomy-view.ts:100-113`). Ispravka samo jednog znači da članak prođe proveru i tiho nestane pre prikaza.

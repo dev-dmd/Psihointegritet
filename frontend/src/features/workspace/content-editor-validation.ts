@@ -21,6 +21,7 @@ import { requiredContentApprovals } from "./content-approval-policy";
 
 const ROUTE_PREFIX: Record<ContentType, string> = {
   static_page: "",
+  article: "/znanje",
   service: "/usluge",
   therapist: "/tim",
   program: "/programi",

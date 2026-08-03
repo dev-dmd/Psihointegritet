@@ -774,6 +774,152 @@
         "editability": "unmodeled",
         "reason": "LegalDocumentPage komponenta ne renderuje links sekciju — nema dokaza o obliku."
       }
+    },
+    "article_detail": {
+      "hero": {
+        "editability": "editable",
+        "required": true,
+        "visibility": "fixed",
+        "fields": {
+          "title": {
+            "kind": "text",
+            "limit": "pageH1",
+            "required": true
+          },
+          "lead": {
+            "kind": "text",
+            "limit": "heroLead",
+            "required": false
+          }
+        }
+      },
+      "byline": {
+        "editability": "editable",
+        "required": true,
+        "visibility": "fixed",
+        "fields": {
+          "author": {
+            "kind": "cta",
+            "allowedActions": [
+              "VIEW_THERAPIST"
+            ],
+            "targetType": "therapist",
+            "required": true
+          }
+        }
+      },
+      "body_intro": {
+        "editability": "editable",
+        "required": true,
+        "visibility": "fixed",
+        "fields": {
+          "body": {
+            "kind": "rich",
+            "maxBlocks": 120,
+            "maxChars": "articleBody",
+            "required": true
+          }
+        }
+      },
+      "questions": {
+        "editability": "editable",
+        "required": false,
+        "visibility": "toggleable",
+        "fields": {
+          "intro": {
+            "kind": "text",
+            "limit": "sectionIntro",
+            "required": false
+          },
+          "items": {
+            "kind": "rich",
+            "maxBlocks": 20,
+            "maxChars": "sectionIntro",
+            "required": true
+          },
+          "standalone": {
+            "kind": "boolean",
+            "required": false
+          }
+        }
+      },
+      "practice": {
+        "editability": "editable",
+        "required": false,
+        "visibility": "toggleable",
+        "fields": {
+          "title": {
+            "kind": "text",
+            "limit": "sectionH2",
+            "required": false
+          },
+          "steps": {
+            "kind": "rich",
+            "maxBlocks": 30,
+            "maxChars": "articleBody",
+            "required": true
+          },
+          "standalone": {
+            "kind": "boolean",
+            "required": false
+          }
+        }
+      },
+      "body_outro": {
+        "editability": "editable",
+        "required": false,
+        "visibility": "toggleable",
+        "fields": {
+          "body": {
+            "kind": "rich",
+            "maxBlocks": 60,
+            "maxChars": "articleBody",
+            "required": false
+          }
+        }
+      },
+      "sources": {
+        "editability": "editable",
+        "required": false,
+        "visibility": "toggleable",
+        "fields": {
+          "items": {
+            "kind": "repeater",
+            "min": 0,
+            "max": 20,
+            "item": {
+              "citation": {
+                "kind": "text",
+                "limit": "cardDescription",
+                "required": true
+              },
+              "url": {
+                "kind": "text",
+                "limit": "redirectPath",
+                "required": false
+              }
+            }
+          }
+        }
+      },
+      "cta": {
+        "editability": "editable",
+        "required": false,
+        "visibility": "toggleable",
+        "fields": {
+          "items": {
+            "kind": "ctaList",
+            "min": 0,
+            "max": 2,
+            "allowedActions": [
+              "START_MATCHING",
+              "BOOK_SERVICE",
+              "GENERAL_CONTACT"
+            ],
+            "targetType": null
+          }
+        }
+      }
     }
   }
 }

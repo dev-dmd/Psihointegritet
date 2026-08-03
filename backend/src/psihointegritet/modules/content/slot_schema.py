@@ -84,6 +84,7 @@ ContentCharacterLimitKey = Literal[
     "imageAlt",
     "slug",
     "redirectPath",
+    "articleBody",
 ]
 
 # Mirrors frontend/src/lib/content-governance/types.ts::CtaAction.
@@ -138,6 +139,20 @@ class MoneyFieldSpec:
 
 
 @dataclass(frozen=True, slots=True)
+class BooleanFieldSpec:
+    """An authored yes/no answer, not a display toggle.
+
+    Slot *visibility* is already expressed by `SlotOverride.mode`; this kind
+    exists for a decision the author makes about the content itself, where the
+    system must not guess a default. ADR-019 §4 is the first case: a section may
+    be recommended on its own only when a human confirmed it stands alone.
+    """
+
+    required: bool = False
+    kind: Literal["boolean"] = "boolean"
+
+
+@dataclass(frozen=True, slots=True)
 class ImageFieldSpec:
     required: bool = False
     kind: Literal["image"] = "image"
@@ -182,6 +197,7 @@ NonRepeaterFieldSpec = (
     | RichFieldSpec
     | IntegerFieldSpec
     | MoneyFieldSpec
+    | BooleanFieldSpec
     | ImageFieldSpec
     | CtaFieldSpec
 )
@@ -621,6 +637,93 @@ SLOT_SPEC_REGISTRY: dict[ContentTemplate, dict[str, SlotSpec]] = {
         ),
         "links": UnmodeledSlot(
             reason="LegalDocumentPage komponenta ne renderuje links sekciju — nema dokaza o obliku."
+        ),
+    },
+    # Recipe `article-v1` (ADR-021). The order of the keys below is the order the
+    # published page renders in; the author chooses which optional sections exist
+    # and what goes in them, never where they land. Splitting the body into named
+    # sections is what lets Kompas recommend `practice` on its own — a single
+    # `body` field could not be addressed that precisely.
+    ContentTemplate.ARTICLE_DETAIL: {
+        "hero": EditableSlot(
+            required=True,
+            visibility="fixed",
+            fields={
+                "title": TextFieldSpec(limit="pageH1", required=True),
+                # Optional on purpose: import must not derive it from the first
+                # paragraph, which would silently duplicate the opening lines.
+                "lead": TextFieldSpec(limit="heroLead"),
+            },
+        ),
+        # The public byline. A controlled reference to a published therapist
+        # entry, never free text, and independent of who operated the editor
+        # (`created_by_user_id`) — ADR-019 §5.
+        "byline": EditableSlot(
+            required=True,
+            visibility="fixed",
+            fields={
+                "author": CtaFieldSpec(
+                    allowed_actions=("VIEW_THERAPIST",),
+                    target_type=ContentType.THERAPIST,
+                    required=True,
+                )
+            },
+        ),
+        "body_intro": EditableSlot(
+            required=True,
+            visibility="fixed",
+            fields={"body": RichFieldSpec(max_blocks=120, max_chars="articleBody", required=True)},
+        ),
+        "questions": EditableSlot(
+            required=False,
+            visibility="toggleable",
+            fields={
+                "intro": TextFieldSpec(limit="sectionIntro"),
+                "items": RichFieldSpec(max_blocks=20, max_chars="sectionIntro", required=True),
+                "standalone": BooleanFieldSpec(),
+            },
+        ),
+        "practice": EditableSlot(
+            required=False,
+            visibility="toggleable",
+            fields={
+                "title": TextFieldSpec(limit="sectionH2"),
+                "steps": RichFieldSpec(max_blocks=30, max_chars="articleBody", required=True),
+                "standalone": BooleanFieldSpec(),
+            },
+        ),
+        "body_outro": EditableSlot(
+            required=False,
+            visibility="toggleable",
+            fields={"body": RichFieldSpec(max_blocks=60, max_chars="articleBody")},
+        ),
+        # Never required by schema: a mandatory field would push an author to
+        # invent a citation. A quote without a source is an advisory finding that
+        # asks for clinical review instead (ADR-019 §6).
+        "sources": EditableSlot(
+            required=False,
+            visibility="toggleable",
+            fields={
+                "items": RepeaterFieldSpec(
+                    min=0,
+                    max=20,
+                    item={
+                        "citation": TextFieldSpec(limit="cardDescription", required=True),
+                        "url": TextFieldSpec(limit="redirectPath"),
+                    },
+                )
+            },
+        ),
+        "cta": EditableSlot(
+            required=False,
+            visibility="toggleable",
+            fields={
+                "items": CtaListFieldSpec(
+                    min=0,
+                    max=2,
+                    allowed_actions=("START_MATCHING", "BOOK_SERVICE", "GENERAL_CONTACT"),
+                )
+            },
         ),
     },
 }

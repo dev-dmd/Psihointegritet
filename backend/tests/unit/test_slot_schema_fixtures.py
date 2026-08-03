@@ -16,6 +16,7 @@ from typing import Any
 
 from psihointegritet.modules.content.slot_schema import (
     SLOT_SPEC_REGISTRY,
+    BooleanFieldSpec,
     CollectionFieldSpec,
     ComputedSlot,
     CtaFieldSpec,
@@ -64,6 +65,8 @@ def _field_to_json(spec: SlotFieldSpec) -> dict[str, Any]:
             "max": spec.max,
             "required": spec.required,
         }
+    if isinstance(spec, BooleanFieldSpec):
+        return {"kind": "boolean", "required": spec.required}
     if isinstance(spec, ImageFieldSpec):
         return {"kind": "image", "required": spec.required}
     if isinstance(spec, CtaFieldSpec):
@@ -107,9 +110,9 @@ def _slot_to_json(spec: SlotSpec) -> dict[str, Any]:
     return {"editability": "unmodeled", "reason": spec.reason}
 
 
-def test_fixture_file_loaded_all_nine_templates() -> None:
+def test_fixture_file_loaded_all_ten_templates() -> None:
     assert FIXTURES["fixtureSchemaVersion"] == "1"
-    assert len(FIXTURES["templates"]) == 9
+    assert len(FIXTURES["templates"]) == 10
 
 
 def test_python_registry_matches_the_fixture_exactly() -> None:

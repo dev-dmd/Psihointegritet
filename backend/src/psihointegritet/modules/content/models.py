@@ -63,9 +63,12 @@ __all__ = [
 
 
 class ContentType(StrEnum):
-    """The six governed types from R1.4.i `ContentType`.
+    """The six governed types from R1.4.i, plus `article` since ADR-019.
 
-    `article` is deliberately absent: the knowledge library is R3 (ADR-016).
+    The first six share one property `article` does not: their identity is a
+    closed allowlist of known pages (`system_catalog.py`). An article is one
+    entry per published text, unbounded in number, so it takes a separate
+    identity path — see ADR-019 §3.
     """
 
     STATIC_PAGE = "static_page"
@@ -74,6 +77,7 @@ class ContentType(StrEnum):
     PROGRAM = "program"
     COMPANY_PLAN = "company_plan"
     PACKAGE_OFFER = "package_offer"
+    ARTICLE = "article"
 
 
 class ContentTemplate(StrEnum):
@@ -92,6 +96,10 @@ class ContentTemplate(StrEnum):
     PRICING_PAGE = "pricing_page"
     STATIC_INFORMATION = "static_information"
     LEGAL_PAGE = "legal_page"
+    # The first template whose sections follow a Layout Engine recipe
+    # (`article-v1`, ADR-021): the author decides which sections exist, the
+    # recipe decides the order they render in.
+    ARTICLE_DETAIL = "article_detail"
 
 
 class ReviewOutcome(StrEnum):

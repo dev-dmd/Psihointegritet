@@ -51,6 +51,10 @@ export type SlotFieldSpec =
       max: number;
       required?: boolean;
     }
+  /** An authored yes/no answer, not a display toggle — slot visibility is
+   * already `SlotOverride.mode`. First used by ADR-019 §4: a section may be
+   * recommended on its own only when a human confirmed it stands alone. */
+  | { kind: "boolean"; required?: boolean }
   | { kind: "image"; required?: boolean }
   | { kind: "imageList"; min: number; max: number }
   | {
@@ -451,5 +455,81 @@ export const slotSpecRegistry: Record<
     links: unmodeled(
       "LegalDocumentPage komponenta ne renderuje links sekciju — nema dokaza o obliku.",
     ),
+  },
+
+  // Recipe `article-v1` (ADR-021). The key order below is the order the
+  // published page renders in; the author chooses which optional sections
+  // exist and what goes in them, never where they land. Splitting the body
+  // into named sections is what lets Kompas recommend `practice` on its own.
+  article_detail: {
+    hero: editable(true, "fixed", {
+      title: { kind: "text", limit: "pageH1", required: true },
+      // Optional on purpose: import must not derive it from the first
+      // paragraph, which would silently duplicate the opening lines.
+      lead: { kind: "text", limit: "heroLead" },
+    }),
+    // The public byline: a controlled reference to a published therapist,
+    // independent of who operated the editor (ADR-019 §5).
+    byline: editable(true, "fixed", {
+      author: {
+        kind: "cta",
+        allowedActions: ["VIEW_THERAPIST"],
+        targetType: "therapist",
+        required: true,
+      },
+    }),
+    body_intro: editable(true, "fixed", {
+      body: {
+        kind: "rich",
+        maxBlocks: 120,
+        maxChars: "articleBody",
+        required: true,
+      },
+    }),
+    questions: editable(false, "toggleable", {
+      intro: { kind: "text", limit: "sectionIntro" },
+      items: {
+        kind: "rich",
+        maxBlocks: 20,
+        maxChars: "sectionIntro",
+        required: true,
+      },
+      standalone: { kind: "boolean" },
+    }),
+    practice: editable(false, "toggleable", {
+      title: { kind: "text", limit: "sectionH2" },
+      steps: {
+        kind: "rich",
+        maxBlocks: 30,
+        maxChars: "articleBody",
+        required: true,
+      },
+      standalone: { kind: "boolean" },
+    }),
+    body_outro: editable(false, "toggleable", {
+      body: { kind: "rich", maxBlocks: 60, maxChars: "articleBody" },
+    }),
+    // Never required by schema: a mandatory field would push an author to
+    // invent a citation. A quote without a source asks for clinical review
+    // instead (ADR-019 §6).
+    sources: editable(false, "toggleable", {
+      items: {
+        kind: "repeater",
+        min: 0,
+        max: 20,
+        item: {
+          citation: { kind: "text", limit: "cardDescription", required: true },
+          url: { kind: "text", limit: "redirectPath" },
+        },
+      },
+    }),
+    cta: editable(false, "toggleable", {
+      items: {
+        kind: "ctaList",
+        min: 0,
+        max: 2,
+        allowedActions: ["START_MATCHING", "BOOK_SERVICE", "GENERAL_CONTACT"],
+      },
+    }),
   },
 };
