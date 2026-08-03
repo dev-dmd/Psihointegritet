@@ -11,6 +11,13 @@ import { compassFallbackRegistry } from "./fallback-registry";
 /** Marks an aggregate as coming from checked-in copy, never a published row. */
 const FALLBACK_TAXONOMY_VERSION = "kompas-taxonomy-fallback";
 
+export function compassDemoPreviewEnabled(): boolean {
+  return (
+    process.env.NODE_ENV !== "production" &&
+    process.env.NEXT_PUBLIC_COMPASS_DEMO_PREVIEW === "true"
+  );
+}
+
 /**
  * Projects the checked-in fallback registry into the wire shape the public
  * Kompas pages already render.
@@ -79,7 +86,9 @@ export function withFallbackTerms(
   live: readonly RoutablePublicTaxonomyTerm[],
   kind: CompassRouteKind,
 ): readonly RoutablePublicTaxonomyTerm[] {
-  return live.length > 0 ? live : fallbackTermsForRouteKind(kind);
+  return live.length > 0 || !compassDemoPreviewEnabled()
+    ? live
+    : fallbackTermsForRouteKind(kind);
 }
 
 /**
@@ -94,6 +103,7 @@ export function fallbackTaxonomyPage(
   kind: CompassRouteKind,
   slug: string,
 ): PublicTaxonomyPageAggregate | null {
+  if (!compassDemoPreviewEnabled()) return null;
   const registry = compassFallbackRegistry;
   const areas = fallbackTermsForRouteKind("oblast");
   const topics = fallbackTermsForRouteKind("tema");

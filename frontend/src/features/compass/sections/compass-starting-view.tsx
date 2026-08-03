@@ -1,8 +1,9 @@
 import type { Route } from "next";
 import Link from "next/link";
 
+import type { RoutablePublicTaxonomyTerm } from "@/lib/compass/types";
+
 import { CompassStartQuestionsButton } from "./compass-start-questions-button";
-import { allFallbackTopics, type CompassRegistry } from "../fallback-registry";
 
 /**
  * „Polazni prikaz" — the package of areas and topics shown by default.
@@ -19,13 +20,17 @@ import { allFallbackTopics, type CompassRegistry } from "../fallback-registry";
  * is fabricated to fill the grid.
  */
 export function CompassStartingView({
-  registry,
+  areas,
+  topics,
+  isDemo = false,
   id,
 }: {
-  registry: CompassRegistry;
+  areas: readonly RoutablePublicTaxonomyTerm[];
+  topics: readonly RoutablePublicTaxonomyTerm[];
+  isDemo?: boolean;
   id: string;
 }) {
-  const topics = allFallbackTopics(registry).slice(0, 12);
+  const visibleTopics = topics.slice(0, 12);
 
   return (
     <div className="mx-auto max-w-[1536px] px-5 pt-3 pb-[72px] md:px-8 md:pb-24">
@@ -46,6 +51,11 @@ export function CompassStartingView({
           pitanja možete pokrenuti kad god poželite.
         </p>
         <CompassStartQuestionsButton />
+        {isDemo ? (
+          <p className="border-honey/40 bg-honey/10 text-coffee mt-4 rounded-xl border px-3 py-2 text-[12.5px]">
+            Demo sadržaj — prikazan je samo u lokalnom preview režimu.
+          </p>
+        ) : null}
       </section>
 
       <section
@@ -68,25 +78,32 @@ export function CompassStartingView({
         </div>
 
         <div className="mt-4 grid [grid-template-columns:repeat(auto-fit,minmax(230px,1fr))] gap-2">
-          {registry.areas.map((area) => (
+          {areas.map((area) => (
             <Link
               key={area.stableId}
-              href={`/kompas/oblast/${area.slug}` as Route}
+              href={area.canonicalPath as Route}
               className="border-line bg-surface hover:border-coffee/25 hover:shadow-card-hover flex flex-col gap-1 rounded-[14px] border px-4 py-3.5 transition-[border-color,box-shadow]"
             >
-              <span className="text-forest text-[15px]">{area.label}</span>
+              <span className="text-forest text-[15px]">
+                {area.publicLabel}
+              </span>
               <span className="text-coffee/60 text-[12.5px] leading-[1.5]">
-                {area.description}
+                {area.shortDescription}
               </span>
               <span className="text-sage text-[11px] tracking-[0.06em] uppercase">
-                {area.topics.length} tema
+                {
+                  topics.filter(
+                    (topic) => topic.parentStableId === area.stableId,
+                  ).length
+                }{" "}
+                tema
               </span>
             </Link>
           ))}
         </div>
       </section>
 
-      {topics.length > 0 ? (
+      {visibleTopics.length > 0 ? (
         <section
           aria-labelledby="kompas-polazni-teme"
           className="bg-surface mt-3 rounded-[22px] px-5 py-[22px] md:px-8 md:py-7"
@@ -107,13 +124,13 @@ export function CompassStartingView({
           </div>
 
           <ul className="mt-4 flex flex-wrap gap-2">
-            {topics.map((topic) => (
+            {visibleTopics.map((topic) => (
               <li key={topic.stableId}>
                 <Link
-                  href={`/kompas/tema/${topic.slug}` as Route}
+                  href={topic.canonicalPath as Route}
                   className="border-line-strong bg-coffee/3 text-forest hover:border-coffee/30 inline-flex min-h-11 items-center rounded-full border px-4 text-[13.5px] transition-colors"
                 >
-                  {topic.label}
+                  {topic.publicLabel}
                 </Link>
               </li>
             ))}

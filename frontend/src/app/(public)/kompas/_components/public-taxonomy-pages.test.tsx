@@ -86,9 +86,13 @@ describe("public Compass page renderers", () => {
       "href",
       "/usluge/individualna-psihoterapija",
     );
-    expect(
-      screen.getByRole("link", { name: "Želim stručnu pomoć" }),
-    ).toHaveAttribute("href", "/pronadji-podrsku");
+    const supportLinks = screen.getAllByRole("link", {
+      name: "Želim stručnu pomoć",
+    });
+    expect(supportLinks.length).toBeGreaterThan(0);
+    for (const link of supportLinks) {
+      expect(link).toHaveAttribute("href", "/pronadji-podrsku");
+    }
     // The area's own meta line counts what is actually on the page.
     expect(
       screen.getByText("1 tema · 1 objavljen sadržaj"),

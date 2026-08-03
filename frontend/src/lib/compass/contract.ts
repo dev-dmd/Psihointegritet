@@ -19,7 +19,7 @@ const taxonomyAxisSchema = z.enum([
   "access_level",
 ]);
 
-const publicTaxonomyTermSchema = z.object({
+export const publicTaxonomyTermSchema = z.object({
   termId: z.string().uuid(),
   axis: taxonomyAxisSchema,
   stableId: z.string().min(1),
@@ -35,7 +35,7 @@ const publicTaxonomyTermSchema = z.object({
   relatedStableIds: z.array(z.string()),
 });
 
-const publicTaxonomyCollectionSchema = z.object({
+export const publicTaxonomyCollectionSchema = z.object({
   taxonomyVersion: z.string().min(1),
   locale: z.string().min(2),
   terms: z.array(publicTaxonomyTermSchema),
@@ -146,6 +146,7 @@ export const publicCompassRecommendationSchema = z.object({
           }),
         )
         .max(3),
+      goalIds: z.array(z.string()),
     }),
   ),
   relatedTopics: z.array(publicTaxonomyTermSchema),

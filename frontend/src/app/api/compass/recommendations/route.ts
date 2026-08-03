@@ -13,7 +13,7 @@ export async function POST(request: Request): Promise<Response> {
 
   try {
     const response = await fetch(
-      `${serverEnv.NEXT_PUBLIC_API_URL}/api/v1/public/compass/recommendations`,
+      `${serverEnv.NEXT_PUBLIC_API_URL}/api/v1/public/compass/flows/main-kompas/recommendations`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
