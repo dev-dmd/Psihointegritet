@@ -83,6 +83,11 @@ jobs:
       NEXT_PUBLIC_APP_URL: http://localhost:3007
       NEXT_PUBLIC_API_URL: http://localhost:8001
       NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: pk_test_ZXhhbXBsZS5jbGVyay5hY2NvdW50cy5kZXYk
+      # Placeholder pair, not a real instance. `lib/validation/env.ts` requires both
+      # keys at module load, so `next build` fails while collecting route handlers
+      # without this. The E2E suite is signed out and mocks every BFF call, so no
+      # request ever reaches Clerk; an authenticated suite would need real secrets.
+      CLERK_SECRET_KEY: sk_test_000000000000000000000000000000000000000000
       NEXT_PUBLIC_COMPASS_DEMO_PREVIEW: "false"
     steps:
       - uses: actions/checkout@v4
