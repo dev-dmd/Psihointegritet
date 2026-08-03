@@ -17,15 +17,19 @@ from psihointegritet.modules.identity.roster import (
 )
 
 
-def test_every_member_has_a_matching_therapist_slug() -> None:
+def test_every_therapist_has_a_matching_slug_and_nobody_else_has_one() -> None:
     # A therapist whose slug belonged to someone else is the defect that made
-    # this module necessary.
+    # this module necessary. The reverse matters too: a slug on a non-clinician
+    # would offer them for matching, which is a clinical claim.
     for key, person in TEAM.items():
-        assert person.therapist_slug is not None, key
-        assert person.therapist_slug.startswith(person.email.split(".")[0]), (
-            f"{key}: therapist slug '{person.therapist_slug}' does not match "
-            f"the email '{person.email}'"
-        )
+        if MembershipRole.THERAPIST in person.roles:
+            assert person.therapist_slug is not None, key
+            assert person.therapist_slug.startswith(person.email.split(".")[0]), (
+                f"{key}: therapist slug '{person.therapist_slug}' does not match "
+                f"the email '{person.email}'"
+            )
+        else:
+            assert person.therapist_slug is None, key
 
 
 def test_clerk_ids_are_unique_across_the_team() -> None:
@@ -36,9 +40,21 @@ def test_clerk_ids_are_unique_across_the_team() -> None:
             assert owner == key, f"{clerk_id} is claimed by both {owner} and {key}"
 
 
-def test_every_member_holds_both_roles_per_d026() -> None:
+def test_every_therapist_holds_both_roles_per_d026() -> None:
     for key, person in TEAM.items():
+        if person.therapist_slug is None:
+            continue
         assert person.roles == frozenset({MembershipRole.ORG_ADMIN, MembershipRole.THERAPIST}), key
+
+
+def test_the_platform_operator_is_an_admin_but_never_a_clinician() -> None:
+    # D-051 gives a superadmin every capability at runtime; the membership row
+    # still must not say "therapist", or he becomes selectable for matching.
+    operators = [person for person in TEAM.values() if person.superadmin]
+    assert operators, "the roster records no platform operator"
+    for person in operators:
+        assert MembershipRole.THERAPIST not in person.roles, person.key
+        assert person.therapist_slug is None, person.key
 
 
 def test_no_production_ids_are_recorded_yet() -> None:
@@ -73,4 +89,4 @@ def test_only_production_resolves_to_the_production_clerk_instance() -> None:
 
 
 def test_known_keys_are_sorted_and_complete() -> None:
-    assert known_keys() == ("anja", "marija", "marjan")
+    assert known_keys() == ("anja", "marija", "marjan", "milan")

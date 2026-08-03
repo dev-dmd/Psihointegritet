@@ -180,6 +180,11 @@ def resolve_request(args: argparse.Namespace, settings: Settings) -> StaffProvis
                 f"on the {instance} instance. Refusing to guess which one is right."
             )
         print(f"{person.display_name} <{person.email}> [{external_id}]")
+        # An explicit flag always wins, including `--revoke-superadmin`, so the
+        # roster can record the intent without taking the decision away.
+        superadmin = args.superadmin if args.superadmin is not None else person.superadmin or None
+        if superadmin and args.superadmin is None:
+            print("  ★ platform superadmin (recorded in the roster)")
         return StaffProvisioningRequest(
             organization_slug=args.organization,
             external_auth_id=external_id,
@@ -188,7 +193,7 @@ def resolve_request(args: argparse.Namespace, settings: Settings) -> StaffProvis
             display_name=person.display_name,
             therapist_slug=person.therapist_slug,
             replace_roles=args.replace_roles,
-            superadmin=args.superadmin,
+            superadmin=superadmin,
         )
 
     # `--superadmin` alone is a legitimate invocation: a platform operator
