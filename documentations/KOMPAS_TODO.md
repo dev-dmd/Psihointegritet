@@ -5,7 +5,7 @@
 **Vlasnik tehničkih odluka:** Milan Dražić (CTO)  
 **Vlasnik stručne kategorizacije i javnih naziva:** Anja Stamenković i stručni tim  
 **Ulazni dokument:** `CODEX HANDOFF — KOMPAS.docx`, primljen 2026-07-31  
-**Povezano:** O-21 · D-047 · D-048 · D-052 · **D-053 · D-054 · D-056 · ADR-022 Amandmani 1–2** · **D-058 · D-059 · D-060 · ADR-025** · ADR-016 · ADR-018 · budući ADR-019/ADR-021
+**Povezano:** O-21 · D-047 · D-048 · D-052 · **D-053 · D-054 · D-056 · ADR-022 Amandmani 1–2** · **D-058 · D-059 · D-060 · D-061 · ADR-025** · **ADR-019 · ADR-021** · ADR-016 · ADR-018
 
 ## 0A. Kompas v1 vertikala — faze i acceptance gate-ovi (D-058)
 
@@ -260,7 +260,7 @@ Otvoreno za Anju/tim:
 
 | Vrednost            | Ciljni katalog | V1 status                                      |
 | ------------------- | -------------- | ---------------------------------------------- |
-| `article`           | Da             | Posle ADR-019 i pravog article toka            |
+| `article`           | Da             | ADR-019 usvojen; čeka K3A.3 implementaciju     |
 | `program`           | Da             | Kada postoji objavljeni entitet i card adapter |
 | `pdf` / `worksheet` | Da             | Posle `ResourceAsset` vertikale iz ADR-018     |
 | `audio`             | Da             | ⏸️ Nema model/provider                         |
@@ -809,13 +809,17 @@ Preporuka za v1:
 
 ### K3A — article/Layout i katalog sadržaja, zasebna domenska kapija
 
-- [ ] **K3A.1** ADR-019: `article` tip, identitet, autor/reviewer, izvori, SEO/JSON-LD i javna ruta.
-- [ ] **K3A.2** ADR-021: minimalni Layout Engine recept pre prvog article renderer-a; AI generisanje nije deo ovog koraka.
-- [ ] **K3A.3** Dodati `ContentType.article`/article template tek posle ADR-019.
-- [ ] **K3A.4** Završiti stvarni `.docx → RichDoc → metadata → review → approve → publish → public article` tok.
+- [x] **K3A.1** ADR-019 usvojen 2026-08-03: `article` tip, identitet, `/znanje/<slug>`, javni potpis odvojen od operatera, izvori, SEO/JSON-LD, pristup, `EDIT-0xx` provera i pravilo četiri oka.
+- [x] **K3A.2** ADR-021 usvojen 2026-08-03: recept je imenovan i verzionisan skup sekcija sa **fiksnim** redosledom renderovanja; autor bira koje sekcije postoje, ne kojim redom. Prvi i jedini potrošač je `article-v1`. AI generisanje nije deo ovog koraka.
+- [ ] **K3A.3** Dodati `ContentType.article`/`article_detail` template, registre, limite i parity fixtures.
+- [ ] **K3A.4** Završiti stvarni `.docx → RichDoc → segmenti → metadata → review → approve → publish → public article` tok.
 - [ ] **K3A.5** Potvrditi koji postojeći `service`/`program` entiteti imaju discovery card adapter.
+- [ ] **K3A.6** Kompas granica na **dva** mesta: backend eligibility (`compass_service.py:222-225`) i frontend projekcija kartice (`lib/compass/taxonomy-view.ts:100-113`). Ispravka samo jednog znači da članak prođe proveru i tiho nestane pre prikaza.
+- [ ] **K3A.7** Segment označen kao samostalno upotrebljiv ulazi u sekciju „Praktični alati” sa dubokim linkom na sidro u članku; deduplikacija mora sprečiti da se isti tekst pojavi i kao kartica i kao alat.
 
 **Gate K3A:** najmanje jedan stvarni objavljeni članak i jedan dozvoljeni postojeći entitet ulaze u isti discovery read-model. Ova kapija ne blokira K1/K2.
+
+**Redosled:** K3A.3 i dalje ide **posle D19**, jer uvodi novu tabelu i migraciju, a `alembic check` do tada nije čist.
 
 ### K3B — kanonske stranice i urednički vodiči
 
@@ -1012,7 +1016,8 @@ D-058/ADR-025 su usvojeni, a Kompas v1 vertikala radi: DB flow, taxonomy, Result
 5. **Ostatak K6:** access oznaka na kartici (K6.7), preneti početni termin iz hero/„Razlozi dolaska” (K6.9) i čipovi „Vaš trenutni izbor” (K6.11).
 6. **Realni end-to-end acceptance tok sa admin terapeutom:** napraviti i odobriti sadržaj kroz „Brzi unos”/postojeći lifecycle, objaviti ga i potvrditi da ga javni Kompas pravilno učitava, filtrira, objašnjava i preporučuje bez frontend hardcode-a. Zavisi od 3.
 7. **Produkciona aktivacija po D-059:** flag se pali tek kad su 2, 3 i 6 zeleni.
-8. `CompassGuide`, article/Layout, dodatne formate i AI širiti tek iza postojećih K3A/ADR-019/ADR-021 kapija.
+8. **Article vertikala (K3A.3–K3A.7)** po ADR-019/ADR-021, sa `anksioznost-nije-vas-neprijatelj.docx` kao ručnim acceptance scenarijem; počinje posle D19 zbog nove migracije.
+9. `CompassGuide`, dodatne formate i AI širiti tek iza postojećih kapija.
 
 ---
 

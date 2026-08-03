@@ -90,7 +90,7 @@ Editor kasnije može menjati sadržaj u postojećem slotu ili dodati dozvoljeni 
 | `pricing_page`       | service prices, package offers, notice, CTA                        | program/CompanyPlan references 0-8                                |
 | `static_information` | hero, intro, prose sections, CTA                                   | 1-6 prose sections, FAQ 0-1                                       |
 | `legal_page`         | title, approved legal copy, version/date                           | nema marketinški CTA; links only                                  |
-| `article` (R3)       | hero, author/reviewer strip, lead, body, sources                   | approved block registry only                                      |
+| `article_detail`     | hero, byline, body_intro, questions, practice, body_outro, sources, cta | recept `article-v1` (ADR-021) fiksira redosled sekcija; `questions` i `practice` mogu biti samostalno preporučeni ako ih autor tako označi |
 
 Za sve cards/grid slotove važi jedan nivo kartice: kartica ne sadrži drugu vizuelnu karticu. Prazan optional slot se ne renderuje; ne ostavlja razmak niti placeholder na javnoj strani.
 
