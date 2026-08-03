@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
+import { notFound } from "next/navigation";
 
 import { PublicTaxonomyListPage } from "@/app/(public)/kompas/_components/public-taxonomy-list-page";
+import { isCompassPublicEnabled } from "@/lib/compass/flags";
 import {
   compassListDiscoverability,
   createCompassMetadata,
@@ -14,6 +16,8 @@ export const metadata: Metadata = createCompassMetadata(
 );
 
 export default async function CompassAreasPage() {
+  if (!isCompassPublicEnabled()) notFound();
+
   const collection = await getPublicTaxonomy();
   return (
     <PublicTaxonomyListPage

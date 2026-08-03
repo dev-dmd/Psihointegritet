@@ -4,6 +4,7 @@ import {
   compassSitemapEntries,
   mergeSitemapEntries,
 } from "@/lib/compass/discoverability";
+import { isCompassPublicEnabled } from "@/lib/compass/flags";
 import { getPublicTaxonomy } from "@/lib/compass/public-taxonomy";
 import { sitemapEntries } from "@/lib/content-governance/discoverability";
 import { getContentProvider } from "@/lib/content-governance/provider-resolver";
@@ -14,7 +15,9 @@ import {
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const environment = deploymentEnvironment();
-  if (!isProductionEnvironment(environment)) {
+  // A deactivated Kompas answers 404 (D-059), so its routes must not be
+  // advertised even where the environment would otherwise be indexable.
+  if (!isProductionEnvironment(environment) || !isCompassPublicEnabled()) {
     return sitemapEntries(await getContentProvider(), undefined, environment);
   }
 

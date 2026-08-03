@@ -1,3 +1,5 @@
+import { notFound } from "next/navigation";
+
 import { CompassExitFeedback } from "@/features/compass/feedback/compass-exit-feedback";
 import {
   compassDemoPreviewEnabled,
@@ -6,6 +8,7 @@ import {
 import { CompassAlwaysAvailable } from "@/features/compass/sections/compass-always-available";
 import { CompassHero } from "@/features/compass/sections/compass-hero";
 import { CompassStartingView } from "@/features/compass/sections/compass-starting-view";
+import { isCompassPublicEnabled } from "@/lib/compass/flags";
 import { metadataForRoute } from "@/lib/content-governance/discoverability";
 import { getContentProvider } from "@/lib/content-governance/provider-resolver";
 import { getPublicTaxonomy } from "@/lib/compass/public-taxonomy";
@@ -14,6 +17,7 @@ import { publicTermsForRouteKind } from "@/lib/compass/taxonomy-view";
 const STARTING_VIEW_ID = "kompas-oblasti";
 
 export async function generateMetadata() {
+  if (!isCompassPublicEnabled()) return {};
   return metadataForRoute("/kompas", await getContentProvider());
 }
 
@@ -24,6 +28,8 @@ export async function generateMetadata() {
  * are available only under an explicit, non-production preview flag.
  */
 export default async function CompassPage() {
+  if (!isCompassPublicEnabled()) notFound();
+
   const taxonomy = await getPublicTaxonomy();
   const liveAreas = publicTermsForRouteKind(taxonomy, "oblast");
   const liveTopics = publicTermsForRouteKind(taxonomy, "tema");

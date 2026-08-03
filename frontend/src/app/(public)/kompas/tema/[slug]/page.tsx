@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
+import { notFound } from "next/navigation";
 
 import { PublicTaxonomyPage } from "@/app/(public)/kompas/_components/public-taxonomy-page";
+import { isCompassPublicEnabled } from "@/lib/compass/flags";
 import {
   compassPageDiscoverability,
   createCompassMetadata,
@@ -15,6 +17,8 @@ interface CompassTopicPageProps {
 export async function generateMetadata({
   params,
 }: CompassTopicPageProps): Promise<Metadata> {
+  if (!isCompassPublicEnabled()) return {};
+
   const { slug } = await params;
   const aggregate = await loadPublicTaxonomyPage("tema", slug, () =>
     fallbackTaxonomyPage("tema", slug),
@@ -25,6 +29,8 @@ export async function generateMetadata({
 export default async function CompassTopicPage({
   params,
 }: CompassTopicPageProps) {
+  if (!isCompassPublicEnabled()) notFound();
+
   const { slug } = await params;
   const aggregate = await loadPublicTaxonomyPage("tema", slug, () =>
     fallbackTaxonomyPage("tema", slug),

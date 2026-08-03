@@ -3,7 +3,7 @@ export interface SiteNavLink {
   href: string;
 }
 
-/** The six sticky-header destinations remain deliberately compact. */
+/** The sticky-header destinations remain deliberately compact. */
 export const headerNavLinks: SiteNavLink[] = [
   { label: "Pronađi podršku", href: "/pronadji-podrsku" },
   { label: "Terapeuti", href: "/tim" },
@@ -13,6 +13,17 @@ export const headerNavLinks: SiteNavLink[] = [
   { label: "Kompas", href: "/kompas" },
   { label: "O nama", href: "/o-nama" },
 ];
+
+/**
+ * Header links minus destinations that are switched off for this environment.
+ * The Kompas entry follows D-059: it disappears wherever `/kompas` answers 404,
+ * so the navigation never advertises a route that is not activated.
+ */
+export function visibleHeaderNavLinks(compassEnabled: boolean): SiteNavLink[] {
+  return compassEnabled
+    ? headerNavLinks
+    : headerNavLinks.filter((link) => link.href !== "/kompas");
+}
 
 export const headerBookingHref = "/zakazi?source=header";
 
