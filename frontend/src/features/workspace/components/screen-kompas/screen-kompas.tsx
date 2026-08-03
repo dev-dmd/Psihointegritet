@@ -25,6 +25,48 @@ import { ReviewQueue } from "./review-queue";
 import { SystemChoices } from "./system-choices";
 import { TermList } from "./term-list";
 import type { KompasTab } from "./types";
+import {
+  CompassAdminWorkspace,
+  type CompassWorkspaceSection,
+} from "./compass-admin-workspace";
+
+const WORKSPACE_TABS = [
+  { id: "overview", label: "Pregled" },
+  { id: "registry", label: "Registar" },
+  { id: "flow", label: "Tok pitanja" },
+  { id: "content", label: "Sadržaj" },
+  { id: "results", label: "Prikaz rezultata" },
+  { id: "testing", label: "Testiranje" },
+  { id: "publishing", label: "Pregled i objavljivanje" },
+] as const;
+
+type WorkspaceTab = (typeof WORKSPACE_TABS)[number]["id"];
+
+export function ScreenKompas() {
+  const [workspaceTab, setWorkspaceTab] = useState<WorkspaceTab>("overview");
+  return (
+    <section className="animate-fade-up">
+      <PageHeader
+        title="Kompas"
+        description="Od registra i toka pitanja do testiranja istog Engine-a i kontrolisane objave."
+      />
+      <div className="rounded-panel border-line bg-surface mb-6 border px-4 py-4">
+        <TabPills
+          tabs={[...WORKSPACE_TABS]}
+          activeId={workspaceTab}
+          onChange={(id) => setWorkspaceTab(id as WorkspaceTab)}
+        />
+      </div>
+      {workspaceTab === "registry" ? (
+        <CompassRegistryPanel />
+      ) : (
+        <CompassAdminWorkspace
+          section={workspaceTab as CompassWorkspaceSection}
+        />
+      )}
+    </section>
+  );
+}
 
 /**
  * K2 — admin surface over the canonical Kompas registry (D-053/ADR-022).
@@ -34,7 +76,7 @@ import type { KompasTab } from "./types";
  * Network lifecycle lives in `hooks/use-taxonomy-registry.ts`; the backend
  * stays the authority for locks, validation and publication.
  */
-export function ScreenKompas() {
+function CompassRegistryPanel() {
   const [activeTab, setActiveTab] = useState<KompasTab>("areas");
   const [editorState, setEditorState] = useState<{
     axis: ManagedTaxonomyAxis;
@@ -84,12 +126,7 @@ export function ScreenKompas() {
   };
 
   return (
-    <section className="animate-fade-up">
-      <PageHeader
-        title="Kompas"
-        description="Centralni registar oblasti, tema i kontrolisanih veza koje koriste CMS, preporuke i javni Kompas. Podaci se učitavaju iz baze kao jedinog autoriteta."
-      />
-
+    <section>
       {loadError ? (
         <div className="border-danger/45 bg-danger/8 rounded-panel mb-6 border px-5 py-4">
           <p className="text-coffee text-[14.5px] font-semibold">
