@@ -38,6 +38,7 @@ from psihointegritet.modules.guidance.authorization import (
     IntakeAuthorizationError,
     StaffActor,
     resolve_staff_actor,
+    staff_authorization_message,
 )
 from psihointegritet.modules.organizations.models import Organization
 from psihointegritet.shared.domain.rich_doc import rich_doc_to_json
@@ -73,7 +74,10 @@ async def _org_admin_actor(
     try:
         actor = await resolve_staff_actor(session, identity, settings.default_organization_slug)
     except IntakeAuthorizationError as error:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(error)) from error
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=staff_authorization_message(error),
+        ) from error
     if not actor.is_org_admin:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,

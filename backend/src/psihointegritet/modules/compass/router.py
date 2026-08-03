@@ -27,6 +27,7 @@ from psihointegritet.modules.guidance.authorization import (
     IntakeAuthorizationError,
     StaffActor,
     resolve_staff_actor,
+    staff_authorization_message,
 )
 from psihointegritet.modules.organizations.models import Organization
 
@@ -69,7 +70,8 @@ async def _actor(
         actor = await resolve_staff_actor(session, identity, settings.default_organization_slug)
     except IntakeAuthorizationError as error:
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN, detail="Nema pristupa."
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=staff_authorization_message(error),
         ) from error
     if not actor.is_org_admin:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Nema pristupa.")

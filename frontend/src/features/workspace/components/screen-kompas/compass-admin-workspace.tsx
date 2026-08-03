@@ -86,8 +86,20 @@ export function CompassAdminWorkspace({
   if (flows.isLoading || registry.isLoading)
     return <p>Učitavanje Kompas radnog prostora…</p>;
   if (flows.isError)
+    // The server already says *why* (missing tenant, unprovisioned account, no
+    // active role). Swallowing it left the operator guessing between three
+    // different fixes.
     return (
-      <p className="text-danger">Flow verzije se trenutno ne mogu učitati.</p>
+      <div className="border-danger/45 bg-danger/8 rounded-panel border px-5 py-4">
+        <p className="text-coffee text-[14.5px] font-semibold">
+          Flow verzije se trenutno ne mogu učitati
+        </p>
+        <p className="text-ink-70 mt-1 text-[13px] leading-[1.5]">
+          {flows.error instanceof Error
+            ? flows.error.message
+            : "Osvežite stranicu; ako se ponovi, javite tehničkom timu."}
+        </p>
+      </div>
     );
 
   if (section === "overview") {

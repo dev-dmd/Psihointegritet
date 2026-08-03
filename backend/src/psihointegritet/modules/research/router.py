@@ -22,6 +22,7 @@ from psihointegritet.modules.guidance.authorization import (
     IntakeAuthorizationError,
     StaffActor,
     resolve_staff_actor,
+    staff_authorization_message,
 )
 from psihointegritet.modules.organizations.models import Organization
 
@@ -86,7 +87,7 @@ async def _actor(
             status_code=status.HTTP_403_FORBIDDEN,
             detail={
                 "code": "RESEARCH-AUTH-001",
-                "message": "Nalog nema pristup rezultatima istraživanja.",
+                "message": staff_authorization_message(error),
                 "fieldPath": None,
             },
         ) from error
