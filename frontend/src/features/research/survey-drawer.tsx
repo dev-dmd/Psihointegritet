@@ -79,29 +79,29 @@ function SurveyDrawerContent({
   const titleId = `survey-${surveyStableId}`;
 
   const toggle = (questionId: string, optionId: string, multi: boolean) => {
-    setAnswers((current) => {
-      const selected = current[questionId] ?? [];
-      if (!multi) return { ...current, [questionId]: [optionId] };
-      return {
-        ...current,
-        [questionId]: selected.includes(optionId)
+    const selected = answers[questionId] ?? [];
+    const nextAnswers = {
+      ...answers,
+      [questionId]: multi
+        ? selected.includes(optionId)
           ? selected.filter((id) => id !== optionId)
-          : [...selected, optionId],
-      };
-    });
-    if (!multi) advance();
+          : [...selected, optionId]
+        : [optionId],
+    };
+    setAnswers(nextAnswers);
+    if (!multi) advance(nextAnswers);
   };
 
-  const advance = () => {
+  const advance = (currentAnswers = answers) => {
     if (index + 1 >= questions.length) {
-      finish();
+      finish(currentAnswers);
       return;
     }
     setIndex((current) => current + 1);
   };
 
-  const finish = () => {
-    const payload = Object.entries(answers)
+  const finish = (currentAnswers = answers) => {
+    const payload = Object.entries(currentAnswers)
       .filter(([, optionIds]) => optionIds.length > 0)
       .map(([questionId, optionIds]) => ({ questionId, optionIds }));
 
@@ -110,6 +110,10 @@ function SurveyDrawerContent({
       { onSuccess: () => setScreen("done") },
     );
   };
+
+  const hasCurrentAnswer = question
+    ? (answers[question.questionId]?.length ?? 0) > 0
+    : false;
 
   const close = () => {
     onClose();
@@ -253,15 +257,20 @@ function SurveyDrawerContent({
                 </button>
                 <button
                   type="button"
-                  onClick={advance}
-                  disabled={submitMutation.isPending}
+                  onClick={() => advance()}
+                  disabled={
+                    submitMutation.isPending ||
+                    (!question?.optional && !hasCurrentAnswer)
+                  }
                   className="border-forest text-forest hover:bg-meadow/30 min-h-11 cursor-pointer rounded-full border px-4 text-[13.5px] font-semibold transition-colors disabled:cursor-not-allowed"
                 >
                   {index + 1 >= questions.length
                     ? submitMutation.isPending
                       ? "Slanje…"
                       : "Pošalji"
-                    : "Preskoči pitanje"}
+                    : question?.optional && !hasCurrentAnswer
+                      ? "Preskoči pitanje"
+                      : "Nastavi"}
                 </button>
                 <button
                   type="button"

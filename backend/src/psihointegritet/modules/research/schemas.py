@@ -8,7 +8,7 @@ id: submissions reference those ids, never the rendered Serbian text.
 from datetime import datetime
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 from pydantic.alias_generators import to_camel
 
 from .models import (
@@ -41,6 +41,13 @@ class SurveyQuestion(ResearchApiSchema):
     multi: bool = False
     optional: bool = False
 
+    @model_validator(mode="after")
+    def option_ids_are_unique(self) -> SurveyQuestion:
+        option_ids = [option.option_id for option in self.options]
+        if len(option_ids) != len(set(option_ids)):
+            raise ValueError("optionId mora biti jedinstven unutar pitanja")
+        return self
+
 
 class SurveyQuestionSchema(ResearchApiSchema):
     """The `question_schema` JSON payload of one survey version."""
@@ -54,10 +61,23 @@ class SurveyQuestionSchema(ResearchApiSchema):
 
     allows_free_text: bool = False
 
+    @model_validator(mode="after")
+    def question_ids_are_unique(self) -> SurveyQuestionSchema:
+        question_ids = [question.question_id for question in self.questions]
+        if len(question_ids) != len(set(question_ids)):
+            raise ValueError("questionId mora biti jedinstven u verziji ankete")
+        return self
+
 
 class SurveyAnswer(ResearchApiSchema):
     question_id: str = Field(min_length=1, max_length=80)
     option_ids: list[str] = Field(min_length=1, max_length=12)
+
+    @model_validator(mode="after")
+    def option_ids_are_unique(self) -> SurveyAnswer:
+        if len(self.option_ids) != len(set(self.option_ids)):
+            raise ValueError("Odgovor ne sme sadržati duplirane optionIds")
+        return self
 
 
 class SubmitResearchRequest(ResearchApiSchema):
@@ -66,6 +86,21 @@ class SubmitResearchRequest(ResearchApiSchema):
     surface: ResearchSubmissionSurface
     trigger: ResearchSubmissionTrigger
     locale: str = Field(default="sr-Latn", max_length=16)
+
+    @model_validator(mode="after")
+    def surface_and_trigger_match_survey(self) -> SubmitResearchRequest:
+        allowed = {
+            "online-experience": {("research-drawer", "manual")},
+            "compass-experience": {
+                ("compass-feedback", "after-results"),
+                ("compass-feedback", "finish"),
+            },
+        }
+        combinations = allowed.get(self.survey_stable_id)
+        current = (self.surface.value, self.trigger.value)
+        if combinations is not None and current not in combinations:
+            raise ValueError("surface i trigger nisu dozvoljeni za ovu anketu")
+        return self
 
 
 class SubmitResearchResponse(ResearchApiSchema):
@@ -92,6 +127,8 @@ class OptionTallyOut(ResearchApiSchema):
 class QuestionTallyOut(ResearchApiSchema):
     question_id: str
     prompt: str
+    answered_count: int
+    multi: bool
     options: list[OptionTallyOut]
 
 

@@ -67,14 +67,21 @@ function SurveyCard({ survey }: { survey: SurveyResults }) {
 
           <div className="mt-5 flex flex-col gap-6">
             {survey.questions.map((question) => {
-              // Percentages are of this version's submissions only — never of
-              // a total that merges versions or surveys.
-              const total = survey.submissionCount;
+              // Percentages use people who answered this question, never all
+              // submissions or another survey version.
+              const total = question.answeredCount;
               return (
                 <div key={question.questionId}>
                   <div className="text-coffee mb-2.5 text-[13.5px] font-semibold">
                     {question.prompt}
                   </div>
+                  <p className="text-ink-45 mb-2 text-[11.5px]">
+                    Odgovorilo {question.answeredCount} od{" "}
+                    {survey.submissionCount}
+                    {question.multi
+                      ? " · moguć je višestruki izbor, zbir procenata ne mora biti 100%"
+                      : ""}
+                  </p>
                   <div className="flex flex-col gap-2.5">
                     {question.options.map((option) => {
                       const pct =

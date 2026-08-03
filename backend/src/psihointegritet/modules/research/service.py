@@ -208,6 +208,7 @@ class ResearchService:
         ).all()
 
         option_counts: Counter[tuple[str, str]] = Counter()
+        answered_counts: Counter[str] = Counter()
         surfaces: Counter[str] = Counter()
         triggers: Counter[str] = Counter()
 
@@ -221,6 +222,7 @@ class ResearchService:
                 question_id = _as_str(entry.get("questionId"))
                 if question_id is None:
                     continue
+                answered_counts[question_id] += 1
                 for raw_option in _as_list(entry.get("optionIds")):
                     option_id = _as_str(raw_option)
                     if option_id is not None:
@@ -230,6 +232,8 @@ class ResearchService:
             QuestionTallyOut(
                 question_id=question.question_id,
                 prompt=question.prompt,
+                answered_count=answered_counts[question.question_id],
+                multi=question.multi,
                 options=[
                     OptionTallyOut(
                         option_id=option.option_id,

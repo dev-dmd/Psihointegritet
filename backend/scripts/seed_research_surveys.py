@@ -27,9 +27,8 @@ ONLINE_EXPERIENCE: dict[str, Any] = {
         "Odgovorite na nekoliko kratkih pitanja o online i radu uživo. Anketa "
         "traje oko jednog minuta, anonimna je i ne traži privatne informacije."
     ),
-    # The original survey kept an optional free-text note; it stays allowed here
-    # so no existing behaviour is removed.
-    "allowsFreeText": True,
+    # V1 has no approved DTO/UI/storage/retention contract for prose.
+    "allowsFreeText": False,
     "questions": [
         {
             "questionId": "prior_support",
