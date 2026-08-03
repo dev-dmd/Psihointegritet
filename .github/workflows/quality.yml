@@ -55,10 +55,15 @@ jobs:
             echo "Kompas migration contains unrelated Intake/D19 drift."
             exit 1
           fi
-      - name: Kompas migration round-trip
+      - name: Migration round-trip
         run: |
           uv run alembic downgrade 20260802_0015
           uv run alembic upgrade head
+      # Enabled by D19 (migration 20260803_0017): until then this reported the
+      # pre-existing Intake/identity drift and would have failed work that did
+      # not cause it. Models and schema now agree, so any new divergence is a
+      # real one — a model changed without a migration, or the reverse.
+      - run: uv run alembic check
       - run: uv run pytest
 
   frontend:

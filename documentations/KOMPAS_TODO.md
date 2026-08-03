@@ -16,7 +16,7 @@
 - [x] Faza 4: `/kompas` koristi objavljeni flow, taxonomy i stvarni recommendation API bez URL selection-a; fallback zahteva eksplicitni non-production preview flag.
 - [ ] Faza 5: opt-in, development-only seed je runtime provereno idempotentan; lokalna baza nema 2–3 prethodno objavljena eligible service/program sadržaja, pa njihov stvarni linkage ostaje deployment data gate.
 - [ ] Faza 6: sedam admin celina, lifecycle i isti preview Engine postoje; nedostaju autentifikovani admin browser test i potpuniji editor svih flow polja/actor evidence prikaz.
-- [ ] Faza 7: statički gate-ovi, backend i frontend testovi, production build, Playwright i migracioni round-trip prolaze; puni `alembic check` i dalje prijavljuje ranije postojeći D19 `intake_cases.age_group` i legacy type/index drift. **Zatvara se D19 paketom po D-060**, kao zaseban commit i zasebna migracija.
+- [x] Faza 7: statički gate-ovi, backend i frontend testovi, production build, Playwright i migracioni round-trip prolaze. **D19 je zatvoren 2026-08-03** migracijom `20260803_0017` po D-060, pa je puni `alembic check` sada čist i nad čistom i nad dev bazom.
 
 **Produkciona aktivacija (D-059):** basic Kompas je deo R3 Content obima, ali se pali nezavisno preko feature flag-a — tek kada postoje minimalni urednički podaci (Faza 5), admin prihvatni testovi (Faza 6) i zeleni javni E2E. Flag je `NEXT_PUBLIC_COMPASS_ENABLED` i **podrazumevano je isključen**: bez njega `/kompas`, `/kompas/oblasti`, `/kompas/teme` i obe kanonske rute vraćaju 404, header link i CTA na naslovnoj se ne renderuju, a sitemap ne navodi nijednu Kompas rutu. Sporedni efekat je namerno koristan — isključeno okruženje ne prerenderuje te rute, pa nedostupan backend ne može da obori njegov build.
 
