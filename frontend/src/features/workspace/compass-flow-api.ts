@@ -1,3 +1,4 @@
+import { isApiProblem } from "@/lib/errors/api-problem";
 import type { components } from "@/types/api.generated";
 
 export type CompassFlowVersion = components["schemas"]["CompassFlowVersionOut"];
@@ -7,13 +8,15 @@ export type AdminFlowPreview = components["schemas"]["AdminFlowPreviewOut"];
 
 async function parse<T>(response: Response): Promise<T> {
   if (!response.ok) {
-    const payload = (await response.json().catch(() => null)) as {
-      detail?: { message?: string } | string;
-    } | null;
-    const message =
-      typeof payload?.detail === "object"
-        ? payload.detail.message
-        : payload?.detail;
+    // The backend answers with the shared problem envelope, where the human
+    // sentence is `title` (`api/errors.py` puts a string detail there, and a
+    // structured detail's `message` too). Reading `detail.message` instead —
+    // as this client first did — silently reduced every explained refusal to
+    // "Kompas zahtev nije uspeo (403)".
+    const payload: unknown = await response.json().catch(() => null);
+    const message = isApiProblem(payload)
+      ? (payload.detail ?? payload.title)
+      : null;
     throw new Error(
       message ?? `Kompas zahtev nije uspeo (${response.status}).`,
     );
