@@ -82,11 +82,27 @@ jobs:
       MIGRATION_DATABASE_URL: postgresql+psycopg://psihointegritet:local_only_change_me@localhost:5434/psihointegritet
       NEXT_PUBLIC_APP_URL: http://localhost:3007
       NEXT_PUBLIC_API_URL: http://localhost:8001
-      NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: pk_test_ZXhhbXBsZS5jbGVyay5hY2NvdW50cy5kZXYk
-      # Placeholder pair, not a real instance. `lib/validation/env.ts` requires both
-      # keys at module load, so `next build` fails while collecting route handlers
-      # without this. The E2E suite is signed out and mocks every BFF call, so no
-      # request ever reaches Clerk; an authenticated suite would need real secrets.
+      # Placeholder pair for a nonexistent instance. Both are required:
+      # `lib/validation/env.ts` validates them at module load, so `next build`
+      # fails while collecting route handlers if either is missing.
+      #
+      # The publishable key's `pk_live_` format is deliberate and must not be
+      # "fixed" to `pk_test_`. A test key marks a Clerk development instance,
+      # and `clerkMiddleware` then answers every browser navigation with a 307 to
+      # `<instance>.clerk.accounts.dev/v1/client/handshake` (dev-browser handshake).
+      # Against a placeholder instance that handshake returns 400, so every page
+      # renders Clerk's error instead of the app and the whole E2E suite fails.
+      # A production-format publishable key skips the handshake, so signed-out
+      # browsing never leaves the runner. An authenticated suite would need a real
+      # matching pair from GitHub Secrets — a real publishable key with a
+      # placeholder secret is not enough, the handshake token then fails
+      # verification.
+      #
+      # The secret stays `sk_test_` on purpose: GitHub push protection reads
+      # `sk_live_` followed by a long alphanumeric run as a Stripe API key and
+      # rejects the push. Only the publishable key decides the instance type here,
+      # so the mismatch is harmless for signed-out runs.
+      NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: pk_live_Y2xlcmsuZXhhbXBsZS5jb20k
       CLERK_SECRET_KEY: sk_test_000000000000000000000000000000000000000000
       NEXT_PUBLIC_COMPASS_DEMO_PREVIEW: "false"
     steps:
