@@ -103,6 +103,7 @@ class CompassReasonOut(CompassApiSchema):
 class CompassRecommendationItemOut(CompassApiSchema):
     card: CompassContentCardOut
     reasons: list[CompassReasonOut] = Field(max_length=3)
+    goal_ids: list[str]
 
 
 class CompassHandoffCandidateOut(CompassApiSchema):

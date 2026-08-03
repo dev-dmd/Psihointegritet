@@ -5,6 +5,7 @@ from sqlalchemy import engine_from_config, pool
 
 from psihointegritet.core.config import get_settings
 from psihointegritet.db.base import Base
+from psihointegritet.modules.compass import models as compass_models
 from psihointegritet.modules.content import models as content_models
 from psihointegritet.modules.content import taxonomy_models
 from psihointegritet.modules.guidance import models as guidance_models
@@ -18,6 +19,7 @@ from psihointegritet.modules.research import models as research_models
 # are silently left out of the migration rather than reported as an error.
 MODEL_MODULES = (
     content_models,
+    compass_models,
     taxonomy_models,
     guidance_models,
     identity_models,

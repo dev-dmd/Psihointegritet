@@ -604,7 +604,11 @@ class CompassService:
                     )
                 ]
             recommendations.append(
-                CompassRecommendationItemOut(card=candidate.card, reasons=reasons)
+                CompassRecommendationItemOut(
+                    card=candidate.card,
+                    reasons=reasons,
+                    goal_ids=sorted(candidate.signals.goal_ids),
+                )
             )
 
         related_topics = sorted(
