@@ -8,6 +8,8 @@
 
 **Amandman 1 — 2026-07-31:** D-054 razdvaja kanonske stranice oblasti/tema od dinamičkog kombinovanog prikaza, uvodi „Oblast” kao UI naziv za postojeći `topic_group` i rezerviše opcioni revisioned `CompassGuide` za authored/approved stručne veze između tema.
 
+**Amandman 3 — 2026-08-03 (D-058/ADR-025):** Uslov iz §3 je ispunjen jer Kompas dobija sopstveni lifecycle verzija toka. `modules/compass` je zato otvoren isključivo za flow identitet/verzije/review, mapiranje odgovora i Result Composer. `modules/content` ostaje autoritet za taxonomy, content discovery metadata i eligibility; novi modul ne preuzima CMS, taxonomy, kanonske rute ni Intake matching.
+
 ---
 
 ## 1. Kontekst
@@ -65,7 +67,7 @@ Kombinovani prikaz ne dobija novu taxonomy vrednost ili stranicu. Engine sme da 
 - terapeuta, capability-ja i matching rangiranja;
 - Team Queue i ljudskog handoff-a.
 
-Ne otvara se `modules/compass` u v1. Javni Kompas je proizvodna površina nad Content domenom, a ne novi vlasnik iste taksonomije. Novi modul zahteva zaseban ADR tek ako Kompas dobije sopstveni lifecycle ili perzistentne korisničke podatke.
+Po D-058 otvara se mali `modules/compass`, jer Kompas sada ima sopstveni lifecycle flow verzija. Javni Kompas je i dalje proizvodna površina nad Content domenom i novi modul nije vlasnik iste taksonomije. Granica i zabrana dupliranja detaljno su zaključane ADR-025; perzistentni korisnički podaci nisu uvedeni.
 
 ---
 

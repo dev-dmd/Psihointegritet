@@ -147,7 +147,7 @@ Psihointegritet želi eksplicitno da prikaže da prima LGBTQIA+ osobe bez stigme
 
 1. ~~Definicija proizvoda: šta Kompas radi, za koga, čime se razlikuje od Vođenog izbora~~ → **napredak 2026-07-29, vidi ispod**
 2. Granica osnovni vs napredni tier
-3. Release (R-mapa)
+3. ~~Release (R-mapa)~~ → **rešeno 2026-08-03, D-059**
 
 > **Napredak 2026-07-29 (CTO).** Kompas je **discovery i recommendation sloj iznad istog kataloga sadržaja** — ne novi katalog. Prvi izbor korisnika: „Želim stručnu podršku" · „Želim da razumem šta mi se dešava" · „Tražim koristan sadržaj" · „Tražim podršku za roditeljstvo" · „Tražim podršku za odnos" · „Tražim sadržaj za kompaniju ili tim". Grana **informacije** pretražuje članke, video, PDF vodiče, preporuke knjiga, programe i radionice; grana **stručna podrška** vodi na usluge, terapeute, način rada i prelazak na zahtev za termin. Zakazivanje ostaje globalno dostupno ali ne agresivno — sekundarni CTA na stručnom sadržaju („Potrebna vam je stručna podrška?") i povratak iz booking toka na sadržaj („Još nisam spreman da zakažem — želim prvo da pogledam materijale").
 >
@@ -155,7 +155,9 @@ Psihointegritet želi eksplicitno da prikaže da prima LGBTQIA+ osobe bez stigme
 
 > **Usvojeno 2026-07-31 — D-053 / ADR-022:** `KOMPAS_TODO.md` razdvaja Kompas topic grupe/teme od D-052 Intake routing oblasti. V1 ose su `topicGroupId`, `topicIds`, jedna sistemska vrednost `journeyIntent`, `goalIds`, `audienceIds`, izvedeni/kontrolisani `contentFormat` i postojeći `accessPolicy`; tagovi/sinonimi ostaju samo pretraga. Kompas je u v1 deterministički content recommendation servis u `modules/content`, bez novog therapist scoring-a i bez obaveznog AI-ja. Implementacija ide backend registar → panel → CMS → javni Kompas.
 
-**O-21 ostaje otvoren samo** za basic/advanced granicu i release mapu. K0 arhitektonska kapija i K1–K3 implementacija su prošle; tačne Anjine kategorije su podaci registra, a finalni javni vizuelni sloj čeka poseban Kompas design handoff.
+> **Usvojeno 2026-08-03 — D-059:** basic Kompas **pripada R3 Content obimu**, ali ima **nezavisnu produkcionu aktivaciju preko feature flag-a**. Ne pravi se veštački nov proizvodni release; flag se pali tek kada postoje minimalni urednički podaci, admin prihvatni testovi i zeleni javni E2E. Tačka 3 je time zatvorena.
+
+**O-21 ostaje otvoren samo** za basic/advanced granicu (tačka 2). K0 kapija, K1–K3, K3B core, K4 v1, K6A i Kompas v1 vertikala (D-058/ADR-025) su prošli; tačne Anjine kategorije su podaci registra, ne promena Engine ugovora.
 
 ---
 

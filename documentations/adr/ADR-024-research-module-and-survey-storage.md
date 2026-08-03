@@ -37,9 +37,9 @@ Ni Next proxy ruta ne prosleđuje ništa osim parsiranog tela: bez zaglavlja, be
 
 Čuvanje labele bi značilo da promena formulacije **tiho prepisuje istoriju** odgovora, i da u tabelu koja mora ostati bez ličnih podataka ulaze slobodni stringovi.
 
-### 2.4 `compass-experience` v1 nema slobodan tekst
+### 2.4 V1 ankete nemaju slobodan tekst — amandman 2026-08-03
 
-`allowsFreeText: false`. Slobodno polje je mesto gde bi korisnik najlakše ostavio zdravstveni ili lični podatak, a Kompas feedback-u proza ne treba. `online-experience` zadržava opcioni komentar da postojeće ponašanje ne nestane.
+`allowsFreeText: false` važi i za `compass-experience` i za `online-experience`. Slobodno polje je mesto gde bi korisnik najlakše ostavio zdravstveni ili lični podatak, a v1 nema odobren DTO/UI/storage/retention ugovor za prozu. Ovo ne menja D-057 generički model ankete; sužava obe trenutne definicije na kontrolisane option ID-jeve.
 
 ### 2.5 Rezultati se ne spajaju
 

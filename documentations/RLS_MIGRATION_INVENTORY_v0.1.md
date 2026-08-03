@@ -27,7 +27,7 @@
 
 ---
 
-## 2. `ORGANIZATION_SCOPED` — direktan `organization_id NOT NULL` (9)
+## 2. `ORGANIZATION_SCOPED` — direktan `organization_id NOT NULL` (planirano 13)
 
 Polisa: ADR-023 §7.2. Nema šta da se denormalizuje.
 
@@ -42,6 +42,10 @@ Polisa: ADR-023 §7.2. Nema šta da se denormalizuje.
 | `taxonomy_intake_links` | 5 — taxonomy | FK ka `taxonomy_terms` je izuzetak §5.3 |
 | `taxonomy_term_routes` | 5 — taxonomy | FK ka `taxonomy_terms` je izuzetak §5.3 |
 | `organization_memberships` | 6 | **posebna polisa** — vidi §5 ispod |
+| `research_surveys` | 6 — Research | direktno tenant-scoped; public read samo kroz servis za published verziju |
+| `research_submissions` | 6 — Research | direktno tenant-scoped; nema identitet/IP/free-text/Kompas selection |
+| `compass_flows` | 7 — Compass flow | stabilni flow identitet; staff write, public nema direktan table access |
+| `compass_flow_versions` | 7 — Compass flow | denormalizovan `organization_id`; public read samo published kroz servis |
 
 ---
 
@@ -71,7 +75,7 @@ Ponašanje globalnog termina pri promeni javne labele, arhiviranju i organizacij
 
 ---
 
-## 4. `DERIVED_CHILD` — traži denormalizaciju (17)
+## 4. `DERIVED_CHILD` — traži denormalizaciju (planirano 18)
 
 Redosled kolona: tabela · roditelj kroz koji se izvodi organizacija · dubina lanca · rollout grupa · polisa posle backfill-a.
 
@@ -94,6 +98,7 @@ Redosled kolona: tabela · roditelj kroz koji se izvodi organizacija · dubina l
 | `taxonomy_term_relations` | `source_revision_id` → `taxonomy_term_revisions` | 3 | 5 | **§7.3** |
 | `taxonomy_intake_link_review_decisions` | `link_id` → `taxonomy_intake_links` | 2 | 5 | §7.2 |
 | `taxonomy_publication_events` | **uslovno**, vidi §6 | 2–3 | 5 | **§7.3** |
+| `compass_flow_review_decisions` | `flow_version_id` → `compass_flow_versions` | 2 | 7 | §7.2; `organization_id` obavezno denormalizovan i DB-zaštićen |
 
 ### 4.1 Deca mešanih roditelja su i sama mešana
 
@@ -188,3 +193,5 @@ Popunjava se tokom rollout-a; prazna dok grupa ne prođe staging proveru.
 | 4 | `consent_records` (1) | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
 | 5 | taxonomy / Kompas (8) | ⬜ | n/a §7 | ⬜ | ⬜ | ⬜ | ⬜ |
 | 6 | `organization_memberships` (1) | n/a | n/a | ⬜ | ⬜ | ⬜ | ⬜ |
+| 6 | Research (2) | n/a | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
+| 7 | Compass flow (3) | 1 child | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
