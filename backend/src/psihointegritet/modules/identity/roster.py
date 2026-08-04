@@ -84,6 +84,11 @@ TEAM: Mapping[str, TeamMember] = {
         # when it exists, per this module's docstring.
         clerk_ids={CLERK_DEVELOPMENT: "user_3HBcL93c1DXDjlHjelBklHdxFxw"},
     ),
+    # Two entries, one person: Milan signs in with either address, and both are
+    # accounts on the *same* Clerk instance, so they cannot share one entry —
+    # `clerk_ids` holds one id per instance by design. The key therefore names
+    # the account, not the human. Deleting one as a "duplicate" would silently
+    # lock him out of whichever address he happened to use that day.
     "milan": TeamMember(
         key="milan",
         display_name="Milan Dražić",
@@ -94,6 +99,15 @@ TEAM: Mapping[str, TeamMember] = {
         roles=frozenset({MembershipRole.ORG_ADMIN}),
         therapist_slug=None,
         clerk_ids={CLERK_DEVELOPMENT: "user_3GXrf2rAn8Ekdc3qgHtnWxHWSY4"},
+        superadmin=True,
+    ),
+    "milan-dmdevelon": TeamMember(
+        key="milan-dmdevelon",
+        display_name="Milan Dražić (dmdevelon)",
+        email="milan.drazic@dmdevelon.website",
+        roles=frozenset({MembershipRole.ORG_ADMIN}),
+        therapist_slug=None,
+        clerk_ids={CLERK_DEVELOPMENT: "user_3GpXyBDgdjBWaKDixwvc01Dlr6c"},
         superadmin=True,
     ),
 }

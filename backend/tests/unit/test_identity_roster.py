@@ -89,4 +89,21 @@ def test_only_production_resolves_to_the_production_clerk_instance() -> None:
 
 
 def test_known_keys_are_sorted_and_complete() -> None:
-    assert known_keys() == ("anja", "marija", "marjan", "milan")
+    assert known_keys() == (
+        "anja",
+        "marija",
+        "marjan",
+        "milan",
+        "milan-dmdevelon",
+    )
+
+
+def test_the_same_person_may_hold_two_accounts_with_distinct_ids() -> None:
+    # Both of Milan's addresses live on the development instance, so they are
+    # separate entries. The ids must still differ, or one entry would provision
+    # over the other.
+    milan = member("milan")
+    dmdevelon = member("milan-dmdevelon")
+    assert milan is not None and dmdevelon is not None
+    assert milan.email != dmdevelon.email
+    assert milan.clerk_id_for(CLERK_DEVELOPMENT) != dmdevelon.clerk_id_for(CLERK_DEVELOPMENT)
