@@ -1,7 +1,5 @@
 "use client";
 
-import Link from "next/link";
-
 import { StatCard } from "@/components/panel/stat-card";
 
 import {
@@ -10,6 +8,7 @@ import {
 } from "../../compass-flow-api";
 import { useCompassFlowAdmin } from "../../hooks/use-compass-flow-admin";
 import { useTaxonomyRegistryQuery } from "../../hooks/use-taxonomy-registry";
+import { CompassContentWorkspace } from "./compass-content-workspace";
 
 export type CompassWorkspaceSection =
   "overview" | "flow" | "content" | "results" | "testing" | "publishing";
@@ -240,23 +239,7 @@ export function CompassAdminWorkspace({
   }
 
   if (section === "content") {
-    return (
-      <div className="rounded-panel border-line bg-surface border px-6 py-6">
-        <h2 className="text-forest font-serif text-[21px]">
-          CMS sadržaj i Kompas metadata
-        </h2>
-        <p className="text-ink-55 mt-2 text-[13.5px]">
-          Sadržaj se ne kopira u Kompas. U postojećem CMS editoru proverite
-          oblast, teme, kome je namenjeno i šta korisnik dobija.
-        </p>
-        <Link
-          href="/radni-prostor/sadrzaj"
-          className="text-forest mt-4 inline-flex min-h-11 items-center font-semibold underline"
-        >
-          Otvori postojeći CMS editor →
-        </Link>
-      </div>
-    );
+    return <CompassContentWorkspace />;
   }
 
   if (section === "results") {

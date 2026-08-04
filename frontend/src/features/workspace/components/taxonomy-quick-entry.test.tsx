@@ -1,86 +1,24 @@
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { render, screen, waitFor } from "@testing-library/react";
+import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import type { ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
   TAXONOMY_REGISTRY_QUERY_KEY,
   type TaxonomyRegistrySnapshot,
-  type TaxonomyTerm,
 } from "../taxonomy-api";
 import { useTaxonomyRegistryCache } from "../hooks/use-taxonomy-registry";
 import { suggestTaxonomyStableId } from "./taxonomy-term-form/model";
+import {
+  createQueryClient,
+  fillNewAreaIdentity,
+  jsonResponse,
+  makeTerm,
+  openIdentity,
+  renderWithClient,
+} from "./taxonomy-quick-entry.harness";
 import { TaxonomyQuickEntry } from "./taxonomy-quick-entry";
 import { TaxonomyTermEditor } from "./taxonomy-term-editor";
 import { QuickEntryReview } from "./taxonomy-term-form/quick-entry-review";
-
-function makeTerm(overrides: Partial<TaxonomyTerm> = {}): TaxonomyTerm {
-  return {
-    axis: "topic_group",
-    canonicalPath: null,
-    compassEnabled: true,
-    createdAt: "2026-08-01T10:00:00Z",
-    decisions: [],
-    events: [],
-    locale: "sr-Latn",
-    lockVersion: 1,
-    organizationId: null,
-    publicLabel: "Nova oblast",
-    publicVisible: true,
-    relations: [],
-    revisionId: "revision-1",
-    searchTerms: [],
-    shortDescription: "Kratak javni opis.",
-    sortOrder: 0,
-    stableId: "nova-oblast",
-    status: "draft",
-    systemDefined: false,
-    termId: "term-1",
-    updatedAt: "2026-08-01T10:00:00Z",
-    versionLabel: "v1",
-    ...overrides,
-  };
-}
-
-function jsonResponse(value: unknown, status = 200) {
-  return new Response(JSON.stringify(value), {
-    status,
-    headers: { "Content-Type": "application/json" },
-  });
-}
-
-function createQueryClient() {
-  return new QueryClient({
-    defaultOptions: {
-      queries: { retry: false },
-      mutations: { retry: false },
-    },
-  });
-}
-
-function renderWithClient(element: ReactNode, client = createQueryClient()) {
-  return {
-    client,
-    ...render(
-      <QueryClientProvider client={client}>{element}</QueryClientProvider>,
-    ),
-  };
-}
-
-async function openIdentity(user: ReturnType<typeof userEvent.setup>) {
-  await user.click(screen.getByRole("button", { name: "Novi brzi unos" }));
-  // The launcher asks what you want to add; picking a card is the whole step.
-  await user.click(screen.getByRole("button", { name: /^Oblast/ }));
-}
-
-async function fillNewAreaIdentity(user: ReturnType<typeof userEvent.setup>) {
-  await user.type(screen.getByLabelText("Naziv oblasti"), "Nova oblast");
-  await user.type(
-    screen.getByLabelText("Opis koji vide posetioci"),
-    "Kratak javni opis.",
-  );
-}
 
 afterEach(() => {
   vi.unstubAllGlobals();

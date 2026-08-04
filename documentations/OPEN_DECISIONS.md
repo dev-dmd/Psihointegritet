@@ -265,6 +265,26 @@ O-24 više nije otvorena arhitektonska blokada. Implementacija se prati u `KOMPA
 
 ---
 
+### O-27 · Jezik sistemskog kataloga po organizaciji _(novo 2026-08-04)_
+
+> **Gde piše:** TODO §5G · **Blokira:** prvi tenant van srpskog tržišta; danas ne blokira ništa
+
+**Odlučeno je okruženje, ne rešenje.** CTO je 2026-08-04 zaključao model: novo tržište je **nova organizacija sa svojim domenom**, svojim sadržajem i svojim testovima, a sistemska objašnjenja i poruke idu na jeziku tog tenanta. Psihointegritet ostaje na srpskom i **ne postaje višejezičan** — nema prebacivača jezika ni prevoda postojećih stranica. Time otpada translation-group veza između entry-ja (TODO §5G).
+
+**Šta je već rešeno i ne traži odluku:** tenant se razrešava preko `settings.default_organization_slug`, pa je novo tržište nov deployment · `locale` je na reviziji termina a `stable_id` bez jezika, uz unique indekse `(term_id, organization_id, locale)` · put čitanja filtrira jezik do kraja (`compass_service.py:132,193`), pa preporuka ne može da pređe jezičku granicu.
+
+**Šta traži odluku:** `SYSTEM_CONTENT_LOCALE = "sr-Latn"` (`system_catalog.py:18`) je modulska konstanta koja **diže grešku za svaki drugi jezik** na dva mesta (`system_catalog.py:80`, `identity.py:97`). Brana je namerna i dobra — sprečava polupreveden sistemski katalog — ali je i tvrda granica na jedan jezik za celu instalaciju.
+
+**Traži se od CTO:**
+
+1. Da li jezik pripada **organizaciji** (`organizations.default_locale`) ili **deployment-u** (podešavanje uz `default_organization_slug`). Prvo je tačnije ako ikad dve organizacije dele instalaciju; drugo je jeftinije i dovoljno za model „jedno tržište = jedan deployment".
+2. Šta se dešava sa **sistemskim katalogom** stranog tenanta: da li se D-052/D-053 sistemske ose i termini sejuju prevedeni po jeziku, ili strani tenant dobija svoj registar od nule.
+3. Da li brana ostaje kao **provera** (jezik tenanta mora biti tačno jedan i sav sistemski sadržaj mora biti na njemu) ili se uklanja.
+
+**Dok ne stigne:** konstanta se ne dira, `next-intl` se ne uključuje, nema `default_locale` kolone i nema koda. Važe samo tri pravila iz TODO §5G koja ništa ne koštaju: backend vraća kod a frontend bira reči · nov tekst ide u copy modul, ne inline u JSX · ijekavica je pun locale, nikad automatska zamena `e → je/ije`.
+
+---
+
 ## 🟡 Pre Faze 2
 
 ### O-08 · S7 — Pravila otkazivanja

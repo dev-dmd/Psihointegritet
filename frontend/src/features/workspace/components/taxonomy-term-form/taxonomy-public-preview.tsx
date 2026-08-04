@@ -1,5 +1,7 @@
 "use client";
 
+import { useId } from "react";
+
 import type { TaxonomyTerm } from "../../taxonomy-api";
 
 import { type ManagedTaxonomyAxis, taxonomySeoWarnings } from "./model";
@@ -24,6 +26,7 @@ export function TaxonomyPublicPreview({
   axis: ManagedTaxonomyAxis;
   registryTerms: TaxonomyTerm[];
 }) {
+  const titleId = useId();
   const icon =
     draft.visualMode === "icon" ? findTaxonomyIcon(draft.iconKey) : null;
   const Icon = icon?.icon;
@@ -38,8 +41,11 @@ export function TaxonomyPublicPreview({
   // another field group. The card inside stays white: it is standing in for
   // something the visitor sees, and must not pick up the panel's colour.
   return (
-    <div className="rounded-card bg-meadow/30 mt-4 px-5 py-4">
-      <p className="text-ink-70 text-[13px] font-semibold">
+    <section
+      aria-labelledby={titleId}
+      className="rounded-card bg-meadow/30 mt-4 px-5 py-4"
+    >
+      <p id={titleId} className="text-ink-70 text-[13px] font-semibold">
         Kako će izgledati posetiocima
       </p>
 
@@ -83,6 +89,6 @@ export function TaxonomyPublicPreview({
           ) : null}
         </TechnicalDetails>
       ) : null}
-    </div>
+    </section>
   );
 }

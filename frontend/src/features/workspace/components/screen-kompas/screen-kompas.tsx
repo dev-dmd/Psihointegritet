@@ -42,8 +42,19 @@ const WORKSPACE_TABS = [
 
 type WorkspaceTab = (typeof WORKSPACE_TABS)[number]["id"];
 
-export function ScreenKompas() {
-  const [workspaceTab, setWorkspaceTab] = useState<WorkspaceTab>("overview");
+function isWorkspaceTab(value: string | null): value is WorkspaceTab {
+  return WORKSPACE_TABS.some((tab) => tab.id === value);
+}
+
+export function ScreenKompas({
+  initialTab = null,
+}: {
+  /** Lets the CMS editor send the author back to the tab they came from. */
+  initialTab?: string | null;
+} = {}) {
+  const [workspaceTab, setWorkspaceTab] = useState<WorkspaceTab>(
+    isWorkspaceTab(initialTab) ? initialTab : "overview",
+  );
   return (
     <section className="animate-fade-up">
       <PageHeader

@@ -518,11 +518,28 @@ Dokazuje `SlotSpec` registar koji pravni tok ne dokazuje (`legal_page` ima samo 
 
 | #      | Obim                                                                                                                                    | Status | Napomena                                                                                                                                                       |
 | ------ | --------------------------------------------------------------------------------------------------------------------------------------- | ------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| UX-0A  | Razumljivo kreiranje oblasti i tema: nov launcher, provera postojećih, skriven stabilni ID, jedan javni opis, preview kartice, katalog ikona, ljudske greške | ⬜     | Potvrđeni nalazi: opis se traži dvaput (`taxonomy-quick-entry.tsx:275` + `content-fields.tsx:83`), stabilni ID uređuje terapeut, `iconKey` se nigde ne renderuje |
-| UX-0B  | Kompas „Sadržaj" postaje radni tok nad postojećim CMS endpointima: lista povezanih/nepovezanih, povezivanje postojećeg, ručno kreiranje članka | ⬜     | Danas je jedan pasus i link (`compass-admin-workspace.tsx:242-259`). Bez novog backend ugovora i bez DOCX uvoza                                                  |
+| UX-0A  | Razumljivo kreiranje oblasti i tema: nov launcher, provera postojećih, skriven stabilni ID, jedan javni opis, preview kartice, katalog ikona, ljudske greške | 🟡     | **U toku (2026-08-04).** Urađeno: launcher sa tri kartice · duplo pitanje za opis uklonjeno · stabilni ID izveden i sklopljen u „Tehničke detalje" · katalog od 30 ikona sa vizuelnim pickerom · preview javne kartice sa SEO savetima pod „Napredna podešavanja" · „Redosled prikaza" kao izbor umesto broja · preimenovanja polja · **sva tri tiha kvara zatvorena**. Ostaje: testovi za preview, presete redosleda i advisory za preširoke izraze |
+| UX-0B  | Kompas „Sadržaj" postaje radni tok nad postojećim CMS endpointima: lista povezanih/nepovezanih, povezivanje postojećeg, ručno kreiranje članka | ✅     | **2026-08-04.** Zamenjen pasus i link. Lista računa **stvarna** eligibility pravila iz `compass_service.py` i imenuje šta fali; filteri Sve/Nije povezano/Nedostaju podaci/Spremno za Kompas; „Dodaj novi sadržaj" pravi članak preko postojećeg `POST /content/entries`. Bez novog backend ugovora i bez DOCX uvoza |
 | UX-0C  | Editor toka pitanja govori jezikom iskustva umesto `Prompt`/`selectionTarget`/`optionSource`/`questionId`, uz live preview                | ⬜     | Preskok se prikazuje kao uvek uključen (`optional` je konstanta); slobodan tekst stoji onemogućen uz „U pripremi" (K4.1)                                        |
 
-**Uz UX-0A se zatvaraju tri tiha kvara** u kojima greška danas nestane bez traga: nepoznat `fieldPath` upisuje poruku pod ključ koji se ne renderuje i usput briše globalni baner (`use-taxonomy-form-errors.ts:38-42`), korak 5 validira polja koja nisu montirana (`taxonomy-quick-entry.tsx:354`), i `saveStep:133` tiho izlazi bez poruke.
+**Tri tiha kvara u kojima je greška nestajala bez traga — zatvoreni 2026-08-04:**
+
+| Kvar                                                                                    | Rešenje                                                                                                                                                                              |
+| ----------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Nepoznat `fieldPath` upisivao poruku pod ključ koji se ne renderuje i usput brisao globalni baner | Nemapirana polja padaju u baner umesto da nestanu; poruke idu kroz `taxonomy-error-copy.ts`                                                                                            |
+| Greška je stizala o polju koje nije montirano, jer server validira ceo payload            | `use-taxonomy-form-errors.ts` zove `onFieldTargeted` **pre** nego što zakači grešku, a wizard po `TAXONOMY_FIELD_STEP` prebaci korisnika na korak kojem to polje pripada               |
+| `saveStep` tiho izlazio bez poruke kad radna verzija još ne postoji                       | Umesto praznog `return` prikazuje se poruka sa sledećom radnjom                                                                                                                        |
+
+> Scenario „tema bez oblasti na koraku 5" nije dostižan — takva tema pada već na koraku 2. Stvarni put je server, pa regresioni test tera `422` sa `fieldPath: primary_parent_term_id` pri čuvanju koraka 1 i tvrdi da wizard skoči na „Organizacija".
+
+**Šta je UX-0B otkrio, a nije bio u planu:**
+
+| Nalaz                                                                                                                                                              | Posledica                                                                                                                                                                                          |
+| -------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Članak se može napraviti, ali ga Kompas ne preporučuje.** `require_content_identity` prihvata `article`, dok `_eligible_candidates` filtrira kroz `is_system_content_definition`, koji članke namerno ne poznaje | Red članka u listi nosi izričitu napomenu umesto lažnog „Objavljeno". Otvaranje oba allowlist-a ostaje Faza 8 vertikale članaka                                                                     |
+| **Editor se nije otvarao za članak.** `ScreenSadrzaj` je renderovao editor samo kad postoji zapis u sistemskom katalogu, a članci ga po ADR-019 nemaju             | Ekran sada izvodi naslov i rutu `/znanje/<slug>` za članke; generički slot editor radi jer je `article_detail` registrovan u Fazi 2. Sedmokoračni article stepper ostaje Faza 5                      |
+| **Kompas tab nije bio adresabilan.** Aktivni tab je bio lokalni `useState`, pa je povratak iz CMS-a uvek vodio na „Pregled"                                        | `/radni-prostor/kompas?tab=content` i `/radni-prostor/sadrzaj?entryId=…&izvor=kompas` čitaju se na serveru, po uzoru na `zakazi/page.tsx` — bez `useSearchParams` i bez Suspense granice             |
+| **Stranice terapeuta nisu Kompas sadržaj.** Server izbacuje ceo tip pre bilo kog pravila (`ContentEntry.content_type != THERAPIST`)                               | Ne prikazuju se u listi; rečeno jednom u zaglavlju, umesto reda koji nudi radnju bez efekta                                                                                                          |
 
 **Definition of done:** org_admin bez dokumentacije razlikuje oblast/temu/sadržaj, proveri da li slična stavka postoji, napravi je bez tehničkog ID-ja, razume gde se opis prikazuje i šta rade izrazi za pretragu, izabere ikonu vizuelno, vidi javni preview, razume svaku grešku, poveže postojeći CMS sadržaj, ručno napravi članak i uredi pitanje bez JSON pojmova.
 
@@ -551,6 +568,38 @@ Dokazuje `SlotSpec` registar koji pravni tok ne dokazuje (`legal_page` ima samo 
 **Zaključano Amandmanom 1 (2026-08-01):** globalno čitljivo **nije** globalno upisivo (polise po komandi) · deca mešanih roditelja imaju četiri pravila i **trigger** kao stvarni enforcement · `taxonomy_publication_events` traži „tačno jedan roditelj" i pravilo za buduće insert-e · startup guard imenuje objekat · `BYPASSRLS` se ne dodeljuje nikome, a `SET ROLE` na vlasnika **sam po sebi ne pomaže pod `FORCE`**.
 
 **Izvan ovog milestone-a:** `company_accounts` iznad organizacije (D-055, zaseban PR posle stabilizacije) · `legal_entities` · `client_companies` (R4) · custom domeni i domain resolver (ADR-023 §6.3) · cross-organization pristup (**O-25**) · ponašanje globalnih termina pri izmeni/arhiviranju/override-u (**O-26**).
+
+---
+
+## 5G. Strano tržište = nov tenant, ne višejezičan sajt (CTO, 2026-08-04)
+
+> **Odluka:** ako platforma izađe na drugo tržište, pravi se **nova organizacija (tenant) sa svojim domenom** — svoj sadržaj, svoji testovi, verovatno drugačiji izgled sajta. Sistemska objašnjenja i poruke tom tenantu idu **na njegovom jeziku**.
+> **Psihointegritet ostaje na srpskom i ne postaje višejezičan.** Nema prebacivača jezika, nema iste stranice u dve verzije, nema prevoda postojećeg sadržaja.
+> **Status:** ništa se ne implementira po ovoj stavci. Ovo je ograničenje kojeg se držimo, ne zadatak.
+
+**Šta ovim otpada.** Veza „isti članak na dva jezika" ne postoji jer strani tenant piše svoj sadržaj od nule. Komentar u `modules/content/models.py:14-20` — locale je deo identiteta entry-ja i translation-group kolona se ne dodaje — time nije više odloženo pitanje nego **završena odluka**: pod ovim modelom ta kolona nikada ne treba. Ne dodavati je.
+
+**Šta već radi (provereno na kodu 2026-08-04, bez izmena):**
+
+- Tenant se razrešava preko `settings.default_organization_slug` (`compass_router.py:69`) — novo tržište je novi deployment sa svojim env-om, bez izmene koda.
+- `locale` stoji na **reviziji** termina (`taxonomy_models.py:202`), a identitet termina (`stable_id`) je bez jezika. Unique indeksi su već `(term_id, organization_id, locale)`, pa je tenant overlay na drugom jeziku izraziv **bez migracije**.
+- Put čitanja je parametrizovan jezikom do kraja: `list_public(organization_id, locale)`, a `_eligible_candidates` filtrira i `ContentEntry.locale` i revizije taksonomije (`compass_service.py:132,193`). Preporuka ne može da pređe jezičku granicu.
+- Kolona `locale String(16)` prima svaku realnu BCP-47 oznaku.
+
+**Šta stvarno stoji na putu stranom tenantu:**
+
+| # | Prepreka                                                                                                                                 | Gde                                                          |
+| - | ---------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------ |
+| 1 | `SYSTEM_CONTENT_LOCALE = "sr-Latn"` je modulska konstanta i **diže grešku za svaki drugi jezik** na dva mesta. Namerna brana; treba da postane vrednost po organizaciji | `system_catalog.py:18,80` · `identity.py:97`                  |
+| 2 | Nema jezika na nivou organizacije — `sr-Latn` je podrazumevani argument na desetak potpisa, plus `PUBLIC_COMPASS_LOCALE` i `lang="sr-Latn"` | `layout.tsx:40` · `lib/compass/public-taxonomy.ts`            |
+| 3 | Backend danas vraća srpske **rečenice**, ne samo kodove (npr. `staff_authorization_message()`)                                            | `modules/guidance/authorization.py`                           |
+| 4 | `next-intl@4.13.2` je zavisnost sa **nula import-a**; ~214 fajlova nosi srpske literale inline                                            | `package.json:49`                                             |
+
+**Pravila koja se drže od sada, jer ne koštaju ništa danas a skupa su kasnije:**
+
+1. **Backend vraća kod, frontend bira reči.** RFC7807 `code` već postoji, a `taxonomy-error-copy.ts` već mapira kod → tekst. Svaka nova backend poruka koja postoji samo kao srpska rečenica je nov dug.
+2. **Nijedan nov tekst ne ide inline u JSX** nego u copy modul (`taxonomy-copy.ts`, `taxonomy-error-copy.ts`, `label`/`searchTerms` u `taxonomy-icon-registry.ts`). UX-0 to već radi iz drugog razloga; ako se navika održi kroz UX-0B i UX-0C, kasniji prelaz je zamena mehanizma nad rečnicima koji postoje, a ne prepisivanje komponenata.
+3. **Ijekavica nije prevod nego pravopisna varijanta** i ne sme se raditi automatskom zamenom `e → je/ije` — pravilo ima previše izuzetaka da bi se puštalo nad kliničkim tekstom. Tretira se kao pun locale sa svojim revizijama, uz regionalnu oznaku tipa `sr-Latn-BA`; ne izmišljati podoznaku.
 
 ---
 
