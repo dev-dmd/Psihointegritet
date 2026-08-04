@@ -20,6 +20,7 @@ from psihointegritet.modules.content.health import (
     CONTENT_HEALTH_RULESET_VERSION,
     authored_content_findings,
 )
+from psihointegritet.modules.content.identity import require_content_identity
 from psihointegritet.modules.content.models import (
     ContentEntry,
     ContentPublicationEvent,
@@ -55,10 +56,7 @@ from psihointegritet.modules.content.schemas import (
     TransitionRequest,
     UpdateContentRevisionRequest,
 )
-from psihointegritet.modules.content.system_catalog import (
-    is_system_content_definition,
-    require_system_content_definition,
-)
+from psihointegritet.modules.content.system_catalog import is_system_content_definition
 from psihointegritet.modules.content.taxonomy_models import (
     TaxonomyAxis,
     TaxonomyTerm,
@@ -496,7 +494,7 @@ class ContentService:
         self, actor: StaffActor, request: CreateContentEntryRequest
     ) -> ContentRevisionOut:
         self._require_org_admin(actor)
-        require_system_content_definition(
+        require_content_identity(
             request.content_type,
             request.slug,
             request.template,
