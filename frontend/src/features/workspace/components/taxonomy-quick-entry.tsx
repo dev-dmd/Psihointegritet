@@ -2,8 +2,6 @@
 
 import { useRef, useState } from "react";
 
-import { cn } from "@/helpers/cn";
-
 import { useSaveTaxonomyTermMutation } from "../hooks/use-taxonomy-registry";
 import type { TaxonomyRoute, TaxonomyTerm } from "../taxonomy-api";
 import { RouteGovernanceControls } from "./screen-kompas/route-governance-controls";
@@ -13,9 +11,9 @@ import {
   TaxonomyDescriptionField,
 } from "./taxonomy-term-form/content-fields";
 import { TaxonomyDuplicateHint } from "./taxonomy-term-form/taxonomy-duplicate-hint";
+import { TaxonomyKindLauncher } from "./taxonomy-term-form/taxonomy-kind-launcher";
 import { TaxonomyIdentityFields } from "./taxonomy-term-form/identity-fields";
 import {
-  AXIS_EDITOR_CONFIG,
   buildTaxonomyTermSavePayload,
   type ManagedTaxonomyAxis,
   type TaxonomyValidationScope,
@@ -32,19 +30,6 @@ import { QuickEntryReview } from "./taxonomy-term-form/quick-entry-review";
 import { useTaxonomyFormErrors } from "./taxonomy-term-form/use-taxonomy-form-errors";
 import { useTaxonomyTermDraft } from "./taxonomy-term-form/use-taxonomy-term-draft";
 
-const AXES: readonly {
-  axis: ManagedTaxonomyAxis;
-  description: string;
-}[] = [
-  { axis: "topic_group", description: "Javna oblast koja okuplja teme." },
-  { axis: "topic", description: "Konkretna tema unutar jedne oblasti." },
-  { axis: "audience", description: "Kontrolisana publika za preporuke." },
-  {
-    axis: "content_goal",
-    description: "Kontrolisani cilj sadržaja i preporuke.",
-  },
-];
-
 interface PendingSave {
   nextStep: QuickEntryStep;
   closeAfterSave: boolean;
@@ -53,9 +38,12 @@ interface PendingSave {
 export function TaxonomyQuickEntry({
   terms,
   onSaved,
+  onOpenContentWorkspace,
 }: {
   terms: TaxonomyTerm[];
   onSaved: (term: TaxonomyTerm) => void;
+  /** Choosing "Sadržaj" is a hand-off, not a taxonomy term (UX-0A). */
+  onOpenContentWorkspace?: () => void;
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const [step, setStep] = useState<QuickEntryStep>(0);
@@ -212,49 +200,16 @@ export function TaxonomyQuickEntry({
 
       {step === 0 ? (
         <div className="mt-5">
-          <p className="text-ink-55 text-[13px] leading-[1.5]">
-            Izaberite upravljani registar. Sistemski journey intent-i ostaju
-            zaključani i biraju se kasnije kao kontrolisana vrednost.
-          </p>
-          <div className="mt-4 grid gap-3 sm:grid-cols-2">
-            {AXES.map((option) => (
-              <button
-                key={option.axis}
-                type="button"
-                disabled={Boolean(activeTerm)}
-                aria-pressed={axis === option.axis}
-                onClick={() => setAxis(option.axis)}
-                className={cn(
-                  "rounded-tile cursor-pointer border px-4 py-3 text-left disabled:cursor-not-allowed disabled:opacity-55",
-                  axis === option.axis
-                    ? "border-sage bg-sage/10"
-                    : "border-line-strong hover:border-coffee/35 bg-transparent",
-                )}
-              >
-                <span className="text-coffee block text-[13.5px] font-semibold">
-                  {AXIS_EDITOR_CONFIG[option.axis].newLabel}
-                </span>
-                <span className="text-ink-55 mt-1 block text-[12px]">
-                  {option.description}
-                </span>
-              </button>
-            ))}
-          </div>
-          {activeTerm ? (
-            <p className="text-ink-55 mt-3 text-[12px]">
-              Registar je zaključan zajedno sa stabilnim ID-jem nakon prvog
-              čuvanja.
-            </p>
-          ) : null}
-          <div className="border-line mt-5 flex gap-2 border-t pt-4">
-            <button
-              type="button"
-              onClick={() => setStep(1)}
-              className="bg-forest text-panel-canvas hover:bg-forest-hover cursor-pointer rounded-full border-0 px-5 py-2.5 text-[13px] font-semibold"
-            >
-              Nastavi na identitet
-            </button>
-          </div>
+          <TaxonomyKindLauncher
+            disabled={Boolean(activeTerm)}
+            onSelectAxis={(next) => {
+              setAxis(next);
+              setStep(1);
+            }}
+            {...(onOpenContentWorkspace
+              ? { onSelectContent: onOpenContentWorkspace }
+              : {})}
+          />
         </div>
       ) : null}
 

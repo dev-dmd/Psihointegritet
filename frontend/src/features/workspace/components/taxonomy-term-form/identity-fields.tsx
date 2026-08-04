@@ -39,8 +39,10 @@ export function TaxonomyIdentityFields({
   const config = AXIS_EDITOR_CONFIG[axis];
   const seoWarning = taxonomySeoWarnings(draft).publicLabel;
 
+  // Two equal columns: the name field, and the disclosure beside it, centred
+  // against it. One column per row on mobile.
   return (
-    <div className="mt-5 grid gap-4 md:grid-cols-2">
+    <div className="mt-5 grid gap-4 md:grid-cols-2 md:items-center">
       <div>
         <label
           htmlFor={`${editorId}-label`}
@@ -86,23 +88,25 @@ export function TaxonomyIdentityFields({
         ) : null}
       </div>
 
-      <TechnicalDetails>
-        <p className="text-ink-70 text-[12.5px] font-semibold">
-          Interna oznaka sistema
-        </p>
-        <p className="text-ink-55 mt-1 text-[12px] leading-[1.5]">
-          Ova oznaka čuva veze ispravnim čak i ako kasnije promenite javni
-          naziv. Platforma je sama formira iz naziva.
-        </p>
-        <div
-          id={`${editorId}-stable-id`}
-          className="border-line-strong bg-panel-canvas text-ink-55 rounded-tile mt-2 flex min-h-[38px] items-center gap-2 border px-3 py-2 font-mono text-[12.5px]"
-        >
-          {term ? <LockIcon size={14} aria-hidden /> : null}
-          {term?.stableId || draft.stableId || "—"}
-        </div>
-        <FieldError id={errorId("stableId")} message={fieldErrors.stableId} />
-      </TechnicalDetails>
+      {/* On mobile this becomes the second row and sits directly above the
+          description field, so it carries its own bottom spacing there; on
+          desktop the grid gap already handles it. */}
+      <div className="mb-4 md:mb-0">
+        <TechnicalDetails className="mt-0">
+          <p className="text-ink-55 text-[12px] leading-[1.5]">
+            Interna oznaka sistema čuva veze ispravnim čak i ako kasnije
+            promenite javni naziv. Platforma je sama formira iz naziva.
+          </p>
+          <div
+            id={`${editorId}-stable-id`}
+            className="text-ink-55 mt-1.5 flex items-center gap-1.5 font-mono text-[12.5px]"
+          >
+            {term ? <LockIcon size={14} aria-hidden /> : null}
+            {term?.stableId || draft.stableId || "—"}
+          </div>
+          <FieldError id={errorId("stableId")} message={fieldErrors.stableId} />
+        </TechnicalDetails>
+      </div>
     </div>
   );
 }

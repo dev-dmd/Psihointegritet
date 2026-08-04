@@ -1,23 +1,36 @@
+import { cn } from "@/helpers/cn";
+
 /**
  * The collapsed home for values the platform owns (D-062).
  *
- * Internal ids, axes and lock versions are real and stay reachable — a
- * platform admin sometimes needs them — but they are never the first thing a
- * therapist meets, and never a field they must fill to finish a task.
+ * Deliberately unstyled as a box: no border, no panel, no focus ring drawn
+ * around it. A bordered card reads as "another section to fill in", which is
+ * the opposite of the intent — internal ids and lock versions are reachable
+ * for a platform admin and invisible for everyone else. It sits flush with the
+ * field above it so nothing about the layout suggests a required step.
+ *
+ * The summary is still a real disclosure control, so it keeps a visible
+ * keyboard focus state — an underline rather than a box.
  */
 export function TechnicalDetails({
   summary = "Tehnički detalji",
+  className,
   children,
 }: {
   summary?: string;
+  /** Lets a caller place it inline with a label row instead of below it. */
+  className?: string;
   children: React.ReactNode;
 }) {
   return (
-    <details className="border-line rounded-tile bg-panel-canvas/40 mt-4 border px-4 py-3">
-      <summary className="text-ink-55 cursor-pointer text-[12.5px] font-semibold">
+    <details className={cn("mt-3", className)}>
+      <summary className="text-ink-45 hover:text-ink-55 focus-visible:text-ink-70 inline-flex cursor-pointer list-none items-center gap-1.5 text-[12px] outline-none focus-visible:underline">
+        <span aria-hidden className="text-[10px]">
+          ▸
+        </span>
         {summary}
       </summary>
-      <div className="mt-3">{children}</div>
+      <div className="mt-2">{children}</div>
     </details>
   );
 }

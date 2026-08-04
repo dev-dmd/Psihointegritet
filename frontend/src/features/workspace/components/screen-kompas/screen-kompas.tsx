@@ -58,7 +58,9 @@ export function ScreenKompas() {
         />
       </div>
       {workspaceTab === "registry" ? (
-        <CompassRegistryPanel />
+        <CompassRegistryPanel
+          onOpenContentWorkspace={() => setWorkspaceTab("content")}
+        />
       ) : (
         <CompassAdminWorkspace
           section={workspaceTab as CompassWorkspaceSection}
@@ -76,7 +78,11 @@ export function ScreenKompas() {
  * Network lifecycle lives in `hooks/use-taxonomy-registry.ts`; the backend
  * stays the authority for locks, validation and publication.
  */
-function CompassRegistryPanel() {
+function CompassRegistryPanel({
+  onOpenContentWorkspace,
+}: {
+  onOpenContentWorkspace: () => void;
+}) {
   const [activeTab, setActiveTab] = useState<KompasTab>("areas");
   const [editorState, setEditorState] = useState<{
     axis: ManagedTaxonomyAxis;
@@ -177,7 +183,11 @@ function CompassRegistryPanel() {
             />
           </div>
 
-          <TaxonomyQuickEntry terms={terms} onSaved={upsertTerm} />
+          <TaxonomyQuickEntry
+            terms={terms}
+            onSaved={upsertTerm}
+            onOpenContentWorkspace={onOpenContentWorkspace}
+          />
 
           <div className="rounded-panel border-line bg-surface border px-4 py-4 md:px-5">
             <TabPills

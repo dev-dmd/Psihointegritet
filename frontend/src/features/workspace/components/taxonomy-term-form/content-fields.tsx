@@ -6,6 +6,8 @@ import { cn } from "@/helpers/cn";
 import { FieldError } from "../screen-kompas/governance-error";
 import type { TaxonomyTermFieldsProps } from "./field-props";
 import { taxonomySeoWarnings } from "./model";
+import { TaxonomyIconPicker } from "./taxonomy-icon-picker";
+import { TechnicalDetails } from "./technical-details";
 
 type ContentFieldsProps = Omit<
   TaxonomyTermFieldsProps,
@@ -89,14 +91,15 @@ export function TaxonomyContentFields(props: ContentFieldsProps) {
           Vizuelna oznaka
         </div>
         <p className="text-ink-55 mt-1 text-[12px] leading-[1.5]">
-          Može se koristiti ikona ili jedan postojeći asset, nikada oba.
+          Prikazuje se uz naziv na javnoj kartici. Koristi se ili oznaka iz
+          kataloga ili slika iz biblioteke, nikada oboje.
         </p>
         <div className="mt-3 flex flex-wrap gap-2">
           {(
             [
               ["none", "Bez oznake"],
               ["icon", "Ikona"],
-              ["asset", "Asset"],
+              ["asset", "Slika iz biblioteke"],
             ] as const
           ).map(([mode, label]) => (
             <button
@@ -122,70 +125,42 @@ export function TaxonomyContentFields(props: ContentFieldsProps) {
         </div>
 
         {draft.visualMode === "icon" ? (
-          <div className="mt-3 max-w-[460px]">
-            <label
-              htmlFor={`${editorId}-icon-key`}
-              className="text-ink-70 mb-1.5 block text-[12.5px] font-semibold"
-            >
-              Ključ ikone
-            </label>
-            <input
-              id={`${editorId}-icon-key`}
-              value={draft.iconKey}
-              maxLength={120}
-              disabled={disabled}
-              placeholder="sparkles"
-              onChange={(event) => {
-                setField("iconKey", event.target.value);
-                clearFieldError("iconKey");
-              }}
-              aria-invalid={Boolean(fieldErrors.iconKey)}
-              aria-describedby={
-                fieldErrors.iconKey ? errorId("iconKey") : undefined
-              }
-              className={inputClass(
-                "iconKey",
-                "border-line-strong rounded-tile bg-panel-canvas text-coffee focus:border-sage w-full border px-3.5 py-2.5 font-mono text-sm outline-none disabled:opacity-60",
-              )}
-            />
-            <FieldError id={errorId("iconKey")} message={fieldErrors.iconKey} />
-            <p className="text-ink-55 mt-1.5 text-[12px]">
-              Koristi ključ iz odobrenog seta ikona interfejsa.
-            </p>
-          </div>
+          <TaxonomyIconPicker
+            value={draft.iconKey}
+            onChange={(iconKey) => {
+              setField("iconKey", iconKey);
+              clearFieldError("iconKey");
+            }}
+            disabled={disabled}
+            editorId={editorId}
+            errorId={errorId("iconKey")}
+            {...(fieldErrors.iconKey ? { error: fieldErrors.iconKey } : {})}
+          />
         ) : null}
 
         {draft.visualMode === "asset" ? (
           <div className="mt-3 max-w-[460px]">
-            <label
-              htmlFor={`${editorId}-asset-id`}
-              className="text-ink-70 mb-1.5 block text-[12.5px] font-semibold"
-            >
-              ID postojećeg asseta
-            </label>
-            <input
-              id={`${editorId}-asset-id`}
-              value={draft.assetId}
-              maxLength={191}
-              disabled={disabled}
-              placeholder="asset-id"
-              onChange={(event) => {
-                setField("assetId", event.target.value);
-                clearFieldError("assetId");
-              }}
-              aria-invalid={Boolean(fieldErrors.assetId)}
-              aria-describedby={
-                fieldErrors.assetId ? errorId("assetId") : undefined
-              }
-              className={inputClass(
-                "assetId",
-                "border-line-strong rounded-tile bg-panel-canvas text-coffee focus:border-sage w-full border px-3.5 py-2.5 font-mono text-sm outline-none disabled:opacity-60",
-              )}
-            />
+            {draft.assetId ? (
+              <>
+                <p className="text-ink-70 text-[12.5px]">
+                  Ova stavka već koristi sliku iz biblioteke.
+                </p>
+                <TechnicalDetails summary="Detalji slike">
+                  <span
+                    id={`${editorId}-asset-id`}
+                    className="text-ink-55 font-mono text-[12.5px]"
+                  >
+                    {draft.assetId}
+                  </span>
+                </TechnicalDetails>
+              </>
+            ) : (
+              <p className="text-ink-55 text-[12.5px] leading-[1.5]">
+                Biblioteka slika još nije dostupna u panelu. Do tada koristite
+                oznaku iz kataloga ili ostavite stavku bez oznake.
+              </p>
+            )}
             <FieldError id={errorId("assetId")} message={fieldErrors.assetId} />
-            <p className="text-ink-55 mt-1.5 text-[12px]">
-              Do asset biblioteke ovde se unosi ID već odobrenog asseta.
-            </p>
           </div>
         ) : null}
       </div>

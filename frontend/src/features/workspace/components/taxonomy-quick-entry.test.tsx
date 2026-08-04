@@ -70,9 +70,8 @@ function renderWithClient(element: ReactNode, client = createQueryClient()) {
 
 async function openIdentity(user: ReturnType<typeof userEvent.setup>) {
   await user.click(screen.getByRole("button", { name: "Novi brzi unos" }));
-  await user.click(
-    screen.getByRole("button", { name: /Nastavi na identitet/ }),
-  );
+  // The launcher asks what you want to add; picking a card is the whole step.
+  await user.click(screen.getByRole("button", { name: /^Oblast/ }));
 }
 
 async function fillNewAreaIdentity(user: ReturnType<typeof userEvent.setup>) {
@@ -104,10 +103,7 @@ describe("TaxonomyQuickEntry", () => {
 
     renderWithClient(<TaxonomyQuickEntry terms={[]} onSaved={vi.fn()} />);
     await user.click(screen.getByRole("button", { name: "Novi brzi unos" }));
-    await user.click(screen.getByRole("button", { name: /Nova tema/ }));
-    await user.click(
-      screen.getByRole("button", { name: /Nastavi na identitet/ }),
-    );
+    await user.click(screen.getByRole("button", { name: /^Tema/ }));
     await user.type(
       screen.getByLabelText("Naziv teme"),
       "Sagorevanje na poslu",
