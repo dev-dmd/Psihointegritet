@@ -210,6 +210,10 @@ export function TaxonomyContentFields(props: ContentFieldsProps) {
         >
           Interna stručna napomena
         </label>
+        <p className="text-ink-55 mb-1.5 text-[12px] leading-[1.5]">
+          Ovu napomenu vide samo članovi stručnog i administratorskog tima.
+          Posetioci sajta i korisnici Kompasa je ne vide.
+        </p>
         <textarea
           id={`${editorId}-internal-note`}
           value={draft.internalExpertNote}
@@ -236,7 +240,7 @@ export function TaxonomyContentFields(props: ContentFieldsProps) {
           message={fieldErrors.internalExpertNote}
         />
         <div className="text-ink-55 mt-1.5 flex flex-wrap justify-between gap-2 text-[12px]">
-          <span>Vidljiva je samo osoblju i nikada ne ulazi u javni API.</span>
+          <span>Ostaje u panelu; ne prikazuje se na javnim stranicama.</span>
           <span>{draft.internalExpertNote.length}/4000</span>
         </div>
       </div>

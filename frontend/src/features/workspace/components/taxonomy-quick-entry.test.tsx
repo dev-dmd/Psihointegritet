@@ -188,6 +188,44 @@ describe("TaxonomyQuickEntry", () => {
     expect(screen.getByRole("heading", { name: "Organizacija" })).toBeVisible();
   });
 
+  it("takes the author to the field a server error is about", async () => {
+    // The server validates the whole payload, so it can answer about a field
+    // that lives on another step. Before this, the message was pinned to an
+    // input that was not mounted: nothing rendered and focus went nowhere.
+    const user = userEvent.setup();
+    const fetchMock = vi.fn().mockResolvedValue(
+      jsonResponse(
+        {
+          type: "about:blank",
+          title: "Referenca nije važeća.",
+          status: 422,
+          code: "TAX-REF-001",
+          fieldPath: "primary_parent_term_id",
+          correlationId: "corr-422",
+        },
+        422,
+      ),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    renderWithClient(<TaxonomyQuickEntry terms={[]} onSaved={vi.fn()} />);
+    await user.click(screen.getByRole("button", { name: "Novi brzi unos" }));
+    await user.click(screen.getByRole("button", { name: /^Tema/ }));
+    await user.type(screen.getByLabelText("Naziv teme"), "Sagorevanje");
+    await user.type(
+      screen.getByLabelText("Opis koji vide posetioci"),
+      "Opis teme.",
+    );
+    await user.click(screen.getByRole("button", { name: "Sačuvaj i nastavi" }));
+
+    expect(
+      await screen.findByRole("heading", { name: "Organizacija" }),
+    ).toBeVisible();
+    expect(
+      screen.getByText(/Izaberite oblast kojoj ova tema pripada/),
+    ).toBeVisible();
+  });
+
   it("merges a confirmed canonicalPath into the registry cache", async () => {
     const user = userEvent.setup();
     const term = makeTerm();

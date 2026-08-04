@@ -82,6 +82,25 @@ export interface TaxonomySeoWarnings {
 
 const STABLE_ID_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
+/**
+ * Which wizard step owns each field. A validation issue raised on the review
+ * step points at an input that lives three steps back; without this map the
+ * message is stored against a control nobody can see.
+ */
+export const TAXONOMY_FIELD_STEP: Record<string, 1 | 2 | 3> = {
+  publicLabel: 1,
+  stableId: 1,
+  shortDescription: 1,
+  primaryParentTermId: 2,
+  journeyIntentTermId: 2,
+  searchTerms: 2,
+  sortOrder: 2,
+  relatedTopicIds: 2,
+  iconKey: 3,
+  assetId: 3,
+  internalExpertNote: 3,
+};
+
 export function suggestTaxonomyStableId(publicLabel: string): string {
   return publicLabel
     .trim()

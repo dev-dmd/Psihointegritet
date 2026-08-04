@@ -16,6 +16,7 @@ import { TaxonomyPublicPreview } from "./taxonomy-term-form/taxonomy-public-prev
 import { TaxonomyIdentityFields } from "./taxonomy-term-form/identity-fields";
 import {
   buildTaxonomyTermSavePayload,
+  TAXONOMY_FIELD_STEP,
   type ManagedTaxonomyAxis,
   type TaxonomyValidationScope,
   validateTaxonomyTermDraft,
@@ -66,7 +67,11 @@ export function TaxonomyQuickEntry({
     applyApiError,
     errorId,
     inputClass,
-  } = useTaxonomyFormErrors(editorId);
+  } = useTaxonomyFormErrors(editorId, (field) => {
+    // Bring the owning step on screen before the message is pinned to it.
+    const owner = TAXONOMY_FIELD_STEP[field];
+    if (owner !== undefined) setStep(owner);
+  });
 
   const adoptTerm = (saved: TaxonomyTerm) => {
     setActiveTerm(saved);
@@ -120,7 +125,15 @@ export function TaxonomyQuickEntry({
       applyValidationIssue(issue);
       return;
     }
-    if (!activeTerm && scope !== "identity") return;
+    if (!activeTerm && scope !== "identity") {
+      // Used to return in silence, leaving a button that simply did nothing.
+      applyValidationIssue({
+        field: "publicLabel",
+        message:
+          "Radna verzija još ne postoji. Unesite naziv i opis, pa sačuvajte prvi korak.",
+      });
+      return;
+    }
     pendingSave.current = { nextStep, closeAfterSave };
     saveMutation.mutate(
       buildTaxonomyTermSavePayload({ axis, draft, term: activeTerm }),

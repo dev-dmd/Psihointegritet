@@ -99,7 +99,7 @@ export function TaxonomyOrganizationFields({
               htmlFor={`${editorId}-journey`}
               className="text-ink-70 mb-1.5 block text-[13px] font-semibold"
             >
-              Da li tema vodi ka istraživanju, stručnoj podršci ili oba puta?
+              Gde ova tema može da vodi korisnika?
             </label>
             <select
               id={`${editorId}-journey`}

@@ -22,7 +22,16 @@ const FIELD_DOM_SUFFIX: Record<string, string> = {
   internalExpertNote: "internal-note",
 };
 
-export function useTaxonomyFormErrors(editorId: string) {
+export function useTaxonomyFormErrors(
+  editorId: string,
+  /**
+   * Called before an error is pinned to a field, so a multi-step form can
+   * bring that field on screen first. Without it the message lands on an
+   * input that is not mounted: nothing renders, focus goes nowhere, and the
+   * button that triggered the check looks dead.
+   */
+  onFieldTargeted?: (field: string) => void,
+) {
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [serverError, setServerError] = useState<string | null>(null);
 
@@ -45,6 +54,7 @@ export function useTaxonomyFormErrors(editorId: string) {
       setServerError(message);
       return;
     }
+    onFieldTargeted?.(field);
     setServerError(null);
     setFieldErrors({ [field]: message });
     focusField(field);
