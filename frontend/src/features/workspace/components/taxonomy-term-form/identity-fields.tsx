@@ -3,7 +3,12 @@
 import { LockIcon } from "../icons";
 import { FieldError } from "../screen-kompas/governance-error";
 import type { TaxonomyTermFieldsProps } from "./field-props";
-import { AXIS_EDITOR_CONFIG, taxonomySeoWarnings } from "./model";
+import {
+  AXIS_EDITOR_CONFIG,
+  suggestTaxonomyStableId,
+  taxonomySeoWarnings,
+} from "./model";
+import { TechnicalDetails } from "./technical-details";
 
 type IdentityFieldsProps = Pick<
   TaxonomyTermFieldsProps,
@@ -17,10 +22,7 @@ type IdentityFieldsProps = Pick<
   | "clearFieldError"
   | "errorId"
   | "inputClass"
-> & {
-  deriveStableId?: (publicLabel: string) => string;
-  onStableIdEdited?: () => void;
-};
+>;
 
 export function TaxonomyIdentityFields({
   axis,
@@ -33,8 +35,6 @@ export function TaxonomyIdentityFields({
   clearFieldError,
   errorId,
   inputClass,
-  deriveStableId,
-  onStableIdEdited,
 }: IdentityFieldsProps) {
   const config = AXIS_EDITOR_CONFIG[axis];
   const seoWarning = taxonomySeoWarnings(draft).publicLabel;
@@ -56,7 +56,11 @@ export function TaxonomyIdentityFields({
           onChange={(event) => {
             const value = event.target.value;
             setField("publicLabel", value);
-            if (deriveStableId) setField("stableId", deriveStableId(value));
+            // The internal id follows the name until the row exists; after
+            // that the server locks it and the draft value is ignored. There
+            // is no hand-editing path any more — a therapist cannot pick a
+            // good one, and it is permanent from the first save.
+            if (!term) setField("stableId", suggestTaxonomyStableId(value));
             clearFieldError("publicLabel");
           }}
           aria-invalid={Boolean(fieldErrors.publicLabel)}
@@ -82,50 +86,23 @@ export function TaxonomyIdentityFields({
         ) : null}
       </div>
 
-      <div>
-        <label
-          htmlFor={`${editorId}-stable-id`}
-          className="text-ink-70 mb-1.5 block text-[13px] font-semibold"
-        >
-          Stabilni ID
-        </label>
-        {term ? (
-          <div
-            id={`${editorId}-stable-id`}
-            className="border-line-strong bg-panel-canvas text-ink-55 rounded-tile flex min-h-[42px] items-center gap-2 border px-3.5 py-2.5 font-mono text-[12.5px]"
-          >
-            <LockIcon size={14} aria-hidden />
-            {term.stableId}
-          </div>
-        ) : (
-          <input
-            id={`${editorId}-stable-id`}
-            value={draft.stableId}
-            maxLength={80}
-            disabled={disabled}
-            placeholder={config.stableIdExample}
-            onChange={(event) => {
-              onStableIdEdited?.();
-              setField("stableId", event.target.value);
-              clearFieldError("stableId");
-            }}
-            aria-invalid={Boolean(fieldErrors.stableId)}
-            aria-describedby={
-              fieldErrors.stableId ? errorId("stableId") : undefined
-            }
-            className={inputClass(
-              "stableId",
-              "border-line-strong rounded-tile bg-panel-canvas text-coffee focus:border-sage w-full border px-3.5 py-2.5 font-mono text-sm outline-none disabled:opacity-60",
-            )}
-          />
-        )}
-        <FieldError id={errorId("stableId")} message={fieldErrors.stableId} />
-        <p className="text-ink-55 mt-1.5 text-[12px]">
-          {term
-            ? "Zaključan je nakon kreiranja i koristi se za veze i preporuke."
-            : "Predlog možete ispraviti samo pre prvog čuvanja. Posle toga ID ostaje zaključan."}
+      <TechnicalDetails>
+        <p className="text-ink-70 text-[12.5px] font-semibold">
+          Interna oznaka sistema
         </p>
-      </div>
+        <p className="text-ink-55 mt-1 text-[12px] leading-[1.5]">
+          Ova oznaka čuva veze ispravnim čak i ako kasnije promenite javni
+          naziv. Platforma je sama formira iz naziva.
+        </p>
+        <div
+          id={`${editorId}-stable-id`}
+          className="border-line-strong bg-panel-canvas text-ink-55 rounded-tile mt-2 flex min-h-[38px] items-center gap-2 border px-3 py-2 font-mono text-[12.5px]"
+        >
+          {term ? <LockIcon size={14} aria-hidden /> : null}
+          {term?.stableId || draft.stableId || "—"}
+        </div>
+        <FieldError id={errorId("stableId")} message={fieldErrors.stableId} />
+      </TechnicalDetails>
     </div>
   );
 }

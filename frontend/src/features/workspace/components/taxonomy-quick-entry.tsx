@@ -12,11 +12,11 @@ import {
   TaxonomyContentFields,
   TaxonomyDescriptionField,
 } from "./taxonomy-term-form/content-fields";
+import { TaxonomyDuplicateHint } from "./taxonomy-term-form/taxonomy-duplicate-hint";
 import { TaxonomyIdentityFields } from "./taxonomy-term-form/identity-fields";
 import {
   AXIS_EDITOR_CONFIG,
   buildTaxonomyTermSavePayload,
-  suggestTaxonomyStableId,
   type ManagedTaxonomyAxis,
   type TaxonomyValidationScope,
   validateTaxonomyTermDraft,
@@ -61,7 +61,6 @@ export function TaxonomyQuickEntry({
   const [step, setStep] = useState<QuickEntryStep>(0);
   const [axis, setAxis] = useState<ManagedTaxonomyAxis>("topic_group");
   const [activeTerm, setActiveTerm] = useState<TaxonomyTerm | null>(null);
-  const [stableIdEdited, setStableIdEdited] = useState(false);
   const [resumeTermId, setResumeTermId] = useState("");
   const pendingSave = useRef<PendingSave>({
     nextStep: 1,
@@ -95,7 +94,9 @@ export function TaxonomyQuickEntry({
       applyApiError(
         error,
         "Radna verzija nije sačuvana. Pokušajte ponovo.",
-        activeTerm ? undefined : "stableId",
+        // A name collision is reported next to the name, the field the
+        // author can actually change; the internal id is derived from it.
+        activeTerm ? undefined : "publicLabel",
       ),
   });
 
@@ -141,7 +142,6 @@ export function TaxonomyQuickEntry({
     setAxis("topic_group");
     setActiveTerm(null);
     resetFromTerm(null);
-    setStableIdEdited(false);
     setStep(0);
     clearErrors();
     setIsOpen(true);
@@ -151,7 +151,6 @@ export function TaxonomyQuickEntry({
     setAxis(term.axis);
     setActiveTerm(term);
     resetFromTerm(term);
-    setStableIdEdited(true);
     setStep(1);
     clearErrors();
     setIsOpen(true);
@@ -262,15 +261,14 @@ export function TaxonomyQuickEntry({
       {step === 1 ? (
         <div>
           <p className="text-ink-55 mt-5 text-[13px] leading-[1.5]">
-            Prvo čuvanje kreira DRAFT i zaključava stabilni ID. Naziv i opis
-            ostaju izmenjivi kroz istu radnu reviziju.
+            Prvo čuvanje pravi radnu verziju. Naziv i opis ostaju izmenjivi.
           </p>
-          <TaxonomyIdentityFields
-            {...fields}
-            onStableIdEdited={() => setStableIdEdited(true)}
-            {...(!activeTerm && !stableIdEdited
-              ? { deriveStableId: suggestTaxonomyStableId }
-              : {})}
+          <TaxonomyIdentityFields {...fields} />
+          <TaxonomyDuplicateHint
+            candidateLabel={draft.publicLabel}
+            axis={axis}
+            terms={terms}
+            onOpenExisting={resume}
           />
           <TaxonomyDescriptionField {...fields} />
           <QuickEntrySaveActions

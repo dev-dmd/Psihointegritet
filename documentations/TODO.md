@@ -511,6 +511,23 @@ Dokazuje `SlotSpec` registar koji pravni tok ne dokazuje (`legal_page` ima samo 
 
 ---
 
+## 5F. UX-0 — task-based administratorski UX (D-062, 2026-08-04)
+
+> **Pravilo:** korisnik opisuje šta želi, platforma formira tehnički ispravan zapis. Standardni tok ne prikazuje stable ID, UUID, API, asset ID, icon key, taxonomy osu, selection target, option source, kanonsku rutu, lock version ni backend kod greške — sve ide u sklopivu sekciju „Tehnički detalji".
+> **Granica:** ne dira backend ugovore, lifecycle, approval pravila, taxonomy ose ni recommendation semantiku. Dozvole ostaju na `org_admin`; UX se piše tako da kasnija uloga terapeuta-autora ne traži prepravku.
+
+| #      | Obim                                                                                                                                    | Status | Napomena                                                                                                                                                       |
+| ------ | --------------------------------------------------------------------------------------------------------------------------------------- | ------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| UX-0A  | Razumljivo kreiranje oblasti i tema: nov launcher, provera postojećih, skriven stabilni ID, jedan javni opis, preview kartice, katalog ikona, ljudske greške | ⬜     | Potvrđeni nalazi: opis se traži dvaput (`taxonomy-quick-entry.tsx:275` + `content-fields.tsx:83`), stabilni ID uređuje terapeut, `iconKey` se nigde ne renderuje |
+| UX-0B  | Kompas „Sadržaj" postaje radni tok nad postojećim CMS endpointima: lista povezanih/nepovezanih, povezivanje postojećeg, ručno kreiranje članka | ⬜     | Danas je jedan pasus i link (`compass-admin-workspace.tsx:242-259`). Bez novog backend ugovora i bez DOCX uvoza                                                  |
+| UX-0C  | Editor toka pitanja govori jezikom iskustva umesto `Prompt`/`selectionTarget`/`optionSource`/`questionId`, uz live preview                | ⬜     | Preskok se prikazuje kao uvek uključen (`optional` je konstanta); slobodan tekst stoji onemogućen uz „U pripremi" (K4.1)                                        |
+
+**Uz UX-0A se zatvaraju tri tiha kvara** u kojima greška danas nestane bez traga: nepoznat `fieldPath` upisuje poruku pod ključ koji se ne renderuje i usput briše globalni baner (`use-taxonomy-form-errors.ts:38-42`), korak 5 validira polja koja nisu montirana (`taxonomy-quick-entry.tsx:354`), i `saveStep:133` tiho izlazi bez poruke.
+
+**Definition of done:** org_admin bez dokumentacije razlikuje oblast/temu/sadržaj, proveri da li slična stavka postoji, napravi je bez tehničkog ID-ja, razume gde se opis prikazuje i šta rade izrazi za pretragu, izabere ikonu vizuelno, vidi javni preview, razume svaku grešku, poveže postojeći CMS sadržaj, ručno napravi članak i uredi pitanje bez JSON pojmova.
+
+---
+
 ## 5E. RLS i multi-tenant izolacija — bezbednosni milestone
 
 > **Gde piše:** **ADR-023** · **D-055** · O-25 · `RLS_MIGRATION_INVENTORY_v0.1.md` · Rules v1.1 §11/§17/§20

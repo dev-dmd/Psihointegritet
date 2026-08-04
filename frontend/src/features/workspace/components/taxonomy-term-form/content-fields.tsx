@@ -80,8 +80,10 @@ export function TaxonomyContentFields(props: ContentFieldsProps) {
 
   return (
     <>
-      <TaxonomyDescriptionField {...props} />
-
+      {/* The public description is NOT rendered here. It belongs to the step
+          that asks "how will this look to visitors", and this group used to
+          repeat it — the author answered once, then met the same empty-looking
+          field two steps later and reasonably assumed nothing had saved. */}
       <div className="border-line rounded-tile mt-4 border px-4 py-4">
         <div className="text-ink-70 text-[13px] font-semibold">
           Vizuelna oznaka

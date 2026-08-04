@@ -10,6 +10,7 @@ import {
   type TaxonomyTerm,
 } from "../taxonomy-api";
 import { useTaxonomyRegistryCache } from "../hooks/use-taxonomy-registry";
+import { suggestTaxonomyStableId } from "./taxonomy-term-form/model";
 import { TaxonomyQuickEntry } from "./taxonomy-quick-entry";
 import { TaxonomyTermEditor } from "./taxonomy-term-editor";
 import { QuickEntryReview } from "./taxonomy-term-form/quick-entry-review";
@@ -87,7 +88,7 @@ afterEach(() => {
 });
 
 describe("TaxonomyQuickEntry", () => {
-  it("creates an incomplete topic DRAFT and locks stable ID after first POST", async () => {
+  it("derives the internal id from the name without ever asking for it", async () => {
     const user = userEvent.setup();
     const saved = makeTerm({
       axis: "topic",
@@ -111,9 +112,10 @@ describe("TaxonomyQuickEntry", () => {
       screen.getByLabelText("Naziv teme"),
       "Sagorevanje na poslu",
     );
-    expect(screen.getByLabelText("Stabilni ID")).toHaveValue(
-      "sagorevanje-na-poslu",
-    );
+    // D-062: the therapist never meets this field. It still has to be right,
+    // because the server locks it on the first save — so the assertion moved
+    // from the input to the request body below.
+    expect(screen.queryByLabelText("Stabilni ID")).not.toBeInTheDocument();
     await user.type(
       screen.getByLabelText("Kratak javni opis"),
       "Početni opis teme.",
@@ -134,13 +136,12 @@ describe("TaxonomyQuickEntry", () => {
     });
 
     await user.click(screen.getByRole("button", { name: "Nazad" }));
-    expect(
-      screen.queryByRole("textbox", { name: "Stabilni ID" }),
-    ).not.toBeInTheDocument();
-    expect(screen.getByText("sagorevanje-na-poslu")).toBeVisible();
+    // Still reachable for a platform admin, but folded away under
+    // "Tehnički detalji" rather than presented as something to fill in.
+    expect(screen.getByText("sagorevanje-na-poslu")).toBeInTheDocument();
   });
 
-  it("keeps a 409 collision next to stable ID without losing draft input", async () => {
+  it("reports a name collision next to the name, in the author's words", async () => {
     const user = userEvent.setup();
     const fetchMock = vi.fn().mockResolvedValue(
       jsonResponse(
@@ -162,10 +163,11 @@ describe("TaxonomyQuickEntry", () => {
     await fillNewAreaIdentity(user);
     await user.click(screen.getByRole("button", { name: "Sačuvaj i nastavi" }));
 
-    expect(await screen.findByText("Stabilni ID već postoji.")).toBeVisible();
+    // The server answers about `stableId`, a field the author never sees.
+    // The panel translates that into the name they can actually change.
+    expect(await screen.findByText(/već postoji u registru/)).toBeVisible();
     expect(screen.getByLabelText("Naziv oblasti")).toHaveValue("Nova oblast");
-    expect(screen.getByLabelText("Stabilni ID")).toHaveValue("nova-oblast");
-    expect(screen.getByLabelText("Stabilni ID")).toHaveAttribute(
+    expect(screen.getByLabelText("Naziv oblasti")).toHaveAttribute(
       "aria-invalid",
       "true",
     );
@@ -321,7 +323,6 @@ describe("TaxonomyTermEditor shared form layer", () => {
       />,
     );
     await user.type(screen.getByLabelText("Naziv oblasti"), publicLabel);
-    await user.type(screen.getByLabelText("Stabilni ID"), "dug-naziv");
     await user.type(
       screen.getByLabelText("Kratak javni opis"),
       shortDescription,
@@ -342,7 +343,8 @@ describe("TaxonomyTermEditor shared form layer", () => {
     const request = fetchMock.mock.calls[0]?.[1] as RequestInit;
     expect(JSON.parse(String(request.body))).toMatchObject({
       axis: "topic_group",
-      stableId: "dug-naziv",
+      // Derived from the name by the form, in both surfaces, with no input.
+      stableId: suggestTaxonomyStableId(publicLabel),
       publicLabel,
       shortDescription,
       searchTerms: ["Stres", "Opterećenje"],

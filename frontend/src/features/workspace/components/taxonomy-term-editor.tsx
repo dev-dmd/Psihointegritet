@@ -5,7 +5,10 @@ import type { FormEvent } from "react";
 import { useSaveTaxonomyTermMutation } from "../hooks/use-taxonomy-registry";
 import type { TaxonomyTerm } from "../taxonomy-api";
 import { LockIcon } from "./icons";
-import { TaxonomyContentFields } from "./taxonomy-term-form/content-fields";
+import {
+  TaxonomyContentFields,
+  TaxonomyDescriptionField,
+} from "./taxonomy-term-form/content-fields";
 import { TaxonomyIdentityFields } from "./taxonomy-term-form/identity-fields";
 import {
   AXIS_EDITOR_CONFIG,
@@ -65,7 +68,9 @@ export function TaxonomyTermEditor({
       applyApiError(
         error,
         "Izmena nije sačuvana. Pokušajte ponovo.",
-        term ? undefined : "stableId",
+        // A name collision is reported next to the name, the field the
+        // author can actually change; the internal id is derived from it.
+        term ? undefined : "publicLabel",
       ),
   });
 
@@ -152,6 +157,8 @@ export function TaxonomyTermEditor({
       ) : null}
 
       <TaxonomyIdentityFields {...fields} />
+      {/* Rendered here, once. `TaxonomyContentFields` no longer carries it. */}
+      <TaxonomyDescriptionField {...fields} />
       <TaxonomyOrganizationFields {...fields} />
       <TaxonomyContentFields {...fields} />
 
