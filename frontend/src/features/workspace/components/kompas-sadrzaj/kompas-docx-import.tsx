@@ -51,7 +51,7 @@ export function KompasDocxImport({
   });
 
   return (
-    <div className="border-line-strong rounded-tile border px-4 py-3">
+    <div className="bg-meadow/30 border-line-strong rounded-tile mb-6 border px-4 py-3.5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-ink-70 text-[12.5px] leading-[1.5]">
           Imate tekst u Word dokumentu? Uvezite ga umesto ručnog prekucavanja.

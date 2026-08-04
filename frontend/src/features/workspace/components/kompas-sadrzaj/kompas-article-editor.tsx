@@ -62,6 +62,7 @@ export function KompasArticleEditor({ entry }: { entry: ApiContentRevision }) {
 
   const [slotData, setSlotData] = useState(() => initialSlotData(entry));
   const [dirty, setDirty] = useState(false);
+  const [bodyImportKey, setBodyImportKey] = useState(0);
 
   const health = useContentRevisionHealthQuery(entry);
 
@@ -115,6 +116,7 @@ export function KompasArticleEditor({ entry }: { entry: ApiContentRevision }) {
   const hasExistingText = (existingBody?.blocks?.length ?? 0) > 0;
 
   const applyImportedBody = (body: RichDoc) => {
+    setBodyImportKey((v) => v + 1);
     setSlotData((current) => {
       const slot = (current.body_intro ?? {}) as {
         mode?: string;
@@ -179,19 +181,18 @@ export function KompasArticleEditor({ entry }: { entry: ApiContentRevision }) {
         </p>
       ) : null}
 
-      <div className="rounded-panel border-line bg-surface flex flex-col gap-5 border px-6 py-5">
+      <div className="rounded-panel border-line flex flex-col gap-3 border px-6 py-5">
         {slots.map((slotName) => {
           const spec = specs[slotName];
           if (!spec) return null;
           return (
-            <div key={slotName} className="flex flex-col gap-3">
-              {slotName === "body_intro" && editable ? (
-                <KompasDocxImport
-                  hasExistingText={hasExistingText}
-                  onImported={applyImportedBody}
-                />
-              ) : null}
+            <div key={slotName} className="flex flex-col gap-1">
               <SlotEditor
+                key={
+                  slotName === "body_intro"
+                    ? `${slotName}-v${bodyImportKey}`
+                    : slotName
+                }
                 slotName={slotName}
                 spec={spec}
                 value={slotData[slotName]}
@@ -200,6 +201,12 @@ export function KompasArticleEditor({ entry }: { entry: ApiContentRevision }) {
                   setDirty(true);
                 }}
               />
+              {slotName === "body_intro" && editable ? (
+                <KompasDocxImport
+                  hasExistingText={hasExistingText}
+                  onImported={applyImportedBody}
+                />
+              ) : null}
             </div>
           );
         })}

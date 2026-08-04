@@ -188,6 +188,7 @@ body {
 .rich-text-editor-surface {
   scrollbar-color: var(--color-sage) var(--color-panel-canvas);
   scrollbar-width: thin;
+  resize: vertical;
 }
 
 .rich-text-editor-surface::-webkit-scrollbar {
