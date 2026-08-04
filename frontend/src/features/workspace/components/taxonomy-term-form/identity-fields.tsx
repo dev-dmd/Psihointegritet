@@ -3,11 +3,7 @@
 import { LockIcon } from "../icons";
 import { FieldError } from "../screen-kompas/governance-error";
 import type { TaxonomyTermFieldsProps } from "./field-props";
-import {
-  AXIS_EDITOR_CONFIG,
-  suggestTaxonomyStableId,
-  taxonomySeoWarnings,
-} from "./model";
+import { AXIS_EDITOR_CONFIG, suggestTaxonomyStableId } from "./model";
 import { TechnicalDetails } from "./technical-details";
 
 type IdentityFieldsProps = Pick<
@@ -37,7 +33,6 @@ export function TaxonomyIdentityFields({
   inputClass,
 }: IdentityFieldsProps) {
   const config = AXIS_EDITOR_CONFIG[axis];
-  const seoWarning = taxonomySeoWarnings(draft).publicLabel;
 
   // Two equal columns: the name field, and the disclosure beside it, centred
   // against it. One column per row on mobile.
@@ -81,11 +76,6 @@ export function TaxonomyIdentityFields({
         <p className="text-ink-45 mt-1 text-right text-[11px]">
           {draft.publicLabel.length}/160
         </p>
-        {seoWarning ? (
-          <p className="text-badge-amber mt-1 text-[11.5px] leading-[1.4]">
-            {seoWarning}
-          </p>
-        ) : null}
       </div>
 
       {/* On mobile this becomes the second row and sits directly above the

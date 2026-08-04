@@ -4,6 +4,7 @@ import { cn } from "@/helpers/cn";
 
 import { FieldError } from "../screen-kompas/governance-error";
 import type { TaxonomyTermFieldsProps } from "./field-props";
+import { broadSearchTerms } from "./taxonomy-duplicate-match";
 import { AXIS_EDITOR_CONFIG, parseTaxonomySearchTerms } from "./model";
 
 export function TaxonomyOrganizationFields({
@@ -38,9 +39,9 @@ export function TaxonomyOrganizationFields({
         draft.relatedTopicIds.includes(item.termId)) &&
       item.termId !== term?.termId,
   );
-  const searchTermCount = parseTaxonomySearchTerms(
-    draft.searchTermsText,
-  ).length;
+  const searchTerms = parseTaxonomySearchTerms(draft.searchTermsText);
+  const searchTermCount = searchTerms.length;
+  const broadTerms = broadSearchTerms(searchTerms);
 
   return (
     <>
@@ -143,8 +144,13 @@ export function TaxonomyOrganizationFields({
             htmlFor={`${editorId}-search-terms`}
             className="text-ink-70 mb-1.5 block text-[13px] font-semibold"
           >
-            Sinonimi i pojmovi za pretragu
+            Kako ljudi mogu da traže ovu oblast ili temu?
           </label>
+          <p className="text-ink-55 mb-1.5 text-[12px] leading-[1.5]">
+            Unesite druge nazive, svakodnevne izraze ili pitanja koja ljudi
+            koriste pri pretrazi. Ovi izrazi pomažu pronalaženju, ali ne
+            stvaraju stručne veze niti menjaju preporuke.
+          </p>
           <textarea
             id={`${editorId}-search-terms`}
             value={draft.searchTermsText}
@@ -153,7 +159,7 @@ export function TaxonomyOrganizationFields({
             disabled={disabled}
             placeholder={
               axis === "topic"
-                ? "sagorevanje\nprofesionalna iscrpljenost"
+                ? "teskoba\nstalna zabrinutost\nosećam stezanje u grudima\nkako da smirim anksioznost"
                 : "Jedan pojam u svakom redu"
             }
             onChange={(event) => {
@@ -174,9 +180,19 @@ export function TaxonomyOrganizationFields({
             message={fieldErrors.searchTerms}
           />
           <div className="text-ink-55 mt-1.5 flex flex-wrap justify-between gap-2 text-[12px]">
-            <span>Jedan pojam po redu ili odvojen zarezom.</span>
+            <span>Jedan izraz po redu ili odvojen zarezom.</span>
             <span>{searchTermCount}/100</span>
           </div>
+          {broadTerms.length > 0 ? (
+            <p className="text-badge-amber mt-1.5 text-[12px] leading-[1.45]">
+              {broadTerms.map((term) => `„${term}”`).join(", ")}{" "}
+              {broadTerms.length === 1
+                ? "je veoma širok izraz"
+                : "su veoma široki izrazi"}{" "}
+              i može da prikaže mnogo nepovezanih rezultata. Razmotrite
+              precizniji izraz.
+            </p>
+          ) : null}
         </div>
 
         <div>

@@ -77,7 +77,7 @@ async function openIdentity(user: ReturnType<typeof userEvent.setup>) {
 async function fillNewAreaIdentity(user: ReturnType<typeof userEvent.setup>) {
   await user.type(screen.getByLabelText("Naziv oblasti"), "Nova oblast");
   await user.type(
-    screen.getByLabelText("Kratak javni opis"),
+    screen.getByLabelText("Opis koji vide posetioci"),
     "Kratak javni opis.",
   );
 }
@@ -113,7 +113,7 @@ describe("TaxonomyQuickEntry", () => {
     // from the input to the request body below.
     expect(screen.queryByLabelText("Stabilni ID")).not.toBeInTheDocument();
     await user.type(
-      screen.getByLabelText("Kratak javni opis"),
+      screen.getByLabelText("Opis koji vide posetioci"),
       "Početni opis teme.",
     );
     await user.click(screen.getByRole("button", { name: "Sačuvaj i nastavi" }));
@@ -272,9 +272,12 @@ describe("TaxonomyQuickEntry", () => {
     await openIdentity(user);
     await user.type(screen.getByLabelText("Naziv oblasti"), publicLabel);
     await user.type(
-      screen.getByLabelText("Kratak javni opis"),
+      screen.getByLabelText("Opis koji vide posetioci"),
       shortDescription,
     );
+    // Advisory, not a rule: they sit under "Napredna podešavanja za
+    // pretraživače" beside the public preview, not in the author's way.
+    await user.click(screen.getByText("Napredna podešavanja za pretraživače"));
     expect(screen.getByText(/naziv prelazi preporučenih 65/)).toBeVisible();
     expect(screen.getByText(/opis prelazi preporučenih 170/)).toBeVisible();
     expect(
@@ -320,14 +323,16 @@ describe("TaxonomyTermEditor shared form layer", () => {
     );
     await user.type(screen.getByLabelText("Naziv oblasti"), publicLabel);
     await user.type(
-      screen.getByLabelText("Kratak javni opis"),
+      screen.getByLabelText("Opis koji vide posetioci"),
       shortDescription,
     );
     await user.type(
-      screen.getByLabelText("Sinonimi i pojmovi za pretragu"),
+      screen.getByLabelText("Kako ljudi mogu da traže ovu oblast ili temu?"),
       "Stres, stres{enter}Opterećenje",
     );
 
+    // Same treatment in the advanced editor: folded away beside the preview.
+    await user.click(screen.getByText("Napredna podešavanja za pretraživače"));
     expect(screen.getByText(/naziv prelazi preporučenih 65/)).toBeVisible();
     expect(screen.getByText(/opis prelazi preporučenih 170/)).toBeVisible();
     await user.click(

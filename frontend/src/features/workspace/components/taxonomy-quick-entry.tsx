@@ -12,6 +12,7 @@ import {
 } from "./taxonomy-term-form/content-fields";
 import { TaxonomyDuplicateHint } from "./taxonomy-term-form/taxonomy-duplicate-hint";
 import { TaxonomyKindLauncher } from "./taxonomy-term-form/taxonomy-kind-launcher";
+import { TaxonomyPublicPreview } from "./taxonomy-term-form/taxonomy-public-preview";
 import { TaxonomyIdentityFields } from "./taxonomy-term-form/identity-fields";
 import {
   buildTaxonomyTermSavePayload,
@@ -226,6 +227,11 @@ export function TaxonomyQuickEntry({
             onOpenExisting={resume}
           />
           <TaxonomyDescriptionField {...fields} />
+          <TaxonomyPublicPreview
+            draft={draft}
+            axis={axis}
+            registryTerms={terms}
+          />
           <QuickEntrySaveActions
             busy={saveMutation.isPending}
             onBack={() => setStep(0)}

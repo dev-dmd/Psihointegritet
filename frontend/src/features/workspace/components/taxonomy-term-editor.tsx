@@ -10,6 +10,7 @@ import {
   TaxonomyDescriptionField,
 } from "./taxonomy-term-form/content-fields";
 import { TaxonomyIdentityFields } from "./taxonomy-term-form/identity-fields";
+import { TaxonomyPublicPreview } from "./taxonomy-term-form/taxonomy-public-preview";
 import {
   AXIS_EDITOR_CONFIG,
   buildTaxonomyTermSavePayload,
@@ -159,6 +160,11 @@ export function TaxonomyTermEditor({
       <TaxonomyIdentityFields {...fields} />
       {/* Rendered here, once. `TaxonomyContentFields` no longer carries it. */}
       <TaxonomyDescriptionField {...fields} />
+      <TaxonomyPublicPreview
+        draft={draft}
+        axis={axis}
+        registryTerms={registryTerms}
+      />
       <TaxonomyOrganizationFields {...fields} />
       <TaxonomyContentFields {...fields} />
 

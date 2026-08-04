@@ -5,7 +5,6 @@ import { cn } from "@/helpers/cn";
 
 import { FieldError } from "../screen-kompas/governance-error";
 import type { TaxonomyTermFieldsProps } from "./field-props";
-import { taxonomySeoWarnings } from "./model";
 import { TaxonomyIconPicker } from "./taxonomy-icon-picker";
 import { TechnicalDetails } from "./technical-details";
 
@@ -24,15 +23,18 @@ export function TaxonomyDescriptionField({
   errorId,
   inputClass,
 }: ContentFieldsProps) {
-  const seoWarning = taxonomySeoWarnings(draft).shortDescription;
   return (
     <div className="mt-4">
       <label
         htmlFor={`${editorId}-description`}
         className="text-ink-70 mb-1.5 block text-[13px] font-semibold"
       >
-        Kratak javni opis
+        Opis koji vide posetioci
       </label>
+      <p className="text-ink-55 mb-1.5 text-[12px] leading-[1.5]">
+        Napišite jednu ili dve jasne rečenice. Opis se prikazuje ispod naziva i
+        na javnoj stranici te oblasti ili teme.
+      </p>
       <textarea
         id={`${editorId}-description`}
         value={draft.shortDescription}
@@ -59,11 +61,6 @@ export function TaxonomyDescriptionField({
       <p className="text-ink-45 mt-1 text-right text-[11px]">
         {draft.shortDescription.length}/500
       </p>
-      {seoWarning ? (
-        <p className="text-badge-amber mt-1 text-[11.5px] leading-[1.4]">
-          {seoWarning}
-        </p>
-      ) : null}
     </div>
   );
 }
