@@ -22,7 +22,10 @@ import type { RichDoc } from "@/lib/content-governance/rich-doc";
 import { KompasContentActions } from "./kompas-content-actions";
 import { KompasDocxImport } from "./kompas-docx-import";
 import { KompasEditorHeader } from "./kompas-editor-header";
-import { KompasEditorHealth } from "./kompas-editor-health";
+import { NextActionCard } from "./next-action-card";
+import { ArticleChecklist } from "./article-checklist";
+import { deriveArticleCompletion } from "./article-completion";
+import { TechnicalDetails } from "../taxonomy-term-form/technical-details";
 
 const HREF = "/radni-prostor/kompas/sadrzaj" as const;
 const TAB_LABEL = "Kompas sadržaj";
@@ -65,6 +68,14 @@ export function KompasArticleEditor({ entry }: { entry: ApiContentRevision }) {
   const [bodyImportKey, setBodyImportKey] = useState(0);
 
   const health = useContentRevisionHealthQuery(entry);
+
+  // Derive the article's completion state from slot data, discovery metadata,
+  // and server-side Content Health findings. The same state feeds the stepper,
+  // the next-action card, and the checklist.
+  const completion = deriveArticleCompletion(
+    { slotData, discovery: entry.discovery, status: entry.status },
+    health.data?.findings ?? [],
+  );
 
   const fail = (title: string) => (error: unknown) =>
     reportError({
@@ -142,7 +153,9 @@ export function KompasArticleEditor({ entry }: { entry: ApiContentRevision }) {
 
   return (
     <section className="animate-fade-up flex flex-col gap-4">
-      <KompasEditorHeader entry={entry} />
+      <KompasEditorHeader entry={entry} completion={completion} />
+
+      <NextActionCard state={completion} />
 
       {errorsFor(HREF).map((error) => (
         <div
@@ -212,11 +225,24 @@ export function KompasArticleEditor({ entry }: { entry: ApiContentRevision }) {
         })}
       </div>
 
-      <KompasEditorHealth
-        findings={health.data?.findings ?? []}
-        isLoading={health.isLoading}
-        isError={health.isError}
-      />
+      {health.data && health.data.findings.length > 0 ? (
+        <TechnicalDetails summary="Tehnički nalazi servera">
+          <ul className="flex flex-col gap-1.5">
+            {health.data.findings.map((finding) => (
+              <li
+                key={`${finding.ruleId}-${finding.fieldPath ?? ""}`}
+                className="text-ink-55 text-[12px] leading-[1.5]"
+              >
+                <span className="font-semibold">{finding.ruleId}</span> v
+                {finding.ruleVersion}
+                {finding.fieldPath ? ` · ${finding.fieldPath}` : ""}:{" "}
+                {finding.message}
+              </li>
+            ))}
+          </ul>
+        </TechnicalDetails>
+      ) : null}
+      <ArticleChecklist state={completion} />
 
       <div className="rounded-panel border-line bg-surface flex flex-wrap items-center justify-between gap-3 border px-6 py-4">
         <button

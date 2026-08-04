@@ -11,6 +11,9 @@ export const metadata: Metadata = {
 /**
  * The article gets a page of its own, not a panel under a catalogue — an
  * author who opened a text should be looking at that text (D-063).
+ *
+ * Reads `?korak=` from the URL so the stepper survives refresh and the
+ * back button (D-062).
  */
 export default async function KompasArticlePage({
   params,

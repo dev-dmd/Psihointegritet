@@ -7,16 +7,13 @@ import {
   StatusBadge,
   type StatusBadgeTone,
 } from "@/components/panel/status-badge";
-import { cn } from "@/helpers/cn";
 
 import { CMS_STATUS_LABEL } from "../../compass-content-view";
 import type { ApiContentRevision } from "../../content-api";
-import {
-  articlePublicPath,
-  articleSteps,
-  articleTitle,
-} from "../../kompas-article-view";
+import { articlePublicPath, articleTitle } from "../../kompas-article-view";
 import { TechnicalDetails } from "../taxonomy-term-form/technical-details";
+import { ArticleStepper } from "./article-stepper";
+import type { ArticleCompletionState } from "./article-completion";
 
 const STATUS_TONE: Record<ApiContentRevision["status"], StatusBadgeTone> = {
   draft: "neutral",
@@ -32,9 +29,13 @@ const STATUS_TONE: Record<ApiContentRevision["status"], StatusBadgeTone> = {
  * The step row is the answer to "where did I stop" — an author who comes back
  * to a half-written text should not have to open every section to find out.
  */
-export function KompasEditorHeader({ entry }: { entry: ApiContentRevision }) {
-  const steps = articleSteps(entry);
-
+export function KompasEditorHeader({
+  entry,
+  completion,
+}: {
+  entry: ApiContentRevision;
+  completion: ArticleCompletionState;
+}) {
   return (
     <header className="rounded-panel border-line bg-surface border px-6 py-5">
       <Link
@@ -53,22 +54,9 @@ export function KompasEditorHeader({ entry }: { entry: ApiContentRevision }) {
         </StatusBadge>
       </div>
 
-      <ol className="mt-4 flex flex-wrap gap-2">
-        {steps.map((step, index) => (
-          <li
-            key={step.id}
-            className={cn(
-              "rounded-full border px-3.5 py-1.5 text-[12px] font-semibold",
-              step.done
-                ? "border-sage bg-sage/12 text-forest"
-                : "border-line-strong text-ink-55 bg-transparent",
-            )}
-            title={step.missing ?? undefined}
-          >
-            <span aria-hidden>{step.done ? "✓" : index + 1}</span> {step.label}
-          </li>
-        ))}
-      </ol>
+      <div className="mt-4">
+        <ArticleStepper state={completion} />
+      </div>
 
       <div className="mt-4 flex flex-wrap items-center gap-2">
         <ActorBadge action="Napisao/la" actor={entry.createdBy} />
