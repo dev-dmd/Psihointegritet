@@ -8,9 +8,11 @@ membership via `resolve_staff_actor`, `org_admin` required for every mutation
 
 from __future__ import annotations
 
+import asyncio
+from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, File, HTTPException, UploadFile, status
 from sqlalchemy import select
 
 from psihointegritet.api.dependencies import AppSettings, CurrentIdentity, DatabaseSession
@@ -42,7 +44,13 @@ from psihointegritet.modules.guidance.authorization import (
 )
 from psihointegritet.modules.organizations.models import Organization
 from psihointegritet.shared.domain.rich_doc import rich_doc_to_json
+from psihointegritet.shared.parsing.docx_import import (
+    DocxImportLimits,
+    DocxImportRejectedError,
+    convert_docx_bytes,
+)
 from psihointegritet.shared.parsing.html_normalize import normalize_html_to_rich_doc
+from psihointegritet.shared.parsing.upload import read_docx_upload
 
 router = APIRouter(prefix="/content", tags=["content"])
 public_router = APIRouter(prefix="/public/content", tags=["public-content"])
@@ -96,6 +104,66 @@ def _handle(error: Exception) -> HTTPException:
     if isinstance(error, ValueError):
         return HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail=str(error))
     raise error
+
+
+#: Guards a document that passes the size checks but is still slow to walk
+#: (thousands of tiny runs). Same budget the legal registry uses.
+_DOCX_CONVERSION_TIMEOUT_SECONDS = 20
+
+
+@router.post(
+    "/rich-doc/import-docx",
+    response_model=NormalizeRichHtmlResponse,
+    operation_id="import_rich_doc_docx",
+)
+async def import_rich_doc_docx(
+    identity: CurrentIdentity,
+    session: DatabaseSession,
+    settings: AppSettings,
+    file: Annotated[UploadFile, File()],
+) -> NormalizeRichHtmlResponse:
+    """Convert a `.docx` into RichDoc for any staff editor, writing nothing.
+
+    Preview only, exactly like the legal registry's import (ADR-017 Amendment 1
+    §A1.2): the panel shows the result and the author applies it by saving the
+    revision. Same conversion, same limits, same findings — the article editor
+    must not grow a second, subtly different importer.
+    """
+    data = await read_docx_upload(file)
+    async with session.begin():
+        await _org_admin_actor(session, settings, identity)
+    try:
+        # CPU-bound (mammoth + zip/HTML parsing) — never on the event loop
+        # (rules §18).
+        result = await asyncio.wait_for(
+            asyncio.to_thread(convert_docx_bytes, data, DocxImportLimits()),
+            timeout=_DOCX_CONVERSION_TIMEOUT_SECONDS,
+        )
+    except TimeoutError as error:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail="Konverzija dokumenta je istekla.",
+        ) from error
+    except DocxImportRejectedError as error:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail=str(error),
+        ) from error
+
+    return NormalizeRichHtmlResponse(
+        body=rich_doc_to_json(result.document),
+        findings=[
+            RichDocFindingOut(
+                rule_id=finding.rule_id,
+                rule_version=finding.rule_version,
+                severity=finding.severity,
+                message=finding.message,
+                remediation=finding.remediation,
+                field_path=finding.field_path,
+            )
+            for finding in result.findings
+        ],
+    )
 
 
 @router.post(

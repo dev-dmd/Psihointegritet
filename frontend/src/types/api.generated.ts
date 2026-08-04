@@ -251,6 +251,31 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/content/rich-doc/import-docx": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Import Rich Doc Docx
+         * @description Convert a `.docx` into RichDoc for any staff editor, writing nothing.
+         *
+         *     Preview only, exactly like the legal registry's import (ADR-017 Amendment 1
+         *     §A1.2): the panel shows the result and the author applies it by saving the
+         *     revision. Same conversion, same limits, same findings — the article editor
+         *     must not grow a second, subtly different importer.
+         */
+        post: operations["import_rich_doc_docx"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/content/rich-doc/normalize-html": {
         parameters: {
             query?: never;
@@ -1115,6 +1140,11 @@ export interface components {
             /** File */
             file: string;
         };
+        /** Body_import_rich_doc_docx */
+        Body_import_rich_doc_docx: {
+            /** File */
+            file: string;
+        };
         /** Body_preview_new_legal_document_docx */
         Body_preview_new_legal_document_docx: {
             /** File */
@@ -1481,15 +1511,18 @@ export interface components {
          *     slots but never invent a section type (CONTENT_MODEL_MATRIX §4).
          * @enum {string}
          */
-        ContentTemplate: "service_detail" | "therapist_profile" | "support_area" | "audience_page" | "program_detail" | "company_page" | "pricing_page" | "static_information" | "legal_page";
+        ContentTemplate: "service_detail" | "therapist_profile" | "support_area" | "audience_page" | "program_detail" | "company_page" | "pricing_page" | "static_information" | "legal_page" | "article_detail";
         /**
          * ContentType
-         * @description The six governed types from R1.4.i `ContentType`.
+         * @description The six governed types from R1.4.i, plus `article` since ADR-019.
          *
-         *     `article` is deliberately absent: the knowledge library is R3 (ADR-016).
+         *     The first six share one property `article` does not: their identity is a
+         *     closed allowlist of known pages (`system_catalog.py`). An article is one
+         *     entry per published text, unbounded in number, so it takes a separate
+         *     identity path — see ADR-019 §3.
          * @enum {string}
          */
-        ContentType: "static_page" | "service" | "therapist" | "program" | "company_plan" | "package_offer";
+        ContentType: "static_page" | "service" | "therapist" | "program" | "company_plan" | "package_offer" | "article";
         /** CreateContentEntryRequest */
         CreateContentEntryRequest: {
             contentType: components["schemas"]["ContentType"];
@@ -3525,6 +3558,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ContentRevisionOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    import_rich_doc_docx: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_import_rich_doc_docx"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NormalizeRichHtmlResponse"];
                 };
             };
             /** @description Validation Error */

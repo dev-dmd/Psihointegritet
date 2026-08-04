@@ -136,6 +136,29 @@ async function parseOrThrow<T>(response: Response): Promise<T> {
   return (await response.json()) as T;
 }
 
+/**
+ * Converts a `.docx` into RichDoc for a staff editor. Nothing is stored: the
+ * result lands in the editor's local state and reaches the server only when
+ * the author saves the revision.
+ */
+export async function importRichDocDocx(
+  file: File,
+): Promise<RichDocNormalizationResult> {
+  if (!file.name.toLowerCase().endsWith(".docx")) {
+    throw new ContentApiError(
+      "Izabrani fajl nije .docx. Sačuvajte Word dokument kao .docx i pokušajte ponovo.",
+      422,
+    );
+  }
+  const formData = new FormData();
+  formData.set("file", file);
+  const response = await fetch("/api/content/rich-doc/import-docx", {
+    method: "POST",
+    body: formData,
+  });
+  return parseOrThrow<RichDocNormalizationResult>(response);
+}
+
 export async function fetchContentEntries(
   contentType?: ContentType,
 ): Promise<ApiContentRevision[]> {

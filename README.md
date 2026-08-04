@@ -68,3 +68,15 @@ Backend: `uv sync --locked && uv run ruff format --check . && uv run ruff check 
 ./scripts/start-dev.sh
 
 adding roles: set -a; . ./.env.local; set +a; npm run roles:assign
+
+---
+
+Paddle AI plugin:
+/plugin marketplace add anthropics/claude-plugins-community
+/plugin install paddle@claude-community
+
+codex plugin marketplace add PaddleHQ/paddle-agent-skills
+
+npx skills add https://developer.paddle.com/
+
+---

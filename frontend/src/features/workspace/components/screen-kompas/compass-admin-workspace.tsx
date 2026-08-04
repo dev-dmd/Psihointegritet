@@ -8,10 +8,9 @@ import {
 } from "../../compass-flow-api";
 import { useCompassFlowAdmin } from "../../hooks/use-compass-flow-admin";
 import { useTaxonomyRegistryQuery } from "../../hooks/use-taxonomy-registry";
-import { CompassContentWorkspace } from "./compass-content-workspace";
 
 export type CompassWorkspaceSection =
-  "overview" | "flow" | "content" | "results" | "testing" | "publishing";
+  "overview" | "flow" | "results" | "testing" | "publishing";
 
 function initialDefinition(): CompassFlowDefinition {
   return {
@@ -236,10 +235,6 @@ export function CompassAdminWorkspace({
         ))}
       </div>
     );
-  }
-
-  if (section === "content") {
-    return <CompassContentWorkspace />;
   }
 
   if (section === "results") {

@@ -16,14 +16,14 @@ import { TechnicalDetails } from "../taxonomy-term-form/technical-details";
  * public renderer exists for them — an active control would fail on save.
  */
 const FORMATS = [
-  { id: "article", label: "Članak", ready: true },
+  { id: "article", label: "Tekst / članak", ready: true },
   { id: "video", label: "Video", ready: false },
   { id: "audio", label: "Audio", ready: false },
   { id: "pdf", label: "PDF", ready: false },
   { id: "worksheet", label: "Radni list", ready: false },
 ] as const;
 
-export function CompassContentCreate({
+export function KompasContentCreate({
   onCreate,
   isPending,
   serverError,
@@ -48,7 +48,7 @@ export function CompassContentCreate({
   return (
     <div className="rounded-panel border-line bg-surface border px-5 py-5">
       <h3 className="text-forest font-serif text-[17px]">
-        Šta želite da kreirate?
+        Šta želite da objavite?
       </h3>
 
       <div className="mt-3 flex flex-wrap gap-2">
@@ -83,7 +83,9 @@ export function CompassContentCreate({
           disabled={isPending}
           onChange={(event) => setTitle(event.target.value)}
           aria-invalid={showIssue}
-          aria-describedby={showIssue ? "compass-article-title-error" : undefined}
+          aria-describedby={
+            showIssue ? "compass-article-title-error" : undefined
+          }
           className={cn(
             "rounded-tile bg-panel-canvas text-coffee focus:border-sage w-full border px-3.5 py-2.5 text-sm outline-none disabled:opacity-60",
             showIssue ? "border-danger" : "border-line-strong",
@@ -124,7 +126,7 @@ export function CompassContentCreate({
         }}
         className="border-coffee bg-coffee text-panel-canvas mt-4 inline-flex min-h-11 cursor-pointer items-center rounded-full border px-5 text-[13px] font-semibold disabled:cursor-not-allowed disabled:opacity-60"
       >
-        {isPending ? "Kreiranje…" : "Napravi članak i otvori editor"}
+        {isPending ? "Kreiranje…" : "Napravi tekst i nastavi"}
       </button>
     </div>
   );

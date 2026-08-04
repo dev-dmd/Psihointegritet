@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { StatCard } from "@/components/panel/stat-card";
@@ -19,6 +20,7 @@ import {
   TaxonomyTermEditor,
 } from "../taxonomy-term-editor";
 import { AXIS_BY_TAB, TABS } from "./constants";
+import { KompasContentList } from "../kompas-sadrzaj/kompas-content-list";
 import { isEditableManagedTerm, isManagedAxis } from "./helpers";
 import { IntakeLinks } from "./intake-links";
 import { ReviewQueue } from "./review-queue";
@@ -32,9 +34,9 @@ import {
 
 const WORKSPACE_TABS = [
   { id: "overview", label: "Pregled" },
+  { id: "content", label: "Sadržaj" },
   { id: "registry", label: "Registar" },
   { id: "flow", label: "Tok pitanja" },
-  { id: "content", label: "Sadržaj" },
   { id: "results", label: "Prikaz rezultata" },
   { id: "testing", label: "Testiranje" },
   { id: "publishing", label: "Pregled i objavljivanje" },
@@ -68,10 +70,10 @@ export function ScreenKompas({
           onChange={(id) => setWorkspaceTab(id as WorkspaceTab)}
         />
       </div>
-      {workspaceTab === "registry" ? (
-        <CompassRegistryPanel
-          onOpenContentWorkspace={() => setWorkspaceTab("content")}
-        />
+      {workspaceTab === "content" ? (
+        <KompasContentList />
+      ) : workspaceTab === "registry" ? (
+        <CompassRegistryPanel />
       ) : (
         <CompassAdminWorkspace
           section={workspaceTab as CompassWorkspaceSection}
@@ -89,11 +91,10 @@ export function ScreenKompas({
  * Network lifecycle lives in `hooks/use-taxonomy-registry.ts`; the backend
  * stays the authority for locks, validation and publication.
  */
-function CompassRegistryPanel({
-  onOpenContentWorkspace,
-}: {
-  onOpenContentWorkspace: () => void;
-}) {
+function CompassRegistryPanel() {
+  // The launcher's third card is content, and content now has its own screen
+  // (D-063) rather than a tab in this one.
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState<KompasTab>("areas");
   const [editorState, setEditorState] = useState<{
     axis: ManagedTaxonomyAxis;
@@ -197,7 +198,9 @@ function CompassRegistryPanel({
           <TaxonomyQuickEntry
             terms={terms}
             onSaved={upsertTerm}
-            onOpenContentWorkspace={onOpenContentWorkspace}
+            onOpenContentWorkspace={() =>
+              router.push("/radni-prostor/kompas/sadrzaj")
+            }
           />
 
           <div className="rounded-panel border-line bg-surface border px-4 py-4 md:px-5">

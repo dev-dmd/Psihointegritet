@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useState } from "react";
 
 import { ErrorBanner } from "@/components/panel/error-banner";
@@ -33,14 +32,7 @@ const TAB_LABEL = "Sadržaj";
  * `slotSpecRegistry` (CG-C1a) — no per-template editor code here. Network
  * lifecycle belongs to `hooks/use-content-entries.ts`.
  */
-export function ScreenSadrzaj({
-  initialEntryId = null,
-  returnToKompas = false,
-}: {
-  /** Entry another screen asked to open, e.g. the Kompas content workspace. */
-  initialEntryId?: string | null;
-  returnToKompas?: boolean;
-} = {}) {
+export function ScreenSadrzaj() {
   const { reportError, errorsFor, clearError } = usePanelErrors();
 
   const entriesQuery = useContentEntriesQuery();
@@ -55,9 +47,7 @@ export function ScreenSadrzaj({
     : null;
 
   const [activeType, setActiveType] = useState<ContentType>("static_page");
-  const [selectedEntryId, setSelectedEntryId] = useState<string | null>(
-    initialEntryId,
-  );
+  const [selectedEntryId, setSelectedEntryId] = useState<string | null>(null);
 
   const errors = errorsFor(HREF);
   const selectedEntry =
@@ -65,16 +55,6 @@ export function ScreenSadrzaj({
   const selectedDefinition = selectedEntry
     ? findSystemContentDefinition(selectedEntry.contentType, selectedEntry.slug)
     : null;
-  // Articles are governed content without a catalogue entry (ADR-019): their
-  // identity is authored, not one of the six fixed system pages. Without this
-  // the editor simply never rendered for them.
-  const selectedLabels =
-    selectedEntry && !selectedDefinition
-      ? {
-          title: selectedEntry.seo?.title?.trim() || selectedEntry.slug,
-          publicRoute: `/znanje/${selectedEntry.slug}`,
-        }
-      : null;
 
   // Derived from the mutation rather than mirrored into local state — the
   // pending row and its failure message are the mutation's own lifecycle.
@@ -124,15 +104,6 @@ export function ScreenSadrzaj({
         description="Sistemske stranice, usluge, terapeuti, programi, kompanije i paketi. Izaberite postojeću stavku i menjajte samo polja definisana njenom strukturom."
       />
 
-      {returnToKompas ? (
-        <Link
-          href="/radni-prostor/kompas?tab=content"
-          className="text-forest mb-4 inline-flex min-h-11 items-center text-[13px] font-semibold underline"
-        >
-          ← Nazad na Kompas sadržaj
-        </Link>
-      ) : null}
-
       <ErrorBanner errors={errors} onDismiss={clearError} />
 
       {loadError ? (
@@ -166,18 +137,12 @@ export function ScreenSadrzaj({
             onOpen={handleOpen}
           />
 
-          {selectedEntry && (selectedDefinition || selectedLabels) ? (
+          {selectedEntry && selectedDefinition ? (
             <ContentRevisionEditor
               key={selectedEntry.revisionId}
               entry={selectedEntry}
-              displayTitle={
-                selectedDefinition?.title ?? selectedLabels?.title ?? ""
-              }
-              publicRoute={
-                selectedDefinition?.publicRoute ??
-                selectedLabels?.publicRoute ??
-                ""
-              }
+              displayTitle={selectedDefinition.title}
+              publicRoute={selectedDefinition.publicRoute}
               onDeleted={() => setSelectedEntryId(null)}
             />
           ) : null}
