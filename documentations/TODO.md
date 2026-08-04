@@ -603,6 +603,25 @@ Dokazuje `SlotSpec` registar koji pravni tok ne dokazuje (`legal_page` ima samo 
 
 ---
 
+## 5H. Kompas sadržaj je zaseban od CMS stranica — otvoreno (CTO, 2026-08-04)
+
+> **Odluka:** **Kompas sadržaj odvajamo od CMS sadržaja ostalih stranica.** Stranica, Usluga, Program, Paket i Kompanijski plan su stranice sajta; Kompas sadržaj je zaseban materijal koji se piše za oblast i temu.
+> **Status:** samo zabeleženo. Detaljan plan se pravi kasnije — ništa se sada ne implementira.
+
+**Šta je danas pogrešno (viđeno u panelu):**
+
+1. Napravim oblast i temu — i tu se staje. **Nigde ne postoji „napiši sadržaj za ovu temu".**
+2. U tabu „Sadržaj" dugme „Poveži u CMS editoru" nudi samo Paket, Uslugu, Stranicu i Program. To su stranice sajta, ne Kompas sadržaj — **povezujem sa nečim što nije to što mi treba.**
+3. Tema se šalje na stručni pregled **iako iza nje ne postoji nijedan tekst.** Pregled danas gleda pojam i vezu, ne sadržaj.
+4. Kartica „Kompas tema ↔ Intake oblast podrške" (npr. „Gubitak posla" ↔ „Trauma i krizna iskustva") je **Intake veza za Vođeni izbor**, a lako se pročita kao povezivanje sa sadržajem.
+5. Nije uvek jasno **za koju oblast** pravim temu — pitanje postoji samo u jednom ulazu.
+
+**Kako treba da izgleda:** posle kreiranja oblasti ili teme tok vodi na **tekst editor** za taj sadržaj, sa **uvozom `.docx`** kao ulazom.
+
+**Ne dirati dok se ne napravi plan:** taxonomy ose, lifecycle, approval pravila i Kompas recommendation semantiku. Uvoz `.docx` je već specificiran (Faza 3 vertikale članaka) i njegov tehnički obim ostaje nepromenjen.
+
+---
+
 ## 5A. MVP Demo paket — za sastanak sa Anjom i timom
 
 > **Gde piše:** `PSIHOINTEGRITET_INTAKE_MATCHING_ENGINE_v0.1.md` · odluke D-021…D-024 · zahtev CTO 2026-07-18
