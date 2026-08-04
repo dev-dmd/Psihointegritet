@@ -34,13 +34,18 @@ export function TaxonomyPublicPreview({
   const warnings = taxonomySeoWarnings(draft);
   const hasWarning = Boolean(warnings.publicLabel || warnings.shortDescription);
 
+  // The whole section is tinted and full width so it reads as a result, not as
+  // another field group. The card inside stays white: it is standing in for
+  // something the visitor sees, and must not pick up the panel's colour.
   return (
-    <div className="mt-4">
+    <div className="rounded-card bg-meadow/30 mt-4 px-5 py-4">
       <p className="text-ink-70 text-[13px] font-semibold">
         Kako će izgledati posetiocima
       </p>
 
-      <div className="rounded-card border-line bg-surface mt-2 max-w-[420px] border px-5 py-4">
+      {/* The tinted section spans the form; the card keeps a reading width,
+          because that is roughly how wide it renders for a visitor. */}
+      <div className="rounded-card border-line bg-surface mt-3 w-auto max-w-[420px] border px-5 py-4">
         <div className="flex items-start gap-3">
           {Icon ? (
             <span className="text-forest mt-0.5" aria-hidden>

@@ -4,7 +4,9 @@ import { cn } from "@/helpers/cn";
 
 import { FieldError } from "../screen-kompas/governance-error";
 import type { TaxonomyTermFieldsProps } from "./field-props";
+import { DISPLAY_ORDER_PRESETS, displayOrderPreset } from "./taxonomy-copy";
 import { broadSearchTerms } from "./taxonomy-duplicate-match";
+import { TechnicalDetails } from "./technical-details";
 import { AXIS_EDITOR_CONFIG, parseTaxonomySearchTerms } from "./model";
 
 export function TaxonomyOrganizationFields({
@@ -138,7 +140,7 @@ export function TaxonomyOrganizationFields({
         </div>
       ) : null}
 
-      <div className="mt-4 grid gap-4 lg:grid-cols-[minmax(0,1fr)_180px]">
+      <div className="mt-4">
         <div>
           <label
             htmlFor={`${editorId}-search-terms`}
@@ -194,43 +196,62 @@ export function TaxonomyOrganizationFields({
             </p>
           ) : null}
         </div>
+      </div>
 
-        <div>
-          <label
-            htmlFor={`${editorId}-sort-order`}
-            className="text-ink-70 mb-1.5 block text-[13px] font-semibold"
-          >
-            Redosled prikaza
-          </label>
-          <input
-            id={`${editorId}-sort-order`}
-            type="number"
-            min={0}
-            max={100_000}
-            step={1}
-            value={draft.sortOrder}
-            disabled={disabled}
-            onChange={(event) => {
-              setField("sortOrder", event.target.value);
-              clearFieldError("sortOrder");
-            }}
-            aria-invalid={Boolean(fieldErrors.sortOrder)}
-            aria-describedby={
-              fieldErrors.sortOrder ? errorId("sortOrder") : undefined
-            }
-            className={inputClass(
-              "sortOrder",
-              "border-line-strong rounded-tile bg-panel-canvas text-coffee focus:border-sage w-full border px-3.5 py-2.5 text-sm outline-none disabled:opacity-60",
-            )}
-          />
-          <FieldError
-            id={errorId("sortOrder")}
-            message={fieldErrors.sortOrder}
-          />
-          <p className="text-ink-55 mt-1.5 text-[12px] leading-[1.45]">
-            Manji broj se prikazuje ranije. Isti broj se razrešava po nazivu.
-          </p>
+      {/* "Redosled prikaza" was a raw 0–100000 integer. Nobody outside the team
+          can say what 37 means, and the field only ever needs three answers.
+          The wire value stays an integer; the UI stops asking for one. */}
+      <div className="mt-4">
+        <span
+          id={`${editorId}-sort-order-label`}
+          className="text-ink-70 mb-1.5 block text-[13px] font-semibold"
+        >
+          Redosled prikaza
+        </span>
+        <div
+          role="radiogroup"
+          aria-labelledby={`${editorId}-sort-order-label`}
+          className="flex flex-wrap gap-2"
+        >
+          {DISPLAY_ORDER_PRESETS.map((preset) => {
+            const isSelected =
+              displayOrderPreset(Number(draft.sortOrder) || 0) === preset.id;
+            return (
+              <button
+                key={preset.id}
+                type="button"
+                role="radio"
+                aria-checked={isSelected}
+                disabled={disabled}
+                onClick={() => {
+                  setField("sortOrder", String(preset.value));
+                  clearFieldError("sortOrder");
+                }}
+                className={cn(
+                  "min-h-11 cursor-pointer rounded-full border px-4 text-[12.5px] font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-50",
+                  isSelected
+                    ? "border-coffee bg-coffee text-panel-canvas"
+                    : "border-line-strong text-ink-70 hover:border-coffee/40 bg-transparent",
+                )}
+              >
+                {preset.label}
+              </button>
+            );
+          })}
         </div>
+        <FieldError id={errorId("sortOrder")} message={fieldErrors.sortOrder} />
+        <p className="text-ink-55 mt-1.5 text-[12px] leading-[1.45]">
+          Određuje mesto u listi oblasti ili tema. Stavke sa istim izborom
+          ređaju se po nazivu.
+        </p>
+        <TechnicalDetails summary="Tačna vrednost redosleda">
+          <span
+            id={`${editorId}-sort-order`}
+            className="text-ink-55 font-mono text-[12.5px]"
+          >
+            {draft.sortOrder || "0"}
+          </span>
+        </TechnicalDetails>
       </div>
 
       {config.requiresTopicContext ? (
