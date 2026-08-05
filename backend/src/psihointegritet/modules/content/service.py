@@ -36,6 +36,7 @@ from psihointegritet.modules.content.publication import (
     ContentFinding,
     ContentPublishCheck,
     ReviewDecisionRecord,
+    Severity,
     check_publishable,
     effective_required_approvals,
     granted_capabilities,
@@ -209,6 +210,8 @@ class ContentService:
         axis: TaxonomyAxis,
         locale: str,
         field_path: str,
+        *,
+        strict: bool = True,
     ) -> TaxonomyTermRevision:
         term = await self._session.get(TaxonomyTerm, term_id)
         if (
@@ -226,7 +229,7 @@ class ContentService:
                 TaxonomyTermRevision.term_id == term.id,
                 TaxonomyTermRevision.organization_id == actor.organization_id,
                 TaxonomyTermRevision.locale == locale,
-                TaxonomyTermRevision.status == RevisionStatus.PUBLISHED,
+                TaxonomyTermRevision.status != "archived",
             )
         )
         revision = tenant_revision
@@ -236,10 +239,14 @@ class ContentService:
                     TaxonomyTermRevision.term_id == term.id,
                     TaxonomyTermRevision.organization_id.is_(None),
                     TaxonomyTermRevision.locale == locale,
-                    TaxonomyTermRevision.status == RevisionStatus.PUBLISHED,
+                    TaxonomyTermRevision.status != "archived",
                 )
             )
-        if revision is None or revision.status is RevisionStatus.ARCHIVED:
+        if revision is None:
+            raise ValueError(
+                f"Izabrana Kompas vrednost za „{field_path}” ne postoji ili je arhivirana."
+            )
+        if strict and revision.status != RevisionStatus.PUBLISHED:
             raise ValueError(
                 f"Izabrana Kompas vrednost za „{field_path}” nije objavljena i aktivna."
             )
@@ -251,18 +258,28 @@ class ContentService:
         revision: ContentRevision,
         locale: str,
         metadata: ContentDiscoveryMetadata,
+        *,
+        strict: bool = False,
     ) -> None:
-        """Persist only registry IDs, after validating every reference server-side."""
+        """Persist only registry IDs, after validating every reference server-side.
+
+        When `strict` is False (default during editing), draft/in-review terms
+        are accepted — the gate moves to publish time (D-065)."""
         unique_topic_ids = list(dict.fromkeys(metadata.topic_term_ids))
         unique_audience_ids = list(dict.fromkeys(metadata.audience_term_ids))
         unique_goal_ids = list(dict.fromkeys(metadata.content_goal_term_ids))
         if metadata.topic_group_term_id is not None:
             await self._require_taxonomy_term(
-                actor, metadata.topic_group_term_id, TaxonomyAxis.TOPIC_GROUP, locale, "oblast"
+                actor,
+                metadata.topic_group_term_id,
+                TaxonomyAxis.TOPIC_GROUP,
+                locale,
+                "oblast",
+                strict=strict,
             )
         for term_id in unique_topic_ids:
             topic_revision = await self._require_taxonomy_term(
-                actor, term_id, TaxonomyAxis.TOPIC, locale, "teme"
+                actor, term_id, TaxonomyAxis.TOPIC, locale, "teme", strict=strict
             )
             if (
                 metadata.topic_group_term_id is not None
@@ -271,11 +288,11 @@ class ContentService:
                 raise ValueError("Svaka izabrana tema mora pripadati izabranoj oblasti.")
         for term_id in unique_audience_ids:
             await self._require_taxonomy_term(
-                actor, term_id, TaxonomyAxis.AUDIENCE, locale, "publika"
+                actor, term_id, TaxonomyAxis.AUDIENCE, locale, "publika", strict=strict
             )
         for term_id in unique_goal_ids:
             await self._require_taxonomy_term(
-                actor, term_id, TaxonomyAxis.CONTENT_GOAL, locale, "cilj sadržaja"
+                actor, term_id, TaxonomyAxis.CONTENT_GOAL, locale, "cilj sadržaja", strict=strict
             )
         if metadata.journey_intent_term_id is not None:
             await self._require_taxonomy_term(
@@ -284,6 +301,7 @@ class ContentService:
                 TaxonomyAxis.JOURNEY_INTENT,
                 locale,
                 "put korisnika",
+                strict=strict,
             )
         if metadata.content_format_term_id is not None:
             await self._require_taxonomy_term(
@@ -292,10 +310,16 @@ class ContentService:
                 TaxonomyAxis.CONTENT_FORMAT,
                 locale,
                 "format",
+                strict=strict,
             )
         if metadata.access_level_term_id is not None:
             access = await self._require_taxonomy_term(
-                actor, metadata.access_level_term_id, TaxonomyAxis.ACCESS_LEVEL, locale, "pristup"
+                actor,
+                metadata.access_level_term_id,
+                TaxonomyAxis.ACCESS_LEVEL,
+                locale,
+                "pristup",
+                strict=strict,
             )
             # The only currently public CMS renderer is public. Do not let an
             # editor select an entitlement label the route cannot enforce.
@@ -626,7 +650,25 @@ class ContentService:
             ReviewDecisionRecord(capability=d.capability, outcome=d.outcome)
             for d in await self._decisions(revision.id)
         ]
-        extra_findings = authored_content_findings(entry, revision)
+        # D-065: re-validate discovery references in strict mode at publish time.
+        # Draft/in-review terms that were accepted during editing are now
+        # blocking findings.
+        discovery_findings: tuple[ContentFinding, ...] = ()
+        try:
+            discovery = await self._discovery(revision.id)
+            await self._replace_discovery(actor, revision, entry.locale, discovery, strict=True)
+        except ValueError as exc:
+            discovery_findings = (
+                ContentFinding(
+                    rule_id="KOMPAS-REF-001",
+                    rule_version="1",
+                    severity=Severity.ERROR,
+                    message=str(exc),
+                    remediation="Objavite termin(e) u Kompasu, pa pošaljite tekst na pregled.",
+                    field_path="discovery",
+                ),
+            )
+        extra_findings = authored_content_findings(entry, revision) + discovery_findings
         outcome: ContentPublishCheck = check_publishable(
             entry.content_type,
             revision.template,

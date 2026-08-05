@@ -69,8 +69,9 @@ export function KompasEditorHeader({
           {entry.lockVersion}
         </p>
         <p className="text-ink-55 mt-1.5 text-[12px] leading-[1.5]">
-          Javna rubrika Znanje još nije objavljena, pa ova adresa za sada ne
-          otvara stranicu.
+          Ovaj tekst će dobiti javnu adresu{" "}
+          <span className="font-mono">{articlePublicPath(entry)}</span> kada
+          bude odobren i objavljen.
         </p>
       </TechnicalDetails>
     </header>

@@ -22,6 +22,8 @@ export interface ArticleStepStatus {
   blocked: boolean;
   /** Step is done but a health finding exists for a field within it. */
   hasProblem: boolean;
+  /** What the tooltip says when the badge is amber. */
+  problemSummary: string | null;
 }
 
 export interface ArticleTask {
@@ -168,6 +170,11 @@ function findingsToTasks(findings: readonly ApiContentFinding[]): {
   const blocking: ArticleTask[] = [];
   const advisory: ArticleTask[] = [];
 
+  /** Safe label — never empty. */
+  function label(finding: ApiContentFinding): string {
+    return finding.remediation || finding.message || "Proverite ovo polje.";
+  }
+
   for (const finding of findings) {
     // Discovery / taxonomy findings
     if (
@@ -180,7 +187,7 @@ function findingsToTasks(findings: readonly ApiContentFinding[]): {
       if (finding.fieldPath)
         advisory.push({
           id: `${finding.ruleId}-${finding.fieldPath}`,
-          label: finding.remediation || finding.message,
+          label: label(finding),
           step: "kompas",
           anchor: finding.fieldPath,
           blocking: finding.severity === "error",
@@ -192,7 +199,7 @@ function findingsToTasks(findings: readonly ApiContentFinding[]): {
     if (finding.ruleId === "TAX-REF-001" || finding.ruleId === "TAX-REF-002") {
       const task = {
         id: `${finding.ruleId}-${finding.fieldPath ?? ""}`,
-        label: finding.remediation || finding.message,
+        label: label(finding),
         step:
           (finding.fieldPath?.startsWith("topic") ?? false)
             ? "taxonomy"
@@ -206,12 +213,23 @@ function findingsToTasks(findings: readonly ApiContentFinding[]): {
 
     // Content-model / structural
     if (finding.ruleId?.startsWith("MODEL-") ?? false) {
-      blocking.push({
+      // MODEL-003 is about toggleable (optional) sections having no override
+      // — for articles these are deliberate: the author adds them manually.
+      const isOptionalOverride =
+        finding.ruleId === "MODEL-003" &&
+        finding.fieldPath != null &&
+        ["questions", "practice", "body_outro", "sources", "cta"].includes(
+          finding.fieldPath,
+        );
+      (isOptionalOverride ? advisory : blocking).push({
         id: `${finding.ruleId}-${finding.fieldPath ?? ""}`,
-        label: finding.remediation || finding.message,
+        // Translate MODEL-003 into Serbian the author understands.
+        label: isOptionalOverride
+          ? optionalSectionLabel(finding.fieldPath ?? "")
+          : label(finding),
         step: guessStepForField(finding.fieldPath),
         anchor: finding.fieldPath ?? undefined,
-        blocking: true,
+        blocking: !isOptionalOverride,
       });
       continue;
     }
@@ -220,7 +238,7 @@ function findingsToTasks(findings: readonly ApiContentFinding[]): {
     if (finding.ruleId?.startsWith("RICH-") ?? false) {
       advisory.push({
         id: `${finding.ruleId}-${finding.fieldPath ?? ""}`,
-        label: finding.remediation || finding.message,
+        label: label(finding),
         step: "text",
         anchor: finding.fieldPath ?? undefined,
         blocking: finding.severity === "error",
@@ -232,7 +250,7 @@ function findingsToTasks(findings: readonly ApiContentFinding[]): {
     if (finding.ruleId?.startsWith("IMPORT-") ?? false) {
       advisory.push({
         id: `${finding.ruleId}-${finding.fieldPath ?? ""}`,
-        label: finding.remediation || finding.message,
+        label: label(finding),
         step: "text",
         anchor: finding.fieldPath ?? undefined,
         blocking: false,
@@ -243,7 +261,7 @@ function findingsToTasks(findings: readonly ApiContentFinding[]): {
     // Anything else becomes an advisory, kept for visibility
     advisory.push({
       id: `${finding.ruleId}-${finding.fieldPath ?? ""}`,
-      label: finding.remediation || finding.message,
+      label: label(finding),
       step: "review",
       anchor: finding.fieldPath ?? undefined,
       blocking: finding.severity === "error",
@@ -251,6 +269,20 @@ function findingsToTasks(findings: readonly ApiContentFinding[]): {
   }
 
   return { blocking, advisory };
+}
+
+/** Human-readable Serbian labels for optional article sections.
+ *  Replaces the technical MODEL-003 remediation text ("Sekcija „x" nema
+ *  važeći override oblik.") that means nothing to a Word user. */
+function optionalSectionLabel(fieldPath: string): string {
+  const map: Record<string, string> = {
+    questions: "Pitanja za razmišljanje nisu dodata",
+    practice: "Praktični koraci nisu dodati",
+    body_outro: "Završna poruka nije dodata",
+    sources: "Izvori i literatura nisu dodati",
+    cta: "Sledeći korak za čitaoca nije dodat",
+  };
+  return map[fieldPath] ?? `${fieldPath} nije podešeno`;
 }
 
 /** Reasonable guess at which step a field path belongs to. */
@@ -468,11 +500,16 @@ export function deriveArticleCompletion(
   const steps: ArticleStepStatus[] = STEP_ORDER.map((id, i) => {
     const blocked =
       i > 0 && !STEP_ORDER.slice(0, i).every((prev) => doneMap[prev]);
-    const hasProblem =
-      doneMap[id] &&
-      allBlocking.some(
+    const stepTasks = allBlocking
+      .concat(allAdvisory)
+      .filter(
         (task) => task.step === id || task.anchor?.startsWith(stepAnchor(id)),
       );
+    const hasProblem = doneMap[id] && stepTasks.length > 0;
+    const problemSummary =
+      hasProblem && stepTasks.length > 0
+        ? stepTasks.map((task) => task.label).join("; ")
+        : null;
     return {
       id,
       ordinal: i + 1,
@@ -480,6 +517,7 @@ export function deriveArticleCompletion(
       done: id === "review" ? canSubmitForReview : doneMap[id],
       blocked,
       hasProblem,
+      problemSummary,
     };
   });
 

@@ -617,12 +617,12 @@ Dokazuje `SlotSpec` registar koji pravni tok ne dokazuje (`legal_page` ima samo 
 
 | #         | Obim                                                                                                                                                                                                                 | Status | Napomena                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
 | --------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **§5H-1** | Odvojena Kompas content površina: rute `kompas/sadrzaj`, `/novo`, `/[entryId]`; editor kao **puna stranica**; članci se odvezuju od `ScreenSadrzaj`; nova radna verzija / arhiviraj / obriši                         | 🟡     | **Editor kao puna stranica završen (2026-08-05).** `ArticleCompletion` guide integrisan: 5-step klikabilni stepper (`ArticleStepper`), `NextActionCard` za dominantan sledeći korak, `ArticleChecklist` sa direktnim navigacionim linkovima do polja. `article-completion.test.ts` (22 testa). `content-revision-editor.tsx` nije diran.                                                                                                                        |
-| **§5H-2** | Content-first klasifikacija: naslov i javni autor prvo, pretraživi izbor oblasti uz inline kreiranje, tema filtrirana po oblasti uz inline kreiranje; novi termini ostaju **draft**, članak ostaje otvoren i povezan | 🟡     | **Naslov/autor/text step adapteri završeni (2026-08-05).** `ArticleBasicsStep`: naslov, kratak uvod, autor kao dropdown (`ArticleAuthorField`) — wire format CTA skriven od autora. `ArticleTextStep`: veliki editor + Word import + `ArticleOptionalSection` za 5 opcionih delova (Pitanja, Praktični koraci, Završna poruka, Izvori, CTA) sa ljudskim labelama i objašnjenjima. Nema `inherit/override/hidden`, nema `Hero`/`Byline`/`body_intro` labela. **Oblast/tema dropdown sa inline create i tri Kompas pitanja = PR3.** |
+| **§5H-1** | Odvojena Kompas content površina: rute `kompas/sadrzaj`, `/novo`, `/[entryId]`; editor kao **puna stranica**; članci se odvezuju od `ScreenSadrzaj`; nova radna verzija / arhiviraj / obriši                         | ✅     | **Završen 2026-08-05.** 5-step klikabilni stepper, `NextActionCard`, `ArticleChecklist`, `deriveArticleCompletion()` čista funkcija (22 testa). `content-revision-editor.tsx` nije diran.                                                                                                                        |
+| **§5H-2** | Content-first klasifikacija: naslov i javni autor prvo, pretraživi izbor oblasti uz inline kreiranje, tema filtrirana po oblasti uz inline kreiranje; novi termini ostaju **draft**, članak ostaje otvoren i povezan | ✅     | **Završen 2026-08-05.** `ArticleBasicsStep` (naslov, uvod, autor dropdown — CTA wire format skriven). `ArticleTextStep` (veliki editor + Word import + 5 opcionih delova sa ljudskim labelama). `ArticleTaxonomyStep` (dropdown oblasti, checkbox teme, inline create). `ArticleCompassStep` (tri pitanja, auto format/pristup). `ArticleReviewStep` (pregled + "Pošalji na stručni pregled"). Nema `inherit/override/hidden`, nema `Hero`/`Byline` labela. |
 | **§5H-3** | Pravi tekst editor + `.docx` uvoz: RichDoc/Tiptap komponenta se ponovo koristi, importer **predlaže** a autor **potvrđuje**; ništa se ne upisuje bez potvrde                                                         | 🟡     | **Deo isporučen 2026-08-04 na zahtev CTO.** Gotovo: `shared/parsing/upload.py` (izdvojen `_read_docx`, privacy router prebačen na njega), `POST /content/rich-doc/import-docx` (preview-only, isti `convert_docx_bytes`, isti limiti i nalazi), proxy, klijent, hook i dugme uz telo članka, sa potvrdom pre zamene postojećeg teksta. **2026-08-04 ispravka:** `.docx` proxy je popravljen — raw `Blob` + originalni `Content-Type` umesto `request.formData()` (Node.js fetch je gubio multipart boundary). **Ispravka prikaza:** `RichTextEditor` je uncontrolled posle mount-a — importovani tekst se nije video. Dodat `bodyImportKey` koji forsira remount `SlotEditor`-a na svaki import, pa se sadržaj odmah prikazuje u Tiptap-u. Editor ima `resize: vertical` za vertikalno rastezanje. Ostaje: `article_import.py` segmentacija (naslov/pitanja/vežba u sekcije), **D28** i ispravka `management` diskriminatora |
 | **§5H-4** | Zajednički pregled i javna kapija: jedno „Pošalji na pregled", redosled oblast → tema → članak, D25/D26/D27, oba (zapravo tri) allowlist-a, javna ruta `/znanje/<slug>`, novi Faza 5 gate, pa tek onda flag          | ⬜     | Četiri oka iza flag-a (**D-066**). `/znanje` **ne** ide iza `NEXT_PUBLIC_COMPASS_ENABLED` — to je R3 CMS površina; iza flag-a je samo _preporuka_ članaka                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
 
-**Jedina arhitektonska promena je D-065.** `_require_taxonomy_term` (`service.py:224-246`) je tražio objavljenu reviziju termina, pa članak nije mogao da referencira oblast napravljenu u istom toku. Provera se seli na kapiju (`in_review → approved` i publish) kao error nalaz `KOMPAS-REF-001`. Publish time postaje **stroži nego danas** — trenutno ga niko ne ponavlja, pa termin arhiviran posle objave ostaje referenciran.
+**D-065 implementiran 2026-08-05.** `_require_taxonomy_term` (`service.py`) dobija `strict: bool` parametar. Pri čuvanju draft-a (`strict=False`) prihvata bilo koji ne-arhivirani termin — autor može da kreira oblast/temu i odmah ih koristi bez objave. Pri publish-u (`strict=True`) zahteva `status == PUBLISHED` — kapija je pomerena na `check_publish`. `_replace_discovery` default je `strict=False`.
 
 **Acceptance scenario:** `documentations/Tugovanje nije nešto što treba _preboljeti_.docx` (Anja, 2026-08-04). Bold naslov bez ijednog heading bloka, četiri pitanja za samorefleksiju kao neuređena lista, citat Khalila Gibrana koji **mora** u stručni pregled kao atribucija. Oblast **Gubitak i životne promene** i tema **Tugovanje** su vrednosti koje UI treba da _pronađe ili ponudi da kreira_, ne da pretpostavi. Tekst je pisan **ijekavicom i ostaje tačno takav**; `locale` ostaje `sr-Latn`, jer bi `sr-Latn-BA` izbacio članak iz Kompasa čije su oblasti `sr-Latn`. Sistemski jezik panela i autorski glas nisu ista stvar.
 
@@ -941,9 +941,9 @@ Oba fajla su vraćena u originalnom sadržaju. Provereno da vraćanje plugina **
 
 ---
 
-## 10. Status test-faze — 2026-08-05 ✅ SVI ZELENI (PR1+PR2)
+## 10. Status test-faze — 2026-08-05 ✅ SVI ZELENI (PR1+PR2+PR3+D-065)
 
-### Frontend
+### Frontend (`/frontend`)
 
 | Provera                         | Rezultat                                |
 | ------------------------------- | --------------------------------------- |
@@ -955,7 +955,7 @@ Oba fajla su vraćena u originalnom sadržaju. Provereno da vraćanje plugina **
 | `npm run build`                 | ✅                                      |
 | `npx playwright test`           | ✅ 62 prošlo                            |
 
-### Backend
+### Backend (`/backend`)
 
 | Provera                      | Rezultat                                |
 | ---------------------------- | --------------------------------------- |
@@ -964,10 +964,45 @@ Oba fajla su vraćena u originalnom sadržaju. Provereno da vraćanje plugina **
 | `uv run pyright`             | ✅ 0 errors, 0 warnings, 0 informations |
 | `uv run pytest`              | ✅ 353 prošlo, 1 preskočen              |
 
-### Novi testovi (PR1+PR2)
+### Novi frontend fajlovi (PR1+PR2+PR3)
 
-| Test fajl                          | Broj  | Pokriva                                                            |
-| ---------------------------------- | ----- | ------------------------------------------------------------------ |
-| `article-completion.test.ts`       | 22    | `deriveArticleCompletion()` — svi koraci, health→task, dedup       |
-| `article-author-field.test.ts`     | 11    | `extractTherapistSlug()` — sve grane, edge cases                   |
-| **Ukupno novih**                   | **33** | —                                                                |
+| Fajl                                     | Linija | Uloga                                             |
+| ---------------------------------------- | ------ | ------------------------------------------------- |
+| `article-completion.ts`                  | ~500   | `deriveArticleCompletion()` — čista funkcija       |
+| `article-completion.test.ts`             | ~400   | 22 testa                                          |
+| `article-stepper.tsx`                    | ~130   | 5-step klikabilni badge-ovi + tooltip              |
+| `next-action-card.tsx`                   | ~65    | Dominantna "Sledeći korak" kartica                 |
+| `article-checklist.tsx`                  | ~120   | Akciona pre-submit checklista                      |
+| `article-author-field.tsx`               | ~80    | Terapeut dropdown (CTA wire skriven)               |
+| `article-author-field.test.ts`           | ~90    | 11 testova za `extractTherapistSlug`               |
+| `article-basics-step.tsx`                | ~145   | Korak 1 — Osnovni podaci                           |
+| `article-text-step.tsx`                  | ~150   | Korak 2 — Tekst + "Dodaj deo"                      |
+| `article-optional-section.tsx`           | ~185   | "Dodaj"/"Ukloni" opcioni deo + ljudske labele      |
+| `article-taxonomy-step.tsx`              | ~515   | Korak 3 — Oblast dropdown, teme, inline create      |
+| `article-compass-step.tsx`               | ~165   | Korak 4 — Tri pitanja, auto format/pristup          |
+| `article-review-step.tsx`                | ~85    | Korak 5 — Pregled, checklista, slanje na review     |
+
+### Izmenjeni backend fajlovi
+
+| Fajl                | Izmena                                                                 |
+| ------------------- | ---------------------------------------------------------------------- |
+| `modules/content/service.py` | D-065: `_require_taxonomy_term` dobija `strict` parametar; `check_publish` dodaje strict validaciju |
+
+### Izmenjeni frontend fajlovi
+
+| Fajl                        | Izmena                                                            |
+| --------------------------- | ----------------------------------------------------------------- |
+| `kompas-article-editor.tsx` | Integrisan `discovery` state, 5-step render, `effectiveDiscovery` |
+| `kompas-article-screen.tsx` | Pojednostavljen prop lanac                                        |
+| `kompas-editor-header.tsx`  | `ArticleStepper` umesto neklikabilnih badge-ova; nova poruka o javnoj adresi |
+| `page.tsx` (entry point)    | Pojednostavljen prop lanac                                        |
+
+### Ostale ispravke
+
+| Ispravka                                 | Gde                                      |
+| ---------------------------------------- | ---------------------------------------- |
+| `openapi.json` u `backend/.gitignore`    | `backend/.gitignore`                     |
+| `MODEL-003` za opcione sekcije → advisory | `article-completion.ts`                |
+| `optionalSectionLabel` — ljudske labele   | `article-completion.ts`                  |
+| Tooltip na stepper badge-ovima           | `article-stepper.tsx` + `article-completion.ts` |
+| `handleSendForReview → save→transition`  | `kompas-article-editor.tsx`              |

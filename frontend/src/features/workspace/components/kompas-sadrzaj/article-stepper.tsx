@@ -89,7 +89,9 @@ export function ArticleStepper({ state }: { state: ArticleCompletionState }) {
               key={step.id}
               className={cn(base, tone, "cursor-not-allowed")}
               title={
-                step.blocked ? "Prvo završite prethodne korake." : undefined
+                step.blocked
+                  ? "Prvo završite prethodne korake."
+                  : (step.problemSummary ?? undefined)
               }
             >
               {content}
@@ -108,11 +110,13 @@ export function ArticleStepper({ state }: { state: ArticleCompletionState }) {
                 "focus-visible:ring-coffee cursor-pointer hover:opacity-80 focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:outline-none",
               )}
               title={
-                step.done
-                  ? "Ovaj korak je završen."
-                  : isCurrent
-                    ? "Trenutni korak."
-                    : "Skoči na ovaj korak."
+                step.problemSummary
+                  ? step.problemSummary
+                  : step.done
+                    ? "Ovaj korak je završen."
+                    : isCurrent
+                      ? "Trenutni korak."
+                      : "Skoči na ovaj korak."
               }
             >
               {content}

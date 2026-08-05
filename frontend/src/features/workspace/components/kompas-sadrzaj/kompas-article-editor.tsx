@@ -1,7 +1,7 @@
 "use client";
 
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
 
 import { slotSpecRegistry } from "@/lib/content-governance/slot-schema";
 import { templateRegistry } from "@/lib/content-governance/limits";
@@ -14,6 +14,7 @@ import {
   useDeleteContentRevisionMutation,
   useSaveContentRevisionMutation,
 } from "../../hooks/use-content-revision";
+import { useTaxonomyRegistryLookupQuery } from "../../hooks/use-taxonomy-registry";
 import { contentErrorMessage } from "../../hooks/use-content-entries";
 import { usePanelErrors } from "../../panel-errors";
 import type { RichDoc } from "@/lib/content-governance/rich-doc";
@@ -21,11 +22,14 @@ import type { RichDoc } from "@/lib/content-governance/rich-doc";
 import { KompasContentActions } from "./kompas-content-actions";
 import { KompasEditorHeader } from "./kompas-editor-header";
 import { NextActionCard } from "./next-action-card";
-import { ArticleChecklist } from "./article-checklist";
 import { deriveArticleCompletion } from "./article-completion";
 import { ArticleBasicsStep } from "./article-basics-step";
 import { ArticleTextStep } from "./article-text-step";
+import { ArticleTaxonomyStep } from "./article-taxonomy-step";
+import { ArticleCompassStep } from "./article-compass-step";
+import { ArticleReviewStep } from "./article-review-step";
 import { TechnicalDetails } from "../taxonomy-term-form/technical-details";
+import type { ApiContentDiscovery } from "../../content-api";
 
 const HREF = "/radni-prostor/kompas/sadrzaj" as const;
 const TAB_LABEL = "Kompas sadržaj";
@@ -64,16 +68,47 @@ export function KompasArticleEditor({ entry }: { entry: ApiContentRevision }) {
   const { replaceEntry, removeEntry } = useContentEntriesCache();
 
   const [slotData, setSlotData] = useState(() => initialSlotData(entry));
+  const [discovery, setDiscovery] = useState<ApiContentDiscovery>(
+    () => entry.discovery,
+  );
   const [dirty, setDirty] = useState(false);
   const [bodyImportKey, setBodyImportKey] = useState(0);
 
   const health = useContentRevisionHealthQuery(entry);
+  const registry = useTaxonomyRegistryLookupQuery();
+
+  // Auto-populate format and access level from the registry. These are
+  // system defaults — computed as a derived value rather than an effect so
+  // the checklist is accurate from the first render that has registry data.
+  const effectiveDiscovery = useMemo((): ApiContentDiscovery => {
+    if (!registry.data) return discovery;
+    const formatTerm = registry.data.terms.find(
+      (term) => term.axis === "content_format" && term.systemDefined === true,
+    );
+    const accessTerm = registry.data.terms.find(
+      (term) => term.axis === "access_level" && term.systemDefined === true,
+    );
+    if (!formatTerm && !accessTerm) return discovery;
+    const formatId =
+      discovery.contentFormatTermId ?? formatTerm?.termId ?? null;
+    const accessId = discovery.accessLevelTermId ?? accessTerm?.termId ?? null;
+    if (
+      formatId === discovery.contentFormatTermId &&
+      accessId === discovery.accessLevelTermId
+    )
+      return discovery;
+    return {
+      ...discovery,
+      contentFormatTermId: formatId,
+      accessLevelTermId: accessId,
+    };
+  }, [discovery, registry.data]);
 
   // Derive the article's completion state from slot data, discovery metadata,
   // and server-side Content Health findings. The same state feeds the stepper,
   // the next-action card, and the checklist.
   const completion = deriveArticleCompletion(
-    { slotData, discovery: entry.discovery, status: entry.status },
+    { slotData, discovery: effectiveDiscovery, status: entry.status },
     health.data?.findings ?? [],
   );
 
@@ -148,12 +183,32 @@ export function KompasArticleEditor({ entry }: { entry: ApiContentRevision }) {
     setDirty(true);
   };
 
+  const changeDiscovery = (next: ApiContentDiscovery) => {
+    setDiscovery(next);
+    setDirty(true);
+  };
+
   const handleApplySection = () => {
     save.mutate({
       slotData,
       seo: entry.seo,
-      discovery: entry.discovery,
+      discovery: effectiveDiscovery,
     });
+  };
+
+  const handleSendForReview = () => {
+    save.mutate(
+      {
+        slotData,
+        seo: entry.seo,
+        discovery: effectiveDiscovery,
+      },
+      {
+        onSuccess: () => {
+          transition.mutate("in_review");
+        },
+      },
+    );
   };
 
   return (
@@ -214,6 +269,17 @@ export function KompasArticleEditor({ entry }: { entry: ApiContentRevision }) {
         onApplySection={handleApplySection}
       />
 
+      <ArticleTaxonomyStep discovery={discovery} onChange={changeDiscovery} />
+
+      <ArticleCompassStep discovery={discovery} onChange={changeDiscovery} />
+
+      <ArticleReviewStep
+        completion={completion}
+        canSubmit={completion.canSubmitForReview}
+        isBusy={isBusy}
+        onSubmit={handleSendForReview}
+      />
+
       {health.data && health.data.findings.length > 0 ? (
         <TechnicalDetails summary="Tehnički nalazi servera">
           <ul className="flex flex-col gap-1.5">
@@ -231,8 +297,6 @@ export function KompasArticleEditor({ entry }: { entry: ApiContentRevision }) {
           </ul>
         </TechnicalDetails>
       ) : null}
-      <ArticleChecklist state={completion} />
-
       <div className="rounded-panel border-line bg-surface flex flex-wrap items-center justify-between gap-3 border px-6 py-4">
         <button
           type="button"
@@ -241,7 +305,7 @@ export function KompasArticleEditor({ entry }: { entry: ApiContentRevision }) {
             save.mutate({
               slotData,
               seo: entry.seo,
-              discovery: entry.discovery,
+              discovery: effectiveDiscovery,
             })
           }
           className="border-coffee bg-coffee text-panel-canvas min-h-11 cursor-pointer rounded-full border px-5 text-[13px] font-semibold disabled:cursor-not-allowed disabled:opacity-60"
