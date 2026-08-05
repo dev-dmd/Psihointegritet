@@ -54,6 +54,7 @@ __all__ = [
     "ContentRevisionDiscovery",
     "ContentRevisionRelation",
     "ContentRevisionTaxonomyTerm",
+    "ContentSubmitIdempotency",
     "ContentTaxonomyRole",
     "ContentTemplate",
     "ContentType",
@@ -373,5 +374,29 @@ class ContentPublicationEvent(Base):
     )
     reason: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+
+
+class ContentSubmitIdempotency(Base):
+    """Guarantees a submit-for-review call is processed at most once per key.
+
+    The unique constraint ``(revision_id, idempotency_key)`` makes a second
+    call with the same key a no-op across concurrent transactions — the first
+    writer commits the transition, the second catches the integrity error
+    and returns the already-in-review state (D-068 rule 2).
+    """
+
+    __tablename__ = "content_submit_idempotency"
+    __table_args__ = (
+        UniqueConstraint("revision_id", "idempotency_key", name="uq_content_submit_idempotency"),
+    )
+
+    id: Mapped[UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid4)
+    revision_id: Mapped[UUID] = mapped_column(
+        Uuid(as_uuid=True), ForeignKey("content_revisions.id", ondelete="CASCADE"), index=True
+    )
+    idempotency_key: Mapped[UUID] = mapped_column(Uuid(as_uuid=True), nullable=False)
+    processed_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )

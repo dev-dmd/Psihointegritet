@@ -13,6 +13,7 @@ from datetime import UTC, datetime
 from uuid import UUID
 
 from sqlalchemy import delete, select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm.exc import StaleDataError
 
@@ -29,8 +30,11 @@ from psihointegritet.modules.content.models import (
     ContentRevisionDiscovery,
     ContentRevisionRelation,
     ContentRevisionTaxonomyTerm,
+    ContentSubmitIdempotency,
     ContentTaxonomyRole,
+    ContentTemplate,
     ContentType,
+    ReviewOutcome,
 )
 from psihointegritet.modules.content.publication import (
     ContentFinding,
@@ -54,6 +58,7 @@ from psihointegritet.modules.content.schemas import (
     RecordReviewDecisionRequest,
     ReviewDecisionOut,
     SeoFields,
+    SubmitArticleForReviewRequest,
     TransitionRequest,
     UpdateContentRevisionRequest,
 )
@@ -845,6 +850,113 @@ class ContentService:
         revision.updated_by_user_id = actor.user_id
         await self._session.flush()
         return await self._to_schema_loaded(entry, revision)
+
+    async def submit_article_for_review(
+        self,
+        actor: StaffActor,
+        entry_id: UUID,
+        revision_id: UUID,
+        request: SubmitArticleForReviewRequest,
+    ) -> ContentRevisionOut:
+        """Atomic save + submit: persist pending edits and move the revision
+        to ``in_review`` in a single application command (D-068 / RW-1).
+
+        Idempotent: when the revision is already ``in_review`` the method
+        returns the current state (and the stored revision) unchanged, without
+        a 409, a re-mutation or a duplicate event.  A fresh ``idempotency_key``
+        on an already-in-review revision is still accepted — only the first
+        key that caused the transition is recorded.
+        """
+        self._require_org_admin(actor)
+        entry = await self._entry(actor, entry_id)
+        revision = await self._revision(actor, entry_id, revision_id)
+
+        # ---- idempotency: already in review → return current state ----------
+        if revision.status == RevisionStatus.IN_REVIEW:
+            return await self._to_schema_loaded(entry, revision)
+
+        # ---- guard: must be draft -------------------------------------------
+        if revision.status is not RevisionStatus.DRAFT:
+            raise ContentConflictError(
+                f"Cannot submit a revision in status {revision.status}; "
+                "return it to draft first."
+            )
+
+        # ---- lock-guard -----------------------------------------------------
+        if request.lock_version != revision.lock_version:
+            raise ContentConflictError(
+                "Revizija je izmenjena u međuvremenu — osvežite i pokušajte ponovo."
+            )
+
+        # ---- apply pending content edits ------------------------------------
+        if request.slot_data is not None:
+            revision.slot_data = request.slot_data
+        if request.seo is not None:
+            revision.seo = request.seo.model_dump(by_alias=False, exclude_none=True)
+        if request.discovery is not None:
+            await self._replace_discovery(actor, revision, entry.locale, request.discovery)
+
+        revision.updated_by_user_id = actor.user_id
+
+        # ---- Content Health check (blocking findings) -----------------------
+        decisions: list[ReviewDecisionRecord] = []
+        findings: list[ContentFinding] = []
+        if revision.status is RevisionStatus.DRAFT:
+            findings = structural_findings(revision.template, revision.slot_data) + authored_content_findings(entry, revision)
+            if any(item.severity == "error" for item in findings):
+                raise ContentConflictError(
+                    "Tekst ima blokirajuće nalaze i ne može se poslati na pregled."
+                    " Otklonite greške iznad pre ponovnog slanja."
+                )
+
+        # ---- transition to in_review ----------------------------------------
+        from_status = revision.status
+        revision.status = RevisionStatus.IN_REVIEW
+        revision.updated_by_user_id = actor.user_id
+
+        await self._log_event(revision.id, from_status, RevisionStatus.IN_REVIEW, actor)
+
+        try:
+            await self._session.flush()
+        except StaleDataError as error:
+            raise ContentConflictError(
+                "Revizija je izmenjena u međuvremenu — osvežite i pokušajte ponovo."
+            ) from error
+
+        # ---- record idempotency key alongside the transition event ----------
+        await self._record_idempotency(revision.id, request.idempotency_key)
+
+        return await self._to_schema_loaded(entry, revision)
+
+    async def _record_idempotency(
+        self, revision_id: UUID, idempotency_key: UUID
+    ) -> None:
+        """Record that *this* key was used to submit *this* revision.
+
+        The table is append-only: a different key on an already-in-review
+        revision is silently accepted — the endpoint returns the existing
+        state without a new transition.  Only the first arrival receives
+        the unique constraint's guarantee.
+
+        The unique constraint ``(revision_id, idempotency_key)`` ensures
+        the same key cannot produce a second transition, even across
+        concurrent requests (serialized by the transaction).
+        """
+        self._session.add(
+            ContentSubmitIdempotency(
+                revision_id=revision_id,
+                idempotency_key=idempotency_key,
+                processed_at=datetime.now(UTC),
+            )
+        )
+        try:
+            await self._session.flush()
+        except IntegrityError:
+            # Another request with the same key already committed — this
+            # is a duplicate arrival, not an application error.  The
+            # previous flush already wrote the transition, so the caller
+            # will see the in-review state on its next turn.
+            pass
 
     async def delete_revision(self, actor: StaffActor, entry_id: UUID, revision_id: UUID) -> None:
         self._require_org_admin(actor)

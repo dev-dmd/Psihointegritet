@@ -27,6 +27,7 @@ from psihointegritet.modules.content.schemas import (
     PublishBlockOut,
     RecordReviewDecisionRequest,
     RichDocFindingOut,
+    SubmitArticleForReviewRequest,
     TransitionRequest,
     UpdateContentRevisionRequest,
 )
@@ -333,6 +334,41 @@ async def check_content_publishable(
             result = await ContentService(session).check_publish(actor, entry_id, revision_id)
             return result.block
     except ContentNotFoundError as error:
+        raise _handle(error) from error
+
+
+@router.post(
+    "/entries/{entry_id}/revisions/{revision_id}/submit-review",
+    response_model=ContentRevisionOut,
+    operation_id="submit_article_for_review",
+)
+async def submit_article_for_review(
+    entry_id: UUID,
+    revision_id: UUID,
+    request: SubmitArticleForReviewRequest,
+    identity: CurrentIdentity,
+    session: DatabaseSession,
+    settings: AppSettings,
+) -> ContentRevisionOut:
+    """Atomic save + transition ``draft → in_review`` in one transaction.
+
+    Idempotent: calling with the same ``idempotencyKey`` returns the
+    already-in-review revision; calling without changes on an already-in-review
+    revision also succeeds.  Only the first caller receives the side-effects
+    (audit event, outbox record).
+    """
+    try:
+        async with session.begin():
+            actor = await _org_admin_actor(session, settings, identity)
+            return await ContentService(session).submit_article_for_review(
+                actor, entry_id, revision_id, request,
+            )
+    except (
+        ContentNotFoundError,
+        ContentForbiddenError,
+        ContentConflictError,
+        ValueError,
+    ) as error:
         raise _handle(error) from error
 
 

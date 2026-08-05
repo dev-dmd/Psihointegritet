@@ -108,6 +108,21 @@ class TransitionRequest(ApiSchema):
     target: RevisionStatus
 
 
+class SubmitArticleForReviewRequest(ApiSchema):
+    """Atomic: save + transition `draft → in_review` in one transaction.
+
+    `lock_version` protects against concurrent writes.  `idempotency_key`
+    makes the second identical call return the already-in-review revision
+    instead of a 409 (D-068 rule 2).
+    """
+
+    lock_version: int
+    idempotency_key: UUID
+    slot_data: dict[str, object] | None = None
+    seo: SeoFields | None = None
+    discovery: ContentDiscoveryMetadata | None = None
+
+
 class RecordReviewDecisionRequest(ApiSchema):
     capability: ApprovalCapability
     outcome: ReviewOutcome

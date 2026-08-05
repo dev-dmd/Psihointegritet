@@ -15,7 +15,7 @@
 - [x] Faza 3: backend Result Composer vraća stabilne sekcije, deduplikaciju i related area/topic razdvajanje.
 - [x] Faza 4: `/kompas` koristi objavljeni flow, taxonomy i stvarni recommendation API bez URL selection-a; fallback zahteva eksplicitni non-production preview flag.
 - [ ] Faza 5: opt-in, development-only seed je runtime provereno idempotentan. **Gate je promenjen 2026-08-04 (D-063):** traži se 2–3 stvarna urednički odobrena i objavljena **Kompas članka**, povezana sa bar dve teme i bar jednom oblašću — ne više 2–3 objavljena `service`/`program`. Usluge i programi su stranice sajta, ne glavni Kompas sadržaj; njihova relacija ostaje sledeći korak, ali ne sme biti uslov da Kompas uopšte ima sadržaj.
-- [ ] Faza 6: sedam admin celina, lifecycle i isti preview Engine postoje; nedostaju autentifikovani admin browser test i potpuniji editor svih flow polja/actor evidence prikaz. **U toku (2026-08-05):** article authoring editor završen — 5-step flow (Osnovni podaci → Tekst → Oblast i teme → Kompas → Pregled i slanje), `deriveArticleCompletion` guide, inline taxonomy create, `ArticleCompassStep`, `ArticleReviewStep`. D-065 backend fix: draft termini dozvoljeni pri čuvanju. PR4 (pregled i produkcioni gate) slede.
+- [ ] Faza 6: sedam admin celina, lifecycle i isti preview Engine postoje; nedostaju autentifikovani admin browser test i potpuniji editor svih flow polja/actor evidence prikaz. **U toku (2026-08-05):** article authoring editor završen — 5-step flow (Osnovni podaci → Tekst → Oblast i teme → Kompas → Pregled i slanje), `deriveArticleCompletion` guide, inline taxonomy create, `ArticleCompassStep`, `ArticleReviewStep`. D-065 backend fix: draft termini dozvoljeni pri čuvanju. PR4 (pregled i produkcioni gate) slede. **Poboljšan overview (2026-08-05):** `ReadinessChecklist` sa animiranim `fade-up` checkovima (`loading → ok/pending/error`), per-tab učitavanje (`enabled` flag na query hookovima), `CompassAdminWorkspace` postaje prezentaciona komponenta. CMS "Povezan sadržaj" check zamenjen sa "Kompas Servisi" (✓/✗/○). 9 vitest testova. Backend `list_terms`/`list_intake_links` batch optimizacija (~10 umesto ~500+ SQL upita).
 - [x] Faza 7: statički gate-ovi, backend i frontend testovi, production build, Playwright i migracioni round-trip prolaze. **D19 je zatvoren 2026-08-03** migracijom `20260803_0017` po D-060, pa je puni `alembic check` sada čist i nad čistom i nad dev bazom.
 
 **Produkciona aktivacija (D-059):** basic Kompas je deo R3 Content obima, ali se pali nezavisno preko feature flag-a — tek kada postoje minimalni urednički podaci (Faza 5), admin prihvatni testovi (Faza 6) i zeleni javni E2E. Flag je `NEXT_PUBLIC_COMPASS_ENABLED` i **podrazumevano je isključen**: bez njega `/kompas`, `/kompas/oblasti`, `/kompas/teme` i obe kanonske rute vraćaju 404, header link i CTA na naslovnoj se ne renderuju, a sitemap ne navodi nijednu Kompas rutu. Sporedni efekat je namerno koristan — isključeno okruženje ne prerenderuje te rute, pa nedostupan backend ne može da obori njegov build.
@@ -33,6 +33,7 @@ Faza se označava završenom samo posle relevantnog gate-a. Research feedback i 
 | 4    | Compass BFF rute, `api/flow.ts`, flow model/hook/test, dinamički quiz/results, DB-backed starting view, javni Query provider i `compass.spec.ts`                                   | build i javni izbor/skip/sentinel E2E prolaze                                         |
 | 5    | `scripts/seed_compass_demo.py`, seed guard testovi i `NEXT_PUBLIC_COMPASS_DEMO_PREVIEW` granica                                                                                    | dvostruki lokalni run ne duplira podatke; CMS linkage čeka eligible rows              |
 | 6    | staff BFF rute, `compass-flow-api.ts`, admin hook, `compass-admin-workspace.tsx` i `screen-kompas.tsx`                                                                             | backend preview deli javni composer; browser admin gate otvoren                       |
+| 6+   | `readiness-checklist.tsx` + test, per-tab `enabled` loading, `CompassAdminWorkspace` prezentaciona, backend `list_terms`/`list_intake_links` batch optimizacija                    | TSC 0 grešaka, ESLint 0, vitest 9/9, pytest 353/354                                  |
 | 7    | `.github/workflows/quality.yml` uz postojeći Content Health workflow                                                                                                               | CI sada sadrži backend, frontend, build, Playwright, round-trip i D19 migration guard |
 
 ---
@@ -60,6 +61,26 @@ Faza se označava završenom samo posle relevantnog gate-a. Research feedback i 
 | ⬜     | Nije započeto                                         |
 | 🚫     | Blokirano postojećom odlukom ili nedostajućim domenom |
 | ⏸️     | Namerno kasnije                                       |
+
+---
+
+## 0C. Content Review Workflow — verzionisani urednički tok (plan 2026-08-05)
+
+> **Problem:** "Pošalji na stručni pregled" prvi put uspe, ali `router.refresh()` pregazi keš pre nego što UI prikaže novo stanje. Drugi klik → 409 (`in_review` revizija nije editabilna). `deriveArticleCompletion` ne proverava `entry.status`. §5H-4 (zajednički pregled + javna kapija) je ⬜.
+
+> **Cilj:** Neograničen broj ciklusa `draft → review → dorada → ponovni review → approved → published → nova verzija` bez dead-end stanja. Statusi štite verziju koju reviewer pregleda, ali nikad ne zaključavaju ceo entry. Svaka poslata verzija je nepromenljiv istorijski dokaz.
+
+| #        | Obim                                       | Zavisi od | Status |
+| -------- | ------------------------------------------ | --------- | ------ |
+| **RW-1** | Atomsko + idempotentno slanje: `POST .../submit-review`, `idempotencyKey`, već poslata revizija vraća uspeh (ne 409) | — | ✅ | `submit_article_for_review` u `service.py`, `ContentSubmitIdempotency` tabela, migracija `20260805_0018`. 353 pytest + alembic check čisti. |
+| **RW-2** | Status-aware wizard: `deriveArticleCompletion` razlikuje `editing / in_review / changes_requested / approved / published`. Dugme samo za `draft`. | RW-1 | ⬜ |
+| **RW-3** | Nove revizije za svaki krug dorade: `POST .../new-draft`, `source_revision_id`/`superseded_at`. `published → nova verzija` ne skida staru sa sajta. | RW-2 | ⬜ |
+| **RW-4** | Reviewer odluke: `approved / rejected` + obavezno obrazloženje za `rejected`. Automatsko agregiranje: sva odobrenja → `approved`. Pravilo četiri oka. | RW-3 | ⬜ |
+| **RW-5** | Urednički paket: `content_review_packages` + `items`. Jedan klik = članak + nove draft oblast/tema. Kompas Flow nije deo paketa. | RW-4 | ⬜ |
+| **RW-6** | Review queue: `organization_review_assignments`, `GET /radni-prostor/pregledi`. Reviewer vidi samo svoj capability. | RW-5 | ⬜ |
+| **RW-7** | Email obaveštenja: `notification_outbox`, QStash job. Događaji: `review_requested / changes_requested / approved / published`. | RW-6 | ⬜ |
+
+**Detaljan plan u `TODO.md` §5J.** Nijedan status ne primorava korisnika da obriše sadržaj.
 
 ---
 
