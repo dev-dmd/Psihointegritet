@@ -1,9 +1,18 @@
 "use client";
 
-import type { PublicationStatus } from "@/lib/content-governance/types";
+import { useState } from "react";
 
+import type { ApprovalCapability, PublicationStatus } from "@/lib/content-governance/types";
+
+import type { ApiReviewDecision } from "../../content-api";
 import type { ArticleCompletionState } from "./article-completion";
 import { ArticleChecklist } from "./article-checklist";
+
+const CAPABILITY_LABELS: Record<ApprovalCapability, string> = {
+  clinical: "Stručni pregled",
+  business: "Poslovni pregled",
+  legal: "Pravni pregled",
+};
 
 /**
  * Step 5 — Pregled i slanje.
@@ -11,28 +20,66 @@ import { ArticleChecklist } from "./article-checklist";
  * Shows a summary of what's ready and the primary action: send for review
  * (draft), pull back to draft (in_review), publish (approved), or a
  * read-only summary for published/archived content (RW-2).
+ *
+ * For in_review revisions, shows the review panel with current decisions
+ * and approve/reject buttons (RW-4).
  */
 export function ArticleReviewStep({
   completion,
   canSubmit,
   entryStatus,
   isBusy,
+  decisions,
+  requiredApprovals,
+  missingApprovals,
   onSubmit,
   onWithdraw,
   onNewDraft,
+  onReview,
 }: {
   completion: ArticleCompletionState;
   canSubmit: boolean;
   entryStatus: PublicationStatus;
   isBusy: boolean;
+  decisions?: readonly ApiReviewDecision[];
+  requiredApprovals?: readonly ApprovalCapability[];
+  missingApprovals?: readonly ApprovalCapability[];
   onSubmit: () => void;
   onWithdraw?: () => void;
   onNewDraft?: () => void;
+  onReview?: (input: {
+    capability: ApprovalCapability;
+    outcome: "approved" | "rejected";
+    note?: string;
+  }) => void;
 }) {
   const isInReview = entryStatus === "in_review";
   const isApproved = entryStatus === "approved";
   const isPublished = entryStatus === "published";
-  const isEditable = entryStatus === "draft" || entryStatus === "approved";
+
+  const [reviewState, setReviewState] = useState<{
+    capability: ApprovalCapability;
+    outcome: "rejected";
+  } | null>(null);
+
+  const decide = (capability: ApprovalCapability, outcome: "approved") => {
+    onReview?.({ capability, outcome });
+  };
+
+  const confirmReject = () => {
+    if (!reviewState) return;
+    const note = (
+      document.getElementById(
+        `review-note-${reviewState.capability}`,
+      ) as HTMLTextAreaElement | null
+    )?.value?.trim();
+    if (!note) return;
+    onReview?.({ capability: reviewState.capability, outcome: "rejected", note });
+    setReviewState(null);
+  };
+
+  const decisionFor = (capability: ApprovalCapability) =>
+    (decisions ?? []).find((d) => d.capability === capability);
 
   return (
     <section
@@ -71,26 +118,131 @@ export function ArticleReviewStep({
         </div>
       ) : null}
 
-      {/* In review — show withdraw button */}
+      {/* In review — review panel + withdraw button */}
       {isInReview ? (
-        <div className="border-badge-amber/40 bg-badge-amber-bg rounded-panel mt-5 border px-5 py-4">
-          <p className="text-coffee text-[13px] font-semibold">
-            Tekst je poslat na stručni pregled
-          </p>
-          <p className="text-ink-70 mt-1 text-[12.5px] leading-[1.55]">
-            Tim pregleda tekst. Ako želite da ga menjate, prvo ga povucite na
-            doradu.
-          </p>
-          {onWithdraw ? (
-            <button
-              type="button"
-              disabled={isBusy}
-              onClick={onWithdraw}
-              className="border-coffee text-coffee hover:bg-coffee/8 mt-3 min-h-11 cursor-pointer rounded-full border px-4 text-[12.5px] font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {isBusy ? "Povlačenje…" : "Povuci na doradu"}
-            </button>
+        <div className="mt-5 space-y-4">
+          {/* Review decisions */}
+          {requiredApprovals && requiredApprovals.length > 0 ? (
+            <div className="rounded-panel border-line border px-5 py-4">
+              <h3 className="text-coffee text-[13px] font-semibold">
+                Pregled teksta
+              </h3>
+              <ul className="mt-3 space-y-3">
+                {requiredApprovals.map((capability) => {
+                  const decision = decisionFor(capability);
+                  const isMissing = missingApprovals?.includes(capability);
+                  return (
+                    <li
+                      key={capability}
+                      className="flex items-start justify-between gap-4"
+                    >
+                      <div>
+                        <p className="text-[12.5px] font-medium">
+                          {CAPABILITY_LABELS[capability]}
+                        </p>
+                        {decision ? (
+                          <p className="text-ink-55 mt-0.5 text-[11.5px]">
+                            {decision.outcome === "approved"
+                              ? `Odobrio ${decision.decidedBy?.displayName ?? "—"}`
+                              : `Vraćeno na doradu — ${decision.note ?? ""}`}
+                          </p>
+                        ) : (
+                          <p className="text-ink-45 mt-0.5 text-[11.5px]">
+                            Čeka se pregled
+                          </p>
+                        )}
+                      </div>
+                      {isMissing && onReview ? (
+                        reviewState?.capability === capability ? (
+                          <div className="flex flex-col gap-2">
+                            <textarea
+                              id={`review-note-${capability}`}
+                              placeholder="Opišite šta treba izmeniti…"
+                              rows={2}
+                              className="border-line-strong min-w-[200px] rounded-lg border px-3 py-1.5 text-[12px]"
+                            />
+                            <div className="flex gap-2">
+                              <button
+                                type="button"
+                                onClick={confirmReject}
+                                className="border-danger bg-danger text-panel-canvas cursor-pointer rounded-full px-3 py-1 text-[11px] font-semibold"
+                              >
+                                Potvrdi
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setReviewState(null)}
+                                className="text-ink-55 cursor-pointer text-[11px] underline"
+                              >
+                                Odustani
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="flex gap-2">
+                            <button
+                              type="button"
+                              disabled={isBusy}
+                              onClick={() => decide(capability, "approved")}
+                              className="border-forest text-forest hover:bg-forest/8 cursor-pointer rounded-full border px-3 py-1 text-[11px] font-semibold transition-colors disabled:opacity-50"
+                            >
+                              {isBusy ? "…" : "Odobri"}
+                            </button>
+                            <button
+                              type="button"
+                              disabled={isBusy}
+                              onClick={() =>
+                                setReviewState({
+                                  capability,
+                                  outcome: "rejected",
+                                })
+                              }
+                              className="border-coffee text-coffee hover:bg-coffee/8 cursor-pointer rounded-full border px-3 py-1 text-[11px] font-semibold transition-colors disabled:opacity-50"
+                            >
+                              Vrati na doradu
+                            </button>
+                          </div>
+                        )
+                      ) : decision ? (
+                        <span
+                          className={`shrink-0 rounded-full px-2.5 py-0.5 text-[11px] ${
+                            decision.outcome === "approved"
+                              ? "bg-badge-ok-bg text-badge-ok"
+                              : "bg-badge-danger-bg text-badge-danger"
+                          }`}
+                        >
+                          {decision.outcome === "approved"
+                            ? "Odobreno"
+                            : "Vraćeno"}
+                        </span>
+                      ) : null}
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
           ) : null}
+
+          {/* Withdraw button */}
+          <div className="border-badge-amber/40 bg-badge-amber-bg rounded-panel border px-5 py-4">
+            <p className="text-coffee text-[13px] font-semibold">
+              Tekst je poslat na stručni pregled
+            </p>
+            <p className="text-ink-70 mt-1 text-[12.5px] leading-[1.55]">
+              Tim pregleda tekst. Ako želite da ga menjate, prvo ga povucite na
+              doradu.
+            </p>
+            {onWithdraw ? (
+              <button
+                type="button"
+                disabled={isBusy}
+                onClick={onWithdraw}
+                className="border-coffee text-coffee hover:bg-coffee/8 mt-3 min-h-11 cursor-pointer rounded-full border px-4 text-[12.5px] font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {isBusy ? "Povlačenje…" : "Povuci na doradu"}
+              </button>
+            ) : null}
+          </div>
         </div>
       ) : null}
 

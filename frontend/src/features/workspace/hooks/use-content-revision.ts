@@ -177,8 +177,18 @@ export function useContentReviewMutation(
   },
 ) {
   return useMutation({
-    mutationFn: (capability: ApprovalCapability) =>
-      recordContentReviewDecision(entry.entryId, entry.revisionId, capability),
+    mutationFn: (input: {
+      capability: ApprovalCapability;
+      outcome: "approved" | "rejected";
+      note?: string;
+    }) =>
+      recordContentReviewDecision(
+        entry.entryId,
+        entry.revisionId,
+        input.capability,
+        input.outcome,
+        input.note,
+      ),
     onSuccess: callbacks.onRecorded,
     onError: callbacks.onFailed,
   });

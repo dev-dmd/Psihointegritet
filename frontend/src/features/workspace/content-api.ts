@@ -314,13 +314,14 @@ export async function recordContentReviewDecision(
   revisionId: string,
   capability: ApprovalCapability,
   outcome: "approved" | "rejected" = "approved",
+  note?: string,
 ): Promise<ApiContentRevision> {
   const response = await fetch(
     `/api/content/entries/${encodeURIComponent(entryId)}/revisions/${encodeURIComponent(revisionId)}/reviews`,
     {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ capability, outcome }),
+      body: JSON.stringify({ capability, outcome, note: note ?? null }),
     },
   );
   return parseOrThrow<ApiContentRevision>(response);

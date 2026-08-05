@@ -826,6 +826,16 @@ class ContentService:
                 "Review decisions may be recorded only while a revision is in review"
             )
 
+        # ---- four-eyes rule (D-068 rule 4) --------------------------------
+        if request.outcome == ReviewOutcome.APPROVED:
+            submitters = await self._submission_actors(revision.id)
+            if actor.user_id in submitters:
+                raise ContentConflictError(
+                    "Ne možete odobriti tekst koji ste sami poslali na pregled."
+                    " Potreban je drugi član tima za odobrenje."
+                )
+
+        # ---- upsert decision -----------------------------------------------
         existing = await self._session.scalar(
             select(ContentReviewDecision).where(
                 ContentReviewDecision.revision_id == revision.id,
@@ -849,8 +859,71 @@ class ContentService:
             )
 
         revision.updated_by_user_id = actor.user_id
+
+        # ---- rejected → create new draft + supersede (RW-4) -----------------
+        if request.outcome == ReviewOutcome.REJECTED:
+            if not request.note:
+                raise ValueError("Vraćanje na doradu zahteva obrazloženje.")
+            next_label = _next_version_label(revision.version_label)
+            draft = ContentRevision(
+                entry_id=entry.id,
+                version_label=next_label,
+                template=revision.template,
+                slot_data=revision.slot_data,
+                seo=revision.seo,
+                status=RevisionStatus.DRAFT,
+                source_revision_id=revision.id,
+                created_by_user_id=actor.user_id,  # the reviewer triggers the re-draft
+                updated_by_user_id=actor.user_id,
+            )
+            self._session.add(draft)
+            await self._session.flush()
+
+            previous_discovery = await self._discovery(revision.id)
+            await self._replace_discovery(actor, draft, entry.locale, previous_discovery)
+
+            revision.superseded_at = datetime.now(UTC)
+            revision.superseded_by_revision_id = draft.id
+
+            await self._log_event(
+                draft.id, None, RevisionStatus.DRAFT, actor,
+                reason=f"changes_requested:{request.capability.value}",
+            )
+            await self._session.flush()
+            return await self._to_schema_loaded(entry, draft)
+
         await self._session.flush()
+
+        # ---- auto-approve when all required capabilities are granted (RW-4) ---
+        decisions = [
+            ReviewDecisionRecord(capability=d.capability, outcome=d.outcome)
+            for d in await self._decisions(revision.id)
+        ]
+        findings = structural_findings(
+            revision.template, revision.slot_data
+        ) + authored_content_findings(entry, revision)
+        required = effective_required_approvals(entry.content_type, revision.template, findings)
+        granted = granted_capabilities(decisions)
+        if required.issubset(granted):
+            from_status = revision.status
+            revision.status = RevisionStatus.APPROVED
+            revision.updated_by_user_id = actor.user_id
+            await self._log_event(revision.id, from_status, RevisionStatus.APPROVED, actor)
+            await self._session.flush()
+
         return await self._to_schema_loaded(entry, revision)
+
+    async def _submission_actors(self, revision_id: UUID) -> set[UUID]:
+        """Return the set of user IDs who submitted this revision for review."""
+        events = (
+            await self._session.scalars(
+                select(ContentPublicationEvent).where(
+                    ContentPublicationEvent.revision_id == revision_id,
+                    ContentPublicationEvent.to_status == RevisionStatus.IN_REVIEW,
+                )
+            )
+        ).all()
+        return {event.actor_user_id for event in events if event.actor_user_id}
 
     async def submit_article_for_review(
         self,

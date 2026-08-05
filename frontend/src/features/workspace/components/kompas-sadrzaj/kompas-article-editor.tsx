@@ -9,6 +9,7 @@ import { templateRegistry } from "@/lib/content-governance/limits";
 import type { ApiContentRevision } from "../../content-api";
 import {
   useContentEntriesCache,
+  useContentReviewMutation,
   useContentRevisionHealthQuery,
   useContentTransitionMutation,
   useDeleteContentRevisionMutation,
@@ -175,6 +176,17 @@ export function KompasArticleEditor({ entry }: { entry: ApiContentRevision }) {
     onFailed: fail("Radna verzija nije obrisana"),
   });
 
+  const review = useContentReviewMutation(entry, {
+    onRecorded: (next) => {
+      replaceEntry(next);
+      // Rejected decisions return a new draft revision — navigate to it.
+      if (next.status === "draft" && next.revisionId !== entry.revisionId) {
+        window.location.href = `/radni-prostor/kompas/${next.entryId}`;
+      }
+    },
+    onFailed: fail("Odluka nije zabeležena"),
+  });
+
   const applyImportedBody = (body: RichDoc) => {
     setBodyImportKey((v) => v + 1);
     setSlotData((current) => {
@@ -195,7 +207,7 @@ export function KompasArticleEditor({ entry }: { entry: ApiContentRevision }) {
   };
 
   const editable = entry.status === "draft" || entry.status === "approved";
-  const isBusy = save.isPending || transition.isPending || submit.isPending || newDraft.isPending || remove.isPending;
+  const isBusy = save.isPending || transition.isPending || submit.isPending || newDraft.isPending || review.isPending || remove.isPending;
 
   const changeSlot = (name: string, next: unknown) => {
     setSlotData((current) => ({ ...current, [name]: next }));
@@ -234,6 +246,14 @@ export function KompasArticleEditor({ entry }: { entry: ApiContentRevision }) {
             ? "edit_archived_content"
             : "author_withdrawal";
     newDraft.mutate(reason);
+  };
+
+  const handleReview = (input: {
+    capability: "clinical" | "business" | "legal";
+    outcome: "approved" | "rejected";
+    note?: string;
+  }) => {
+    review.mutate(input);
   };
 
   return (
@@ -304,9 +324,11 @@ export function KompasArticleEditor({ entry }: { entry: ApiContentRevision }) {
         canSubmit={completion.canSubmitForReview}
         entryStatus={entry.status}
         isBusy={isBusy}
+        decisions={entry.decisions}
         onSubmit={handleSendForReview}
+        {...(health.data ? { requiredApprovals: health.data.requiredApprovals, missingApprovals: health.data.missingApprovals } : {})}
         {...(entry.status === "in_review"
-          ? { onWithdraw: () => transition.mutate("draft") }
+          ? { onWithdraw: () => transition.mutate("draft"), onReview: handleReview }
           : {})}
         {...(entry.status === "approved" ||
         entry.status === "published" ||
