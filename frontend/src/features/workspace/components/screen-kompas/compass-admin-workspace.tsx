@@ -1,5 +1,7 @@
 "use client";
 
+import type { UseQueryResult } from "@tanstack/react-query";
+
 import { StatCard } from "@/components/panel/stat-card";
 
 import {
@@ -7,12 +9,14 @@ import {
   type CompassFlowVersion,
 } from "../../compass-flow-api";
 import { useCompassFlowAdmin } from "../../hooks/use-compass-flow-admin";
-import { useTaxonomyRegistryQuery } from "../../hooks/use-taxonomy-registry";
+import type { TaxonomyRegistrySnapshot } from "../../taxonomy-api";
+import { ReadinessChecklist } from "./readiness-checklist";
+import type { ReadinessCheck } from "./readiness-checklist";
 
 export type CompassWorkspaceSection =
   "overview" | "flow" | "results" | "testing" | "publishing";
 
-function initialDefinition(): CompassFlowDefinition {
+export function initialDefinition(): CompassFlowDefinition {
   return {
     schemaVersion: 1,
     entryQuestionId: "area",
@@ -58,10 +62,13 @@ function nextTarget(status: CompassFlowVersion["status"]) {
 
 export function CompassAdminWorkspace({
   section,
+  registry,
+  flowAdmin,
 }: {
   section: CompassWorkspaceSection;
+  registry: UseQueryResult<TaxonomyRegistrySnapshot>;
+  flowAdmin: ReturnType<typeof useCompassFlowAdmin>;
 }) {
-  const registry = useTaxonomyRegistryQuery();
   const {
     flows,
     createMutation,
@@ -69,7 +76,7 @@ export function CompassAdminWorkspace({
     transitionMutation,
     reviewMutation,
     previewMutation,
-  } = useCompassFlowAdmin(initialDefinition);
+  } = flowAdmin;
   const active = flows.data?.[0];
 
   const managed =
@@ -81,8 +88,6 @@ export function CompassAdminWorkspace({
     (term) => term.axis === "topic" && term.status === "published",
   );
 
-  if (flows.isLoading || registry.isLoading)
-    return <p>Učitavanje Kompas radnog prostora…</p>;
   if (flows.isError)
     // The server already says *why* (missing tenant, unprovisioned account, no
     // active role). Swallowing it left the operator guessing between three
@@ -101,14 +106,38 @@ export function CompassAdminWorkspace({
     );
 
   if (section === "overview") {
-    const checks = [
-      { label: "Objavljena oblast", ok: areas.length > 0 },
-      { label: "Objavljena tema", ok: topics.length > 0 },
-      { label: "Objavljena flow verzija", ok: active?.status === "published" },
+    const apiHealthy = registry.isSuccess && flows.isSuccess;
+    const apiFailed = registry.isError || flows.isError;
+    const apiLoading = registry.isLoading || flows.isLoading;
+    const checks: readonly ReadinessCheck[] = [
       {
-        label: "Povezan CMS sadržaj",
-        ok: false,
-        note: "Proverava se u kartici Sadržaj",
+        label: "Objavljena oblast",
+        status: registry.isLoading
+          ? "loading"
+          : areas.length > 0
+            ? "ok"
+            : "pending",
+      },
+      {
+        label: "Objavljena tema",
+        status: registry.isLoading
+          ? "loading"
+          : topics.length > 0
+            ? "ok"
+            : "pending",
+      },
+      {
+        label: "Objavljena flow verzija",
+        status: flows.isLoading
+          ? "loading"
+          : active?.status === "published"
+            ? "ok"
+            : "pending",
+      },
+      {
+        label: "Kompas Servisi",
+        status: apiLoading ? "loading" : apiHealthy ? "ok" : apiFailed ? "error" : "pending",
+        ...(apiFailed ? { note: "Proverite backend servise" } : {}),
       },
     ];
     return (
@@ -122,27 +151,7 @@ export function CompassAdminWorkspace({
           />
           <StatCard value={active?.status ?? "—"} label="Aktuelni status" />
         </div>
-        <div className="rounded-panel border-line bg-surface border px-6 py-5">
-          <h2 className="text-forest font-serif text-[21px]">
-            Spremnost za testiranje i objavu
-          </h2>
-          <ul className="mt-4 space-y-2">
-            {checks.map((check) => (
-              <li
-                key={check.label}
-                className="flex items-center gap-3 text-[13.5px]"
-              >
-                <span
-                  className={check.ok ? "text-badge-ok" : "text-badge-amber"}
-                >
-                  {check.ok ? "✓" : "○"}
-                </span>
-                {check.label}
-                {check.note ? ` — ${check.note}` : ""}
-              </li>
-            ))}
-          </ul>
-        </div>
+        <ReadinessChecklist checks={checks} />
       </div>
     );
   }

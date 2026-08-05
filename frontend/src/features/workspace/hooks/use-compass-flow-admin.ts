@@ -17,6 +17,7 @@ const QUERY_KEY = ["compass-flow-versions"] as const;
 
 export function useCompassFlowAdmin(
   initialDefinition: () => CompassFlowDefinition,
+  options?: { enabled?: boolean },
 ) {
   const queryClient = useQueryClient();
   const refresh = () => queryClient.invalidateQueries({ queryKey: QUERY_KEY });
@@ -24,6 +25,7 @@ export function useCompassFlowAdmin(
     queryKey: QUERY_KEY,
     queryFn: fetchCompassFlows,
     retry: false,
+    ...(options?.enabled !== undefined ? { enabled: options.enabled } : {}),
   });
   const createMutation = useMutation({
     mutationFn: () => createCompassFlow(initialDefinition()),

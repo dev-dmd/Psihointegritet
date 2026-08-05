@@ -47,11 +47,12 @@ export function firstTaxonomyError(
   return null;
 }
 
-export function useTaxonomyRegistryQuery() {
+export function useTaxonomyRegistryQuery(options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: TAXONOMY_REGISTRY_QUERY_KEY,
     queryFn: () => fetchTaxonomyRegistry(),
     staleTime: 30_000,
+    ...(options?.enabled !== undefined ? { enabled: options.enabled } : {}),
   });
 }
 

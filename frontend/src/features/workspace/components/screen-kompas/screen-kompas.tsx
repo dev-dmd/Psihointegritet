@@ -6,6 +6,7 @@ import { useState } from "react";
 import { StatCard } from "@/components/panel/stat-card";
 import { TabPills } from "@/components/panel/tab-pills";
 
+import { useCompassFlowAdmin } from "../../hooks/use-compass-flow-admin";
 import {
   taxonomyErrorMessage,
   useTaxonomyRegistryCache,
@@ -29,6 +30,7 @@ import { TermList } from "./term-list";
 import type { KompasTab } from "./types";
 import {
   CompassAdminWorkspace,
+  initialDefinition,
   type CompassWorkspaceSection,
 } from "./compass-admin-workspace";
 
@@ -48,6 +50,25 @@ function isWorkspaceTab(value: string | null): value is WorkspaceTab {
   return WORKSPACE_TABS.some((tab) => tab.id === value);
 }
 
+/** Tabs whose content lives inside `CompassAdminWorkspace` and may need the
+ * taxonomy registry query. */
+const TABS_NEEDING_REGISTRY = new Set<WorkspaceTab>([
+  "overview",
+  "results",
+  "testing",
+  "publishing",
+]);
+
+/** Tabs whose content lives inside `CompassAdminWorkspace` and may need the
+ * compass flow query. The "flow" tab only needs flows (not registry). */
+const TABS_NEEDING_FLOWS = new Set<WorkspaceTab>([
+  "overview",
+  "flow",
+  "results",
+  "testing",
+  "publishing",
+]);
+
 export function ScreenKompas({
   initialTab = null,
 }: {
@@ -57,6 +78,15 @@ export function ScreenKompas({
   const [workspaceTab, setWorkspaceTab] = useState<WorkspaceTab>(
     isWorkspaceTab(initialTab) ? initialTab : "overview",
   );
+
+  // Lift queries to ScreenKompas so they only fire when the active tab needs
+  // them. The "content" and "registry" tabs manage their own data fetching.
+  const registry = useTaxonomyRegistryQuery({
+    enabled: TABS_NEEDING_REGISTRY.has(workspaceTab),
+  });
+  const flowAdmin = useCompassFlowAdmin(initialDefinition, {
+    enabled: TABS_NEEDING_FLOWS.has(workspaceTab),
+  });
   return (
     <section className="animate-fade-up">
       <PageHeader
@@ -77,6 +107,8 @@ export function ScreenKompas({
       ) : (
         <CompassAdminWorkspace
           section={workspaceTab as CompassWorkspaceSection}
+          registry={registry}
+          flowAdmin={flowAdmin}
         />
       )}
     </section>
