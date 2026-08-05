@@ -53,6 +53,7 @@ from psihointegritet.modules.content.schemas import (
     ContentHealthOut,
     ContentRevisionOut,
     CreateContentEntryRequest,
+    NewContentDraftRequest,
     PublicContentRevisionOut,
     PublishBlockOut,
     RecordReviewDecisionRequest,
@@ -927,6 +928,60 @@ class ContentService:
         await self._record_idempotency(revision.id, request.idempotency_key)
 
         return await self._to_schema_loaded(entry, revision)
+
+    async def create_new_draft(
+        self,
+        actor: StaffActor,
+        entry_id: UUID,
+        revision_id: UUID,
+        request: NewContentDraftRequest,
+    ) -> ContentRevisionOut:
+        """Creates a new DRAFT revision copying the content from the given
+        source revision, without mutating the source (RW-3 / D-068 rule 3).
+
+        Supported reasons (D-068 rule 3):
+          - ``author_withdrawal`` — author pulls ``in_review`` back to draft
+          - ``edit_after_approval`` — new draft from an ``approved`` revision
+          - ``edit_published_content`` — new draft from ``published``, source
+            stays published
+          - ``edit_archived_content`` — new draft from ``archived``
+        """
+        self._require_org_admin(actor)
+        entry = await self._entry(actor, entry_id)
+        source = await self._revision(actor, entry_id, revision_id)
+
+        if source.status is RevisionStatus.DRAFT:
+            raise ContentConflictError("Revizija je već u statusu draft.")
+
+        next_label = _next_version_label(source.version_label)
+        draft = ContentRevision(
+            entry_id=entry.id,
+            version_label=next_label,
+            template=source.template,
+            slot_data=source.slot_data,
+            seo=source.seo,
+            status=RevisionStatus.DRAFT,
+            source_revision_id=source.id,
+            created_by_user_id=actor.user_id,
+            updated_by_user_id=actor.user_id,
+        )
+        self._session.add(draft)
+        await self._session.flush()
+
+        # Copy discovery metadata
+        previous_discovery = await self._discovery(source.id)
+        await self._replace_discovery(actor, draft, entry.locale, previous_discovery)
+
+        # Mark source as superseded by this draft only for in_review / approved.
+        # Published and archived revisions retain their public status until the
+        # new draft is itself published or the source is explicitly archived.
+        if source.status in (RevisionStatus.IN_REVIEW, RevisionStatus.APPROVED):
+            source.superseded_at = datetime.now(UTC)
+            source.superseded_by_revision_id = draft.id
+
+        await self._log_event(draft.id, None, RevisionStatus.DRAFT, actor, reason=request.reason)
+        await self._session.flush()
+        return await self._to_schema_loaded(entry, draft)
 
     async def _record_idempotency(
         self, revision_id: UUID, idempotency_key: UUID

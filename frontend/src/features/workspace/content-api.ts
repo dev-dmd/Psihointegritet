@@ -266,6 +266,49 @@ export async function transitionContentRevision(
   return parseOrThrow<ApiContentRevision>(response);
 }
 
+/** Atomic save + submit: persists pending edits and moves the revision
+ *  ``draft → in_review`` in a single backend transaction (RW-1 / D-068).
+ *  Idempotent — calling with the same ``idempotencyKey`` returns the
+ *  already-in-review revision instead of a 409. */
+export async function submitContentForReview(
+  entryId: string,
+  revisionId: string,
+  payload: {
+    lockVersion: number;
+    idempotencyKey: string;
+    slotData?: Record<string, unknown>;
+    seo?: SeoFields;
+    discovery?: ApiContentDiscovery;
+  },
+): Promise<ApiContentRevision> {
+  const response = await fetch(
+    `/api/content/entries/${encodeURIComponent(entryId)}/revisions/${encodeURIComponent(revisionId)}/submit-review`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    },
+  );
+  return parseOrThrow<ApiContentRevision>(response);
+}
+
+/** Creates a new DRAFT revision copying content from the current one (RW-3). */
+export async function newContentDraft(
+  entryId: string,
+  revisionId: string,
+  reason: string,
+): Promise<ApiContentRevision> {
+  const response = await fetch(
+    `/api/content/entries/${encodeURIComponent(entryId)}/revisions/${encodeURIComponent(revisionId)}/new-draft`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ reason }),
+    },
+  );
+  return parseOrThrow<ApiContentRevision>(response);
+}
+
 export async function recordContentReviewDecision(
   entryId: string,
   revisionId: string,

@@ -21,6 +21,7 @@ from psihointegritet.modules.content.schemas import (
     ContentHealthOut,
     ContentRevisionOut,
     CreateContentEntryRequest,
+    NewContentDraftRequest,
     NormalizeRichHtmlRequest,
     NormalizeRichHtmlResponse,
     PublicContentRevisionOut,
@@ -361,6 +362,40 @@ async def submit_article_for_review(
         async with session.begin():
             actor = await _org_admin_actor(session, settings, identity)
             return await ContentService(session).submit_article_for_review(
+                actor, entry_id, revision_id, request,
+            )
+    except (
+        ContentNotFoundError,
+        ContentForbiddenError,
+        ContentConflictError,
+        ValueError,
+    ) as error:
+        raise _handle(error) from error
+
+
+@router.post(
+    "/entries/{entry_id}/revisions/{revision_id}/new-draft",
+    response_model=ContentRevisionOut,
+    status_code=status.HTTP_201_CREATED,
+    operation_id="new_content_draft",
+)
+async def new_content_draft(
+    entry_id: UUID,
+    revision_id: UUID,
+    request: NewContentDraftRequest,
+    identity: CurrentIdentity,
+    session: DatabaseSession,
+    settings: AppSettings,
+) -> ContentRevisionOut:
+    """Create a new DRAFT revision copying content from the current one (RW-3).
+
+    Does not mutate the source revision.  Published and archived sources stay
+    as-is; in_review and approved sources are marked as superseded.
+    """
+    try:
+        async with session.begin():
+            actor = await _org_admin_actor(session, settings, identity)
+            return await ContentService(session).create_new_draft(
                 actor, entry_id, revision_id, request,
             )
     except (

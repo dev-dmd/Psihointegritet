@@ -47,6 +47,8 @@ export interface ArticleCompletionState {
     anchor?: string;
   } | null;
   canSubmitForReview: boolean;
+  /** The article's publication lifecycle status (RW-2). */
+  lifecycle: "draft" | "in_review" | "approved" | "published" | "archived";
   blockingTasks: ArticleTask[];
   advisoryTasks: ArticleTask[];
 }
@@ -451,11 +453,28 @@ export function deriveArticleCompletion(
     allAdvisory.push(task);
   }
 
-  // Can submit for review only when all four first steps are done and there
-  // are no blocking tasks. The article's publication status is not considered
-  // — only the draft readiness.
+  // Can submit for review only when all four first steps are done, there
+  // are no blocking tasks, AND the revision is still a draft.  Once it has
+  // been sent for review it cannot be submitted again — it must first be
+  // pulled back to draft (RW-2).
+  const isDraft = entry.status === "draft";
+  const isInReview = entry.status === "in_review";
+  const isApproved = entry.status === "approved";
+  const isPublished = entry.status === "published";
+
+  const lifecycle: ArticleCompletionState["lifecycle"] =
+    entry.status === "draft"
+      ? "draft"
+      : entry.status === "in_review"
+        ? "in_review"
+        : entry.status === "approved"
+          ? "approved"
+          : entry.status === "published"
+            ? "published"
+            : "archived";
+
   const canSubmitForReview =
-    b.done && t.done && x.done && k.done && allBlocking.length === 0;
+    isDraft && b.done && t.done && x.done && k.done && allBlocking.length === 0;
 
   // Next-action text.
   let nextAction: ArticleCompletionState["nextAction"] = null;
@@ -487,6 +506,36 @@ export function deriveArticleCompletion(
       description:
         "Još tri kratka odgovora: kome je tekst namenjen, šta čitalac dobija i da li ga vodi ka istraživanju ili stručnoj podršci.",
     };
+  } else if (!isDraft) {
+    if (isInReview) {
+      nextAction = {
+        label: "Tekst je na stručnom pregledu",
+        step: "review",
+        description:
+          "Tim pregleda tekst. Možete ga povući na doradu ili sačekati odluku.",
+      };
+    } else if (isApproved) {
+      nextAction = {
+        label: "Tekst je odobren",
+        step: "review",
+        description:
+          "Tekst je prošao stručni pregled. Možete ga objaviti ili napraviti novu radnu verziju.",
+      };
+    } else if (isPublished) {
+      nextAction = {
+        label: "Tekst je objavljen",
+        step: "review",
+        description:
+          "Tekst je vidljiv posetiocima. Uredite novu verziju da biste ga ažurirali.",
+      };
+    } else {
+      nextAction = {
+        label: "Pregledajte i pošaljite",
+        step: "review",
+        description:
+          "Tekst je spreman. Pregledajte kako će izgledati posetiocima i pošaljite ga timu.",
+      };
+    }
   } else {
     nextAction = {
       label: "Pregledajte i pošaljite",
@@ -526,6 +575,7 @@ export function deriveArticleCompletion(
     currentStep: current,
     nextAction,
     canSubmitForReview,
+    lifecycle,
     blockingTasks: allBlocking,
     advisoryTasks: allAdvisory,
   };

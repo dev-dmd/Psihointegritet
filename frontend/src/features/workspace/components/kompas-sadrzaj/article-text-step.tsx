@@ -38,6 +38,7 @@ export function ArticleTextStep({
   onImportedBody,
   editable,
   onApplySection,
+  isApplying,
 }: {
   slotData: Record<string, unknown>;
   onChangeSlot: (name: string, next: unknown) => void;
@@ -45,6 +46,7 @@ export function ArticleTextStep({
   onImportedBody: (body: RichDoc) => void;
   editable: boolean;
   onApplySection: () => void;
+  isApplying?: boolean;
 }) {
   const specs = slotSpecRegistry[TEMPLATE];
 
@@ -117,6 +119,7 @@ export function ArticleTextStep({
             onChange={(next) => onChangeSlot(slotName, next)}
             disabled={!editable}
             onApply={onApplySection}
+            {...(isApplying !== undefined ? { isApplying } : {})}
           />
         ))}
       </div>

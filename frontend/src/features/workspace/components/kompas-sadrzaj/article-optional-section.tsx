@@ -79,12 +79,15 @@ export function ArticleOptionalSection({
   onChange,
   disabled,
   onApply,
+  isApplying,
 }: {
   slotName: string;
   value: unknown;
   onChange: (next: unknown) => void;
   disabled?: boolean;
   onApply?: () => void;
+  /** When true, the "Primeni" button shows a loading label. */
+  isApplying?: boolean;
 }) {
   const label = SECTION_LABELS[slotName] ?? slotName;
   const description = SECTION_DESCRIPTIONS[slotName];
@@ -176,11 +179,11 @@ export function ArticleOptionalSection({
         <div className="mt-3 flex justify-end">
           <button
             type="button"
-            disabled={disabled}
+            disabled={disabled || isApplying}
             onClick={onApply}
             className="border-forest text-forest hover:bg-forest/8 cursor-pointer rounded-full border px-4 py-1.5 text-[12px] font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-50"
           >
-            Primeni
+            {isApplying ? "Primenjivanje…" : "Primeni"}
           </button>
         </div>
       ) : null}

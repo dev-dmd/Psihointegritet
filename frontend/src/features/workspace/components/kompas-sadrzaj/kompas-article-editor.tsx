@@ -12,7 +12,9 @@ import {
   useContentRevisionHealthQuery,
   useContentTransitionMutation,
   useDeleteContentRevisionMutation,
+  useNewContentDraftMutation,
   useSaveContentRevisionMutation,
+  useSubmitArticleReviewMutation,
 } from "../../hooks/use-content-revision";
 import { useTaxonomyRegistryLookupQuery } from "../../hooks/use-taxonomy-registry";
 import { contentErrorMessage } from "../../hooks/use-content-entries";
@@ -125,7 +127,6 @@ export function KompasArticleEditor({ entry }: { entry: ApiContentRevision }) {
     onSaved: (next) => {
       replaceEntry(next);
       setDirty(false);
-      router.refresh();
     },
     onFailed: fail("Tekst nije sačuvan"),
   });
@@ -134,7 +135,6 @@ export function KompasArticleEditor({ entry }: { entry: ApiContentRevision }) {
     onOutcome: (outcome) => {
       if (outcome.kind === "moved") {
         replaceEntry(outcome.entry);
-        router.refresh();
         return;
       }
       reportError({
@@ -146,6 +146,25 @@ export function KompasArticleEditor({ entry }: { entry: ApiContentRevision }) {
       });
     },
     onFailed: fail("Promena statusa nije uspela"),
+  });
+
+  const submit = useSubmitArticleReviewMutation(entry, {
+    onSubmitted: (next) => {
+      replaceEntry(next);
+      setDirty(false);
+    },
+    onFailed: fail("Tekst nije poslat na pregled"),
+  });
+
+  const newDraft = useNewContentDraftMutation(entry, {
+    onCreated: (next) => {
+      replaceEntry(next);
+      setDirty(false);
+      // Navigate to the newly created draft so the editor is attached to the
+      // correct revisionId and the wizard is interactive again.
+      window.location.href = `/radni-prostor/kompas/${next.entryId}`;
+    },
+    onFailed: fail("Nova radna verzija nije kreirana"),
   });
 
   const remove = useDeleteContentRevisionMutation(entry, {
@@ -176,7 +195,7 @@ export function KompasArticleEditor({ entry }: { entry: ApiContentRevision }) {
   };
 
   const editable = entry.status === "draft" || entry.status === "approved";
-  const isBusy = save.isPending || transition.isPending || remove.isPending;
+  const isBusy = save.isPending || transition.isPending || submit.isPending || newDraft.isPending || remove.isPending;
 
   const changeSlot = (name: string, next: unknown) => {
     setSlotData((current) => ({ ...current, [name]: next }));
@@ -197,18 +216,24 @@ export function KompasArticleEditor({ entry }: { entry: ApiContentRevision }) {
   };
 
   const handleSendForReview = () => {
-    save.mutate(
-      {
-        slotData,
-        seo: entry.seo,
-        discovery: effectiveDiscovery,
-      },
-      {
-        onSuccess: () => {
-          transition.mutate("in_review");
-        },
-      },
-    );
+    submit.mutate({
+      slotData,
+      seo: entry.seo,
+      discovery: effectiveDiscovery,
+      idempotencyKey: crypto.randomUUID(),
+    });
+  };
+
+  const handleNewDraft = () => {
+    const reason =
+      entry.status === "approved"
+        ? "edit_after_approval"
+        : entry.status === "published"
+          ? "edit_published_content"
+          : entry.status === "archived"
+            ? "edit_archived_content"
+            : "author_withdrawal";
+    newDraft.mutate(reason);
   };
 
   return (
@@ -267,6 +292,7 @@ export function KompasArticleEditor({ entry }: { entry: ApiContentRevision }) {
         onImportedBody={applyImportedBody}
         editable={editable}
         onApplySection={handleApplySection}
+        isApplying={save.isPending}
       />
 
       <ArticleTaxonomyStep discovery={discovery} onChange={changeDiscovery} />
@@ -276,8 +302,17 @@ export function KompasArticleEditor({ entry }: { entry: ApiContentRevision }) {
       <ArticleReviewStep
         completion={completion}
         canSubmit={completion.canSubmitForReview}
+        entryStatus={entry.status}
         isBusy={isBusy}
         onSubmit={handleSendForReview}
+        {...(entry.status === "in_review"
+          ? { onWithdraw: () => transition.mutate("draft") }
+          : {})}
+        {...(entry.status === "approved" ||
+        entry.status === "published" ||
+        entry.status === "archived"
+          ? { onNewDraft: handleNewDraft }
+          : {})}
       />
 
       {health.data && health.data.findings.length > 0 ? (

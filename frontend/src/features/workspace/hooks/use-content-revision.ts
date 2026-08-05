@@ -8,7 +8,9 @@ import {
   checkContentPublishable,
   deleteContentRevision,
   fetchContentRevisionHealth,
+  newContentDraft,
   recordContentReviewDecision,
+  submitContentForReview,
   transitionContentRevision,
   updateContentRevision,
   type ApiContentDiscovery,
@@ -144,6 +146,29 @@ export function useContentTransitionMutation(
   });
 }
 
+/** Atomic save + submit for article review (RW-1 / D-068). One mutation
+ *  replaces the old PATCH+POST chain — idempotent, single transaction. */
+export function useSubmitArticleReviewMutation(
+  entry: EntryRef,
+  callbacks: {
+    onSubmitted: (next: ApiContentRevision) => void;
+    onFailed: (error: unknown) => void;
+  },
+) {
+  return useMutation({
+    mutationFn: (variables: SaveRevisionVariables & { idempotencyKey: string }) =>
+      submitContentForReview(entry.entryId, entry.revisionId, {
+        lockVersion: entry.lockVersion,
+        idempotencyKey: variables.idempotencyKey,
+        slotData: variables.slotData,
+        seo: variables.seo,
+        discovery: variables.discovery,
+      }),
+    onSuccess: callbacks.onSubmitted,
+    onError: callbacks.onFailed,
+  });
+}
+
 export function useContentReviewMutation(
   entry: EntryRef,
   callbacks: {
@@ -155,6 +180,23 @@ export function useContentReviewMutation(
     mutationFn: (capability: ApprovalCapability) =>
       recordContentReviewDecision(entry.entryId, entry.revisionId, capability),
     onSuccess: callbacks.onRecorded,
+    onError: callbacks.onFailed,
+  });
+}
+
+/** Creates a new DRAFT revision from an existing one (RW-3). The old revision
+ *  stays published / archived — the new draft is independent. */
+export function useNewContentDraftMutation(
+  entry: EntryRef,
+  callbacks: {
+    onCreated: (next: ApiContentRevision) => void;
+    onFailed: (error: unknown) => void;
+  },
+) {
+  return useMutation({
+    mutationFn: (reason: string) =>
+      newContentDraft(entry.entryId, entry.revisionId, reason),
+    onSuccess: callbacks.onCreated,
     onError: callbacks.onFailed,
   });
 }

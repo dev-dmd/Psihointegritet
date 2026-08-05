@@ -229,6 +229,16 @@ class ContentRevision(Base):
     )
     published_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     archived_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    # RW-3: tracks which revision this one was derived from, and whether the
+    # source was superseded by this one.  A published revision stays published
+    # while a new draft from it is in progress.
+    source_revision_id: Mapped[UUID | None] = mapped_column(
+        Uuid(as_uuid=True), ForeignKey("content_revisions.id", ondelete="SET NULL"), nullable=True
+    )
+    superseded_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    superseded_by_revision_id: Mapped[UUID | None] = mapped_column(
+        Uuid(as_uuid=True), ForeignKey("content_revisions.id", ondelete="SET NULL"), nullable=True
+    )
 
     # CG-B3 optimistic locking: SQLAlchemy's built-in `version_id_col`
     # appends `WHERE lock_version = :current` to every UPDATE and raises

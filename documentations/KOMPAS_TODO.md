@@ -73,8 +73,8 @@ Faza se označava završenom samo posle relevantnog gate-a. Research feedback i 
 | #        | Obim                                       | Zavisi od | Status |
 | -------- | ------------------------------------------ | --------- | ------ |
 | **RW-1** | Atomsko + idempotentno slanje: `POST .../submit-review`, `idempotencyKey`, već poslata revizija vraća uspeh (ne 409) | — | ✅ | `submit_article_for_review` u `service.py`, `ContentSubmitIdempotency` tabela, migracija `20260805_0018`. 353 pytest + alembic check čisti. |
-| **RW-2** | Status-aware wizard: `deriveArticleCompletion` razlikuje `editing / in_review / changes_requested / approved / published`. Dugme samo za `draft`. | RW-1 | ⬜ |
-| **RW-3** | Nove revizije za svaki krug dorade: `POST .../new-draft`, `source_revision_id`/`superseded_at`. `published → nova verzija` ne skida staru sa sajta. | RW-2 | ⬜ |
+| **RW-2** | Status-aware wizard: `deriveArticleCompletion` proverava `entry.status`, dugme samo za `draft`, `in_review` prikazuje "Povuci na doradu" | RW-1 | ✅ | `lifecycle` polje, `canSubmitForReview` zahteva `draft`, `ArticleReviewStep` 4 UI stanja, `useSubmitArticleReviewMutation`, uklonjen `router.refresh()`. 431 vitest ✅. |
+| **RW-3** | Nove revizije za svaki krug dorade: `POST .../new-draft`, `source_revision_id`/`superseded_at`. `published → nova verzija` ne skida staru sa sajta. | RW-2 | ✅ | `create_new_draft` servis, migracija `20260805_0019`, `ArticleReviewStep` dugmad za approved/published, `useNewContentDraftMutation`. 353 pytest + 431 vitest ✅. |
 | **RW-4** | Reviewer odluke: `approved / rejected` + obavezno obrazloženje za `rejected`. Automatsko agregiranje: sva odobrenja → `approved`. Pravilo četiri oka. | RW-3 | ⬜ |
 | **RW-5** | Urednički paket: `content_review_packages` + `items`. Jedan klik = članak + nove draft oblast/tema. Kompas Flow nije deo paketa. | RW-4 | ⬜ |
 | **RW-6** | Review queue: `organization_review_assignments`, `GET /radni-prostor/pregledi`. Reviewer vidi samo svoj capability. | RW-5 | ⬜ |

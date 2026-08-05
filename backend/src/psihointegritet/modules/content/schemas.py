@@ -123,6 +123,18 @@ class SubmitArticleForReviewRequest(ApiSchema):
     discovery: ContentDiscoveryMetadata | None = None
 
 
+class NewContentDraftRequest(ApiSchema):
+    """Create a new draft revision from the current one (RW-3 / D-068 rule 3).
+
+    Copies slot_data, SEO and discovery metadata from the source revision.
+    """
+
+    reason: str = Field(
+        default="author_withdrawal",
+        pattern=r"^(author_withdrawal|changes_requested|edit_after_approval|edit_published_content|edit_archived_content)$",
+    )
+
+
 class RecordReviewDecisionRequest(ApiSchema):
     capability: ApprovalCapability
     outcome: ReviewOutcome
