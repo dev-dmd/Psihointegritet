@@ -16,15 +16,15 @@ import {
 } from "../../hooks/use-content-revision";
 import { contentErrorMessage } from "../../hooks/use-content-entries";
 import { usePanelErrors } from "../../panel-errors";
-import { SlotEditor } from "../slot-editor";
 import type { RichDoc } from "@/lib/content-governance/rich-doc";
 
 import { KompasContentActions } from "./kompas-content-actions";
-import { KompasDocxImport } from "./kompas-docx-import";
 import { KompasEditorHeader } from "./kompas-editor-header";
 import { NextActionCard } from "./next-action-card";
 import { ArticleChecklist } from "./article-checklist";
 import { deriveArticleCompletion } from "./article-completion";
+import { ArticleBasicsStep } from "./article-basics-step";
+import { ArticleTextStep } from "./article-text-step";
 import { TechnicalDetails } from "../taxonomy-term-form/technical-details";
 
 const HREF = "/radni-prostor/kompas/sadrzaj" as const;
@@ -121,11 +121,6 @@ export function KompasArticleEditor({ entry }: { entry: ApiContentRevision }) {
     onFailed: fail("Radna verzija nije obrisana"),
   });
 
-  const bodyIntro = slotData.body_intro as
-    { mode?: string; fields?: { body?: RichDoc } } | undefined;
-  const existingBody = bodyIntro?.fields?.body;
-  const hasExistingText = (existingBody?.blocks?.length ?? 0) > 0;
-
   const applyImportedBody = (body: RichDoc) => {
     setBodyImportKey((v) => v + 1);
     setSlotData((current) => {
@@ -146,10 +141,20 @@ export function KompasArticleEditor({ entry }: { entry: ApiContentRevision }) {
   };
 
   const editable = entry.status === "draft" || entry.status === "approved";
-  const definition = templateRegistry[entry.template];
-  const specs = slotSpecRegistry[entry.template];
-  const slots = [...definition.requiredSlots, ...definition.optionalSlots];
   const isBusy = save.isPending || transition.isPending || remove.isPending;
+
+  const changeSlot = (name: string, next: unknown) => {
+    setSlotData((current) => ({ ...current, [name]: next }));
+    setDirty(true);
+  };
+
+  const handleApplySection = () => {
+    save.mutate({
+      slotData,
+      seo: entry.seo,
+      discovery: entry.discovery,
+    });
+  };
 
   return (
     <section className="animate-fade-up flex flex-col gap-4">
@@ -194,36 +199,20 @@ export function KompasArticleEditor({ entry }: { entry: ApiContentRevision }) {
         </p>
       ) : null}
 
-      <div className="rounded-panel border-line flex flex-col gap-3 border px-6 py-5">
-        {slots.map((slotName) => {
-          const spec = specs[slotName];
-          if (!spec) return null;
-          return (
-            <div key={slotName} className="flex flex-col gap-1">
-              <SlotEditor
-                key={
-                  slotName === "body_intro"
-                    ? `${slotName}-v${bodyImportKey}`
-                    : slotName
-                }
-                slotName={slotName}
-                spec={spec}
-                value={slotData[slotName]}
-                onChange={(next) => {
-                  setSlotData((current) => ({ ...current, [slotName]: next }));
-                  setDirty(true);
-                }}
-              />
-              {slotName === "body_intro" && editable ? (
-                <KompasDocxImport
-                  hasExistingText={hasExistingText}
-                  onImported={applyImportedBody}
-                />
-              ) : null}
-            </div>
-          );
-        })}
-      </div>
+      <ArticleBasicsStep
+        slotData={slotData}
+        onChangeSlot={changeSlot}
+        disabled={!editable}
+      />
+
+      <ArticleTextStep
+        slotData={slotData}
+        onChangeSlot={changeSlot}
+        bodyImportKey={bodyImportKey}
+        onImportedBody={applyImportedBody}
+        editable={editable}
+        onApplySection={handleApplySection}
+      />
 
       {health.data && health.data.findings.length > 0 ? (
         <TechnicalDetails summary="Tehnički nalazi servera">
