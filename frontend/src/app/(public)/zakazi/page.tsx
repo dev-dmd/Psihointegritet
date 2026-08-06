@@ -1,9 +1,5 @@
 import { PageHero } from "@/components/shared/page-hero";
-import {
-  type BookingSearchParams,
-  parseBookingContext,
-} from "@/features/booking/booking-context";
-import { BookingRequestForm } from "@/features/booking/booking-request-form";
+import { TherapistBookingWidget } from "@/components/booking/TherapistBookingWidget";
 import { metadataForRoute } from "@/lib/content-governance/discoverability";
 import { getContentProvider } from "@/lib/content-governance/provider-resolver";
 
@@ -12,11 +8,11 @@ export async function generateMetadata() {
 }
 
 interface BookingPageProps {
-  searchParams: Promise<BookingSearchParams>;
+  searchParams: Promise<{ therapist?: string; source?: string }>;
 }
 
 export default async function BookingPage({ searchParams }: BookingPageProps) {
-  const context = parseBookingContext(await searchParams);
+  const params = await searchParams;
 
   return (
     <>
@@ -35,9 +31,10 @@ export default async function BookingPage({ searchParams }: BookingPageProps) {
         </div>
       </PageHero>
       <section className="pt-[56px] pb-[72px] md:pt-20 md:pb-24">
-        <div className="mx-auto max-w-[1536px] px-5 md:px-8">
-          <BookingRequestForm initialContext={context} />
-        </div>
+        <TherapistBookingWidget
+          therapistSlug={params.therapist}
+          source={params.source}
+        />
       </section>
     </>
   );
