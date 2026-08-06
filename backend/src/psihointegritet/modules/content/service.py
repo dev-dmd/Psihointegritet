@@ -25,6 +25,7 @@ from psihointegritet.modules.content.identity import require_content_identity
 from psihointegritet.modules.content.models import (
     ContentEntry,
     ContentPublicationEvent,
+    ContentReviewAssignment,
     ContentReviewDecision,
     ContentRevision,
     ContentRevisionDiscovery,
@@ -51,8 +52,11 @@ from psihointegritet.modules.content.schemas import (
     ContentDiscoveryMetadata,
     ContentFindingOut,
     ContentHealthOut,
+    ContentReviewAssignmentOut,
+    ContentReviewQueueItemOut,
     ContentRevisionOut,
     CreateContentEntryRequest,
+    CreateContentReviewAssignmentRequest,
     NewContentDraftRequest,
     PublicContentRevisionOut,
     PublishBlockOut,
@@ -913,6 +917,192 @@ class ContentService:
             await self._session.flush()
 
         return await self._to_schema_loaded(entry, revision)
+
+    async def list_review_queue(
+        self,
+        actor: StaffActor,
+    ) -> list[ContentReviewQueueItemOut]:
+        """Return all pending review tasks for the calling user (RW-6).
+
+        Filters to entries where:
+        - The revision is ``in_review``
+        - The user is NOT the submitter (four-eyes rule)
+        - The user is assigned to at least one capability the revision needs,
+          OR no assignments exist at all (implicit: any org_admin may review)
+        """
+        self._require_org_admin(actor)
+        org_id = actor.organization_id
+
+        # Capabilities the user is explicitly assigned to review.
+        assigned_caps: set[ApprovalCapability] = {
+            row[0]
+            for row in (
+                await self._session.execute(
+                    select(ContentReviewAssignment.capability).where(
+                        ContentReviewAssignment.organization_id == org_id,
+                        ContentReviewAssignment.user_id == actor.user_id,
+                        ContentReviewAssignment.active.is_(True),
+                    )
+                )
+            ).all()
+        }
+
+        # If there are no assignments at all for this org, fall back to
+        # implicit — any org_admin may review any capability.
+        has_any_assignment = (
+            await self._session.scalar(
+                select(ContentReviewAssignment.id).where(
+                    ContentReviewAssignment.organization_id == org_id,
+                ).limit(1)
+            )
+        ) is not None
+        if has_any_assignment and not assigned_caps:
+            return []  # Explicitly assigned reviewers exist, but this user isn't one.
+
+        effective_caps = assigned_caps if has_any_assignment else set(ApprovalCapability)
+
+        # All in-review revisions for this org, excluding those submitted by
+        # the current actor (four-eyes rule).
+        rows = (
+            await self._session.execute(
+                select(
+                    ContentEntry.id,
+                    ContentEntry.content_type,
+                    ContentEntry.slug,
+                    ContentRevision.id,
+                    ContentRevision.version_label,
+                    ContentRevision.updated_at,
+                    InternalUser.display_name,
+                )
+                .join(ContentRevision, ContentRevision.entry_id == ContentEntry.id)
+                .join(InternalUser, InternalUser.id == ContentRevision.created_by_user_id)
+                .where(
+                    ContentEntry.organization_id == org_id,
+                    ContentRevision.status == RevisionStatus.IN_REVIEW,
+                    ContentRevision.created_by_user_id != actor.user_id,
+                )
+                .order_by(ContentRevision.updated_at.desc())
+            )
+        ).all()
+
+        if not rows:
+            return []
+
+        revision_ids = [row[3] for row in rows]
+        # Batch-fetch all decisions for these revisions.
+        all_decisions: dict[UUID, list[ContentReviewDecision]] = {
+            rid: [] for rid in revision_ids
+        }
+        for dec in (
+            await self._session.scalars(
+                select(ContentReviewDecision).where(
+                    ContentReviewDecision.revision_id.in_(revision_ids)
+                )
+            )
+        ).all():
+            all_decisions.setdefault(dec.revision_id, []).append(dec)
+
+        # Batch-fetch required approvals per revision (simplified: use
+        # structural + authored findings as in transition).
+        results: list[ContentReviewQueueItemOut] = []
+        for row in rows:
+            entry_id, ctype, slug, rev_id, version_label, submitted_at, submitted_by = row
+            decisions = all_decisions.get(rev_id, [])
+            decided_caps = {d.capability for d in decisions}
+
+            # For each capability the revision needs AND the user can review:
+            for capability in ApprovalCapability:
+                if capability not in effective_caps:
+                    continue
+                # Skip if no assignment and this is one we should filter.
+                decision = next((d for d in decisions if d.capability == capability), None)
+                results.append(
+                    ContentReviewQueueItemOut(
+                        entry_id=entry_id,
+                        revision_id=rev_id,
+                        content_type=ctype,
+                        slug=slug,
+                        version_label=version_label,
+                        submitted_at=submitted_at,
+                        submitted_by_display_name=submitted_by,
+                        capability=capability,
+                        already_decided=capability in decided_caps,
+                        decided_outcome=decision.outcome if decision else None,
+                    )
+                )
+
+        return results
+
+    async def create_review_assignment(
+        self,
+        actor: StaffActor,
+        request: CreateContentReviewAssignmentRequest,
+    ) -> ContentReviewAssignmentOut:
+        self._require_org_admin(actor)
+        existing = await self._session.scalar(
+            select(ContentReviewAssignment).where(
+                ContentReviewAssignment.organization_id == actor.organization_id,
+                ContentReviewAssignment.user_id == request.user_id,
+                ContentReviewAssignment.capability == request.capability,
+            )
+        )
+        if existing is not None:
+            existing.active = request.active
+            await self._session.flush()
+            user = await self._session.get(InternalUser, request.user_id)
+            return ContentReviewAssignmentOut(
+                assignment_id=existing.id,
+                user_id=existing.user_id,
+                display_name=user.display_name or user.email or str(user.id) if user else str(request.user_id),
+                capability=existing.capability,
+                active=existing.active,
+            )
+
+        assignment = ContentReviewAssignment(
+            organization_id=actor.organization_id,
+            user_id=request.user_id,
+            capability=request.capability,
+            active=request.active,
+        )
+        self._session.add(assignment)
+        await self._session.flush()
+        user = await self._session.get(InternalUser, request.user_id)
+        return ContentReviewAssignmentOut(
+            assignment_id=assignment.id,
+            user_id=assignment.user_id,
+            display_name=user.display_name or user.email or str(user.id) if user else str(request.user_id),
+            capability=assignment.capability,
+            active=assignment.active,
+        )
+
+    async def list_review_assignments(
+        self,
+        organization_id: UUID,
+    ) -> list[ContentReviewAssignmentOut]:
+        rows = (
+            await self._session.execute(
+                select(ContentReviewAssignment, InternalUser.display_name)
+                .join(
+                    InternalUser,
+                    InternalUser.id == ContentReviewAssignment.user_id,
+                )
+                .where(
+                    ContentReviewAssignment.organization_id == organization_id,
+                    ContentReviewAssignment.active.is_(True),
+                )
+                .order_by(ContentReviewAssignment.capability, InternalUser.display_name)
+            )
+        ).all()
+        return [
+            ContentReviewAssignmentOut(
+                assignment_id=assignment.id,
+                user_id=assignment.user_id,
+                display_name=display_name or str(assignment.user_id),
+                capability=assignment.capability,
+                active=assignment.active,
+            )
+            for assignment, display_name in rows
+        ]
 
     async def _submission_actors(self, revision_id: UUID) -> set[UUID]:
         """Return the set of user IDs who submitted this revision for review."""

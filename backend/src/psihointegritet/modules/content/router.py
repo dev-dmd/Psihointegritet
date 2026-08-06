@@ -19,8 +19,11 @@ from psihointegritet.api.dependencies import AppSettings, CurrentIdentity, Datab
 from psihointegritet.modules.content.models import ContentType
 from psihointegritet.modules.content.schemas import (
     ContentHealthOut,
+    ContentReviewAssignmentOut,
+    ContentReviewQueueItemOut,
     ContentRevisionOut,
     CreateContentEntryRequest,
+    CreateContentReviewAssignmentRequest,
     NewContentDraftRequest,
     NormalizeRichHtmlRequest,
     NormalizeRichHtmlResponse,
@@ -474,3 +477,23 @@ async def delete_content_revision(
             await ContentService(session).delete_revision(actor, entry_id, revision_id)
     except (ContentNotFoundError, ContentForbiddenError, ContentConflictError) as error:
         raise _handle(error) from error
+
+
+@router.get(
+    "/review-queue",
+    response_model=list[ContentReviewQueueItemOut],
+    operation_id="list_review_queue",
+)
+async def list_review_queue(
+    identity: CurrentIdentity,
+    session: DatabaseSession,
+    settings: AppSettings,
+) -> list[ContentReviewQueueItemOut]:
+    """Return all pending review tasks for the calling user (RW-6).
+
+    Filters out entries submitted by the user (four-eyes rule) and shows only
+    capabilities the user is assigned to review.
+    """
+    async with session.begin():
+        actor = await _org_admin_actor(session, settings, identity)
+        return await ContentService(session).list_review_queue(actor)

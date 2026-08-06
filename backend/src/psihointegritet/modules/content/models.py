@@ -51,6 +51,7 @@ __all__ = [
     "ContentEntry",
     "ContentPublicationEvent",
     "ContentReviewDecision",
+    "ContentReviewAssignment",
     "ContentRevisionDiscovery",
     "ContentRevisionRelation",
     "ContentRevisionTaxonomyTerm",
@@ -408,5 +409,40 @@ class ContentSubmitIdempotency(Base):
     )
     idempotency_key: Mapped[UUID] = mapped_column(Uuid(as_uuid=True), nullable=False)
     processed_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+
+
+class ContentReviewAssignment(Base):
+    """Which staff members may review content for a given capability (RW-6).
+
+    An org_admin assigns reviewers per capability (clinical, business, legal).
+    A capability without an active assignment implicitly allows any org_admin
+    to review — the queue still filters out the submitter.
+    """
+
+    __tablename__ = "content_review_assignments"
+    __table_args__ = (
+        UniqueConstraint(
+            "organization_id", "user_id", "capability",
+            name="uq_content_review_assignment",
+        ),
+    )
+
+    id: Mapped[UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid4)
+    organization_id: Mapped[UUID] = mapped_column(
+        Uuid(as_uuid=True), ForeignKey("organizations.id", ondelete="CASCADE"), index=True
+    )
+    user_id: Mapped[UUID] = mapped_column(
+        Uuid(as_uuid=True), ForeignKey("internal_users.id", ondelete="CASCADE"), index=True
+    )
+    capability: Mapped[ApprovalCapability] = mapped_column(
+        value_enum(ApprovalCapability, length=32), nullable=False
+    )
+    active: Mapped[bool] = mapped_column(default=True, server_default=text("true"))
+    email_notifications: Mapped[bool] = mapped_column(
+        default=True, server_default=text("true")
+    )
+    created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )

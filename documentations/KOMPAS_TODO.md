@@ -77,7 +77,7 @@ Faza se označava završenom samo posle relevantnog gate-a. Research feedback i 
 | **RW-3** | Nove revizije za svaki krug dorade: `POST .../new-draft`, `source_revision_id`/`superseded_at`. `published → nova verzija` ne skida staru sa sajta. | RW-2 | ✅ | `create_new_draft` servis, migracija `20260805_0019`, `ArticleReviewStep` dugmad za approved/published, `useNewContentDraftMutation`. 353 pytest + 431 vitest ✅. |
 | **RW-4** | Reviewer odluke: `approved / rejected` + obavezno obrazloženje za `rejected`. Automatsko agregiranje: sva odobrenja → `approved`. Pravilo četiri oka. | RW-3 | ✅ | Four-eyes pravilo, `rejected` → auto `create_new_draft`, auto `approved`, `ArticleReviewStep` review panel sa dugmadima. 353 pytest + 431 vitest ✅. |
 | **RW-5** | Urednički paket: `content_review_packages` + `items`. Jedan klik = članak + nove draft oblast/tema. Kompas Flow nije deo paketa. | RW-4 | ✅ | `_submit_package_terms` batch-fetch + tranzicija, `reason="submitted_via_article_package"`. Bez frontend izmena. 353 pytest + 431 vitest ✅. |
-| **RW-6** | Review queue: `organization_review_assignments`, `GET /radni-prostor/pregledi`. Reviewer vidi samo svoj capability. | RW-5 | ⬜ |
+| **RW-6** | Review queue: `organization_review_assignments`, `GET /radni-prostor/pregledi`. Reviewer vidi samo svoj capability. | RW-5 | ✅ | `ContentReviewAssignment` model + migracija `20260806_0020`, `list_review_queue` sa four-eyes, `ReviewQueueScreen` frontend. 353 pytest + 431 vitest ✅. |
 | **RW-7** | Email obaveštenja: `notification_outbox`, QStash job. Događaji: `review_requested / changes_requested / approved / published`. | RW-6 | ⬜ |
 
 **Detaljan plan u `TODO.md` §5J.** Nijedan status ne primorava korisnika da obriše sadržaj.

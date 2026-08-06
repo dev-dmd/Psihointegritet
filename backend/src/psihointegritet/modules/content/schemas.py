@@ -141,6 +141,34 @@ class RecordReviewDecisionRequest(ApiSchema):
     note: str | None = None
 
 
+class ContentReviewAssignmentOut(ApiSchema):
+    assignment_id: UUID
+    user_id: UUID
+    display_name: str
+    capability: ApprovalCapability
+    active: bool
+
+
+class CreateContentReviewAssignmentRequest(ApiSchema):
+    user_id: UUID
+    capability: ApprovalCapability
+    active: bool = True
+
+
+class ContentReviewQueueItemOut(ApiSchema):
+    """One entry in the reviewer's queue (RW-6)."""
+    entry_id: UUID
+    revision_id: UUID
+    content_type: ContentType
+    slug: str
+    version_label: str
+    submitted_at: datetime
+    submitted_by_display_name: str | None
+    capability: ApprovalCapability
+    already_decided: bool  # True if a decision exists for this capability
+    decided_outcome: ReviewOutcome | None
+
+
 class ContentFindingOut(ApiSchema):
     rule_id: str
     rule_version: str
