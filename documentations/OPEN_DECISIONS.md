@@ -141,13 +141,13 @@ Psihointegritet želi eksplicitno da prikaže da prima LGBTQIA+ osobe bez stigme
 
 > **Gde piše:** PRODUCT_CONTEXT v0.3 §11.5 · content-architecture.md §6 · D-053 · ADR-022 · **Blokira još samo:** tier/release obećanje, ne backend registra
 
-**Šta znamo:** CTO je 2026-07-26 potvrdio da je Kompas **novi, zaseban proizvod** — nije novo ime za postojeći Vođeni izbor / Intake & Matching tok. D-053/ADR-022 sada dozvoljavaju backend registar, panel i CMS reference pre javnog proizvoda. Recommendation, javni Kompas i Intake/Booking handoff dolaze tek kroz svoje K3A–K6 kapije.
+**Šta znamo:** CTO je 2026-07-26 potvrdio da je Kompas **novi, zaseban proizvod** — nije novo ime za postojeći Vođeni izbor / Intake & Matching tok. D-053/D-054/D-056 i ADR-022 Amandmani 1–2 zaključavaju backend registar, panel, CMS reference, javni v1 tok, anonimni access i Intake granicu. K3B core, K4 Engine, K5 storage granica, kanonske/list stranice i K6A „Brzi unos” su završeni; finalni `/kompas`, vidljivi Intake most i feedback ostaju iza svojih K5/K6 kapija.
 
 **Preostalo od CTO/tima:**
 
 1. ~~Definicija proizvoda: šta Kompas radi, za koga, čime se razlikuje od Vođenog izbora~~ → **napredak 2026-07-29, vidi ispod**
 2. Granica osnovni vs napredni tier
-3. Release (R-mapa)
+3. ~~Release (R-mapa)~~ → **rešeno 2026-08-03, D-059**
 
 > **Napredak 2026-07-29 (CTO).** Kompas je **discovery i recommendation sloj iznad istog kataloga sadržaja** — ne novi katalog. Prvi izbor korisnika: „Želim stručnu podršku" · „Želim da razumem šta mi se dešava" · „Tražim koristan sadržaj" · „Tražim podršku za roditeljstvo" · „Tražim podršku za odnos" · „Tražim sadržaj za kompaniju ili tim". Grana **informacije** pretražuje članke, video, PDF vodiče, preporuke knjiga, programe i radionice; grana **stručna podrška** vodi na usluge, terapeute, način rada i prelazak na zahtev za termin. Zakazivanje ostaje globalno dostupno ali ne agresivno — sekundarni CTA na stručnom sadržaju („Potrebna vam je stručna podrška?") i povratak iz booking toka na sadržaj („Još nisam spreman da zakažem — želim prvo da pogledam materijale").
 >
@@ -155,7 +155,9 @@ Psihointegritet želi eksplicitno da prikaže da prima LGBTQIA+ osobe bez stigme
 
 > **Usvojeno 2026-07-31 — D-053 / ADR-022:** `KOMPAS_TODO.md` razdvaja Kompas topic grupe/teme od D-052 Intake routing oblasti. V1 ose su `topicGroupId`, `topicIds`, jedna sistemska vrednost `journeyIntent`, `goalIds`, `audienceIds`, izvedeni/kontrolisani `contentFormat` i postojeći `accessPolicy`; tagovi/sinonimi ostaju samo pretraga. Kompas je u v1 deterministički content recommendation servis u `modules/content`, bez novog therapist scoring-a i bez obaveznog AI-ja. Implementacija ide backend registar → panel → CMS → javni Kompas.
 
-**O-21 ostaje otvoren samo** za basic/advanced granicu i release mapu. K0 arhitektonska kapija je prošla; K1 backend foundation može da počne. Tačne Anjine kategorije su podaci registra i mogu stići tokom implementacije, ali pre javnog UI-ja.
+> **Usvojeno 2026-08-03 — D-059:** basic Kompas **pripada R3 Content obimu**, ali ima **nezavisnu produkcionu aktivaciju preko feature flag-a**. Ne pravi se veštački nov proizvodni release; flag se pali tek kada postoje minimalni urednički podaci, admin prihvatni testovi i zeleni javni E2E. Tačka 3 je time zatvorena.
+
+**O-21 ostaje otvoren samo** za basic/advanced granicu (tačka 2). K0 kapija, K1–K3, K3B core, K4 v1, K6A i Kompas v1 vertikala (D-058/ADR-025) su prošli; tačne Anjine kategorije su podaci registra, ne promena Engine ugovora.
 
 ---
 
@@ -218,6 +220,68 @@ O-24 više nije otvorena arhitektonska blokada. Implementacija se prati u `KOMPA
 4. Da li push uopšte ulazi u R2 M2.5 ili je zaseban milestone.
 
 **Dok ne stigne:** ključevi stoje u env-u, **ne šalje se nijedna notifikacija**, nema `web-push` zavisnosti ni service worker registracije za push. Bez koda unapred (MP §3).
+
+---
+
+### O-25 · Cross-organization pristup za platformskog operatera _(novo 2026-08-01)_
+
+> **Gde piše:** ADR-023 §6.5, §12 · D-051 · D-055 · **Blokira:** treći RLS PR (polise) samo ako se do tada pojavi druga organizacija; danas ne blokira ništa
+
+**Šta znamo:** D-051 daje platformskom superadminu pun staff kapacitet (`org_admin` + `therapist`) **unutar tenant-a**, kroz `internal_users.is_superadmin` i `resolve_staff_actor`. Danas **ne postoji nijedan cross-organization put** — svako razrešavanje organizacije ide kroz `settings.default_organization_slug = "psihointegritet"` i postoji tačno jedna organizacija. Dakle trenutno nema šta da se auditira.
+
+**Zašto je ipak otvorena stavka:** čim postoji druga organizacija, „superadmin vidi sve" prestaje da bude bezopasno. ADR-023 zaključava da runtime konekcija **nikad** nema `BYPASSRLS` i da se svakodnevne polise ne šire na `organization_id IN (...)`, pa cross-organization pristup mora dobiti eksplicitan, zaseban put — a taj put niko još nije opisao.
+
+**Traži se od CTO:**
+
+1. Da li platformski operater uopšte sme da čita operativne podatke druge organizacije, ili samo agregate i dijagnostiku.
+2. Ako sme — kroz šta: impersonation/support sesija sa vremenskim ograničenjem, namenska procedura, ili poseban servisni tok.
+3. Šta se beleži: ko, kada, zašto, kojoj organizaciji, i koliko dugo se taj zapis čuva.
+4. Da li se to gradi kao proširenje D-051 ili kao zaseban `PlatformRole` model — ADR-023 §12 preporučuje proširenje, da ne postoje dva paralelna modela uloga.
+
+**Dok ne stigne:** superadmin ostaje ograničen na `default_organization_slug`, bez cross-organization koda, bez `BYPASSRLS`, bez „vidi sve" polise. Prva organizacija koja se doda **pre** ove odluke mora se tretirati kao blokada, ne kao sitnica.
+
+**Smer koji je već potvrđen (CTO, 2026-08-01), ostaje da se razradi:** ne uvoditi `BYPASSRLS` u normalnu aplikaciju · napraviti eksplicitnu support/platform-admin sesiju · **zahtevati razlog pristupa** · auditovati organizaciju, korisnika, vreme i akcije · po mogućnosti vremenski ograničiti pristup.
+
+---
+
+### O-26 · Ponašanje globalnih taxonomy termina prema organizaciji _(novo 2026-08-01)_
+
+> **Gde piše:** ADR-023 §7.3.1 · D-053/ADR-022 · `RLS_MIGRATION_INVENTORY_v0.1.md` §3 · **Blokira:** organizacijsko prilagođavanje sistemskih termina; ne blokira RLS rollout
+
+**Šta znamo:** `taxonomy_terms` i `taxonomy_term_revisions` su mešane tabele — 17 od 19 odnosno 17 od 17 redova su **globalni sistemski termini** (D-053 system ose i D-052 `support_area` seed), vidljivi svakoj organizaciji. ADR-023 §7.3 zaključava da runtime te redove **sme da čita, ali ne sme da kreira, menja ni briše**. To je bezbednosno dovoljno i ne čeka ovu odluku.
+
+**Šta nije odlučeno** — šest situacija koje će se pojaviti čim postoji druga organizacija:
+
+1. Šta se dešava kad organizacija hoće **drugu javnu labelu** za globalan termin.
+2. Ko i kako **arhivira** globalan termin koji koristi više organizacija.
+3. Da li organizacija sme da **kopira** globalan termin u sopstveni managed termin, i šta se tada dešava sa referencama.
+4. Šta znači **`UPDATE`/`DELETE` globalnog termina** iz platformskog toka — ko ga odobrava.
+5. Da li postoji **organization override** globalnog termina i, ako postoji, kao zaseban red ili kao polje.
+6. Šta se prikazuje kad override postoji a globalni termin se u međuvremenu promeni.
+
+**Predloženi smer (nije usvojen):** organizacija **ne menja globalan termin direktno**, nego dobija zaseban povezan override zapis — globalni sistemski termin + opciona organization-specific prezentaciona konfiguracija. Tako promena Anjine javne labele ne menja termin svim budućim klijentima platforme, a sistemski registar ostaje jedan.
+
+**Dok ne stigne:** bez override modela, bez kolone za organizacijsku labelu, bez koda. Zabrana upisa iz §7.3 je jedina važeća polovina ugovora.
+
+---
+
+### O-27 · Jezik sistemskog kataloga po organizaciji _(novo 2026-08-04)_
+
+> **Gde piše:** TODO §5G · **Blokira:** prvi tenant van srpskog tržišta; danas ne blokira ništa
+
+**Odlučeno je okruženje, ne rešenje.** CTO je 2026-08-04 zaključao model: novo tržište je **nova organizacija sa svojim domenom**, svojim sadržajem i svojim testovima, a sistemska objašnjenja i poruke idu na jeziku tog tenanta. Psihointegritet ostaje na srpskom i **ne postaje višejezičan** — nema prebacivača jezika ni prevoda postojećih stranica. Time otpada translation-group veza između entry-ja (TODO §5G).
+
+**Šta je već rešeno i ne traži odluku:** tenant se razrešava preko `settings.default_organization_slug`, pa je novo tržište nov deployment · `locale` je na reviziji termina a `stable_id` bez jezika, uz unique indekse `(term_id, organization_id, locale)` · put čitanja filtrira jezik do kraja (`compass_service.py:132,193`), pa preporuka ne može da pređe jezičku granicu.
+
+**Šta traži odluku:** `SYSTEM_CONTENT_LOCALE = "sr-Latn"` (`system_catalog.py:18`) je modulska konstanta koja **diže grešku za svaki drugi jezik** na dva mesta (`system_catalog.py:80`, `identity.py:97`). Brana je namerna i dobra — sprečava polupreveden sistemski katalog — ali je i tvrda granica na jedan jezik za celu instalaciju.
+
+**Traži se od CTO:**
+
+1. Da li jezik pripada **organizaciji** (`organizations.default_locale`) ili **deployment-u** (podešavanje uz `default_organization_slug`). Prvo je tačnije ako ikad dve organizacije dele instalaciju; drugo je jeftinije i dovoljno za model „jedno tržište = jedan deployment".
+2. Šta se dešava sa **sistemskim katalogom** stranog tenanta: da li se D-052/D-053 sistemske ose i termini sejuju prevedeni po jeziku, ili strani tenant dobija svoj registar od nule.
+3. Da li brana ostaje kao **provera** (jezik tenanta mora biti tačno jedan i sav sistemski sadržaj mora biti na njemu) ili se uklanja.
+
+**Dok ne stigne:** konstanta se ne dira, `next-intl` se ne uključuje, nema `default_locale` kolone i nema koda. Važe samo tri pravila iz TODO §5G koja ništa ne koštaju: backend vraća kod a frontend bira reči · nov tekst ide u copy modul, ne inline u JSX · ijekavica je pun locale, nikad automatska zamena `e → je/ije`.
 
 ---
 

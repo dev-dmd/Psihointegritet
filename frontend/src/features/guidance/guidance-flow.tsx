@@ -71,11 +71,7 @@ export function GuidanceFlow(props: GuidanceFlowProps) {
   );
 }
 
-function GuidanceFlowContent({
-  entry,
-  surface,
-  onClose,
-}: GuidanceFlowProps) {
+function GuidanceFlowContent({ entry, surface, onClose }: GuidanceFlowProps) {
   const [screen, setScreen] = useState<Screen>(
     entry === "page" ? "intro" : entry === "chooser" ? "chooser" : "questions",
   );
@@ -117,7 +113,7 @@ function GuidanceFlowContent({
     matchAttempt,
   );
   const result = productionIntakeEnabled
-    ? authoritativeMatchQuery.data ?? null
+    ? (authoritativeMatchQuery.data ?? null)
     : localResult;
   const matchingError = authoritativeMatchQuery.isError;
 

@@ -6,6 +6,7 @@ import type {
   CompanyPlanContentEntity,
   ContentEntity,
   ContentEntityOfType,
+  ContentEntityType,
   ContentProvider,
   ContentType,
   ProgramContentEntity,
@@ -387,7 +388,7 @@ export class CmsContentProvider implements ContentProvider {
     return this.entities.find((entity) => entity.route === route) ?? null;
   }
 
-  getEntity<T extends ContentType>(
+  getEntity<T extends ContentEntityType>(
     type: T,
     id: string,
   ): ContentEntityOfType<T> | null {

@@ -1,6 +1,5 @@
 "use client";
 
-import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 
 import { ErrorBanner } from "@/components/panel/error-banner";
@@ -12,13 +11,12 @@ import {
 } from "@/lib/content-governance/system-content-catalog";
 import type { ContentType } from "@/lib/content-governance/types";
 
+import type { ApiContentRevision } from "../content-api";
 import {
-  ContentApiError,
-  createContentEntry,
-  fetchContentEntries,
-  type ApiContentRevision,
-} from "../content-api";
-import { CONTENT_ENTRIES_QUERY_KEY } from "../content-entries-query";
+  contentErrorMessage,
+  useContentEntriesQuery,
+  useOpenSystemContentEntryMutation,
+} from "../hooks/use-content-entries";
 import { usePanelErrors } from "../panel-errors";
 import { ContentEntryList } from "./content-entry-list";
 import { ContentRevisionEditor } from "./content-revision-editor";
@@ -28,33 +26,28 @@ const HREF = "/radni-prostor/sadrzaj" as const;
 const TAB_LABEL = "Sadržaj";
 
 /**
- * CG-C1b — generic draft editor: `useQuery`/`useMutation` from the first
- * commit (learned from `screen-dokumenti.tsx`'s go-`useEffect` re-fetch
- * cost this same session — see `TODO.md` §5D). Orchestrates the query,
- * active `ContentType` tab and selected entry; every field kind's rendering
- * lives in `slot-editor.tsx`/`slot-field-editor.tsx`, driven entirely by
- * `slotSpecRegistry` (CG-C1a) — no per-template editor code here.
+ * CG-C1b — generic draft editor. Orchestrates the entry list, the active
+ * `ContentType` tab and the selected entry; every field kind's rendering lives
+ * in `slot-editor.tsx`/`slot-field-editor.tsx`, driven entirely by
+ * `slotSpecRegistry` (CG-C1a) — no per-template editor code here. Network
+ * lifecycle belongs to `hooks/use-content-entries.ts`.
  */
 export function ScreenSadrzaj() {
   const { reportError, errorsFor, clearError } = usePanelErrors();
-  const queryClient = useQueryClient();
 
-  const entriesQuery = useQuery({
-    queryKey: CONTENT_ENTRIES_QUERY_KEY,
-    queryFn: () => fetchContentEntries(),
-  });
+  const entriesQuery = useContentEntriesQuery();
+  const openEntry = useOpenSystemContentEntryMutation();
+
   const entries = entriesQuery.data ?? [];
-  const loading = entriesQuery.isLoading;
   const loadError = entriesQuery.isError
-    ? entriesQuery.error instanceof ContentApiError
-      ? entriesQuery.error.message
-      : "Sadržaj se trenutno ne može učitati. Osvežite stranicu."
+    ? contentErrorMessage(
+        entriesQuery.error,
+        "Sadržaj se trenutno ne može učitati. Osvežite stranicu.",
+      )
     : null;
 
   const [activeType, setActiveType] = useState<ContentType>("static_page");
   const [selectedEntryId, setSelectedEntryId] = useState<string | null>(null);
-  const [openingIdentity, setOpeningIdentity] = useState<string | null>(null);
-  const [openError, setOpenError] = useState<string | null>(null);
 
   const errors = errorsFor(HREF);
   const selectedEntry =
@@ -63,73 +56,45 @@ export function ScreenSadrzaj() {
     ? findSystemContentDefinition(selectedEntry.contentType, selectedEntry.slug)
     : null;
 
-  const handleOpen = async (
+  // Derived from the mutation rather than mirrored into local state — the
+  // pending row and its failure message are the mutation's own lifecycle.
+  const openingIdentity =
+    openEntry.isPending && openEntry.variables
+      ? systemContentIdentity(openEntry.variables)
+      : null;
+  const openError = openEntry.isError
+    ? contentErrorMessage(
+        openEntry.error,
+        "Zahtev nije uspeo. Pokušajte ponovo.",
+      )
+    : null;
+
+  const handleOpen = (
     definition: SystemContentDefinition,
     existing: ApiContentRevision | null,
   ) => {
     if (existing) {
-      setOpenError(null);
+      openEntry.reset();
       setSelectedEntryId(existing.entryId);
       return;
     }
 
-    const identity = systemContentIdentity(definition);
-    setOpeningIdentity(identity);
-    setOpenError(null);
-    try {
-      const created = await createContentEntry({
-        contentType: definition.contentType,
-        slug: definition.slug,
-        template: definition.template,
-      });
-      queryClient.setQueryData<ApiContentRevision[]>(
-        CONTENT_ENTRIES_QUERY_KEY,
-        (current) => [
-          ...(current ?? []).filter((item) => item.entryId !== created.entryId),
-          created,
-        ],
-      );
-      setSelectedEntryId(created.entryId);
-    } catch (error) {
-      // Another staff member may have opened the same fallback between our
-      // list read and POST. Resolve a real 409 by loading the tenant list and
-      // opening the now-existing registered entry instead of surfacing a
-      // false failure.
-      if (error instanceof ContentApiError && error.status === 409) {
-        try {
-          const refreshed = await fetchContentEntries();
-          queryClient.setQueryData(CONTENT_ENTRIES_QUERY_KEY, refreshed);
-          const concurrent =
-            refreshed.find(
-              (item) =>
-                item.contentType === definition.contentType &&
-                item.slug === definition.slug &&
-                item.template === definition.template,
-            ) ?? null;
-          if (concurrent) {
-            setSelectedEntryId(concurrent.entryId);
-            return;
-          }
-        } catch {
-          // Keep and report the original 409 if reconciliation is unavailable.
-        }
-      }
-
-      const message =
-        error instanceof ContentApiError
-          ? error.message
-          : "Zahtev nije uspeo. Pokušajte ponovo.";
-      setOpenError(message);
-      reportError({
-        href: HREF,
-        tabLabel: TAB_LABEL,
-        title: "Sistemska stranica nije otvorena",
-        description: message,
-        details: [],
-      });
-    } finally {
-      setOpeningIdentity(null);
-    }
+    openEntry.mutate(definition, {
+      onSuccess: (entry) => setSelectedEntryId(entry.entryId),
+      onError: (error) => {
+        const message = contentErrorMessage(
+          error,
+          "Zahtev nije uspeo. Pokušajte ponovo.",
+        );
+        reportError({
+          href: HREF,
+          tabLabel: TAB_LABEL,
+          title: "Sistemska stranica nije otvorena",
+          description: message,
+          details: [],
+        });
+      },
+    });
   };
 
   return (
@@ -152,7 +117,7 @@ export function ScreenSadrzaj() {
         </div>
       ) : null}
 
-      {loading ? (
+      {entriesQuery.isLoading ? (
         <p className="text-ink-55 text-[13.5px]">Učitavanje…</p>
       ) : (
         <>
@@ -163,7 +128,7 @@ export function ScreenSadrzaj() {
             onTypeChange={(type) => {
               setActiveType(type);
               setSelectedEntryId(null);
-              setOpenError(null);
+              openEntry.reset();
             }}
             selectedEntryId={selectedEntryId}
             onSelect={setSelectedEntryId}

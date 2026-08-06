@@ -52,6 +52,7 @@ class Settings(BaseSettings):
     intake_review_target_business_hours: int = Field(default=12, ge=1, le=168)
     intake_review_public_max_business_days: int = Field(default=1, ge=1, le=30)
     intake_business_timezone: str = "Europe/Belgrade"
+    slot_hold_ttl_seconds: int = Field(default=600, ge=30, le=3600)
 
     @property
     def is_production(self) -> bool:

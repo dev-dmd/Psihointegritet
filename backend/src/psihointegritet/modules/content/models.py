@@ -50,22 +50,28 @@ __all__ = [
     "ApprovalCapability",
     "ContentEntry",
     "ContentPublicationEvent",
+    "ContentReviewAssignment",
     "ContentReviewDecision",
     "ContentRevisionDiscovery",
     "ContentRevisionRelation",
     "ContentRevisionTaxonomyTerm",
+    "ContentSubmitIdempotency",
     "ContentTaxonomyRole",
     "ContentTemplate",
     "ContentType",
+    "NotificationOutbox",
     "ReviewOutcome",
     "RevisionStatus",
 ]
 
 
 class ContentType(StrEnum):
-    """The six governed types from R1.4.i `ContentType`.
+    """The six governed types from R1.4.i, plus `article` since ADR-019.
 
-    `article` is deliberately absent: the knowledge library is R3 (ADR-016).
+    The first six share one property `article` does not: their identity is a
+    closed allowlist of known pages (`system_catalog.py`). An article is one
+    entry per published text, unbounded in number, so it takes a separate
+    identity path — see ADR-019 §3.
     """
 
     STATIC_PAGE = "static_page"
@@ -74,6 +80,7 @@ class ContentType(StrEnum):
     PROGRAM = "program"
     COMPANY_PLAN = "company_plan"
     PACKAGE_OFFER = "package_offer"
+    ARTICLE = "article"
 
 
 class ContentTemplate(StrEnum):
@@ -92,6 +99,10 @@ class ContentTemplate(StrEnum):
     PRICING_PAGE = "pricing_page"
     STATIC_INFORMATION = "static_information"
     LEGAL_PAGE = "legal_page"
+    # The first template whose sections follow a Layout Engine recipe
+    # (`article-v1`, ADR-021): the author decides which sections exist, the
+    # recipe decides the order they render in.
+    ARTICLE_DETAIL = "article_detail"
 
 
 class ReviewOutcome(StrEnum):
@@ -220,6 +231,16 @@ class ContentRevision(Base):
     )
     published_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     archived_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    # RW-3: tracks which revision this one was derived from, and whether the
+    # source was superseded by this one.  A published revision stays published
+    # while a new draft from it is in progress.
+    source_revision_id: Mapped[UUID | None] = mapped_column(
+        Uuid(as_uuid=True), ForeignKey("content_revisions.id", ondelete="SET NULL"), nullable=True
+    )
+    superseded_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    superseded_by_revision_id: Mapped[UUID | None] = mapped_column(
+        Uuid(as_uuid=True), ForeignKey("content_revisions.id", ondelete="SET NULL"), nullable=True
+    )
 
     # CG-B3 optimistic locking: SQLAlchemy's built-in `version_id_col`
     # appends `WHERE lock_version = :current` to every UPDATE and raises
@@ -364,6 +385,99 @@ class ContentPublicationEvent(Base):
         Uuid(as_uuid=True), ForeignKey("internal_users.id", ondelete="SET NULL"), nullable=True
     )
     reason: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+
+
+class ContentSubmitIdempotency(Base):
+    """Guarantees a submit-for-review call is processed at most once per key.
+
+    The unique constraint ``(revision_id, idempotency_key)`` makes a second
+    call with the same key a no-op across concurrent transactions — the first
+    writer commits the transition, the second catches the integrity error
+    and returns the already-in-review state (D-068 rule 2).
+    """
+
+    __tablename__ = "content_submit_idempotency"
+    __table_args__ = (
+        UniqueConstraint("revision_id", "idempotency_key", name="uq_content_submit_idempotency"),
+    )
+
+    id: Mapped[UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid4)
+    revision_id: Mapped[UUID] = mapped_column(
+        Uuid(as_uuid=True), ForeignKey("content_revisions.id", ondelete="CASCADE"), index=True
+    )
+    idempotency_key: Mapped[UUID] = mapped_column(Uuid(as_uuid=True), nullable=False)
+    processed_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+
+
+class ContentReviewAssignment(Base):
+    """Which staff members may review content for a given capability (RW-6).
+
+    An org_admin assigns reviewers per capability (clinical, business, legal).
+    A capability without an active assignment implicitly allows any org_admin
+    to review — the queue still filters out the submitter.
+    """
+
+    __tablename__ = "content_review_assignments"
+    __table_args__ = (
+        UniqueConstraint(
+            "organization_id",
+            "user_id",
+            "capability",
+            name="uq_content_review_assignment",
+        ),
+    )
+
+    id: Mapped[UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid4)
+    organization_id: Mapped[UUID] = mapped_column(
+        Uuid(as_uuid=True), ForeignKey("organizations.id", ondelete="CASCADE"), index=True
+    )
+    user_id: Mapped[UUID] = mapped_column(
+        Uuid(as_uuid=True), ForeignKey("internal_users.id", ondelete="CASCADE"), index=True
+    )
+    capability: Mapped[ApprovalCapability] = mapped_column(
+        value_enum(ApprovalCapability, length=32), nullable=False
+    )
+    active: Mapped[bool] = mapped_column(default=True, server_default=text("true"))
+    email_notifications: Mapped[bool] = mapped_column(default=True, server_default=text("true"))
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+
+
+class NotificationOutbox(Base):
+    """Durability sink for async notifications (RW-7 / D-068).
+
+    Records are appended in the same transaction as the lifecycle event
+    they notify.  A polling job (QStash / scheduler) picks them up and
+    dispatches via Resend.  A failure to send does not roll back the
+    source transaction — it only bumps the retry counter.
+    """
+
+    __tablename__ = "notification_outbox"
+
+    id: Mapped[UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid4)
+    organization_id: Mapped[UUID] = mapped_column(
+        Uuid(as_uuid=True), ForeignKey("organizations.id", ondelete="CASCADE"), index=True
+    )
+    event_type: Mapped[str] = mapped_column(String(80), nullable=False)
+    aggregate_type: Mapped[str] = mapped_column(String(40), default="content_revision")
+    aggregate_id: Mapped[UUID | None] = mapped_column(
+        Uuid(as_uuid=True), ForeignKey("content_revisions.id", ondelete="SET NULL"), nullable=True
+    )
+    recipient_user_id: Mapped[UUID | None] = mapped_column(
+        Uuid(as_uuid=True), ForeignKey("internal_users.id", ondelete="SET NULL"), nullable=True
+    )
+    payload: Mapped[dict[str, object]] = mapped_column(JSON, default=dict, nullable=False)
+    attempts: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
+    available_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+    sent_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )

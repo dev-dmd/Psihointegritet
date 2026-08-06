@@ -1,26 +1,56 @@
 # KOMPAS TODO — discovery i recommendation sloj
 
-**Status:** K1 backend foundation i K2 panel/editor su završeni; sledeći korak je K3 — neposredna CMS integracija
-**Datum:** 2026-07-31  
+**Status:** Kompas v1 vertikala radi kroz DB flow, taxonomy, Result Composer, javni drawer i admin workspace; završni sadržajni/admin E2E i postojeći Alembic drift ostaju otvoreni gate-ovi
+**Datum:** 2026-08-05
 **Vlasnik tehničkih odluka:** Milan Dražić (CTO)  
 **Vlasnik stručne kategorizacije i javnih naziva:** Anja Stamenković i stručni tim  
 **Ulazni dokument:** `CODEX HANDOFF — KOMPAS.docx`, primljen 2026-07-31  
-**Povezano:** O-21 · D-047 · D-048 · D-052 · **D-053 · D-054 · ADR-022 Amandman 1** · ADR-016 · ADR-018 · budući ADR-019/ADR-021
+**Povezano:** O-21 · D-047 · D-048 · D-052 · **D-053 · D-054 · D-056 · ADR-022 Amandmani 1–2** · **D-058 · D-059 · D-060 · D-061 · ADR-025** · **ADR-019 · ADR-021** · ADR-016 · ADR-018
+
+## 0A. Kompas v1 vertikala — faze i acceptance gate-ovi (D-058)
+
+- [x] Faza 0: D-058, ADR-025, ADR-022/024 amandmani, §8.9 i RLS plan usklađeni pre migracije.
+- [x] Faza 1: Research drawer, obaveznost, validacija, `answeredCount` agregati i backend/frontend/DB integration gate-ovi prolaze.
+- [x] Faza 2: atomski flow domen, migracija, lifecycle, public/staff/preview API i testovi prolaze.
+- [x] Faza 3: backend Result Composer vraća stabilne sekcije, deduplikaciju i related area/topic razdvajanje.
+- [x] Faza 4: `/kompas` koristi objavljeni flow, taxonomy i stvarni recommendation API bez URL selection-a; fallback zahteva eksplicitni non-production preview flag.
+- [ ] Faza 5: opt-in, development-only seed je runtime provereno idempotentan. **Gate je promenjen 2026-08-04 (D-063):** traži se 2–3 stvarna urednički odobrena i objavljena **Kompas članka**, povezana sa bar dve teme i bar jednom oblašću — ne više 2–3 objavljena `service`/`program`. Usluge i programi su stranice sajta, ne glavni Kompas sadržaj; njihova relacija ostaje sledeći korak, ali ne sme biti uslov da Kompas uopšte ima sadržaj.
+- [ ] Faza 6: sedam admin celina, lifecycle i isti preview Engine postoje; nedostaju autentifikovani admin browser test i potpuniji editor svih flow polja/actor evidence prikaz. **U toku (2026-08-05):** article authoring editor završen — 5-step flow (Osnovni podaci → Tekst → Oblast i teme → Kompas → Pregled i slanje), `deriveArticleCompletion` guide, inline taxonomy create, `ArticleCompassStep`, `ArticleReviewStep`. D-065 backend fix: draft termini dozvoljeni pri čuvanju. PR4 (pregled i produkcioni gate) slede. **Poboljšan overview (2026-08-05):** `ReadinessChecklist` sa animiranim `fade-up` checkovima (`loading → ok/pending/error`), per-tab učitavanje (`enabled` flag na query hookovima), `CompassAdminWorkspace` postaje prezentaciona komponenta. CMS "Povezan sadržaj" check zamenjen sa "Kompas Servisi" (✓/✗/○). 9 vitest testova. Backend `list_terms`/`list_intake_links` batch optimizacija (~10 umesto ~500+ SQL upita).
+- [x] Faza 7: statički gate-ovi, backend i frontend testovi, production build, Playwright i migracioni round-trip prolaze. **D19 je zatvoren 2026-08-03** migracijom `20260803_0017` po D-060, pa je puni `alembic check` sada čist i nad čistom i nad dev bazom.
+
+**Produkciona aktivacija (D-059):** basic Kompas je deo R3 Content obima, ali se pali nezavisno preko feature flag-a — tek kada postoje minimalni urednički podaci (Faza 5), admin prihvatni testovi (Faza 6) i zeleni javni E2E. Flag je `NEXT_PUBLIC_COMPASS_ENABLED` i **podrazumevano je isključen**: bez njega `/kompas`, `/kompas/oblasti`, `/kompas/teme` i obe kanonske rute vraćaju 404, header link i CTA na naslovnoj se ne renderuju, a sitemap ne navodi nijednu Kompas rutu. Sporedni efekat je namerno koristan — isključeno okruženje ne prerenderuje te rute, pa nedostupan backend ne može da obori njegov build.
+
+Faza se označava završenom samo posle relevantnog gate-a. Research feedback i Kompas flow ostaju odvojeni; selection i rezultat se ne čuvaju u bazi. Otvorene stručne labele/mapiranja ostaju Anji i timu i predstavljaju podatke, ne promenu Engine ugovora.
+
+### 0B. Evidencija implementacije po fazama
+
+| Faza | Promenjeni fajlovi / ugovor                                                                                                                                                        | Potvrda                                                                               |
+| ---- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| 0    | `PRODUCT_DECISIONS.md`, ADR-022, ADR-024, novi ADR-025, CLEAN §8.9, RLS inventory i ovaj TODO                                                                                      | odluke usklađene pre migracije                                                        |
+| 1    | `modules/research/{schemas,service}.py`, `seed_research_surveys.py`, `survey-drawer.tsx`, `screen-istrazivanja.tsx`, Research unit/integration/E2E testovi i generisani API tipovi | backend i browser regresije prolaze                                                   |
+| 2    | novi `modules/compass/{models,schemas,service,router}.py`, API/Alembic bootstrap, migracija `20260803_0016`, flow unit/integration/contract testovi                                | upgrade/downgrade i lifecycle prolaze                                                 |
+| 3    | `modules/compass/result_composer.py`, Content Compass DTO/service dopune i composer testovi                                                                                        | backend poseduje sekcije, razloge i deduplikaciju                                     |
+| 4    | Compass BFF rute, `api/flow.ts`, flow model/hook/test, dinamički quiz/results, DB-backed starting view, javni Query provider i `compass.spec.ts`                                   | build i javni izbor/skip/sentinel E2E prolaze                                         |
+| 5    | `scripts/seed_compass_demo.py`, seed guard testovi i `NEXT_PUBLIC_COMPASS_DEMO_PREVIEW` granica                                                                                    | dvostruki lokalni run ne duplira podatke; CMS linkage čeka eligible rows              |
+| 6    | staff BFF rute, `compass-flow-api.ts`, admin hook, `compass-admin-workspace.tsx` i `screen-kompas.tsx`                                                                             | backend preview deli javni composer; browser admin gate otvoren                       |
+| 6+   | `readiness-checklist.tsx` + test, per-tab `enabled` loading, `CompassAdminWorkspace` prezentaciona, backend `list_terms`/`list_intake_links` batch optimizacija                    | TSC 0 grešaka, ESLint 0, vitest 9/9, pytest 353/354                                  |
+| 7    | `.github/workflows/quality.yml` uz postojeći Content Health workflow                                                                                                               | CI sada sadrži backend, frontend, build, Playwright, round-trip i D19 migration guard |
 
 ---
 
 ## 0. Kako se koristi ovaj dokument
 
 - Ovo je jedini operativni TODO za Kompas. `TODO.md` i `CMS_TODO.md` nose samo sažetak i link ovde.
-- D-053, D-054 i ADR-022 Amandman 1 zaključali su taksonomiju, kanonske stranice i dinamičku granicu. Implementacija ide backend foundation → route registry/panel → CMS → katalog/vodiči → recommendation/javni Kompas.
+- D-053, D-054, D-056 i ADR-022 Amandmani 1–2 zaključali su taksonomiju, kanonske stranice, anonimni access i javnu dinamičku granicu. Implementacija ide backend foundation → route registry/panel → CMS → javni aggregate → recommendation → javni Kompas.
 - Konačna Anjina kategorizacija menja podatke registra, ne strukturu engine-a. Novi ili precizniji nazivi ne smeju zahtevati izmenu Kompas koda.
 - Ne hardkodovati stručne kategorije, sinonime ni recommendation pravila u React komponentama.
 - U korisničkom i panel jeziku `topic_group` se zove **Oblast**. Sistemski `support_area` se uvek zove **Intake oblast podrške**; to nisu ista osa.
-- Ne praviti novi višekoračni upitnik. Kompas je interaktivna površina koja reaguje odmah.
+- Pitanja su opciona inline interakcija na `/kompas`, bez posebne rute i bez „korak X od Y” jezika. Preskok i sentinel „Nisam siguran/na šta mi se događa” vode na Polazni prikaz.
+- Ne koristiti Intake `GuidanceFlow`/`QuestionsScreen`: njegov obavezni klinički `SafetyNotice` ne pripada Kompasu. Teme koriste novu multi-select kontrolu, najviše dve.
 - Ne uvoditi AI kao preduslov za v1. Prvi engine mora biti determinističan i objašnjiv.
 - `subscriber` i `purchased` postoje samo kao rezervisan ciljni ugovor. Panel ih prikazuje onemogućene kao „U pripremi” i ne sme da ih sačuva ili objavi pre stvarnog R5 entitlement sistema (D-048).
 - Ne praviti Dnevnu sobu, čuvanje sadržaja ni privatne kolekcije kroz ovaj plan (O-23).
-- Po `TODO.md` §0A, testovi/build/lint/typecheck se ne pokreću automatski posle implementacije. Verifikacija se radi kao posebna faza samo na Milanov zahtev, prvenstveno kroz stvaran vertikalni korisnički tok.
+- Po važećem `TODO.md` §0A, fokusirani testovi se pokreću tokom rada, a typecheck/lint/format/architecture/test gate posle izmene. Build i E2E rade se pre završnog handoff-a kada okruženje dozvoljava.
 
 ### Statusi
 
@@ -31,6 +61,26 @@
 | ⬜     | Nije započeto                                         |
 | 🚫     | Blokirano postojećom odlukom ili nedostajućim domenom |
 | ⏸️     | Namerno kasnije                                       |
+
+---
+
+## 0C. Content Review Workflow — verzionisani urednički tok (plan 2026-08-05)
+
+> **Problem:** "Pošalji na stručni pregled" prvi put uspe, ali `router.refresh()` pregazi keš pre nego što UI prikaže novo stanje. Drugi klik → 409 (`in_review` revizija nije editabilna). `deriveArticleCompletion` ne proverava `entry.status`. §5H-4 (zajednički pregled + javna kapija) je ⬜.
+
+> **Cilj:** Neograničen broj ciklusa `draft → review → dorada → ponovni review → approved → published → nova verzija` bez dead-end stanja. Statusi štite verziju koju reviewer pregleda, ali nikad ne zaključavaju ceo entry. Svaka poslata verzija je nepromenljiv istorijski dokaz.
+
+| #        | Obim                                       | Zavisi od | Status |
+| -------- | ------------------------------------------ | --------- | ------ |
+| **RW-1** | Atomsko + idempotentno slanje: `POST .../submit-review`, `idempotencyKey`, već poslata revizija vraća uspeh (ne 409) | — | ✅ | `submit_article_for_review` u `service.py`, `ContentSubmitIdempotency` tabela, migracija `20260805_0018`. 353 pytest + alembic check čisti. |
+| **RW-2** | Status-aware wizard: `deriveArticleCompletion` proverava `entry.status`, dugme samo za `draft`, `in_review` prikazuje "Povuci na doradu" | RW-1 | ✅ | `lifecycle` polje, `canSubmitForReview` zahteva `draft`, `ArticleReviewStep` 4 UI stanja, `useSubmitArticleReviewMutation`, uklonjen `router.refresh()`. 431 vitest ✅. |
+| **RW-3** | Nove revizije za svaki krug dorade: `POST .../new-draft`, `source_revision_id`/`superseded_at`. `published → nova verzija` ne skida staru sa sajta. | RW-2 | ✅ | `create_new_draft` servis, migracija `20260805_0019`, `ArticleReviewStep` dugmad za approved/published, `useNewContentDraftMutation`. 353 pytest + 431 vitest ✅. |
+| **RW-4** | Reviewer odluke: `approved / rejected` + obavezno obrazloženje za `rejected`. Automatsko agregiranje: sva odobrenja → `approved`. Pravilo četiri oka. | RW-3 | ✅ | Four-eyes pravilo, `rejected` → auto `create_new_draft`, auto `approved`, `ArticleReviewStep` review panel sa dugmadima. 353 pytest + 431 vitest ✅. |
+| **RW-5** | Urednički paket: `content_review_packages` + `items`. Jedan klik = članak + nove draft oblast/tema. Kompas Flow nije deo paketa. | RW-4 | ✅ | `_submit_package_terms` batch-fetch + tranzicija, `reason="submitted_via_article_package"`. Bez frontend izmena. 353 pytest + 431 vitest ✅. |
+| **RW-6** | Review queue: `organization_review_assignments`, `GET /radni-prostor/pregledi`. Reviewer vidi samo svoj capability. | RW-5 | ✅ | `ContentReviewAssignment` model + migracija `20260806_0020`, `list_review_queue` sa four-eyes, `ReviewQueueScreen` frontend. 353 pytest + 431 vitest ✅. |
+| **RW-7** | Email obaveštenja: `notification_outbox`, QStash job. Događaji: `review_requested / changes_requested / approved`. | RW-6 | ✅ | **Pun dispatcher (2026-08-06):** `ResendClient`, `dispatch_pending`, `scripts/dispatch_emails.py`, 3 HTML email template-a. Sender: `review@psihointegritet.com`. |
+
+**Detaljan plan u `TODO.md` §5J.** Nijedan status ne primorava korisnika da obriše sadržaj.
 
 ---
 
@@ -84,35 +134,38 @@ Kontrola mora stalno da dozvoli:
 
 ### 2.1 Šta već možemo ponovo koristiti
 
-| Postojeće                                       | Stanje                                                   | Kako ga Kompas koristi                                                                |
-| ----------------------------------------------- | -------------------------------------------------------- | ------------------------------------------------------------------------------------- |
-| `ContentEntry` + `ContentRevision`              | Postoje, tenant-scoped, verzionisani i auditovani        | Stabilan identitet i revision-bound metadata za sadržaj                               |
-| `ContentReviewDecision` + publication lifecycle | Postoje                                                  | Stručni/poslovni review i objava sadržaja                                             |
-| `ContentProvider` + CMS override                | Postoji za šest trenutnih `ContentType` vrednosti        | Javni read-model objavljenih entiteta                                                 |
-| RichDoc + `.docx` import                        | Postoje                                                  | Autorski tok budućih članaka                                                          |
-| Content Health                                  | Postoji                                                  | Publication validacija taksonomijskih referenci i metadata                            |
-| `therapist_matching_profiles`                   | Postoji, tenant-scoped                                   | Intake autoritet za terapeute, uzrast, format, lokaciju i capability-je               |
-| Intake matching v3                              | Postoji                                                  | Jedini autoritet za uslugu/terapeuta                                                  |
-| Intake team queue + reassign                    | Postoje                                                  | Ljudsko preuzimanje/handoff slučaja                                                   |
-| `sessionStorage` obrazac                        | Postoji za booking summary                               | Kandidat za jednokratni Kompas ↔ Intake handoff                                       |
-| Access decision iz ADR-018                      | Ugovor postoji, puni ResourceAsset još ne                | `public/registered/staff_only` granica za v1                                          |
-| K1 taxonomy registry + staff/public API         | Implementirano, migracija čeka posebnu rollout/test fazu | DB autoritet za oblasti (`topic_group`), teme, publike, ciljeve i sistemske vrednosti |
+| Postojeće                                       | Stanje                                                                                           | Kako ga Kompas koristi                                                                |
+| ----------------------------------------------- | ------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------- |
+| `ContentEntry` + `ContentRevision`              | Postoje, tenant-scoped, verzionisani i auditovani                                                | Stabilan identitet i revision-bound metadata za sadržaj                               |
+| `ContentReviewDecision` + publication lifecycle | Postoje                                                                                          | Stručni/poslovni review i objava sadržaja                                             |
+| `ContentProvider` + CMS override                | Postoji za šest trenutnih `ContentType` vrednosti                                                | Javni read-model objavljenih entiteta                                                 |
+| RichDoc + `.docx` import                        | Postoje                                                                                          | Autorski tok budućih članaka                                                          |
+| Content Health                                  | Postoji                                                                                          | Publication validacija taksonomijskih referenci i metadata                            |
+| `therapist_matching_profiles`                   | Postoji, tenant-scoped                                                                           | Intake autoritet za terapeute, uzrast, format, lokaciju i capability-je               |
+| Intake matching v3                              | Postoji                                                                                          | Jedini autoritet za uslugu/terapeuta                                                  |
+| Intake team queue + reassign                    | Postoje                                                                                          | Ljudsko preuzimanje/handoff slučaja                                                   |
+| `sessionStorage` obrazac                        | Postoji za booking summary                                                                       | Kandidat za jednokratni Kompas ↔ Intake handoff                                       |
+| Access decision iz ADR-018                      | Ugovor postoji, puni ResourceAsset još ne                                                        | `public/registered/staff_only` granica za v1                                          |
+| K1 taxonomy registry + staff/public API         | Implementirano i pokriveno test bazom; produkcioni rollout migracije je zaseban operativni korak | DB autoritet za oblasti (`topic_group`), teme, publike, ciljeve i sistemske vrednosti |
+| Public Compass aggregate + Engine               | Implementiran fail-closed public-only read-model i verzirani deterministički endpoint            | Kanonske stranice i preporuke dele istu eligibility granicu                           |
+| Kanonske/list Kompas stranice                   | Implementirane četiri DB-backed rute bez kombinacionih SEO stranica                              | Objavljene oblasti/teme, sadržaji, 308 alias, sitemap i BreadcrumbList                |
+| Admin „Brzi unos”                               | Implementiran nad izdvojenim shared editor slojem                                                | Šest koraka nad istim draft/payload/cache/lifecycle ugovorom                          |
+| Kompas selection/session granica                | Implementirani tipizirani reducer, request adapter i kratki TTL zapisi                           | Stabilna F3/K5 osnova bez topic query parametara                                      |
 
 ### 2.2 Šta još ne postoji
 
-| Nedostaje                                                         | Posledica                                                                                   |
-| ----------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
-| `ContentType.article` i article model                             | Tri kartice u `/znanje` su fallback/„u pripremi”, nisu objavljeni katalog                   |
-| Article template + javna ruta + Article JSON-LD                   | Kompas još nema pravi stručni članak koji može da preporuči                                 |
-| Panel „Kompas”                                                    | K2 treba da omogući uređivanje oblasti, tema, publika, ciljeva i povezivanja nad K1 API-jem |
-| Revision-bound discovery metadata                                 | CMS sadržaj nema `topicIds`, `journeyIntent`, `goalIds`, `audienceIds`                      |
-| Compass recommendation read-model/API                             | Nema autoritativnog filtriranja ni objašnjivih razloga                                      |
-| Kanonske `/kompas/oblast/[slug]` i `/kompas/tema/[slug]` stranice | Oblast/tema još nemaju route identitet, javni agregacioni read-model i renderer             |
-| Revisioned `CompassGuide`                                         | Nema opcionog authored/approved vodiča za stručne tvrdnje o čestim kombinacijama            |
-| `ResourceAsset` implementacija                                    | PDF/radni list još nisu preporučivi asset entiteti                                          |
-| Audio/video/knjiga katalog                                        | Ne uvoditi placeholder modele                                                               |
-| Pretplate/kupovine                                                | Blokirano do R5 (D-048)                                                                     |
-| Dnevna soba / SavedItem                                           | Zasebna O-23 odluka                                                                         |
+| Nedostaje                                            | Posledica                                                                                                                                                        |
+| ---------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ContentType.article` i article model                | Tri kartice u `/znanje` su fallback/„u pripremi”, nisu objavljeni katalog                                                                                        |
+| Article template + javna ruta + Article JSON-LD      | Kompas još nema pravi stručni članak koji može da preporuči                                                                                                      |
+| Eligible objavljen CMS sadržaj za Kompas             | Flow, composer i javni prikaz rade, ali lokalna baza nema 2–3 objavljena `service`/`program` reda sa discovery metapodacima, pa se linkage ne može demonstrirati |
+| Vidljiva Intake potvrda i reverse handoff            | Neutralni TTL kontekst postoji, ali oba korisnička UI toka još nisu povezana                                                                                     |
+| Access oznaka, preneti početni termin, čipovi izbora | Otvoreni ostatak K6 (K6.7/K6.9/K6.11) iznad inače završenog javnog toka                                                                                          |
+| Revisioned `CompassGuide`                            | Nema opcionog authored/approved vodiča za stručne tvrdnje o čestim kombinacijama                                                                                 |
+| `ResourceAsset` implementacija                       | PDF/radni list još nisu preporučivi asset entiteti                                                                                                               |
+| Audio/video/knjiga katalog                           | Ne uvoditi placeholder modele                                                                                                                                    |
+| Pretplate/kupovine                                   | Blokirano do R5 (D-048)                                                                                                                                          |
+| Dnevna soba / SavedItem                              | Zasebna O-23 odluka                                                                                                                                              |
 
 ### 2.3 Mesta na kojima stručni pojmovi danas postoje kao tekst ili zaseban rečnik
 
@@ -228,7 +281,7 @@ Otvoreno za Anju/tim:
 
 | Vrednost            | Ciljni katalog | V1 status                                      |
 | ------------------- | -------------- | ---------------------------------------------- |
-| `article`           | Da             | Posle ADR-019 i pravog article toka            |
+| `article`           | Da             | ADR-019 usvojen; čeka K3A.3 implementaciju     |
 | `program`           | Da             | Kada postoji objavljeni entitet i card adapter |
 | `pdf` / `worksheet` | Da             | Posle `ResourceAsset` vertikale iz ADR-018     |
 | `audio`             | Da             | ⏸️ Nema model/provider                         |
@@ -533,12 +586,15 @@ Jedinstveni fixture/generated artefakt:
 ```json
 {
   "taxonomyVersion": "kompas-taxonomy-v1",
+  "ruleVersion": "compass-rules-v1",
+  "locale": "sr-Latn",
   "topicGroupId": "stress-overload",
   "topicIds": ["burnout"],
   "journeyIntent": "explore",
   "goalIds": ["understand"],
-  "audienceIds": ["self"],
-  "limit": 12
+  "audienceId": "self",
+  "limit": 12,
+  "offset": 0
 }
 ```
 
@@ -558,7 +614,7 @@ Kandidat mora biti:
 - objavljen;
 - u traženom locale-u i tenant-u;
 - sa validnim aktivnim metadata referencama;
-- javno vidljiv ili prikaziv kao dozvoljena registered kartica;
+- sa eksplicitnim efektivnim access nivoom `public`; `registered`, `staff_only` i `NULL` se odbacuju;
 - podržanog formata;
 - odobren za recommendation katalog.
 
@@ -629,27 +685,27 @@ Vraća:
 
 Vraća:
 
+- `taxonomyVersion`, `ruleVersion` i locale;
 - normalizovan izbor;
-- objavljene kartice sadržaja;
-- `itemKind`, `contentFormat`, naslov, sažetak, route i asset preview;
-- access stanje koje je backend već procenio;
-- reason kodove i najviše tri javna razloga;
-- computed `estimatedTime` kada postoji;
+- objavljene kartice sa minimalnim kontrolisanim CMS identitetom: `itemKey`, `contentType`, `slug`, `template`, SEO polja i `contentFormat`; sirovi revision `slotData` nikada ne ulazi u anonimni DTO;
+- literalno `public` access stanje koje je backend već procenio; nema slobodnog URL-a, a frontend rutu izvodi isključivo kroz kontrolisani system catalog;
+- reason kodove i najviše tri javna, plain-language razloga po kartici;
 - predložene povezane teme;
 - neutralni `CompassHandoffContextV1`;
-- informaciju da je izbor prilagođen ako je deljeni termin u međuvremenu arhiviran.
+- informaciju da je izbor prilagođen ako je deljeni termin u međuvremenu arhiviran;
+- stabilnu paginaciju (`offset`, `limit`, `total`, `hasMore`).
 
 ### Greške
 
-| Slučaj                                 | Ponašanje                                                                          |
-| -------------------------------------- | ---------------------------------------------------------------------------------- |
-| Nepoznat ID u staff editoru            | 422 sa `fieldPath`, ID-jem i jasnim uputstvom                                      |
-| Arhiviran ID pri publish-u             | Publication BLOCK finding                                                          |
-| Stara javna selekcija                  | 200 + `selectionAdjustments`, bez rušenja                                          |
-| Nema rezultata                         | 200 + kontrolisani empty state                                                     |
-| Backend nedostupan                     | Neutralna poruka + link ka `/znanje` i Intake-u; bez hardkodovanog lažnog kataloga |
-| `staff_only` sadržaj                   | Nikada u javnom odgovoru                                                           |
-| Registered sadržaj anonimnom korisniku | Kartica samo ako politika dozvoli teaser; sadržaj ostaje zaključan backendom       |
+| Slučaj                                           | Ponašanje                                                                          |
+| ------------------------------------------------ | ---------------------------------------------------------------------------------- |
+| Nepoznat ID u staff editoru                      | 422 sa `fieldPath`, ID-jem i jasnim uputstvom                                      |
+| Arhiviran ID pri publish-u                       | Publication BLOCK finding                                                          |
+| Stara javna selekcija                            | 200 + `selectionAdjustments`, bez rušenja                                          |
+| Nema rezultata                                   | 200 + kontrolisani empty state                                                     |
+| Backend nedostupan                               | Neutralna poruka + link ka `/znanje` i Intake-u; bez hardkodovanog lažnog kataloga |
+| `staff_only` sadržaj                             | Nikada u javnom odgovoru                                                           |
+| Registered ili `NULL` access anonimnom korisniku | Nikada u javnom aggregate/recommendation odgovoru; nema teaser izuzetka            |
 
 ---
 
@@ -706,8 +762,9 @@ Preporuka za v1:
 - [x] **K0.6** ADR-022 zaključava v1 session state: React memorija + kratki `sessionStorage` TTL, bez query topic ID-jeva, DB profila i identifikovanog analytics-a; eksplicitno deljenje ostaje otvoreno.
 - [ ] **K0.7** Primiti i uneti Anjinu konačnu mapu oblasti/tema/sinonima.
 - [x] **K0.8** Usvojen **D-054 / ADR-022 Amandman 1**: „Oblasti” su UI naziv za `topic_group`; kanonske oblast/tema stranice su odvojene od dinamičkog `/kompas`; stručne kombinacije pripadaju opcionom revisioned `CompassGuide` vodiču.
+- [x] **K0.9** Usvojen **D-056 / ADR-022 Amandman 2**: Kompas je odvojen od Intake pitanja, anonimni endpoint je eksplicitno `public`-only, teme su nova max-2 multi-select kontrola, a `kompas` je rezervisan custom-document slug.
 
-**Gate K0:** ✅ D-053 + D-054 + ADR-022 Amandman 1 su accepted. Nepoznate konačne labele su podaci registra i ne blokiraju implementation redosled.
+**Gate K0:** ✅ D-053 + D-054 + D-056 i ADR-022 Amandmani 1–2 su accepted. Nepoznate konačne labele su podaci registra i ne blokiraju implementation redosled.
 
 ### K1 — backend registry foundation
 
@@ -722,7 +779,7 @@ Preporuka za v1:
 - [x] **K1.9** Taxonomy greške vraćaju stabilan `TAX-*` code, `fieldPath` i srpsku poruku; public schema nema internal note, review ni actor podatke.
 - [x] **K1.10** OpenAPI šema i `frontend/src/types/api.generated.ts` regenerisani su posle završetka backend ugovora.
 
-**Gate K1:** ✅ Implementaciono zatvoren. Stable ID nema mutation ni hard-delete, cross-tenant/reference guard-ovi su u servisu i DB-u, D-052 read ima kontrolisani dual-read cutover, a API nosi actor događaje. Izvršavanje migracije i stvarni ulogovani tok ostaju za posebno zatraženu test fazu po `TODO.md` §0A.
+**Gate K1:** ✅ Implementaciono zatvoren. Stable ID nema mutation ni hard-delete, cross-organization/reference guard-ovi su u servisu i DB-u, D-052 read ima kontrolisani dual-read cutover, a API nosi actor događaje. Napomena iz prvobitnog handoff-a o neprimenjenoj migraciji i neproverenom browser toku ostaje istorijski dokaz; važeći `TODO.md` §0A sada zahteva fokusirane i završne gate provere.
 
 ### K2 — panel „Kompas”
 
@@ -740,7 +797,7 @@ Preporuka za v1:
 - [x] **K2.9** Org admin i D-051 superadmin koriste postojeće role/capability-je; ne uvoditi novu Clerk rolu niti zahtevati therapist profil superadminu. Potvrđeno: `/radni-prostor/kompas` koristi postojeći `requireOrgAdmin()` → `isWorkspaceAdmin()` (`isSuperadmin || org_admin`), navigacija koristi istu capability granicu, a backend `resolve_staff_actor()` D-051 superadminu dodaje postojeće `org_admin`/`therapist` capability-je samo za rad u tenant-u, bez membership reda ili terapeutskog profila. Audit ostaje vezan za stvarni interni user ID superadmina.
 - [x] **K2.10** Pre prve objave predložiti i potvrditi javni slug, a zatim prikazati preview buduće kanonske rute `/kompas/oblast/[slug]` ili `/kompas/tema/[slug]`. Panel koristi stvarne staff proxy rute za backend predlog i potvrdu; promena labele ne menja slug. Pri korekciji postojećeg sluga panel preuzima aktuelni route lock, a backend upisuje novu kanonsku rutu i čuva staru kao redirect. K2 ne implementira javne stranice.
 
-**K2.0 napomena:** implementacija je završena bez primene migracije i bez stvarnog ulogovanog browser toka. To ostaje za posebno zatraženu test fazu po `TODO.md` §0A.
+**K2.0 napomena:** prvobitna implementacija završena je bez primene migracije i bez stvarnog ulogovanog browser toka. To je istorijski status tog handoff-a, ne izuzetak od sadašnjeg obaveznog test ugovora iz `TODO.md` §0A.
 
 **K2.1 granica:** ovaj korak je završio read-only upravljačku površinu nad stvarnim registrom. Create/edit je zatim dodat kroz K2.2; lifecycle komande, odobrenja i potvrda sluga i dalje se uvode redom kroz K2.3–K2.10 nad postojećim backend ugovorom.
 
@@ -773,42 +830,47 @@ Preporuka za v1:
 
 ### K3A — article/Layout i katalog sadržaja, zasebna domenska kapija
 
-- [ ] **K3A.1** ADR-019: `article` tip, identitet, autor/reviewer, izvori, SEO/JSON-LD i javna ruta.
-- [ ] **K3A.2** ADR-021: minimalni Layout Engine recept pre prvog article renderer-a; AI generisanje nije deo ovog koraka.
-- [ ] **K3A.3** Dodati `ContentType.article`/article template tek posle ADR-019.
-- [ ] **K3A.4** Završiti stvarni `.docx → RichDoc → metadata → review → approve → publish → public article` tok.
+- [x] **K3A.1** ADR-019 usvojen 2026-08-03: `article` tip, identitet, `/znanje/<slug>`, javni potpis odvojen od operatera, izvori, SEO/JSON-LD, pristup, `EDIT-0xx` provera i pravilo četiri oka.
+- [x] **K3A.2** ADR-021 usvojen 2026-08-03: recept je imenovan i verzionisan skup sekcija sa **fiksnim** redosledom renderovanja; autor bira koje sekcije postoje, ne kojim redom. Prvi i jedini potrošač je `article-v1`. AI generisanje nije deo ovog koraka.
+- [x] **K3A.3** `ContentType.article` i `article_detail` postoje sa svih osam sekcija recepta `article-v1`, novim `articleBody` limitom (24000) i matricom odobrenja `clinical` + `business`. Telo je u postojećem `slot_data`, pa **nije trebala nijedna migracija** — `alembic check` ostaje čist. Uvedena je i nova vrsta polja `boolean` za `standalone` potvrdu, jer odsustvo odgovora ne sme da se čita kao „ne”. Parity fixture je regenerisan (9 → 10 šablona) i oba loadera prolaze nad istim fajlom.
+- [x] **K3A.3a** Granica identiteta: novi `modules/content/identity.py` je jedina vrata (`require_content_identity`, `is_publicly_routable_content`, `is_article_identity`). Šest sistemskih tipova i dalje ide doslovno kroz `require_system_content_definition`, a `system_catalog.py` **nije menjan**. Članci imaju sopstvena pravila (jedan šablon, jedan locale, oblik sluga, rezervisana lista) i parity fixture `reserved-article-slugs.v1.json` sa frontend blizancem. `list_published` namerno ostaje filtriran na sistemske definicije — regresioni test čuva da članak ne uđe u taj payload, jer bi frontend parser tada vratio `null` i ceo javni sajt bi tiho pao na statički fallback.
+- [🟡] **K3A.4** Završiti stvarni `.docx → RichDoc → segmenti → metadata → review → approve → publish → public article` tok. **DOCX uvoz je prerasporeden u §5H-3 (D-063, 2026-08-04); tehnički i bezbednosni obim ostaje nepromenjen.** Generički deo je isporučen 2026-08-04: `shared/parsing/upload.py` i `POST /content/rich-doc/import-docx` (preview-only) pokrivaju konverziju Word → RichDoc za bilo koje staff polje. **2026-08-04 ispravka:** proxy 404 popravljen (raw Blob + Content-Type umesto `request.formData()`), `bodyImportKey` forsira remount Tiptap editora nakon uvoza — tekst se odmah vidi. Editor ima `resize: vertical`. Ostaje segmentacija u `article_import.py` — mapiranje naslova, pitanja i vežbe u sekcije recepta. Importer ubrzava unos u interfejs koji korisniku još ne objašnjava šta unosi, pa prvo ide razumljiv ručni tok. Ručno kreiranje članka stiže kroz UX-0B, nad postojećim `POST /content/entries`.
 - [ ] **K3A.5** Potvrditi koji postojeći `service`/`program` entiteti imaju discovery card adapter.
+- [ ] **K3A.6** Kompas granica na **tri** mesta, ne dva: backend eligibility (`compass_service.py:222-225` → postojeći `is_publicly_routable_content`), frontend projekcija kartice (`lib/compass/taxonomy-view.ts:100-113`) i panel advisory (`features/workspace/compass-content-linking.ts:68-82`, dodato uz UX-0B). Ispravka bilo koja dva od tri znači da članak prođe proveru i tiho nestane pre prikaza.
+- [ ] **K3A.7** Segment označen kao samostalno upotrebljiv ulazi u sekciju „Praktični alati” sa dubokim linkom na sidro u članku; deduplikacija mora sprečiti da se isti tekst pojavi i kao kartica i kao alat.
 
 **Gate K3A:** najmanje jedan stvarni objavljeni članak i jedan dozvoljeni postojeći entitet ulaze u isti discovery read-model. Ova kapija ne blokira K1/K2.
 
+**Redosled:** K3A.3 i dalje ide **posle D19**, jer uvodi novu tabelu i migraciju, a `alembic check` do tada nije čist.
+
 ### K3B — kanonske stranice i urednički vodiči
 
-- [ ] **K3B.1** Definisati read-model i route resolver za jednu objavljenu oblast i jednu objavljenu temu; kanonske rute su `/kompas/oblast/[slug]` i `/kompas/tema/[slug]`, a stari alias radi permanent redirect.
-- [ ] **K3B.2** Kanonska stranica automatski okuplja objavljene podteme/sadržaje iz registra i metadata; ne pravi kopiju sadržaja ni novu stranicu za kombinaciju.
+- [x] **K3B.1** Definisati read-model i bezbedan route resolver za jednu objavljenu oblast i jednu objavljenu temu; kanonske rute su `/kompas/oblast/[slug]` i `/kompas/tema/[slug]`, a stari DB alias radi validiran 308 bez open redirect-a/self-loop-a.
+- [x] **K3B.2** Jedan public page aggregate automatski okuplja term, parent, objavljenu decu/related teme i samo eksplicitno `public` objavljene sadržaje iz istog organization/locale scope-a. Dodati `/kompas/oblasti` i `/kompas/teme` liste; ne pravi kopiju sadržaja ni novu stranicu za kombinaciju.
 - [ ] **K3B.3** Implementirati opcioni revisioned `CompassGuide` identitet tek nad stvarnim katalogom, sa odvojenim `matchTopicGroupIds`/`matchTopicIds`, kontrolisanim sekcijama, lock-om, actor audit-om i Clinical + Business review-om.
 - [ ] **K3B.4** Reference vodiča moraju pokazivati na aktivne taxonomy termine i objavljene dozvoljene sadržaje; arhivirana/neobjavljena referenca blokira approval/publish.
 - [ ] **K3B.5** Ne dozvoliti slobodan page builder, slobodan URL, AI-authored stručnu vezu, therapist ID ni recommendation score u vodiču.
 
-**Gate K3B:** jedna oblast i jedna tema imaju kanonski read-model, a opciono odobren vodič može opisati stvarnu kombinaciju bez menjanja taxonomy registra ili pravljenja kombinacione SEO stranice.
+**Gate K3B core:** ✅ Jedna oblast i jedna tema imaju kanonski read-model, validiran alias i produkcioni discoverability ugovor. Opcioni authored `CompassGuide` ostaje namerno odložen u K3B.3–5.
 
 ### K4 — recommendation service
 
-- [ ] **K4.1** Verziran request/response ugovor.
-- [ ] **K4.2** Tenant/locale/status/access eligibility filter.
-- [ ] **K4.3** Deterministički ranking registry sa `ruleVersion`.
-- [ ] **K4.4** Najviše tri plain-language razloga.
-- [ ] **K4.5** Kontrolisano širenje rezultata i empty state.
-- [ ] **K4.6** Paginacija i stabilan tie-break.
-- [ ] **K4.7** Nema AI poziva, embeddings-a, profila korisnika ni terapeuta.
+- [x] **K4.1** Verziran public request/response ugovor bez free text-a, kontakta, therapist ID-ja ili izbora u query parametrima; najviše dve teme.
+- [x] **K4.2** Organization/locale/status/access eligibility filter; anonimno prolazi samo eksplicitno `public`, nikada `registered`, `staff_only` ili `NULL`.
+- [x] **K4.3** Deterministički ranking registry sa `ruleVersion`.
+- [x] **K4.4** Najviše tri plain-language razloga.
+- [x] **K4.5** Kontrolisano širenje rezultata i empty state.
+- [x] **K4.6** Paginacija i stabilan tie-break.
+- [x] **K4.7** Nema AI poziva, embeddings-a, profila korisnika ni terapeuta.
 - [ ] **K4.8** Za kombinovani prikaz birati: tačan objavljeni `CompassGuide` → najkonkretniji subset vodič → generičke odvojene sekcije; izbor vodiča ima verzirano i stabilno tie-break pravilo.
-- [ ] **K4.9** Generički prikaz deduplikuje sadržaje i može isticati zajedničke metadata pogotke, ali nikada ne generiše tekst o uzročnoj ili stručnoj povezanosti tema.
+- [x] **K4.9** Generički prikaz deduplikuje sadržaje i može isticati zajedničke metadata pogotke, ali nikada ne generiše tekst o uzročnoj ili stručnoj povezanosti tema.
 
-**Gate K4:** isti request i ista verzija kataloga daju isti redosled i razloge.
+**Gate K4 v1:** ✅ Isti request i ista verzija kataloga daju isti redosled i razloge; `CompassGuide` grana iz K4.8 ostaje odložena dok vodič ne postoji.
 
 ### K5 — dvosmerni Intake handoff
 
-- [ ] **K5.1** `CompassHandoffContextV1` i TTL.
-- [ ] **K5.2** Jednokratni browser handoff bez query topic parametara.
+- [x] **K5.1** `CompassHandoffContextV1` i TTL.
+- [x] **K5.2** Jednokratni browser handoff bez query topic parametara.
 - [ ] **K5.3** Kompas → Intake sa vidljivom potvrdom prenetog konteksta.
 - [ ] **K5.4** Intake → Kompas za korisnika koji još nije spreman da zakaže.
 - [ ] **K5.5** Ambiguous topic mapping ne prefill-uje razlog.
@@ -816,23 +878,38 @@ Preporuka za v1:
 
 **Gate K5:** izbor `burnout` može da otvori Intake sa neutralnim kontekstom, ali promena Intake odgovora potpuno kontroliše konačnu preporuku i handoff tima ostaje dostupan.
 
+**Status K5:** 🟡 Bezbedna storage/wire granica je završena; vidljiva potvrda u Intake-u, reverse handoff i ambiguity UI pravilo ostaju K5.3–6.
+
 ### K6 — javni Kompas UI
 
-- [ ] **K6.1** Implementirati tri odvojene površine tek kada K1–K5 rade: `/kompas`, `/kompas/oblast/[slug]` i `/kompas/tema/[slug]`.
-- [ ] **K6.2** Oblasti (`topic_group`) i teme dolaze iz DB read-modela; nema frontend stručnog niza. D-052 Intake oblasti se ne prikazuju kao javne Kompas oblasti.
-- [ ] **K6.3** Jedna interaktivna površina, bez „korak X od Y”.
-- [ ] **K6.4** Izbor oblasti odmah prikazuje sadržaj.
-- [ ] **K6.5** Multi-select tema/filtera, uklanjanje i reset.
-- [ ] **K6.6** Sekcije rezultata bez beskonačnog feed-a; konačni copy dolazi iz UX/content odluke.
-- [ ] **K6.7** Razlog preporuke i access oznaka na kartici.
-- [ ] **K6.8** Stalno vidljiv nenametljiv prelaz ka stručnoj podršci.
-- [ ] **K6.9** Hero i „Razlozi dolaska” otvaraju Kompas sa potvrđenim početnim ID-jem.
-- [ ] **K6.10** Posebna kartica za „ne znam odakle da počnem”, bez lažne stručne teme.
-- [ ] **K6.11** Dinamički prikaz pokazuje čipove „Vaš trenutni izbor”, linkuje svaku oblast/temu ka njenoj kanonskoj stranici i ne koristi reč „profil”.
-- [ ] **K6.12** Ne kreirati `/kompas/tema/kombinacija` stranice niti čitljive topic query parametre; izbor ostaje na `/kompas` u React/session stanju.
+- [x] **K6.1** Implementirati `/kompas`, `/kompas/oblasti`, `/kompas/teme`, `/kompas/oblast/[slug]` i `/kompas/tema/[slug]`. Svih pet ruta postoji; `/kompas` je implementiran po design handoff-u nad postojećim API/state slojem.
+- [x] **K6.2** Oblasti (`topic_group`) i teme dolaze iz DB read-modela; nema frontend stručnog niza. D-052 Intake oblasti se ne prikazuju kao javne Kompas oblasti. Statička taksonomija je dostupna samo van produkcije iza `NEXT_PUBLIC_COMPASS_DEMO_PREVIEW`.
+- [x] **K6.3** Jedna interaktivna površina, bez „korak X od Y”.
+- [x] **K6.4** Izbor oblasti odmah prikazuje sadržaj.
+- [x] **K6.5** Multi-select tema/filtera, uklanjanje i reset. `maxSelections` je ugovorom ograničen na najviše dve teme; „Izmeni odgovore” i „Poništi izbor” postoje.
+- [x] **K6.6** Sekcije rezultata bez beskonačnog feed-a; sekcije dolaze iz backend Result Composer-a. Konačni copy i dalje dolazi iz UX/content odluke.
+- [ ] **K6.7** Razlog preporuke i access oznaka na kartici. 🟡 Razlozi se prikazuju po kartici; **access oznaka još ne postoji na kartici**. Anonimni odgovor danas nosi isključivo `public`, pa oznaka postaje vidljiva tek uz registered/staff sadržaj.
+- [x] **K6.8** Stalno vidljiv nenametljiv prelaz ka stručnoj podršci.
+- [ ] **K6.9** Hero i „Razlozi dolaska” otvaraju Kompas sa potvrđenim početnim ID-jem. 🟡 Hero otvara Kompas, ali **bez prenetog početnog termina** — ulaz počinje od prvog pitanja.
+- [x] **K6.10** Posebna kartica za „ne znam odakle da počnem”, bez lažne stručne teme.
+- [ ] **K6.11** Dinamički prikaz pokazuje čipove „Vaš trenutni izbor”, linkuje svaku oblast/temu ka njenoj kanonskoj stranici i ne koristi reč „profil”. 🟡 Kanonski linkovi postoje i reč „profil” se ne koristi; **čipovi trenutnog izbora još ne postoje**.
+- [x] **K6.12** Ne kreirati `/kompas/tema/kombinacija` stranice niti čitljive topic query parametre; izbor ostaje na `/kompas` u React/session stanju.
 - [ ] **K6.13** `/kompas/putanja/[opaqueId]` je kasniji privatni saved-path domen i ne ulazi u v1 bez retention/access odluke.
+- [x] **K6.14** Polazni prikaz sadrži uvod, oblasti, početne/aktuelne teme, dostupne objavljene sadržaje, linkove ka listama i nenametljiv CTA ka stručnoj pomoći.
+- [x] **K6.15** Kompas feedback koristi zajednički konfigurabilni survey drawer shell, zaseban `compass-experience` i session-once banner; survey state nikad ne ulazi u recommendation state. Potvrđeno na kodu (`compass-exit-feedback.tsx` + `compass-feedback-banner.tsx`) i E2E scenarijem „leaving Kompas never swallows navigation and offers isolated feedback”.
 
 **Gate K6:** korisnik sa početne bira oblast, odmah vidi stvarno objavljen sadržaj, menja izbor, otvara kanonsku oblast/temu ili članak i može u Intake bez wizard osećaja; nijedna kombinacija ne pravi novu SEO stranicu ili stručnu tvrdnju bez odobrenog vodiča.
+
+**Status K6:** 🟡 Sve rute i dinamički tok su implementirani nad DB flow-om, taxonomy-jem i stvarnim recommendation API-jem; javni izbor/skip/sentinel/sekcije/podrška pokriveni su E2E-om. Otvoreni su K6.7 access oznaka, K6.9 preneti početni termin i K6.11 čipovi trenutnog izbora. Puni gate ostaje otvoren i zbog Faze 5: bez 2–3 objavljena eligible sadržaja „odmah vidi stvarno objavljen sadržaj” se ne može demonstrirati.
+
+### K6A — admin „Brzi unos”
+
+- [x] **K6A.1** Razložiti `taxonomy-term-editor.tsx` na zajednički draft/form state, čiste payload/normalization helper-e, per-field validaciju, ponovo upotrebljive sekcije i zajednički mutation/cache tok. `guidance-flow.tsx` i `content-revision-editor.tsx` nisu preduslov ovog rada.
+- [x] **K6A.2** Dodati šest koraka iznad postojećeg „Naprednog uređivanja”: tip vrednosti → identitet/draft → organizacija → početni sadržaj/povezivanje → suggest/confirm ruta → pregled/lifecycle/CMS handoff.
+- [x] **K6A.3** „Sačuvaj i nastavi”/„Sačuvaj i izađi” čuvaju isti draft; stable ID se zaključava posle prvog POST-a, 409/422 ostaje field-level greška, a potvrđena ruta spaja `canonicalPath` u isti React Query cache.
+- [x] **K6A.4** Brzi unos ne uvodi novi registar, lifecycle, content tip ni kopiju CMS editora. Za pun edukativni sadržaj završni CTA koristi postojeći CMS tok ili jasno navodi ADR-019/K3A preduslov.
+
+**Gate K6A:** ✅ Admin pravi draft oblasti/teme, nastavlja kroz mapiranje i slug, može da sačuva/izađe/nastavi lifecycle, a napredni editor koristi isti state/validaciju/payload sloj.
 
 ### K7 — dodatni formati i access
 
@@ -896,7 +973,7 @@ Pravila unosa:
 
 ## 13. Stvarni acceptance tokovi
 
-Kada Milan otvori posebnu fazu testiranja, prioritet su:
+Obavezni prioritetni acceptance tokovi su:
 
 1. Admin bira pravi članak i dodeljuje postojeće taxonomy ID-jeve.
 2. Nepostojeći/arhivirani ID daje preciznu srpsku grešku i blokira objavu.
@@ -908,14 +985,14 @@ Kada Milan otvori posebnu fazu testiranja, prioritet su:
 8. Razlog preporuke je jasan i nema numerički skor.
 9. Kompas → Intake prenosi neutralni kontekst, ali ne terapeuta.
 10. Intake → Kompas vraća korisnika na sadržaj.
-11. Registered sadržaj ostaje backend-zaštićen; `staff_only` ne curi u public API.
-12. Tenant A nikada ne vidi sadržaj tenant-a B.
+11. Registered i `NULL` access sadržaj ostaje van anonimnog odgovora; `staff_only` ne curi u public API.
+12. Organizacija A nikada ne vidi sadržaj organizacije B.
 13. Stari shared/session izbor sa arhiviranim terminom se oporavlja bez 500.
 14. Sirovi topic izbor ne završava u query logu, analytics payload-u ili audit event-u.
 15. `/kompas/oblast/stres-i-preopterecenost` i `/kompas/tema/burnout` ostaju kanonske pojedinačne stranice; promena labele ih ne menja, stari slug redirectuje posle eksplicitne korekcije, a izbor više termina ostaje na `/kompas` i ne proizvodi kombinacionu rutu.
 16. Bez objavljenog `CompassGuide` prikaz razdvaja oblasti/teme i ne tvrdi da su stručno povezane; objavljeni exact/subset vodič dobija prednost po verziranom pravilu.
 
-Mali broj contract/parity testova može se dodati uz vertikalni tok, ali se izvršava samo u posebno zatraženoj test-fazi po `TODO.md` §0A.
+Contract/parity testovi dodaju se uz vertikalni tok i izvršavaju po važećem `TODO.md` §0A; build i E2E rade se pre završnog handoff-a kada okruženje dozvoljava.
 
 ---
 
@@ -923,12 +1000,12 @@ Mali broj contract/parity testova može se dodati uz vertikalni tok, ali se izvr
 
 ### Od Milana
 
-- [x] D-053 i ADR-022 prihvaćeni 2026-07-31.
-- [ ] Da li je basic Kompas deo R3 Content release-a ili zaseban release iza feature flag-a.
+- [x] D-053/D-054/D-056 i ADR-022 Amandmani 1–2 prihvaćeni; javni v1 tok, anonimni access, feedback granica i route skup više nisu otvorene odluke.
+- [x] **D-059 (2026-08-03):** basic Kompas pripada **R3 Content obimu**, ali ima **nezavisnu produkcionu aktivaciju preko feature flag-a**. Ne pravimo veštački nov proizvodni release; Kompas ostaje isključen u produkciji dok ne postoje minimalni urednički podaci, admin prihvatni testovi i zeleni javni E2E.
 - [ ] Šta tačno daje „napredni Kompas”.
 - [ ] Da li eksplicitno deljenje izbora ulazi u v1.
 - [ ] Minimalni Layout Engine recept koji mora postojati pre prvog article renderer-a.
-- [ ] Da li Kompas v1 preporučuje postojeće usluge/programe ili samo sadržaj uz zaseban Intake CTA.
+- [ ] Koji postojeći objavljeni service/program entiteti urednički dobijaju Kompas discovery metadata; sama tehnička kartica nije therapist/service matching odluka.
 
 ### Od Anje i stručnog tima
 
@@ -952,16 +1029,25 @@ Mali broj contract/parity testova može se dodati uz vertikalni tok, ali se izvr
 
 ## 15. Sledeći konkretan korak
 
-D-053, D-054 i ADR-022 Amandman 1 su usvojeni. Sledeće:
+D-058/ADR-025 su usvojeni, a Kompas v1 vertikala radi: DB flow, taxonomy, Result Composer, javni `/kompas`, admin workspace i feedback (K6.15). Redosled ispod je usvojen 2026-08-03 i zamenjuje raniji spisak — prve dve stavke sa njega (`/kompas` renderer i konfigurabilni survey drawer) su isporučene.
 
-1. povezati registar sa **K3 CMS formama**;
-2. Anjinu konačnu tabelu uneti kao stručne podatke čim stigne, bez menjanja arhitekture;
-3. završiti K3A katalog i K3B kanonske stranice/`CompassGuide` ugovor, zatim K4/K5 i tek tada javni K6;
-4. širiti formate i AI tek posle stvarnog osnovnog toka.
+1. **D19 paket, samostalno i pre svega ostalog** (D-060): zasebna pregledana migracija koja namerno uklanja `intake_cases.age_group` uz obaveznu pretprovjeru nepoznatih vrednosti i neslaganja sa `subject_age_band`, bez prelaska na native enum, uz usklađivanje unique drifta oko eksplicitnih `UniqueConstraint` definicija. Gate: round-trip, test očuvanja podataka i potpuno čist `alembic check`. Otvara Fazu 7 i RLS-1.
+2. **Faza 6 — admin:** dovršiti editor svih flow polja, bogatiji actor-evidence prikaz i autentifikovani browser lifecycle test.
+3. **Faza 5 — novi gate (D-063, 2026-08-04):** 2–3 stvarna urednički odobrena i objavljena **Kompas članka**, povezana sa bar dve teme i bar jednom oblašću. Predloženi acceptance set: „Anksioznost nije vaš neprijatelj”, „Tugovanje nije nešto što treba preboljeti” i još jedan kraći sadržaj druge teme. ⚠️ **Zavisi od D28** — dok `required` polja nisu sprovedena za članak, ovaj gate mogu da zadovolje tri prazne stranice. Relacija ka `service`/`program` ostaje sledeći korak, ne uslov.
+4. **K5.3–K5.6:** vidljiva potvrda prenetog Intake konteksta, reverse handoff Intake → Kompas i ambiguity pravilo.
+5. **Ostatak K6:** access oznaka na kartici (K6.7), preneti početni termin iz hero/„Razlozi dolaska” (K6.9) i čipovi „Vaš trenutni izbor” (K6.11).
+6. **Realni end-to-end acceptance tok sa admin terapeutom:** napraviti i odobriti sadržaj kroz „Brzi unos”/postojeći lifecycle, objaviti ga i potvrditi da ga javni Kompas pravilno učitava, filtrira, objašnjava i preporučuje bez frontend hardcode-a. Zavisi od 3.
+7. **Produkciona aktivacija po D-059:** flag se pali tek kad su 2, 3 i 6 zeleni.
+8. **Article vertikala (K3A.3–K3A.7)** po ADR-019/ADR-021, sa `anksioznost-nije-vas-neprijatelj.docx` kao ručnim acceptance scenarijem; počinje posle D19 zbog nove migracije.
+9. `CompassGuide`, dodatne formate i AI širiti tek iza postojećih kapija.
 
 ---
 
-## Status test-faze — 2026-08-01 ✅ SVI ZELENI
+## Status test-faze — 2026-08-01 ✅ KOMPAS OBIM ZELEN
 
-> CTO odluka (2026-08-01): pokrenuta kompletna test-faza. Vidi `TODO.md` §9 za detaljne rezultate.
-> Svi Kompas testovi prolaze: frontend 227 ✅ / backend 269 ✅ / tsc 0 / pyright 0 / eslint 0 / ruff 0.
+- backend: `pytest` 302 passed / 1 skipped; Ruff, format i Pyright čisti;
+- frontend: Vitest 314 passed / 1 skipped; typecheck, ESLint, architecture i menjani Prettier obim čisti;
+- production build: prošao;
+- Playwright E2E: 60 passed;
+- Content Health gate: 0 error / 35 postojećih warning-a; CMS integration provera je preskočena jer `NEXT_PUBLIC_API_URL` nije bio podešen;
+- puni frontend `format:check` i dalje prijavljuje samo ranije postojeći, neizmenjeni `scripts/smoke-cms-authenticated.mjs`; nijedan menjani fajl nema format nalaz.

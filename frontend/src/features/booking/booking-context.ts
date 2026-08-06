@@ -124,9 +124,7 @@ export function therapistsForService(serviceSlug: string) {
   );
 }
 
-export function locationLabel(
-  location: BookingLocation,
-): BookingLocationLabel {
+export function locationLabel(location: BookingLocation): BookingLocationLabel {
   return location === "nis" ? "Niš" : "Leskovac";
 }
 

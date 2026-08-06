@@ -42,6 +42,7 @@ from psihointegritet.modules.privacy.service import (
 )
 from psihointegritet.shared.domain.content_management import ContentManagement
 from psihointegritet.shared.domain.publication import ApprovalCapability
+from psihointegritet.shared.parsing.upload import read_docx_upload
 
 router = APIRouter(prefix="/privacy", tags=["privacy-documents"])
 public_router = APIRouter(prefix="/public/privacy", tags=["public-privacy"])
@@ -114,28 +115,6 @@ async def get_public_custom_document(
     )
 
 
-# Multipart uploads for `.docx` are capped well below the 15 MB backend limit
-# at the ASGI/proxy layer in production; this is the last line of defense.
-_MAX_UPLOAD_BYTES = 15 * 1024 * 1024
-
-
-async def _read_docx(file: UploadFile) -> bytes:
-    if file.filename and not file.filename.lower().endswith(".docx"):
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
-            detail=(
-                "Samo .docx fajlovi su podržani. Sačuvajte dokument kao .docx i pokušajte ponovo."
-            ),
-        )
-    data = await file.read(_MAX_UPLOAD_BYTES + 1)
-    if len(data) > _MAX_UPLOAD_BYTES:
-        raise HTTPException(
-            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
-            detail="Fajl je odbijen: prevelik.",
-        )
-    return data
-
-
 async def _org_admin_actor(
     session: DatabaseSession, settings: AppSettings, identity: CurrentIdentity
 ) -> StaffActor:
@@ -201,7 +180,7 @@ async def preview_new_legal_document_docx(
     settings: AppSettings,
     file: Annotated[UploadFile, File()],
 ) -> ImportDocxResponse:
-    data = await _read_docx(file)
+    data = await read_docx_upload(file)
     try:
         async with session.begin():
             actor = await _org_admin_actor(session, settings, identity)
@@ -238,7 +217,7 @@ async def import_legal_document_docx(
     settings: AppSettings,
     file: Annotated[UploadFile, File()],
 ) -> ImportDocxResponse:
-    data = await _read_docx(file)
+    data = await read_docx_upload(file)
     try:
         async with session.begin():
             actor = await _org_admin_actor(session, settings, identity)

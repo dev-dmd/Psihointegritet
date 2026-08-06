@@ -1,3 +1,4 @@
+import { revalidatePublicCompassAfterMutation } from "@/lib/compass/revalidation";
 import { forwardStaffIntake } from "@/lib/intake/backend-proxy";
 
 interface RouteContext {
@@ -10,7 +11,7 @@ export async function POST(
 ): Promise<Response> {
   const { termId, revisionId } = await context.params;
   const body = await request.text();
-  return forwardStaffIntake(
+  const response = await forwardStaffIntake(
     `/api/v1/content/taxonomy/terms/${encodeURIComponent(termId)}/revisions/${encodeURIComponent(revisionId)}/transition`,
     {
       method: "POST",
@@ -18,4 +19,18 @@ export async function POST(
       body,
     },
   );
+
+  if (response.ok) {
+    try {
+      const target = (JSON.parse(body) as { target?: unknown }).target;
+      if (target === "published" || target === "archived") {
+        revalidatePublicCompassAfterMutation(response);
+      }
+    } catch {
+      // A successful non-transition-shaped response stays successful; the
+      // five-minute cache TTL remains the bounded recovery path.
+    }
+  }
+
+  return response;
 }

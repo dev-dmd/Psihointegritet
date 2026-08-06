@@ -33,6 +33,8 @@ export const contentCharacterLimits: Record<ContentCharacterLimitKey, number> =
     imageAlt: 150,
     slug: 80,
     redirectPath: 180,
+    // ~4000 words; the first real article is 3217 characters.
+    articleBody: 24000,
   };
 
 interface TemplateDefinition {
@@ -99,6 +101,10 @@ export const templateRegistry: Record<ContentTemplate, TemplateDefinition> = {
   legal_page: {
     requiredSlots: ["title", "legal_copy", "version"],
     optionalSlots: ["links"],
+  },
+  article_detail: {
+    requiredSlots: ["hero", "byline", "body_intro"],
+    optionalSlots: ["questions", "practice", "body_outro", "sources", "cta"],
   },
 };
 

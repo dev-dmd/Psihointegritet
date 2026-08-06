@@ -4,6 +4,109 @@
  */
 
 export interface paths {
+    "/api/v1/compass/flows": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Flows */
+        get: operations["list_compass_flow_versions"];
+        put?: never;
+        /** Create Flow */
+        post: operations["create_compass_flow"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/compass/flows/{flow_id}/versions/{version_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Update Flow */
+        put: operations["update_compass_flow_version"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/compass/flows/{flow_id}/versions/{version_id}/next": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create Next Version */
+        post: operations["create_next_compass_flow_version"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/compass/flows/{flow_id}/versions/{version_id}/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Preview Flow */
+        post: operations["preview_compass_flow_version"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/compass/flows/{flow_id}/versions/{version_id}/reviews": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Review Flow */
+        post: operations["review_compass_flow_version"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/compass/flows/{flow_id}/versions/{version_id}/transition": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Transition Flow */
+        post: operations["transition_compass_flow_version"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/content/entries": {
         parameters: {
             query?: never;
@@ -148,6 +251,31 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/content/rich-doc/import-docx": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Import Rich Doc Docx
+         * @description Convert a `.docx` into RichDoc for any staff editor, writing nothing.
+         *
+         *     Preview only, exactly like the legal registry's import (ADR-017 Amendment 1
+         *     §A1.2): the panel shows the result and the author applies it by saving the
+         *     revision. Same conversion, same limits, same findings — the article editor
+         *     must not grow a second, subtly different importer.
+         */
+        post: operations["import_rich_doc_docx"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/content/rich-doc/normalize-html": {
         parameters: {
             query?: never;
@@ -282,11 +410,32 @@ export interface paths {
         get?: never;
         put?: never;
         post?: never;
-        delete?: never;
+        /** Delete Taxonomy Revision */
+        delete: operations["delete_taxonomy_revision"];
         options?: never;
         head?: never;
         /** Update Taxonomy Revision */
         patch: operations["update_taxonomy_revision"];
+        trace?: never;
+    };
+    "/api/v1/content/taxonomy/terms/{term_id}/revisions/{revision_id}/delete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Delete Taxonomy Revision Action
+         * @description Action-route counterpart for panel/proxy layers that reject DELETE.
+         */
+        post: operations["delete_taxonomy_revision_action"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/v1/content/taxonomy/terms/{term_id}/revisions/{revision_id}/reviews": {
@@ -605,6 +754,57 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/public/compass/flows/{stable_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Public Flow */
+        get: operations["get_public_compass_flow"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/public/compass/flows/{stable_id}/recommendations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Get Public Experience */
+        post: operations["get_public_compass_experience"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/public/compass/recommendations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Get Public Compass Recommendations */
+        post: operations["get_public_compass_recommendations"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/public/compass/taxonomy": {
         parameters: {
             query?: never;
@@ -614,6 +814,23 @@ export interface paths {
         };
         /** Get Public Taxonomy */
         get: operations["get_public_taxonomy"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/public/compass/taxonomy/pages/{route_kind}/{slug}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Public Compass Taxonomy Page */
+        get: operations["get_public_compass_taxonomy_page"];
         put?: never;
         post?: never;
         delete?: never;
@@ -753,6 +970,74 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/public/research/submissions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Submit Research Survey */
+        post: operations["submit_research_survey"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/public/research/surveys/{stable_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Public Survey */
+        get: operations["get_public_survey"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/research/overview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Research Overview */
+        get: operations["get_research_overview"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/research/surveys/{stable_id}/results": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Research Results */
+        get: operations["get_research_results"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/health": {
         parameters: {
             query?: never;
@@ -791,6 +1076,12 @@ export interface components {
              * Format: uuid
              */
             userId: string;
+        };
+        /** AdminFlowPreviewOut */
+        AdminFlowPreviewOut: {
+            experience: components["schemas"]["CompassExperienceOut"];
+            flow: components["schemas"]["CompassFlowVersionOut"];
+            selection: components["schemas"]["FlowSelectionOut"];
         };
         /**
          * ApiProblem
@@ -849,6 +1140,11 @@ export interface components {
             /** File */
             file: string;
         };
+        /** Body_import_rich_doc_docx */
+        Body_import_rich_doc_docx: {
+            /** File */
+            file: string;
+        };
         /** Body_preview_new_legal_document_docx */
         Body_preview_new_legal_document_docx: {
             /** File */
@@ -868,6 +1164,214 @@ export interface components {
              */
             therapistProfileId: string;
         };
+        /**
+         * CompassContentCardOut
+         * @description A controlled CMS identity, never an editor-provided destination URL.
+         */
+        CompassContentCardOut: {
+            /**
+             * Accesslevel
+             * @default public
+             * @constant
+             */
+            accessLevel: "public";
+            contentFormat: components["schemas"]["ContentFormat"];
+            contentType: components["schemas"]["ContentType"];
+            /** Itemkey */
+            itemKey: string;
+            /** Locale */
+            locale: string;
+            /**
+             * Publishedat
+             * Format: date-time
+             */
+            publishedAt: string;
+            seo: components["schemas"]["SeoFields"];
+            /** Slug */
+            slug: string;
+            template: components["schemas"]["ContentTemplate"];
+        };
+        /** CompassExperienceOut */
+        CompassExperienceOut: {
+            /** Flowversion */
+            flowVersion: number;
+            handoffCandidate: components["schemas"]["CompassHandoffCandidateOut"];
+            normalizedSelection: components["schemas"]["CompassNormalizedSelectionOut"];
+            /** Sections */
+            sections: components["schemas"]["ResultSectionOut"][];
+            /** Selectionadjustments */
+            selectionAdjustments: components["schemas"]["CompassSelectionAdjustmentOut"][];
+            summary: components["schemas"]["ResultSummaryOut"];
+        };
+        /** CompassFlowDefinition */
+        CompassFlowDefinition: {
+            /** Entryquestionid */
+            entryQuestionId: string;
+            /** Questions */
+            questions: components["schemas"]["FlowQuestion"][];
+            /** Resultsections */
+            resultSections: components["schemas"]["ResultSectionDefinition"][];
+            /**
+             * Schemaversion
+             * @default 1
+             * @constant
+             */
+            schemaVersion: 1;
+        };
+        /** CompassFlowVersionOut */
+        CompassFlowVersionOut: {
+            definition: components["schemas"]["CompassFlowDefinition"];
+            /**
+             * Flowid
+             * Format: uuid
+             */
+            flowId: string;
+            /** Locale */
+            locale: string;
+            /** Lockversion */
+            lockVersion: number;
+            /** Stableid */
+            stableId: string;
+            status: components["schemas"]["RevisionStatus"];
+            /** Version */
+            version: number;
+            /**
+             * Versionid
+             * Format: uuid
+             */
+            versionId: string;
+        };
+        /** CompassHandoffCandidateOut */
+        CompassHandoffCandidateOut: {
+            /** Audienceids */
+            audienceIds: string[];
+            journeyIntent?: components["schemas"]["JourneyIntent"] | null;
+            /**
+             * Schemaversion
+             * @default 1
+             * @constant
+             */
+            schemaVersion: "1";
+            /** Taxonomyversion */
+            taxonomyVersion: string;
+            /** Topicgroupid */
+            topicGroupId?: string | null;
+            /** Topicids */
+            topicIds: string[];
+        };
+        /** CompassNormalizedSelectionOut */
+        CompassNormalizedSelectionOut: {
+            /** Audienceid */
+            audienceId?: string | null;
+            /** Goalids */
+            goalIds: string[];
+            journeyIntent?: components["schemas"]["JourneyIntent"] | null;
+            /** Topicgroupid */
+            topicGroupId?: string | null;
+            /** Topicids */
+            topicIds: string[];
+        };
+        /** CompassPaginationOut */
+        CompassPaginationOut: {
+            /** Hasmore */
+            hasMore: boolean;
+            /** Limit */
+            limit: number;
+            /** Offset */
+            offset: number;
+            /** Total */
+            total: number;
+        };
+        /** CompassReasonOut */
+        CompassReasonOut: {
+            /** Code */
+            code: string;
+            /** Text */
+            text: string;
+        };
+        /** CompassRecommendationItemOut */
+        CompassRecommendationItemOut: {
+            card: components["schemas"]["CompassContentCardOut"];
+            /** Goalids */
+            goalIds: string[];
+            /** Reasons */
+            reasons: components["schemas"]["CompassReasonOut"][];
+        };
+        /** CompassRecommendationOut */
+        CompassRecommendationOut: {
+            handoffCandidate: components["schemas"]["CompassHandoffCandidateOut"];
+            /** Locale */
+            locale: string;
+            normalizedSelection: components["schemas"]["CompassNormalizedSelectionOut"];
+            pagination: components["schemas"]["CompassPaginationOut"];
+            /** Recommendations */
+            recommendations: components["schemas"]["CompassRecommendationItemOut"][];
+            /** Relatedtopics */
+            relatedTopics: components["schemas"]["PublicTaxonomyTermOut"][];
+            /** Ruleversion */
+            ruleVersion: string;
+            /** Selectionadjustments */
+            selectionAdjustments: components["schemas"]["CompassSelectionAdjustmentOut"][];
+            /** Taxonomyversion */
+            taxonomyVersion: string;
+        };
+        /** CompassRecommendationRequest */
+        CompassRecommendationRequest: {
+            /** Audienceid */
+            audienceId?: string | null;
+            /** Goalids */
+            goalIds?: string[];
+            journeyIntent?: components["schemas"]["JourneyIntent"] | null;
+            /**
+             * Limit
+             * @default 12
+             */
+            limit: number;
+            /**
+             * Locale
+             * @default sr-Latn
+             */
+            locale: string;
+            /**
+             * Offset
+             * @default 0
+             */
+            offset: number;
+            /** Ruleversion */
+            ruleVersion: string;
+            /** Taxonomyversion */
+            taxonomyVersion: string;
+            /** Topicgroupid */
+            topicGroupId?: string | null;
+            /** Topicids */
+            topicIds?: string[];
+        };
+        /** CompassSelectionAdjustmentOut */
+        CompassSelectionAdjustmentOut: {
+            /** Code */
+            code: string;
+            /** Fieldpath */
+            fieldPath: string;
+            /** Message */
+            message: string;
+            /** Removedvalues */
+            removedValues?: string[];
+        };
+        /** CompassTaxonomyPageOut */
+        CompassTaxonomyPageOut: {
+            /** Children */
+            children: components["schemas"]["PublicTaxonomyTermOut"][];
+            /** Contentcards */
+            contentCards: components["schemas"]["CompassContentCardOut"][];
+            /** Locale */
+            locale: string;
+            parent?: components["schemas"]["PublicTaxonomyTermOut"] | null;
+            /** Relatedterms */
+            relatedTerms: components["schemas"]["PublicTaxonomyTermOut"][];
+            /** Taxonomyversion */
+            taxonomyVersion: string;
+            term: components["schemas"]["PublicTaxonomyTermOut"];
+        };
         /** ConfirmTaxonomyRouteRequest */
         ConfirmTaxonomyRouteRequest: {
             /**
@@ -885,6 +1389,28 @@ export interface components {
          * @enum {string}
          */
         ConsentKind: "intake_data_processing_notice" | "intake_request_acknowledgement" | "marketing" | "ai_free_text_processing";
+        /**
+         * ContentDiscoveryMetadata
+         * @description Controlled Kompas metadata attached to exactly one CMS revision.
+         */
+        ContentDiscoveryMetadata: {
+            /** Accessleveltermid */
+            accessLevelTermId?: string | null;
+            /** Audiencetermids */
+            audienceTermIds?: string[];
+            /** Contentformattermid */
+            contentFormatTermId?: string | null;
+            /** Contentgoaltermids */
+            contentGoalTermIds?: string[];
+            /** Journeyintenttermid */
+            journeyIntentTermId?: string | null;
+            /** Relatedcontententryids */
+            relatedContentEntryIds?: string[];
+            /** Topicgrouptermid */
+            topicGroupTermId?: string | null;
+            /** Topictermids */
+            topicTermIds?: string[];
+        };
         /** ContentFindingOut */
         ContentFindingOut: {
             /** Fieldpath */
@@ -904,6 +1430,11 @@ export interface components {
              */
             severity: "info" | "warning" | "error";
         };
+        /**
+         * ContentFormat
+         * @enum {string}
+         */
+        ContentFormat: "article" | "pdf" | "video" | "audio" | "worksheet" | "program";
         /**
          * ContentHealthOut
          * @description Read-only result for one saved revision (CG-D4).
@@ -938,6 +1469,7 @@ export interface components {
             createdBy?: components["schemas"]["ActorSummaryOut"] | null;
             /** Decisions */
             decisions: components["schemas"]["ReviewDecisionOut"][];
+            discovery: components["schemas"]["ContentDiscoveryMetadata"];
             /**
              * Entryid
              * Format: uuid
@@ -979,15 +1511,18 @@ export interface components {
          *     slots but never invent a section type (CONTENT_MODEL_MATRIX §4).
          * @enum {string}
          */
-        ContentTemplate: "service_detail" | "therapist_profile" | "support_area" | "audience_page" | "program_detail" | "company_page" | "pricing_page" | "static_information" | "legal_page";
+        ContentTemplate: "service_detail" | "therapist_profile" | "support_area" | "audience_page" | "program_detail" | "company_page" | "pricing_page" | "static_information" | "legal_page" | "article_detail";
         /**
          * ContentType
-         * @description The six governed types from R1.4.i `ContentType`.
+         * @description The six governed types from R1.4.i, plus `article` since ADR-019.
          *
-         *     `article` is deliberately absent: the knowledge library is R3 (ADR-016).
+         *     The first six share one property `article` does not: their identity is a
+         *     closed allowlist of known pages (`system_catalog.py`). An article is one
+         *     entry per published text, unbounded in number, so it takes a separate
+         *     identity path — see ADR-019 §3.
          * @enum {string}
          */
-        ContentType: "static_page" | "service" | "therapist" | "program" | "company_plan" | "package_offer";
+        ContentType: "static_page" | "service" | "therapist" | "program" | "company_plan" | "package_offer" | "article";
         /** CreateContentEntryRequest */
         CreateContentEntryRequest: {
             contentType: components["schemas"]["ContentType"];
@@ -999,6 +1534,17 @@ export interface components {
             /** Slug */
             slug: string;
             template: components["schemas"]["ContentTemplate"];
+        };
+        /** CreateFlowRequest */
+        CreateFlowRequest: {
+            definition: components["schemas"]["CompassFlowDefinition"];
+            /**
+             * Locale
+             * @default sr-Latn
+             */
+            locale: string;
+            /** Stableid */
+            stableId: string;
         };
         /** CreateLegalDocumentRequest */
         CreateLegalDocumentRequest: {
@@ -1073,6 +1619,88 @@ export interface components {
             stableId: string;
         };
         /**
+         * EmptyBehavior
+         * @enum {string}
+         */
+        EmptyBehavior: "hide" | "show";
+        /** FlowAnswer */
+        FlowAnswer: {
+            /** Optionids */
+            optionIds: string[];
+            /** Questionid */
+            questionId: string;
+        };
+        /** FlowEvaluationRequest */
+        FlowEvaluationRequest: {
+            /** Answers */
+            answers?: components["schemas"]["FlowAnswer"][];
+        };
+        /** FlowQuestion */
+        FlowQuestion: {
+            /** Allowedtermids */
+            allowedTermIds?: string[];
+            /** Defaultnextquestionid */
+            defaultNextQuestionId?: string | null;
+            /**
+             * Filtertopicsbyselectedarea
+             * @default false
+             */
+            filterTopicsBySelectedArea: boolean;
+            /**
+             * Helptext
+             * @default
+             */
+            helpText: string;
+            inputMode: components["schemas"]["InputMode"];
+            /**
+             * Maxselections
+             * @default 1
+             */
+            maxSelections: number;
+            optionSource: components["schemas"]["OptionSource"];
+            /**
+             * Optional
+             * @default true
+             * @constant
+             */
+            optional: true;
+            /** Prompt */
+            prompt: string;
+            /** Questionid */
+            questionId: string;
+            selectionTarget: components["schemas"]["SelectionTarget"];
+            /** Skipnextquestionid */
+            skipNextQuestionId?: string | null;
+            /** Staticoptions */
+            staticOptions?: components["schemas"]["StaticFlowOption"][];
+            taxonomyAxis?: components["schemas"]["TaxonomyAxis"] | null;
+            terminal?: components["schemas"]["TerminalBehavior"] | null;
+        };
+        /** FlowReviewRequest */
+        FlowReviewRequest: {
+            capability: components["schemas"]["ApprovalCapability"];
+            /** Note */
+            note?: string | null;
+            outcome: components["schemas"]["ReviewOutcome"];
+        };
+        /** FlowSelectionOut */
+        FlowSelectionOut: {
+            /** Audienceid */
+            audienceId?: string | null;
+            /** Goalids */
+            goalIds?: string[];
+            journeyIntent?: components["schemas"]["JourneyIntent"] | null;
+            /**
+             * Startingpackage
+             * @default false
+             */
+            startingPackage: boolean;
+            /** Topicgroupid */
+            topicGroupId?: string | null;
+            /** Topicids */
+            topicIds?: string[];
+        };
+        /**
          * GuardianConsentStatus
          * @enum {string}
          */
@@ -1123,6 +1751,11 @@ export interface components {
             /** Requiresapproval */
             requiresApproval: boolean;
         };
+        /**
+         * InputMode
+         * @enum {string}
+         */
+        InputMode: "single_select" | "multi_select";
         /** IntakeAcknowledgementInput */
         IntakeAcknowledgementInput: {
             /** Documentversion */
@@ -1182,6 +1815,11 @@ export interface components {
          */
         IntakeSubmissionKind: "request" | "team_review";
         /**
+         * JourneyIntent
+         * @enum {string}
+         */
+        JourneyIntent: "explore" | "professional_support" | "both";
+        /**
          * LegalDocumentKind
          * @description Document identities the registry can hold.
          *
@@ -1238,6 +1876,20 @@ export interface components {
             };
             /** Findings */
             findings: components["schemas"]["RichDocFindingOut"][];
+        };
+        /**
+         * OptionSource
+         * @enum {string}
+         */
+        OptionSource: "taxonomy_axis" | "static";
+        /** OptionTallyOut */
+        OptionTallyOut: {
+            /** Count */
+            count: number;
+            /** Label */
+            label: string;
+            /** Optionid */
+            optionId: string;
         };
         /**
          * PublicContentRevisionOut
@@ -1366,6 +2018,19 @@ export interface components {
             /** Slug */
             slug: string;
         };
+        /**
+         * PublicSurveyOut
+         * @description Published question set for the drawer. Never exposes submissions.
+         */
+        PublicSurveyOut: {
+            schema: components["schemas"]["SurveyQuestionSchema"];
+            /** Stableid */
+            stableId: string;
+            /** Title */
+            title: string;
+            /** Version */
+            version: number;
+        };
         /** PublicTaxonomyOut */
         PublicTaxonomyOut: {
             /** Locale */
@@ -1420,6 +2085,19 @@ export interface components {
             /** Slug */
             slug: string;
         };
+        /** QuestionTallyOut */
+        QuestionTallyOut: {
+            /** Answeredcount */
+            answeredCount: number;
+            /** Multi */
+            multi: boolean;
+            /** Options */
+            options: components["schemas"]["OptionTallyOut"][];
+            /** Prompt */
+            prompt: string;
+            /** Questionid */
+            questionId: string;
+        };
         /** ReassignIntakeCaseRequest */
         ReassignIntakeCaseRequest: {
             /**
@@ -1453,6 +2131,79 @@ export interface components {
          * @enum {string}
          */
         RequesterRole: "self_adult" | "guardian" | "adolescent_16_17" | "information_only";
+        /** ResearchOverviewOut */
+        ResearchOverviewOut: {
+            /** Surveys */
+            surveys: components["schemas"]["SurveyResultsOut"][];
+        };
+        /**
+         * ResearchSubmissionSurface
+         * @description Where the drawer was rendered — not who rendered it.
+         * @enum {string}
+         */
+        ResearchSubmissionSurface: "research-drawer" | "compass-feedback";
+        /**
+         * ResearchSubmissionTrigger
+         * @description What opened the drawer. Coarse by design; never a session identifier.
+         * @enum {string}
+         */
+        ResearchSubmissionTrigger: "manual" | "after-results" | "finish";
+        /**
+         * ResearchSurveyStatus
+         * @enum {string}
+         */
+        ResearchSurveyStatus: "draft" | "published" | "archived";
+        /** ResultSectionDefinition */
+        ResultSectionDefinition: {
+            /** @default hide */
+            emptyBehavior: components["schemas"]["EmptyBehavior"];
+            /** Goalids */
+            goalIds?: string[];
+            /**
+             * Locked
+             * @default false
+             */
+            locked: boolean;
+            /**
+             * Maxitems
+             * @default 4
+             */
+            maxItems: number;
+            /**
+             * Sectionid
+             * @enum {string}
+             */
+            sectionId: "understanding" | "practical-tools" | "professional-support" | "related-areas" | "related-topics" | "other-topics-in-area";
+            /** Title */
+            title: string;
+        };
+        /** ResultSectionOut */
+        ResultSectionOut: {
+            /** Contentitems */
+            contentItems: components["schemas"]["CompassRecommendationItemOut"][];
+            emptyBehavior: components["schemas"]["EmptyBehavior"];
+            /**
+             * Locked
+             * @default false
+             */
+            locked: boolean;
+            /** Sectionid */
+            sectionId: string;
+            /** Taxonomyitems */
+            taxonomyItems: components["schemas"]["PublicTaxonomyTermOut"][];
+            /** Title */
+            title: string;
+        };
+        /** ResultSummaryOut */
+        ResultSummaryOut: {
+            /** Hasselection */
+            hasSelection: boolean;
+            /**
+             * Title
+             * @enum {string}
+             */
+            title: "Vaš prilagođeni prikaz" | "Polazni prikaz";
+        };
         /** ReviewDecisionOut */
         ReviewDecisionOut: {
             capability: components["schemas"]["ApprovalCapability"];
@@ -1503,6 +2254,11 @@ export interface components {
             /** Severity */
             severity: string;
         };
+        /**
+         * SelectionTarget
+         * @enum {string}
+         */
+        SelectionTarget: "topic_group" | "topics" | "audience" | "content_goals" | "journey_intent" | "none";
         /** SeoFields */
         SeoFields: {
             /**
@@ -1518,11 +2274,49 @@ export interface components {
              */
             title: string;
         };
+        /** StaticFlowOption */
+        StaticFlowOption: {
+            /** Label */
+            label: string;
+            /** Nextquestionid */
+            nextQuestionId?: string | null;
+            /** Optionid */
+            optionId: string;
+            /** Selectionvalue */
+            selectionValue?: string | null;
+            terminal?: components["schemas"]["TerminalBehavior"] | null;
+        };
         /**
          * SubjectAgeBand
          * @enum {string}
          */
         SubjectAgeBand: "under_12" | "12_15" | "16_17" | "adult";
+        /** SubmitResearchRequest */
+        SubmitResearchRequest: {
+            /** Answers */
+            answers: components["schemas"]["SurveyAnswer"][];
+            /**
+             * Locale
+             * @default sr-Latn
+             */
+            locale: string;
+            surface: components["schemas"]["ResearchSubmissionSurface"];
+            /** Surveystableid */
+            surveyStableId: string;
+            trigger: components["schemas"]["ResearchSubmissionTrigger"];
+        };
+        /** SubmitResearchResponse */
+        SubmitResearchResponse: {
+            /**
+             * Submissionid
+             * Format: uuid
+             */
+            submissionId: string;
+            /** Surveystableid */
+            surveyStableId: string;
+            /** Surveyversion */
+            surveyVersion: number;
+        };
         /** SuggestTaxonomyRouteRequest */
         SuggestTaxonomyRouteRequest: {
             /**
@@ -1530,6 +2324,92 @@ export interface components {
              * @default sr-Latn
              */
             locale: string;
+        };
+        /** SurveyAnswer */
+        SurveyAnswer: {
+            /** Optionids */
+            optionIds: string[];
+            /** Questionid */
+            questionId: string;
+        };
+        /** SurveyOption */
+        SurveyOption: {
+            /** Label */
+            label: string;
+            /** Optionid */
+            optionId: string;
+        };
+        /** SurveyQuestion */
+        SurveyQuestion: {
+            /**
+             * Multi
+             * @default false
+             */
+            multi: boolean;
+            /**
+             * Optional
+             * @default false
+             */
+            optional: boolean;
+            /** Options */
+            options: components["schemas"]["SurveyOption"][];
+            /** Prompt */
+            prompt: string;
+            /** Questionid */
+            questionId: string;
+        };
+        /**
+         * SurveyQuestionSchema
+         * @description The `question_schema` JSON payload of one survey version.
+         */
+        SurveyQuestionSchema: {
+            /**
+             * Allowsfreetext
+             * @default false
+             */
+            allowsFreeText: boolean;
+            /** Introdescription */
+            introDescription: string;
+            /** Introtitle */
+            introTitle: string;
+            /** Questions */
+            questions: components["schemas"]["SurveyQuestion"][];
+            /**
+             * Schemaversion
+             * @default 1
+             */
+            schemaVersion: number;
+        };
+        /**
+         * SurveyResultsOut
+         * @description Per-survey-version panel view. Versions are never merged into one
+         *     percentage: a changed question set makes the older answers a different
+         *     measurement.
+         */
+        SurveyResultsOut: {
+            /** Firstsubmissionat */
+            firstSubmissionAt: string | null;
+            /** Lastsubmissionat */
+            lastSubmissionAt: string | null;
+            /** Questions */
+            questions: components["schemas"]["QuestionTallyOut"][];
+            /** Stableid */
+            stableId: string;
+            status: components["schemas"]["ResearchSurveyStatus"];
+            /** Submissioncount */
+            submissionCount: number;
+            /** Surfaces */
+            surfaces: {
+                [key: string]: number;
+            };
+            /** Title */
+            title: string;
+            /** Triggers */
+            triggers: {
+                [key: string]: number;
+            };
+            /** Version */
+            version: number;
         };
         /**
          * TaxonomyAxis
@@ -1811,6 +2691,17 @@ export interface components {
             subjectAgeBand: components["schemas"]["SubjectAgeBand"];
             submissionKind: components["schemas"]["IntakeSubmissionKind"];
         };
+        /**
+         * TerminalBehavior
+         * @enum {string}
+         */
+        TerminalBehavior: "results" | "starting_package";
+        /** TransitionFlowRequest */
+        TransitionFlowRequest: {
+            /** Lockversion */
+            lockVersion: number;
+            target: components["schemas"]["RevisionStatus"];
+        };
         /** TransitionRequest */
         TransitionRequest: {
             target: components["schemas"]["RevisionStatus"];
@@ -1821,6 +2712,7 @@ export interface components {
          *     default — the client always edits against a specific version it fetched.
          */
         UpdateContentRevisionRequest: {
+            discovery?: components["schemas"]["ContentDiscoveryMetadata"] | null;
             /** Lockversion */
             lockVersion: number;
             seo?: components["schemas"]["SeoFields"] | null;
@@ -1828,6 +2720,12 @@ export interface components {
             slotData?: {
                 [key: string]: unknown;
             } | null;
+        };
+        /** UpdateFlowVersionRequest */
+        UpdateFlowVersionRequest: {
+            definition: components["schemas"]["CompassFlowDefinition"];
+            /** Lockversion */
+            lockVersion: number;
         };
         /**
          * UpdateLegalDocumentRevisionRequest
@@ -1917,6 +2815,433 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    list_compass_flow_versions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CompassFlowVersionOut"][];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+        };
+    };
+    create_compass_flow: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateFlowRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CompassFlowVersionOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+        };
+    };
+    update_compass_flow_version: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                flow_id: string;
+                version_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateFlowVersionRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CompassFlowVersionOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+        };
+    };
+    create_next_compass_flow_version: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                flow_id: string;
+                version_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CompassFlowVersionOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+        };
+    };
+    preview_compass_flow_version: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                flow_id: string;
+                version_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FlowEvaluationRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminFlowPreviewOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+        };
+    };
+    review_compass_flow_version: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                flow_id: string;
+                version_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FlowReviewRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CompassFlowVersionOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+        };
+    };
+    transition_compass_flow_version: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                flow_id: string;
+                version_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TransitionFlowRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CompassFlowVersionOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+        };
+    };
     list_content_entries: {
         parameters: {
             query?: {
@@ -2233,6 +3558,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ContentRevisionOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    import_rich_doc_docx: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_import_rich_doc_docx"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NormalizeRichHtmlResponse"];
                 };
             };
             /** @description Validation Error */
@@ -2756,6 +4114,63 @@ export interface operations {
             };
         };
     };
+    delete_taxonomy_revision: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                term_id: string;
+                revision_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+        };
+    };
     update_taxonomy_revision: {
         parameters: {
             query?: never;
@@ -2780,6 +4195,63 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["TaxonomyTermOut"];
                 };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+        };
+    };
+    delete_taxonomy_revision_action: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                term_id: string;
+                revision_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Forbidden */
             403: {
@@ -3590,6 +5062,179 @@ export interface operations {
             };
         };
     };
+    get_public_compass_flow: {
+        parameters: {
+            query?: {
+                locale?: string;
+            };
+            header?: never;
+            path: {
+                stable_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CompassFlowVersionOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+        };
+    };
+    get_public_compass_experience: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                stable_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CompassRecommendationRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CompassExperienceOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+        };
+    };
+    get_public_compass_recommendations: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CompassRecommendationRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CompassRecommendationOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+        };
+    };
     get_public_taxonomy: {
         parameters: {
             query?: {
@@ -3617,6 +5262,65 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_public_compass_taxonomy_page: {
+        parameters: {
+            query?: {
+                locale?: string;
+            };
+            header?: never;
+            path: {
+                route_kind: components["schemas"]["TaxonomyRouteKind"];
+                slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CompassTaxonomyPageOut"];
+                };
+            };
+            /** @description Stara putanja preusmerava na aktuelnu kanonsku putanju. */
+            308: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
                 };
             };
         };
@@ -3848,6 +5552,202 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    submit_research_survey: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SubmitResearchRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SubmitResearchResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+        };
+    };
+    get_public_survey: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                stable_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicSurveyOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+        };
+    };
+    get_research_overview: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResearchOverviewOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+        };
+    };
+    get_research_results: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                stable_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SurveyResultsOut"][];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
                 };
             };
         };

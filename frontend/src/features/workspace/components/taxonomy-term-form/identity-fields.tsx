@@ -1,0 +1,102 @@
+"use client";
+
+import { LockIcon } from "../icons";
+import { FieldError } from "../screen-kompas/governance-error";
+import type { TaxonomyTermFieldsProps } from "./field-props";
+import { AXIS_EDITOR_CONFIG, suggestTaxonomyStableId } from "./model";
+import { TechnicalDetails } from "./technical-details";
+
+type IdentityFieldsProps = Pick<
+  TaxonomyTermFieldsProps,
+  | "axis"
+  | "term"
+  | "draft"
+  | "setField"
+  | "disabled"
+  | "editorId"
+  | "fieldErrors"
+  | "clearFieldError"
+  | "errorId"
+  | "inputClass"
+>;
+
+export function TaxonomyIdentityFields({
+  axis,
+  term,
+  draft,
+  setField,
+  disabled,
+  editorId,
+  fieldErrors,
+  clearFieldError,
+  errorId,
+  inputClass,
+}: IdentityFieldsProps) {
+  const config = AXIS_EDITOR_CONFIG[axis];
+
+  // Two equal columns: the name field, and the disclosure beside it, centred
+  // against it. One column per row on mobile.
+  return (
+    <div className="mt-5 grid gap-4 md:grid-cols-2 md:items-center">
+      <div>
+        <label
+          htmlFor={`${editorId}-label`}
+          className="text-ink-70 mb-1.5 block text-[13px] font-semibold"
+        >
+          {config.publicLabel}
+        </label>
+        <input
+          id={`${editorId}-label`}
+          value={draft.publicLabel}
+          maxLength={160}
+          disabled={disabled}
+          onChange={(event) => {
+            const value = event.target.value;
+            setField("publicLabel", value);
+            // The internal id follows the name until the row exists; after
+            // that the server locks it and the draft value is ignored. There
+            // is no hand-editing path any more — a therapist cannot pick a
+            // good one, and it is permanent from the first save.
+            if (!term) setField("stableId", suggestTaxonomyStableId(value));
+            clearFieldError("publicLabel");
+          }}
+          aria-invalid={Boolean(fieldErrors.publicLabel)}
+          aria-describedby={
+            fieldErrors.publicLabel ? errorId("publicLabel") : undefined
+          }
+          className={inputClass(
+            "publicLabel",
+            "border-line-strong rounded-tile bg-panel-canvas text-coffee focus:border-sage w-full border px-3.5 py-2.5 text-sm outline-none disabled:opacity-60",
+          )}
+        />
+        <FieldError
+          id={errorId("publicLabel")}
+          message={fieldErrors.publicLabel}
+        />
+        <p className="text-ink-45 mt-1 text-right text-[11px]">
+          {draft.publicLabel.length}/160
+        </p>
+      </div>
+
+      {/* On mobile this becomes the second row and sits directly above the
+          description field, so it carries its own bottom spacing there; on
+          desktop the grid gap already handles it. */}
+      <div className="mb-4 md:mb-0">
+        <TechnicalDetails className="mt-0">
+          <p className="text-ink-55 text-[12px] leading-[1.5]">
+            Interna oznaka sistema čuva veze ispravnim čak i ako kasnije
+            promenite javni naziv. Platforma je sama formira iz naziva.
+          </p>
+          <div
+            id={`${editorId}-stable-id`}
+            className="text-ink-55 mt-1.5 flex items-center gap-1.5 font-mono text-[12.5px]"
+          >
+            {term ? <LockIcon size={14} aria-hidden /> : null}
+            {term?.stableId || draft.stableId || "—"}
+          </div>
+          <FieldError id={errorId("stableId")} message={fieldErrors.stableId} />
+        </TechnicalDetails>
+      </div>
+    </div>
+  );
+}

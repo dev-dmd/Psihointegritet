@@ -69,7 +69,7 @@ export function SlotEditor({
   };
 
   return (
-    <div className="rounded-panel border-line bg-surface mb-3 border px-4 py-3.5">
+    <div className="rounded-panel border-line bg-surface mb-1 border px-4 py-3.5">
       <div className="mb-2.5 flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <span className="text-coffee text-[14.5px] font-semibold">

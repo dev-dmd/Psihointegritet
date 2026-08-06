@@ -1,0 +1,174 @@
+name: Quality gates
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - staging
+      - features
+
+concurrency:
+  group: quality-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:18.4-alpine
+        env:
+          POSTGRES_DB: psihointegritet
+          POSTGRES_USER: psihointegritet
+          POSTGRES_PASSWORD: local_only_change_me
+        ports:
+          - 5434:5432
+        options: >-
+          --health-cmd "pg_isready -U psihointegritet -d psihointegritet"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql+asyncpg://psihointegritet:local_only_change_me@localhost:5434/psihointegritet
+      MIGRATION_DATABASE_URL: postgresql+psycopg://psihointegritet:local_only_change_me@localhost:5434/psihointegritet
+      TEST_DATABASE_URL: postgresql+asyncpg://psihointegritet:local_only_change_me@localhost:5434/psihointegritet
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: 3.14.6
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+      - run: uv sync --locked --all-groups
+      - run: uv run ruff check .
+      - run: uv run ruff format --check .
+      - run: uv run pyright
+      - run: uv run alembic upgrade head
+      - name: Kompas migration contains no D19 drift
+        run: |
+          if rg -n "intake_cases|age_group" src/psihointegritet/db/migrations/versions/20260803_0016_compass_flow_registry.py; then
+            echo "Kompas migration contains unrelated Intake/D19 drift."
+            exit 1
+          fi
+      - name: Migration round-trip
+        run: |
+          uv run alembic downgrade 20260802_0015
+          uv run alembic upgrade head
+      # Enabled by D19 (migration 20260803_0017): until then this reported the
+      # pre-existing Intake/identity drift and would have failed work that did
+      # not cause it. Models and schema now agree, so any new divergence is a
+      # real one — a model changed without a migration, or the reverse.
+      - run: uv run alembic check
+      - run: uv run pytest
+
+  frontend:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:18.4-alpine
+        env:
+          POSTGRES_DB: psihointegritet
+          POSTGRES_USER: psihointegritet
+          POSTGRES_PASSWORD: local_only_change_me
+        ports:
+          - 5434:5432
+        options: >-
+          --health-cmd "pg_isready -U psihointegritet -d psihointegritet"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql+asyncpg://psihointegritet:local_only_change_me@localhost:5434/psihointegritet
+      MIGRATION_DATABASE_URL: postgresql+psycopg://psihointegritet:local_only_change_me@localhost:5434/psihointegritet
+      NEXT_PUBLIC_APP_URL: http://localhost:3007
+      NEXT_PUBLIC_API_URL: http://localhost:8001
+      # Placeholder pair for a nonexistent instance. Both are required:
+      # `lib/validation/env.ts` validates them at module load, so `next build`
+      # fails while collecting route handlers if either is missing.
+      #
+      # The publishable key's `pk_live_` format is deliberate and must not be
+      # "fixed" to `pk_test_`. A test key marks a Clerk development instance,
+      # and `clerkMiddleware` then answers every browser navigation with a 307 to
+      # `<instance>.clerk.accounts.dev/v1/client/handshake` (dev-browser handshake).
+      # Against a placeholder instance that handshake returns 400, so every page
+      # renders Clerk's error instead of the app and the whole E2E suite fails.
+      # A production-format publishable key skips the handshake, so signed-out
+      # browsing never leaves the runner. An authenticated suite would need a real
+      # matching pair from GitHub Secrets — a real publishable key with a
+      # placeholder secret is not enough, the handshake token then fails
+      # verification.
+      #
+      # The secret stays `sk_test_` on purpose: GitHub push protection reads
+      # `sk_live_` followed by a long alphanumeric run as a Stripe API key and
+      # rejects the push. Only the publishable key decides the instance type here,
+      # so the mismatch is harmless for signed-out runs.
+      NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: pk_live_Y2xlcmsuZXhhbXBsZS5jb20k
+      CLERK_SECRET_KEY: sk_test_000000000000000000000000000000000000000000
+      NEXT_PUBLIC_COMPASS_DEMO_PREVIEW: "false"
+      # D-059 flag. CI keeps Kompas on so `compass.spec.ts` still covers it; the
+      # deployed environments decide separately.
+      NEXT_PUBLIC_COMPASS_ENABLED: "true"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: 3.14.6
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24.13.1
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Prepare public API
+        working-directory: backend
+        env:
+          ALLOW_COMPASS_DEMO_SEED: "true"
+          COMPASS_DEMO_ORGANIZATION_SLUG: psihointegritet
+          ENVIRONMENT: development
+        run: |
+          uv sync --locked --all-groups
+          uv run alembic upgrade head
+          uv run python scripts/seed_compass_demo.py
+          uv run uvicorn psihointegritet.main:app --host 127.0.0.1 --port 8001 >/tmp/psihointegritet-api.log 2>&1 &
+          for attempt in {1..30}; do
+            if curl --fail --silent http://127.0.0.1:8001/api/v1/health >/dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+          cat /tmp/psihointegritet-api.log
+          exit 1
+      - working-directory: frontend
+        run: npm ci
+      - working-directory: frontend
+        run: npm run typecheck
+      - working-directory: frontend
+        run: npm run lint
+      - working-directory: frontend
+        run: npm run format:check
+      - working-directory: frontend
+        run: npm run architecture:check
+      - working-directory: frontend
+        run: npm run test -- --run
+      - working-directory: frontend
+        run: npm run build
+      - working-directory: frontend
+        run: npx playwright install --with-deps chromium
+      - working-directory: frontend
+        run: npm run test:e2e
+      - if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: |
+            frontend/playwright-report
+            frontend/test-results
+            /tmp/psihointegritet-api.log
+          if-no-files-found: ignore

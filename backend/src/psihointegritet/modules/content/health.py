@@ -11,15 +11,16 @@ without duplicating the checked-in public catalogue in Python.
 
 from __future__ import annotations
 
-import re
 import unicodedata
 from collections.abc import Mapping
 from typing import cast
 
+from psihointegritet.modules.content.identity import is_valid_content_slug
 from psihointegritet.modules.content.models import ContentEntry, ContentRevision
 from psihointegritet.modules.content.publication import ContentFinding, Severity
 from psihointegritet.modules.content.slot_schema import (
     SLOT_SPEC_REGISTRY,
+    BooleanFieldSpec,
     CollectionFieldSpec,
     ComputedSlot,
     CtaFieldSpec,
@@ -67,9 +68,15 @@ CONTENT_CHARACTER_LIMITS: Mapping[str, int] = {
     "imageAlt": 150,
     "slug": 80,
     "redirectPath": 180,
+    # ~4000 words. Not unbounded like a legal document body: a lawyer's text
+    # must never be truncated, an educational article has an editorial ceiling.
+    # The first real article is 3217 characters.
+    "articleBody": 24000,
 }
 
-_SLUG_PATTERN = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
+# Slug shape lives with the identity rules, so a slug accepted at creation
+# cannot be rejected at publication for its shape alone.
+
 _MISSING = object()
 
 
@@ -326,6 +333,40 @@ def _validate_cta(
     return findings
 
 
+def _validate_boolean(path: str, spec: BooleanFieldSpec, value: object) -> list[ContentFinding]:
+    """A missing answer stays missing; only a non-boolean value is a defect.
+
+    Absence is not `false` here. `standalone` (ADR-019 §4) means "a human
+    confirmed this section stands alone", and an unanswered question must not
+    read as a confirmation — nor as a refusal the author never gave.
+    """
+    if value is _MISSING or value is None:
+        return (
+            [
+                _finding(
+                    "MODEL-003",
+                    "error",
+                    f"Polje „{path}” je obavezno.",
+                    "Odgovorite sa da ili ne.",
+                    path,
+                )
+            ]
+            if spec.required
+            else []
+        )
+    if not isinstance(value, bool):
+        return [
+            _finding(
+                "MODEL-003",
+                "error",
+                f"Polje „{path}” mora biti da/ne vrednost.",
+                "Koristite kontrolu u editoru umesto ručnog unosa.",
+                path,
+            )
+        ]
+    return []
+
+
 def _validate_field(path: str, spec: SlotFieldSpec, value: object) -> list[ContentFinding]:
     if isinstance(spec, TextFieldSpec):
         return _validate_text(path, spec, value)
@@ -333,6 +374,8 @@ def _validate_field(path: str, spec: SlotFieldSpec, value: object) -> list[Conte
         return _validate_rich(path, spec, value)
     if isinstance(spec, IntegerFieldSpec | MoneyFieldSpec):
         return _validate_number(path, spec, value)
+    if isinstance(spec, BooleanFieldSpec):
+        return _validate_boolean(path, spec, value)
     if isinstance(spec, ImageFieldSpec):
         return _validate_image(path, value)
     if isinstance(spec, CtaFieldSpec):
@@ -408,7 +451,7 @@ def authored_content_findings(
 
     findings: list[ContentFinding] = []
     if (
-        not _SLUG_PATTERN.fullmatch(entry.slug)
+        not is_valid_content_slug(entry.slug)
         or _length(entry.slug) > CONTENT_CHARACTER_LIMITS["slug"]
     ):
         findings.append(

@@ -64,6 +64,19 @@
   --color-badge-danger-bg: rgba(179, 64, 46, 0.12);
   --color-badge-dark: #2e3b2e;
   --color-badge-dark-bg: rgba(46, 59, 46, 0.1);
+  /* Kompas CTA schemes. Five scheme values from the design have no equivalent
+     among the brand tokens above, so they live here rather than as inline hex
+     inside a component. Every other value in the scheme map reuses an existing
+     token (coffee, forest, meadow, warm, warm-shine, forest-soft). */
+  --color-kompas-cream: #f0e9df; /* cream scheme band */
+  --color-kompas-ink: #1f1917; /* coffee scheme button, darker than coffee */
+  --color-kompas-on-meadow: #22301f; /* text on a meadow button */
+  --color-kompas-clay: #8a4a2b; /* warm scheme accent */
+  --color-kompas-ochre: #b06a3f; /* cream scheme accent */
+  /* The CTA band lifts on hover; neither depth matches an existing shadow
+     token, and both must stay identical across all five schemes. */
+  --shadow-kompas-band: 0 14px 34px rgba(58, 46, 40, 0.14);
+  --shadow-kompas-band-hover: 0 26px 60px rgba(58, 46, 40, 0.24);
   /* Panel radii */
   --radius-tile: 14px;
   --radius-stat: 18px;
@@ -175,6 +188,7 @@ body {
 .rich-text-editor-surface {
   scrollbar-color: var(--color-sage) var(--color-panel-canvas);
   scrollbar-width: thin;
+  resize: vertical;
 }
 
 .rich-text-editor-surface::-webkit-scrollbar {

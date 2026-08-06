@@ -8,6 +8,7 @@ from psihointegritet.modules.guidance.authorization import (
     IntakeAuthorizationError,
     StaffActor,
     resolve_staff_actor,
+    staff_authorization_message,
 )
 from psihointegritet.modules.guidance.schemas import (
     ClaimIntakeCaseResponse,
@@ -171,4 +172,7 @@ async def _staff_actor(
     try:
         return await resolve_staff_actor(session, identity, settings.default_organization_slug)
     except IntakeAuthorizationError as error:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(error)) from error
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=staff_authorization_message(error),
+        ) from error

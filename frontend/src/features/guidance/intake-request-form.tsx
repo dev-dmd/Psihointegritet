@@ -108,7 +108,8 @@ export function IntakeRequestForm({
   if (submissionMutation.isSuccess) {
     const submittedTeamReview =
       submissionMutation.data.submissionKind === "team_review";
-    const priorityReview = submissionMutation.data.reviewPriority === "priority";
+    const priorityReview =
+      submissionMutation.data.reviewPriority === "priority";
     return (
       <section aria-live="polite">
         <p className="text-sage mb-3 text-[12.5px] font-semibold tracking-[0.16em] uppercase">

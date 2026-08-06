@@ -43,6 +43,11 @@ class TeamMember:
     therapist_slug: str | None
     # Clerk instance -> user id. Absent means "must be passed explicitly".
     clerk_ids: Mapping[str, str]
+    #: Platform operator (D-051). Recorded here for the same reason the Clerk id
+    #: is: so the person and their authority cannot be paired wrongly by hand.
+    #: `--list` still marks every holder with ★, so the flag stays visible in an
+    #: access review, and `--revoke-superadmin` still overrides this.
+    superadmin: bool = False
 
     def clerk_id_for(self, instance: str) -> str | None:
         return self.clerk_ids.get(instance)
@@ -78,6 +83,32 @@ TEAM: Mapping[str, TeamMember] = {
         # No production account yet — that id must still be passed explicitly
         # when it exists, per this module's docstring.
         clerk_ids={CLERK_DEVELOPMENT: "user_3HBcL93c1DXDjlHjelBklHdxFxw"},
+    ),
+    # Two entries, one person: Milan signs in with either address, and both are
+    # accounts on the *same* Clerk instance, so they cannot share one entry —
+    # `clerk_ids` holds one id per instance by design. The key therefore names
+    # the account, not the human. Deleting one as a "duplicate" would silently
+    # lock him out of whichever address he happened to use that day.
+    "milan": TeamMember(
+        key="milan",
+        display_name="Milan Dražić",
+        email="drazic.milan@gmail.com",
+        # `org_admin` and not `therapist`: the platform flag already grants both
+        # capabilities in every tenant (D-051), but a therapist membership would
+        # also make him selectable as a clinician, which he is not.
+        roles=frozenset({MembershipRole.ORG_ADMIN}),
+        therapist_slug=None,
+        clerk_ids={CLERK_DEVELOPMENT: "user_3GXrf2rAn8Ekdc3qgHtnWxHWSY4"},
+        superadmin=True,
+    ),
+    "milan-dmdevelon": TeamMember(
+        key="milan-dmdevelon",
+        display_name="Milan Dražić (dmdevelon)",
+        email="milan.drazic@dmdevelon.website",
+        roles=frozenset({MembershipRole.ORG_ADMIN}),
+        therapist_slug=None,
+        clerk_ids={CLERK_DEVELOPMENT: "user_3GpXyBDgdjBWaKDixwvc01Dlr6c"},
+        superadmin=True,
     ),
 }
 

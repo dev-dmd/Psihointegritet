@@ -5,23 +5,29 @@ from sqlalchemy import engine_from_config, pool
 
 from psihointegritet.core.config import get_settings
 from psihointegritet.db.base import Base
+from psihointegritet.modules.booking import models as booking_models
+from psihointegritet.modules.compass import models as compass_models
 from psihointegritet.modules.content import models as content_models
 from psihointegritet.modules.content import taxonomy_models
 from psihointegritet.modules.guidance import models as guidance_models
 from psihointegritet.modules.identity import models as identity_models
 from psihointegritet.modules.organizations import models as organization_models
 from psihointegritet.modules.privacy import models as privacy_models
+from psihointegritet.modules.research import models as research_models
 
 # Alembic needs each mapped module imported before it reads Base.metadata.
 # A module missing from this tuple is invisible to autogenerate: its tables
 # are silently left out of the migration rather than reported as an error.
 MODEL_MODULES = (
+    booking_models,
     content_models,
+    compass_models,
     taxonomy_models,
     guidance_models,
     identity_models,
     organization_models,
     privacy_models,
+    research_models,
 )
 
 config = context.config

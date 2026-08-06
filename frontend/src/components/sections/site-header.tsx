@@ -4,7 +4,11 @@ import Link from "next/link";
 import { StickyBar } from "@/components/motion/sticky-bar";
 import { MobileMenu } from "@/components/sections/mobile-menu";
 import { AnimatedCtaLink } from "@/components/ui/animated-cta-link";
-import { headerBookingHref, headerNavLinks } from "@/content/site-navigation";
+import {
+  headerBookingHref,
+  visibleHeaderNavLinks,
+} from "@/content/site-navigation";
+import { isCompassPublicEnabled } from "@/lib/compass/flags";
 import { AuthMenu } from "@/lib/auth/clerk/auth-menu";
 import { MobileAuthSection } from "@/lib/auth/clerk/mobile-auth-section";
 
@@ -16,6 +20,8 @@ import { MobileAuthSection } from "@/lib/auth/clerk/mobile-auth-section";
  * next/link — no full page loads.
  */
 export function SiteHeader() {
+  const navLinks = visibleHeaderNavLinks(isCompassPublicEnabled());
+
   return (
     <>
       <header className="absolute inset-x-0 top-0 z-[60] px-4 pt-10 md:pt-[42px]">
@@ -39,7 +45,7 @@ export function SiteHeader() {
             aria-label="Glavna navigacija"
             className="col-start-2 hidden items-center gap-[clamp(12px,1.4vw,26px)] justify-self-center rounded-full bg-gray-300/32 px-[clamp(18px,1.8vw,28px)] py-[13px] whitespace-nowrap backdrop-blur-[14px] lg:flex"
           >
-            {headerNavLinks.map((link) => (
+            {navLinks.map((link) => (
               <Link
                 key={link.href}
                 href={link.href as Route}
@@ -56,10 +62,7 @@ export function SiteHeader() {
               label="Zakaži termin"
               className="max-[480px]:hidden"
             />
-            <MobileMenu
-              links={headerNavLinks}
-              authSlot={<MobileAuthSection />}
-            />
+            <MobileMenu links={navLinks} authSlot={<MobileAuthSection />} />
           </div>
         </div>
       </header>
@@ -78,7 +81,7 @@ export function SiteHeader() {
           aria-label="Brza navigacija"
           className="hidden items-center gap-[clamp(12px,1.2vw,22px)] lg:flex"
         >
-          {headerNavLinks.map((link) => (
+          {navLinks.map((link) => (
             <Link
               key={link.href}
               href={link.href as Route}
@@ -95,7 +98,7 @@ export function SiteHeader() {
           size="sm"
         />
         <MobileMenu
-          links={headerNavLinks}
+          links={navLinks}
           variant="solid"
           authSlot={<MobileAuthSection />}
         />

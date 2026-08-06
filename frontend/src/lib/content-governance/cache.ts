@@ -6,6 +6,7 @@ export const PUBLIC_CONTENT_CACHE_TAG = "content:published:sr-Latn";
 
 const COLLECTION_ROUTES: Partial<Record<ContentType, string>> = {
   service: "/usluge",
+  article: "/znanje",
   therapist: "/tim",
   program: "/radionice",
   company_plan: "/rad-sa-kompanijama",
@@ -14,6 +15,7 @@ const COLLECTION_ROUTES: Partial<Record<ContentType, string>> = {
 
 const ROUTE_PREFIX: Record<ContentType, string> = {
   static_page: "",
+  article: "/znanje",
   service: "/usluge",
   therapist: "/tim",
   program: "/radionice",

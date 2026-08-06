@@ -53,9 +53,13 @@ function serbianValidationMessage(message: string): string {
   if (message === "Input should be a valid UUID") {
     return "Izaberite postojeću vrednost iz liste.";
   }
-  const maximum = message.match(/^String should have at most (\d+) characters$/);
+  const maximum = message.match(
+    /^String should have at most (\d+) characters$/,
+  );
   if (maximum) return `Polje može imati najviše ${maximum[1]} karaktera.`;
-  const minimum = message.match(/^String should have at least (\d+) characters$/);
+  const minimum = message.match(
+    /^String should have at least (\d+) characters$/,
+  );
   if (minimum) return `Polje mora imati najmanje ${minimum[1]} karaktera.`;
   return message;
 }
@@ -73,7 +77,9 @@ export function taxonomyFieldErrors(error: unknown): Record<string, string> {
   if (error.problem?.fieldPath) {
     fields[normalizedFieldPath(error.problem.fieldPath)] = error.message;
   }
-  for (const [path, messages] of Object.entries(error.problem?.fieldErrors ?? {})) {
+  for (const [path, messages] of Object.entries(
+    error.problem?.fieldErrors ?? {},
+  )) {
     if (messages[0]) {
       fields[normalizedFieldPath(path)] = serbianValidationMessage(messages[0]);
     }
@@ -94,7 +100,7 @@ async function parseOrThrow<T>(response: Response): Promise<T> {
             ? `Kompas registar trenutno nije dostupan. Pokušajte ponovo. Ako se greška ponovi, pošaljite podršci ID greške: ${parsed.correlationId}.`
             : parsed.code === "validation_error"
               ? "Proverite označena polja i ispravite unos."
-            : (parsed.detail ?? parsed.title);
+              : (parsed.detail ?? parsed.title);
       } else if (
         typeof parsed === "object" &&
         parsed !== null &&
@@ -190,7 +196,9 @@ export async function confirmTaxonomyRoute(
       body: JSON.stringify({
         locale: input.locale ?? "sr-Latn",
         slug: input.slug,
-        ...(input.lockVersion == null ? {} : { lockVersion: input.lockVersion }),
+        ...(input.lockVersion == null
+          ? {}
+          : { lockVersion: input.lockVersion }),
       }),
     },
   );

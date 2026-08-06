@@ -7,10 +7,7 @@ import {
   type BookingRequestPayload,
 } from "@/lib/api/booking-request";
 
-export const bookingRequestMutationKey = [
-  "public",
-  "booking-request",
-] as const;
+export const bookingRequestMutationKey = ["public", "booking-request"] as const;
 
 export function useBookingRequestMutation() {
   return useMutation({

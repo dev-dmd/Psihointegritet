@@ -8,23 +8,31 @@ membership via `resolve_staff_actor`, `org_admin` required for every mutation
 
 from __future__ import annotations
 
+import asyncio
+from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, File, HTTPException, UploadFile, status
 from sqlalchemy import select
 
 from psihointegritet.api.dependencies import AppSettings, CurrentIdentity, DatabaseSession
 from psihointegritet.modules.content.models import ContentType
 from psihointegritet.modules.content.schemas import (
     ContentHealthOut,
+    ContentReviewAssignmentOut,
+    ContentReviewQueueItemOut,
     ContentRevisionOut,
     CreateContentEntryRequest,
+    CreateContentReviewAssignmentRequest,
+    NewContentDraftRequest,
     NormalizeRichHtmlRequest,
     NormalizeRichHtmlResponse,
     PublicContentRevisionOut,
     PublishBlockOut,
     RecordReviewDecisionRequest,
     RichDocFindingOut,
+    StaffUserOut,
+    SubmitArticleForReviewRequest,
     TransitionRequest,
     UpdateContentRevisionRequest,
 )
@@ -38,10 +46,17 @@ from psihointegritet.modules.guidance.authorization import (
     IntakeAuthorizationError,
     StaffActor,
     resolve_staff_actor,
+    staff_authorization_message,
 )
 from psihointegritet.modules.organizations.models import Organization
 from psihointegritet.shared.domain.rich_doc import rich_doc_to_json
+from psihointegritet.shared.parsing.docx_import import (
+    DocxImportLimits,
+    DocxImportRejectedError,
+    convert_docx_bytes,
+)
 from psihointegritet.shared.parsing.html_normalize import normalize_html_to_rich_doc
+from psihointegritet.shared.parsing.upload import read_docx_upload
 
 router = APIRouter(prefix="/content", tags=["content"])
 public_router = APIRouter(prefix="/public/content", tags=["public-content"])
@@ -73,7 +88,10 @@ async def _org_admin_actor(
     try:
         actor = await resolve_staff_actor(session, identity, settings.default_organization_slug)
     except IntakeAuthorizationError as error:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(error)) from error
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=staff_authorization_message(error),
+        ) from error
     if not actor.is_org_admin:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -92,6 +110,66 @@ def _handle(error: Exception) -> HTTPException:
     if isinstance(error, ValueError):
         return HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail=str(error))
     raise error
+
+
+#: Guards a document that passes the size checks but is still slow to walk
+#: (thousands of tiny runs). Same budget the legal registry uses.
+_DOCX_CONVERSION_TIMEOUT_SECONDS = 20
+
+
+@router.post(
+    "/rich-doc/import-docx",
+    response_model=NormalizeRichHtmlResponse,
+    operation_id="import_rich_doc_docx",
+)
+async def import_rich_doc_docx(
+    identity: CurrentIdentity,
+    session: DatabaseSession,
+    settings: AppSettings,
+    file: Annotated[UploadFile, File()],
+) -> NormalizeRichHtmlResponse:
+    """Convert a `.docx` into RichDoc for any staff editor, writing nothing.
+
+    Preview only, exactly like the legal registry's import (ADR-017 Amendment 1
+    §A1.2): the panel shows the result and the author applies it by saving the
+    revision. Same conversion, same limits, same findings — the article editor
+    must not grow a second, subtly different importer.
+    """
+    data = await read_docx_upload(file)
+    async with session.begin():
+        await _org_admin_actor(session, settings, identity)
+    try:
+        # CPU-bound (mammoth + zip/HTML parsing) — never on the event loop
+        # (rules §18).
+        result = await asyncio.wait_for(
+            asyncio.to_thread(convert_docx_bytes, data, DocxImportLimits()),
+            timeout=_DOCX_CONVERSION_TIMEOUT_SECONDS,
+        )
+    except TimeoutError as error:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail="Konverzija dokumenta je istekla.",
+        ) from error
+    except DocxImportRejectedError as error:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail=str(error),
+        ) from error
+
+    return NormalizeRichHtmlResponse(
+        body=rich_doc_to_json(result.document),
+        findings=[
+            RichDocFindingOut(
+                rule_id=finding.rule_id,
+                rule_version=finding.rule_version,
+                severity=finding.severity,
+                message=finding.message,
+                remediation=finding.remediation,
+                field_path=finding.field_path,
+            )
+            for finding in result.findings
+        ],
+    )
 
 
 @router.post(
@@ -265,6 +343,81 @@ async def check_content_publishable(
 
 
 @router.post(
+    "/entries/{entry_id}/revisions/{revision_id}/submit-review",
+    response_model=ContentRevisionOut,
+    operation_id="submit_article_for_review",
+)
+async def submit_article_for_review(
+    entry_id: UUID,
+    revision_id: UUID,
+    request: SubmitArticleForReviewRequest,
+    identity: CurrentIdentity,
+    session: DatabaseSession,
+    settings: AppSettings,
+) -> ContentRevisionOut:
+    """Atomic save + transition ``draft → in_review`` in one transaction.
+
+    Idempotent: calling with the same ``idempotencyKey`` returns the
+    already-in-review revision; calling without changes on an already-in-review
+    revision also succeeds.  Only the first caller receives the side-effects
+    (audit event, outbox record).
+    """
+    try:
+        async with session.begin():
+            actor = await _org_admin_actor(session, settings, identity)
+            return await ContentService(session).submit_article_for_review(
+                actor,
+                entry_id,
+                revision_id,
+                request,
+            )
+    except (
+        ContentNotFoundError,
+        ContentForbiddenError,
+        ContentConflictError,
+        ValueError,
+    ) as error:
+        raise _handle(error) from error
+
+
+@router.post(
+    "/entries/{entry_id}/revisions/{revision_id}/new-draft",
+    response_model=ContentRevisionOut,
+    status_code=status.HTTP_201_CREATED,
+    operation_id="new_content_draft",
+)
+async def new_content_draft(
+    entry_id: UUID,
+    revision_id: UUID,
+    request: NewContentDraftRequest,
+    identity: CurrentIdentity,
+    session: DatabaseSession,
+    settings: AppSettings,
+) -> ContentRevisionOut:
+    """Create a new DRAFT revision copying content from the current one (RW-3).
+
+    Does not mutate the source revision.  Published and archived sources stay
+    as-is; in_review and approved sources are marked as superseded.
+    """
+    try:
+        async with session.begin():
+            actor = await _org_admin_actor(session, settings, identity)
+            return await ContentService(session).create_new_draft(
+                actor,
+                entry_id,
+                revision_id,
+                request,
+            )
+    except (
+        ContentNotFoundError,
+        ContentForbiddenError,
+        ContentConflictError,
+        ValueError,
+    ) as error:
+        raise _handle(error) from error
+
+
+@router.post(
     "/entries/{entry_id}/revisions/{revision_id}/transition",
     response_model=ContentRevisionOut,
     operation_id="transition_content_revision",
@@ -331,3 +484,74 @@ async def delete_content_revision(
             await ContentService(session).delete_revision(actor, entry_id, revision_id)
     except (ContentNotFoundError, ContentForbiddenError, ContentConflictError) as error:
         raise _handle(error) from error
+
+
+@router.get(
+    "/review-queue",
+    response_model=list[ContentReviewQueueItemOut],
+    operation_id="list_review_queue",
+)
+async def list_review_queue(
+    identity: CurrentIdentity,
+    session: DatabaseSession,
+    settings: AppSettings,
+) -> list[ContentReviewQueueItemOut]:
+    """Return all pending review tasks for the calling user (RW-6).
+
+    Filters out entries submitted by the user (four-eyes rule) and shows only
+    capabilities the user is assigned to review.
+    """
+    async with session.begin():
+        actor = await _org_admin_actor(session, settings, identity)
+        return await ContentService(session).list_review_queue(actor)
+
+
+@router.get(
+    "/staff-users",
+    response_model=list[StaffUserOut],
+    operation_id="list_staff_users",
+)
+async def list_staff_users(
+    identity: CurrentIdentity,
+    session: DatabaseSession,
+    settings: AppSettings,
+) -> list[StaffUserOut]:
+    async with session.begin():
+        actor = await _org_admin_actor(session, settings, identity)
+        return await ContentService(session).list_staff_users(actor.organization_id)
+
+
+@router.post(
+    "/review-assignments",
+    response_model=ContentReviewAssignmentOut,
+    status_code=status.HTTP_201_CREATED,
+    operation_id="create_content_review_assignment",
+)
+async def create_content_review_assignment(
+    request: CreateContentReviewAssignmentRequest,
+    identity: CurrentIdentity,
+    session: DatabaseSession,
+    settings: AppSettings,
+) -> ContentReviewAssignmentOut:
+    """Assign or re-activate a reviewer for a specific capability (RW-6)."""
+    try:
+        async with session.begin():
+            actor = await _org_admin_actor(session, settings, identity)
+            return await ContentService(session).create_review_assignment(actor, request)
+    except (ContentConflictError, ValueError) as error:
+        raise _handle(error) from error
+
+
+@router.get(
+    "/review-assignments",
+    response_model=list[ContentReviewAssignmentOut],
+    operation_id="list_review_assignments",
+)
+async def list_review_assignments(
+    identity: CurrentIdentity,
+    session: DatabaseSession,
+    settings: AppSettings,
+) -> list[ContentReviewAssignmentOut]:
+    async with session.begin():
+        actor = await _org_admin_actor(session, settings, identity)
+        return await ContentService(session).list_review_assignments(actor.organization_id)

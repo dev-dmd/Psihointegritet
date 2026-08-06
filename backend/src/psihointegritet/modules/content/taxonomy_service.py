@@ -7,7 +7,7 @@ import unicodedata
 from datetime import UTC, datetime
 from uuid import UUID
 
-from sqlalchemy import delete, or_, select
+from sqlalchemy import delete, func, or_, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm.exc import StaleDataError
@@ -492,6 +492,7 @@ class TaxonomyService:
         replacement_term_id: UUID | None,
         *,
         published: bool = False,
+        allow_incomplete_topic_context: bool = False,
     ) -> None:
         if revision.icon_key and revision.asset_id:
             raise TaxonomyValidationError(
@@ -501,33 +502,37 @@ class TaxonomyService:
             )
         if term.axis is TaxonomyAxis.TOPIC:
             if revision.primary_parent_term_id is None:
-                raise TaxonomyValidationError(
-                    "TAX-HIER-001",
-                    "Tema mora pripadati jednoj primarnoj grupi.",
-                    "primaryParentTermId",
+                if not allow_incomplete_topic_context:
+                    raise TaxonomyValidationError(
+                        "TAX-HIER-001",
+                        "Tema mora pripadati jednoj primarnoj grupi.",
+                        "primaryParentTermId",
+                    )
+            else:
+                await self._reference_term(
+                    actor,
+                    revision.primary_parent_term_id,
+                    axis=TaxonomyAxis.TOPIC_GROUP,
+                    field_path="primaryParentTermId",
+                    published=published,
+                    locale=revision.locale,
                 )
             if revision.journey_intent_term_id is None:
-                raise TaxonomyValidationError(
-                    "TAX-JOURNEY-001",
-                    "Tema mora imati izabran put korisnika.",
-                    "journeyIntentTermId",
+                if not allow_incomplete_topic_context:
+                    raise TaxonomyValidationError(
+                        "TAX-JOURNEY-001",
+                        "Tema mora imati izabran put korisnika.",
+                        "journeyIntentTermId",
+                    )
+            else:
+                await self._reference_term(
+                    actor,
+                    revision.journey_intent_term_id,
+                    axis=TaxonomyAxis.JOURNEY_INTENT,
+                    field_path="journeyIntentTermId",
+                    published=published,
+                    locale=revision.locale,
                 )
-            await self._reference_term(
-                actor,
-                revision.primary_parent_term_id,
-                axis=TaxonomyAxis.TOPIC_GROUP,
-                field_path="primaryParentTermId",
-                published=published,
-                locale=revision.locale,
-            )
-            await self._reference_term(
-                actor,
-                revision.journey_intent_term_id,
-                axis=TaxonomyAxis.JOURNEY_INTENT,
-                field_path="journeyIntentTermId",
-                published=published,
-                locale=revision.locale,
-            )
         elif (
             revision.primary_parent_term_id is not None
             or revision.journey_intent_term_id is not None
@@ -765,6 +770,233 @@ class TaxonomyService:
             updated_at=revision.updated_at,
         )
 
+    async def _batch_assemble_term_outs(
+        self,
+        terms: list[TaxonomyTerm],
+        revisions: dict[UUID, TaxonomyTermRevision],
+        locale: str,
+    ) -> dict[UUID, TaxonomyTermOut]:
+        """Assemble :class:`TaxonomyTermOut` per term_id from pre-fetched data.
+
+        All sub-entity queries are batched: one query each for search terms,
+        relations, decisions, events, canonical routes, related terms and
+        actors.  Where the original ``_term_out`` loop issued ~10 queries per
+        term, this method issues ~10 queries **total**.
+
+        Keyed by ``term.id`` rather than returned positionally: not every
+        term in *terms* has a revision (status filter, missing locale
+        revision, ...), so the result is shorter than *terms* and callers
+        must look up by id instead of assuming index alignment.
+        """
+        if not revisions:
+            return {}
+
+        revision_ids = list(revisions.keys())
+
+        # ---- search terms (1 query) ----------------------------------------
+        search_rows: dict[UUID, list[str]] = {rid: [] for rid in revision_ids}
+        for row in (
+            await self._session.scalars(
+                select(TaxonomyTermSearchTerm)
+                .where(TaxonomyTermSearchTerm.revision_id.in_(revision_ids))
+                .order_by(TaxonomyTermSearchTerm.original_value)
+            )
+        ).all():
+            search_rows.setdefault(row.revision_id, []).append(row.original_value)
+
+        # ---- relations (1 query) --------------------------------------------
+        relation_rows: dict[UUID, list[TaxonomyTermRelation]] = {rid: [] for rid in revision_ids}
+        all_relations: list[TaxonomyTermRelation] = list(
+            await self._session.scalars(
+                select(TaxonomyTermRelation).where(
+                    TaxonomyTermRelation.source_revision_id.in_(revision_ids)
+                )
+            )
+        )
+        for rel in all_relations:
+            relation_rows.setdefault(rel.source_revision_id, []).append(rel)
+
+        # ---- decisions (1 query) --------------------------------------------
+        decision_rows: dict[UUID, list[TaxonomyReviewDecision]] = {rid: [] for rid in revision_ids}
+        all_decisions: list[TaxonomyReviewDecision] = list(
+            await self._session.scalars(
+                select(TaxonomyReviewDecision).where(
+                    TaxonomyReviewDecision.revision_id.in_(revision_ids)
+                )
+            )
+        )
+        for dec in all_decisions:
+            decision_rows.setdefault(dec.revision_id, []).append(dec)
+
+        # ---- events (1 query) -----------------------------------------------
+        event_rows: dict[UUID, list[TaxonomyPublicationEvent]] = {rid: [] for rid in revision_ids}
+        all_events: list[TaxonomyPublicationEvent] = list(
+            await self._session.scalars(
+                select(TaxonomyPublicationEvent)
+                .where(TaxonomyPublicationEvent.term_revision_id.in_(revision_ids))
+                .order_by(TaxonomyPublicationEvent.created_at.desc())
+            )
+        )
+        for evt in all_events:
+            event_rows.setdefault(evt.term_revision_id, []).append(evt)  # type: ignore[arg-type]
+
+        # ---- canonical routes (1 query) -------------------------------------
+        route_kind_term_ids = [t.id for t in terms if t.axis in ROUTE_KIND_BY_AXIS]
+        canonical_routes: dict[UUID, TaxonomyTermRoute] = {}
+        if route_kind_term_ids:
+            for route in (
+                await self._session.scalars(
+                    select(TaxonomyTermRoute).where(
+                        TaxonomyTermRoute.term_id.in_(route_kind_term_ids),
+                        TaxonomyTermRoute.locale == locale,
+                        TaxonomyTermRoute.is_canonical.is_(True),
+                    )
+                )
+            ).all():
+                canonical_routes[route.term_id] = route
+
+        # ---- related TaxonomyTerm rows (1 query for parents + journeys + relation targets)
+        related_term_ids: set[UUID] = set()
+        for rev in revisions.values():
+            if rev.primary_parent_term_id:
+                related_term_ids.add(rev.primary_parent_term_id)
+            if rev.journey_intent_term_id:
+                related_term_ids.add(rev.journey_intent_term_id)
+        for rel in all_relations:
+            related_term_ids.add(rel.target_term_id)
+        related_terms: dict[UUID, TaxonomyTerm] = {}
+        if related_term_ids:
+            for rt in (
+                await self._session.scalars(
+                    select(TaxonomyTerm).where(TaxonomyTerm.id.in_(related_term_ids))
+                )
+            ).all():
+                related_terms[rt.id] = rt
+
+        # ---- actors (1 query) -----------------------------------------------
+        user_ids: set[UUID] = set()
+        for rev in revisions.values():
+            if rev.created_by_user_id:
+                user_ids.add(rev.created_by_user_id)
+            if rev.updated_by_user_id:
+                user_ids.add(rev.updated_by_user_id)
+        for dec in all_decisions:
+            if dec.decided_by_user_id:
+                user_ids.add(dec.decided_by_user_id)
+        for evt in all_events:
+            if evt.actor_user_id:
+                user_ids.add(evt.actor_user_id)
+        users: dict[UUID, InternalUser] = {}
+        if user_ids:
+            for user in (
+                await self._session.scalars(
+                    select(InternalUser).where(InternalUser.id.in_(user_ids))
+                )
+            ).all():
+                users[user.id] = user
+
+        # ---- helpers --------------------------------------------------------
+        def _actor(uid: UUID | None) -> ActorSummaryOut | None:
+            if uid is None:
+                return None
+            user = users.get(uid)
+            if user is None:
+                return None
+            return ActorSummaryOut(
+                user_id=user.id,
+                display_name=user.display_name or user.email or str(user.id),
+                is_superadmin=user.is_superadmin,
+            )
+
+        def _decision_out(dec: TaxonomyReviewDecision) -> TaxonomyReviewDecisionOut:
+            return TaxonomyReviewDecisionOut(
+                capability=dec.capability,
+                outcome=dec.outcome,
+                decided_by=_actor(dec.decided_by_user_id),
+                decided_at=dec.decided_at,
+                note=dec.note,
+            )
+
+        def _event_out(evt: TaxonomyPublicationEvent) -> TaxonomyEventOut:
+            return TaxonomyEventOut(
+                from_status=evt.from_status,
+                to_status=evt.to_status,
+                actor=_actor(evt.actor_user_id),
+                reason=evt.reason,
+                created_at=evt.created_at,
+            )
+
+        # ---- assemble -------------------------------------------------------
+        results: dict[UUID, TaxonomyTermOut] = {}
+        for term in terms:
+            revision = revisions.get(term.id)
+            if revision is None:
+                continue
+            rid = revision.id
+
+            # relations for this revision
+            rels = relation_rows.get(rid, [])
+            relation_outputs: list[TaxonomyRelationOut] = []
+            for rel in rels:
+                target = related_terms.get(rel.target_term_id)
+                if target is not None:
+                    relation_outputs.append(
+                        TaxonomyRelationOut(
+                            kind=rel.relation_kind,
+                            target_term_id=target.id,
+                            target_stable_id=target.stable_id,
+                        )
+                    )
+
+            parent = (
+                related_terms.get(revision.primary_parent_term_id)
+                if revision.primary_parent_term_id
+                else None
+            )  # type: ignore[arg-type]
+            journey = (
+                related_terms.get(revision.journey_intent_term_id)
+                if revision.journey_intent_term_id
+                else None
+            )  # type: ignore[arg-type]
+            cr = canonical_routes.get(term.id)
+
+            results[term.id] = TaxonomyTermOut(
+                term_id=term.id,
+                revision_id=rid,
+                organization_id=revision.organization_id,
+                axis=term.axis,
+                stable_id=term.stable_id,
+                canonical_path=(
+                    _canonical_path(cr.route_kind, cr.slug) if cr is not None else None
+                ),
+                system_defined=term.system_defined,
+                locale=revision.locale,
+                public_label=revision.public_label,
+                short_description=revision.short_description,
+                internal_expert_note=revision.internal_expert_note,
+                primary_parent_term_id=revision.primary_parent_term_id,
+                primary_parent_stable_id=parent.stable_id if parent else None,
+                journey_intent_term_id=revision.journey_intent_term_id,
+                journey_intent=journey.stable_id if journey else None,
+                sort_order=revision.sort_order,
+                icon_key=revision.icon_key,
+                asset_id=revision.asset_id,
+                public_visible=revision.public_visible,
+                compass_enabled=revision.compass_enabled,
+                status=revision.status,
+                version_label=revision.version_label,
+                lock_version=revision.lock_version,
+                search_terms=search_rows.get(rid, []),
+                relations=relation_outputs,
+                decisions=[_decision_out(d) for d in decision_rows.get(rid, [])],
+                events=[_event_out(e) for e in event_rows.get(rid, [])],
+                created_by=_actor(revision.created_by_user_id),
+                updated_by=_actor(revision.updated_by_user_id),
+                created_at=revision.created_at,
+                updated_at=revision.updated_at,
+            )
+        return results
+
     async def list_terms(
         self,
         actor: StaffActor,
@@ -783,27 +1015,112 @@ class TaxonomyService:
         )
         if axis is not None:
             statement = statement.where(TaxonomyTerm.axis == axis)
-        terms = (await self._session.scalars(statement.order_by(TaxonomyTerm.axis))).all()
-        normalized_query = _normalize_search_term(query or "")
-        results: list[TaxonomyTermOut] = []
-        for term in terms:
-            revision = await self._latest_effective_revision(term, actor.organization_id, locale)
-            if revision is None or (status is not None and revision.status is not status):
-                continue
-            output = await self._term_out(term, revision)
-            haystack = " ".join(
-                [
-                    term.stable_id,
-                    output.public_label,
-                    output.short_description,
-                    *output.search_terms,
-                ]
+        terms: list[TaxonomyTerm] = list(
+            await self._session.scalars(statement.order_by(TaxonomyTerm.axis))
+        )
+
+        if not terms:
+            return []
+
+        term_ids = [term.id for term in terms]
+        org_id = actor.organization_id
+
+        # ---- batch-fetch latest tenant revisions (1 query) ------------------
+        tenant_latest = (
+            select(
+                TaxonomyTermRevision.term_id,
+                func.max(TaxonomyTermRevision.created_at).label("max_at"),
             )
-            if normalized_query and normalized_query not in _normalize_search_term(haystack):
-                continue
-            results.append(output)
+            .where(
+                TaxonomyTermRevision.term_id.in_(term_ids),
+                TaxonomyTermRevision.organization_id == org_id,
+                TaxonomyTermRevision.locale == locale,
+            )
+            .group_by(TaxonomyTermRevision.term_id)
+        ).subquery("tenant_latest")
+
+        tenant_revs: dict[UUID, TaxonomyTermRevision] = {}
+        for rev in (
+            await self._session.scalars(
+                select(TaxonomyTermRevision)
+                .join(
+                    tenant_latest,
+                    (TaxonomyTermRevision.term_id == tenant_latest.c.term_id)
+                    & (TaxonomyTermRevision.created_at == tenant_latest.c.max_at),
+                )
+                .where(
+                    TaxonomyTermRevision.organization_id == org_id,
+                    TaxonomyTermRevision.locale == locale,
+                )
+            )
+        ).all():
+            # If two revisions share the same max created_at, keep the first
+            tenant_revs.setdefault(rev.term_id, rev)
+
+        # ---- system fallback for system-defined terms without tenant rev -----
+        system_term_ids = [t.id for t in terms if t.system_defined and t.id not in tenant_revs]
+        if system_term_ids:
+            sys_latest = (
+                select(
+                    TaxonomyTermRevision.term_id,
+                    func.max(TaxonomyTermRevision.created_at).label("max_at"),
+                )
+                .where(
+                    TaxonomyTermRevision.term_id.in_(system_term_ids),
+                    TaxonomyTermRevision.organization_id.is_(None),
+                    TaxonomyTermRevision.locale == locale,
+                )
+                .group_by(TaxonomyTermRevision.term_id)
+            ).subquery("sys_latest")
+
+            for rev in (
+                await self._session.scalars(
+                    select(TaxonomyTermRevision)
+                    .join(
+                        sys_latest,
+                        (TaxonomyTermRevision.term_id == sys_latest.c.term_id)
+                        & (TaxonomyTermRevision.created_at == sys_latest.c.max_at),
+                    )
+                    .where(
+                        TaxonomyTermRevision.organization_id.is_(None),
+                        TaxonomyTermRevision.locale == locale,
+                    )
+                )
+            ).all():
+                tenant_revs.setdefault(rev.term_id, rev)
+
+        # ---- status filter --------------------------------------------------
+        if status is not None:
+            tenant_revs = {tid: rev for tid, rev in tenant_revs.items() if rev.status == status}
+
+        # ---- batch-assemble all outputs (~7 more queries, total) ------------
+        all_outputs = await self._batch_assemble_term_outs(terms, tenant_revs, locale)
+
+        # ---- text search filter ---------------------------------------------
+        normalized_query = _normalize_search_term(query or "")
+        if normalized_query:
+            results: list[TaxonomyTermOut] = []
+            for term in terms:
+                output = all_outputs.get(term.id)
+                if output is None:
+                    continue
+                haystack = " ".join(
+                    [
+                        term.stable_id,
+                        output.public_label,
+                        output.short_description,
+                        *output.search_terms,
+                    ]
+                )
+                if normalized_query in _normalize_search_term(haystack):
+                    results.append(output)
+            return sorted(
+                results,
+                key=lambda item: (item.axis.value, item.sort_order, item.public_label),
+            )
         return sorted(
-            results, key=lambda item: (item.axis.value, item.sort_order, item.public_label)
+            all_outputs.values(),
+            key=lambda item: (item.axis.value, item.sort_order, item.public_label),
         )
 
     async def get_term(
@@ -874,7 +1191,14 @@ class TaxonomyService:
         )
         self._session.add(revision)
         await self._session.flush()
-        await self._validate_shape(actor, term, revision, request.related_topic_ids, None)
+        await self._validate_shape(
+            actor,
+            term,
+            revision,
+            request.related_topic_ids,
+            None,
+            allow_incomplete_topic_context=True,
+        )
         await self._replace_search_terms(revision.id, request.search_terms)
         await self._replace_relations(revision, term.id, request.related_topic_ids, None)
         self._log_term_event(revision.id, None, RevisionStatus.DRAFT, actor)
@@ -1046,7 +1370,14 @@ class TaxonomyService:
                 None,
             )
         )
-        await self._validate_shape(actor, term, revision, related, replacement)
+        await self._validate_shape(
+            actor,
+            term,
+            revision,
+            related,
+            replacement,
+            allow_incomplete_topic_context=True,
+        )
         if request.search_terms is not None:
             await self._replace_search_terms(revision.id, request.search_terms)
         if request.related_topic_ids is not None or "replacement_term_id" in fields:
@@ -1184,6 +1515,26 @@ class TaxonomyService:
             await self._session.refresh(revision)
             return await self._term_out(term, revision)
         require_transition(revision.status, request.target)
+        if request.target is RevisionStatus.IN_REVIEW:
+            relations = await self._relations(revision.id)
+            await self._validate_shape(
+                actor,
+                term,
+                revision,
+                [
+                    item.target_term_id
+                    for item in relations
+                    if item.relation_kind is TaxonomyRelationKind.RELATED_TOPIC
+                ],
+                next(
+                    (
+                        item.target_term_id
+                        for item in relations
+                        if item.relation_kind is TaxonomyRelationKind.REPLACEMENT
+                    ),
+                    None,
+                ),
+            )
         if request.target is RevisionStatus.APPROVED:
             relations = await self._relations(revision.id)
             await self._validate_shape(
@@ -1404,7 +1755,13 @@ class TaxonomyService:
             taxonomy_version=TAXONOMY_VERSION,
             locale=locale,
             terms=sorted(
-                outputs, key=lambda item: (item.axis.value, item.sort_order, item.public_label)
+                outputs,
+                key=lambda item: (
+                    item.axis.value,
+                    item.sort_order,
+                    item.public_label,
+                    item.stable_id,
+                ),
             ),
         )
 
@@ -1500,14 +1857,222 @@ class TaxonomyService:
 
     async def list_intake_links(self, actor: StaffActor) -> list[TaxonomyIntakeLinkOut]:
         self._require_org_admin(actor)
-        links = (
+        links: list[TaxonomyIntakeLink] = list(
             await self._session.scalars(
                 select(TaxonomyIntakeLink)
                 .where(TaxonomyIntakeLink.organization_id == actor.organization_id)
                 .order_by(TaxonomyIntakeLink.created_at)
             )
-        ).all()
-        return [await self._link_out(actor, item) for item in links]
+        )
+
+        if not links:
+            return []
+
+        org_id = actor.organization_id
+        locale = "sr-Latn"
+
+        # ---- batch-fetch referenced TaxonomyTerms (1 query) -----------------
+        all_term_ids: set[UUID] = set()
+        for link in links:
+            all_term_ids.add(link.topic_term_id)
+            all_term_ids.add(link.support_area_term_id)
+        terms_by_id: dict[UUID, TaxonomyTerm] = {}
+        if all_term_ids:
+            for term in (
+                await self._session.scalars(
+                    select(TaxonomyTerm).where(TaxonomyTerm.id.in_(all_term_ids))
+                )
+            ).all():
+                terms_by_id[term.id] = term
+
+        # ---- batch-fetch latest revisions for referenced terms (2 queries) --
+        revision_term_ids = list(all_term_ids)
+        tenant_latest = (
+            select(
+                TaxonomyTermRevision.term_id,
+                func.max(TaxonomyTermRevision.created_at).label("max_at"),
+            )
+            .where(
+                TaxonomyTermRevision.term_id.in_(revision_term_ids),
+                TaxonomyTermRevision.organization_id == org_id,
+                TaxonomyTermRevision.locale == locale,
+            )
+            .group_by(TaxonomyTermRevision.term_id)
+        ).subquery("link_tenant_latest")
+
+        revs_by_term: dict[UUID, TaxonomyTermRevision] = {}
+        for rev in (
+            await self._session.scalars(
+                select(TaxonomyTermRevision)
+                .join(
+                    tenant_latest,
+                    (TaxonomyTermRevision.term_id == tenant_latest.c.term_id)
+                    & (TaxonomyTermRevision.created_at == tenant_latest.c.max_at),
+                )
+                .where(
+                    TaxonomyTermRevision.organization_id == org_id,
+                    TaxonomyTermRevision.locale == locale,
+                )
+            )
+        ).all():
+            revs_by_term.setdefault(rev.term_id, rev)
+
+        # system fallback for system-defined terms
+        sys_ids = [
+            tid
+            for tid in revision_term_ids
+            if tid not in revs_by_term
+            and terms_by_id.get(tid) is not None
+            and terms_by_id[tid].system_defined
+        ]
+        if sys_ids:
+            sys_latest = (
+                select(
+                    TaxonomyTermRevision.term_id,
+                    func.max(TaxonomyTermRevision.created_at).label("max_at"),
+                )
+                .where(
+                    TaxonomyTermRevision.term_id.in_(sys_ids),
+                    TaxonomyTermRevision.organization_id.is_(None),
+                    TaxonomyTermRevision.locale == locale,
+                )
+                .group_by(TaxonomyTermRevision.term_id)
+            ).subquery("link_sys_latest")
+            for rev in (
+                await self._session.scalars(
+                    select(TaxonomyTermRevision)
+                    .join(
+                        sys_latest,
+                        (TaxonomyTermRevision.term_id == sys_latest.c.term_id)
+                        & (TaxonomyTermRevision.created_at == sys_latest.c.max_at),
+                    )
+                    .where(
+                        TaxonomyTermRevision.organization_id.is_(None),
+                        TaxonomyTermRevision.locale == locale,
+                    )
+                )
+            ).all():
+                revs_by_term.setdefault(rev.term_id, rev)
+
+        # ---- batch-fetch decisions (1 query) --------------------------------
+        link_ids = [link.id for link in links]
+        decisions_by_link: dict[UUID, list[TaxonomyIntakeLinkReviewDecision]] = {
+            lid: [] for lid in link_ids
+        }
+        for dec in (
+            await self._session.scalars(
+                select(TaxonomyIntakeLinkReviewDecision).where(
+                    TaxonomyIntakeLinkReviewDecision.link_id.in_(link_ids)
+                )
+            )
+        ).all():
+            decisions_by_link.setdefault(dec.link_id, []).append(dec)
+
+        # ---- batch-fetch events (1 query) -----------------------------------
+        events_by_link: dict[UUID, list[TaxonomyPublicationEvent]] = {lid: [] for lid in link_ids}
+        for evt in (
+            await self._session.scalars(
+                select(TaxonomyPublicationEvent)
+                .where(TaxonomyPublicationEvent.intake_link_id.in_(link_ids))
+                .order_by(TaxonomyPublicationEvent.created_at.desc())
+            )
+        ).all():
+            if evt.intake_link_id:
+                events_by_link.setdefault(evt.intake_link_id, []).append(evt)
+
+        # ---- batch-fetch actors (1 query) -----------------------------------
+        user_ids: set[UUID] = set()
+        for link in links:
+            if link.created_by_user_id:
+                user_ids.add(link.created_by_user_id)
+            if link.updated_by_user_id:
+                user_ids.add(link.updated_by_user_id)
+        for decs in decisions_by_link.values():
+            for dec in decs:
+                if dec.decided_by_user_id:
+                    user_ids.add(dec.decided_by_user_id)
+        for evts in events_by_link.values():
+            for evt in evts:
+                if evt.actor_user_id:
+                    user_ids.add(evt.actor_user_id)
+        users: dict[UUID, InternalUser] = {}
+        if user_ids:
+            for user in (
+                await self._session.scalars(
+                    select(InternalUser).where(InternalUser.id.in_(user_ids))
+                )
+            ).all():
+                users[user.id] = user
+
+        # ---- helpers --------------------------------------------------------
+        def _actor(uid: UUID | None) -> ActorSummaryOut | None:
+            if uid is None:
+                return None
+            user = users.get(uid)
+            if user is None:
+                return None
+            return ActorSummaryOut(
+                user_id=user.id,
+                display_name=user.display_name or user.email or str(user.id),
+                is_superadmin=user.is_superadmin,
+            )
+
+        def _decision_out(
+            dec: TaxonomyIntakeLinkReviewDecision,
+        ) -> TaxonomyReviewDecisionOut:
+            return TaxonomyReviewDecisionOut(
+                capability=dec.capability,
+                outcome=dec.outcome,
+                decided_by=_actor(dec.decided_by_user_id),
+                decided_at=dec.decided_at,
+                note=dec.note,
+            )
+
+        def _event_out(evt: TaxonomyPublicationEvent) -> TaxonomyEventOut:
+            return TaxonomyEventOut(
+                from_status=evt.from_status,
+                to_status=evt.to_status,
+                actor=_actor(evt.actor_user_id),
+                reason=evt.reason,
+                created_at=evt.created_at,
+            )
+
+        # ---- assemble -------------------------------------------------------
+        results: list[TaxonomyIntakeLinkOut] = []
+        for link in links:
+            topic = terms_by_id.get(link.topic_term_id)
+            support = terms_by_id.get(link.support_area_term_id)
+            if topic is None or support is None:
+                raise TaxonomyConflictError(
+                    "TAX-LINK-002", "Povezivanje sadrži nepostojeću referencu."
+                )
+            topic_rev = revs_by_term.get(topic.id)
+            support_rev = revs_by_term.get(support.id)
+            if topic_rev is None or support_rev is None:
+                raise TaxonomyConflictError(
+                    "TAX-LINK-002", "Povezivanje sadrži nedostupnu referencu."
+                )
+
+            results.append(
+                TaxonomyIntakeLinkOut(
+                    link_id=link.id,
+                    topic_term_id=topic.id,
+                    topic_stable_id=topic.stable_id,
+                    topic_label=topic_rev.public_label,
+                    support_area_term_id=support.id,
+                    support_area_stable_id=support.stable_id,
+                    support_area_label=support_rev.public_label,
+                    status=link.status,
+                    lock_version=link.lock_version,
+                    decisions=[_decision_out(d) for d in decisions_by_link.get(link.id, [])],
+                    events=[_event_out(e) for e in events_by_link.get(link.id, [])],
+                    created_by=_actor(link.created_by_user_id),
+                    updated_by=_actor(link.updated_by_user_id),
+                    created_at=link.created_at,
+                    updated_at=link.updated_at,
+                )
+            )
+        return results
 
     async def create_intake_link(
         self, actor: StaffActor, request: CreateTaxonomyIntakeLinkRequest

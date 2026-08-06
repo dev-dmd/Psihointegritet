@@ -183,6 +183,10 @@ TEMPLATE_REGISTRY: Mapping[ContentTemplate, TemplateDefinition] = {
         required_slots=("title", "legal_copy", "version"),
         optional_slots=("links",),
     ),
+    ContentTemplate.ARTICLE_DETAIL: TemplateDefinition(
+        required_slots=("hero", "byline", "body_intro"),
+        optional_slots=("questions", "practice", "body_outro", "sources", "cta"),
+    ),
 }
 
 # Baseline per content type, from CONTENT_GOVERNANCE_CONTRACT §6 and
@@ -202,6 +206,10 @@ BASE_REQUIRED_APPROVALS: Mapping[ContentType, frozenset[ApprovalCapability]] = {
     ContentType.PROGRAM: frozenset({ApprovalCapability.BUSINESS}),
     ContentType.COMPANY_PLAN: frozenset({ApprovalCapability.BUSINESS}),
     ContentType.PACKAGE_OFFER: frozenset({ApprovalCapability.BUSINESS}),
+    # Same floor as a therapist profile (ADR-019 §9): an educational text about
+    # mental health carries a clinical claim, and it is still published under
+    # the practice's name, which is what `business` signs for.
+    ContentType.ARTICLE: frozenset({ApprovalCapability.CLINICAL, ApprovalCapability.BUSINESS}),
 }
 
 # Additive per template, because one content type can render as different
@@ -217,6 +225,10 @@ TEMPLATE_REQUIRED_APPROVALS: Mapping[ContentTemplate, frozenset[ApprovalCapabili
     ContentTemplate.COMPANY_PAGE: frozenset(),
     ContentTemplate.PRICING_PAGE: frozenset(),
     ContentTemplate.STATIC_INFORMATION: frozenset(),
+    # Already implied by `BASE_REQUIRED_APPROVALS[ARTICLE]`; stated here so the
+    # template keeps its clinical requirement if an article ever renders through
+    # a second recipe whose base type is not `article`.
+    ContentTemplate.ARTICLE_DETAIL: frozenset({ApprovalCapability.CLINICAL}),
 }
 
 

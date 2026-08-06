@@ -8,6 +8,8 @@
 
 **Amandman 1 — 2026-07-31:** D-054 razdvaja kanonske stranice oblasti/tema od dinamičkog kombinovanog prikaza, uvodi „Oblast” kao UI naziv za postojeći `topic_group` i rezerviše opcioni revisioned `CompassGuide` za authored/approved stručne veze između tema.
 
+**Amandman 3 — 2026-08-03 (D-058/ADR-025):** Uslov iz §3 je ispunjen jer Kompas dobija sopstveni lifecycle verzija toka. `modules/compass` je zato otvoren isključivo za flow identitet/verzije/review, mapiranje odgovora i Result Composer. `modules/content` ostaje autoritet za taxonomy, content discovery metadata i eligibility; novi modul ne preuzima CMS, taxonomy, kanonske rute ni Intake matching.
+
 ---
 
 ## 1. Kontekst
@@ -65,7 +67,7 @@ Kombinovani prikaz ne dobija novu taxonomy vrednost ili stranicu. Engine sme da 
 - terapeuta, capability-ja i matching rangiranja;
 - Team Queue i ljudskog handoff-a.
 
-Ne otvara se `modules/compass` u v1. Javni Kompas je proizvodna površina nad Content domenom, a ne novi vlasnik iste taksonomije. Novi modul zahteva zaseban ADR tek ako Kompas dobije sopstveni lifecycle ili perzistentne korisničke podatke.
+Po D-058 otvara se mali `modules/compass`, jer Kompas sada ima sopstveni lifecycle flow verzija. Javni Kompas je i dalje proizvodna površina nad Content domenom i novi modul nije vlasnik iste taksonomije. Granica i zabrana dupliranja detaljno su zaključane ADR-025; perzistentni korisnički podaci nisu uvedeni.
 
 ---
 
@@ -515,3 +517,52 @@ Odbačeno: poslovna logika bi završila u UI-ju, bez lifecycle-a, audit-a i zaš
 ### AI kao autoritet kategorizacije
 
 Odbačeno: AI kasnije može predložiti reviewable patch, ali schema, registar i ljudsko odobrenje ostaju autoritet.
+
+---
+
+## Amandman 2 — javni tok, anonimni access i operativna granica
+
+- **Datum:** 2026-08-01
+- **Status:** accepted
+- **Odluka:** D-056
+- **Menja:** javnu v1 granicu iz §13 i precizira K3B–K6 redosled; ostale odluke ovog ADR-a ostaju na snazi.
+
+### A2.1 Odvajanje od Intake-a
+
+Kompas je discovery i content-recommendation površina. Intake je jedini autoritet za hard constraints, uslugu, terapeuta i timski handoff. Kompas ne koristi `GuidanceFlow`, `IntakeStep`, `IntakeAnswers` ni Intake `QuestionsScreen`; postojeći ekran bezuslovno renderuje klinički `SafetyNotice`, koji ne pripada Kompasu. Dozvoljena je ponovna upotreba samo neutralnog drawer/surface obrasca.
+
+Kompas → Intake prenosi verzionisan `CompassHandoffContextV1` bez free text-a, kontakta, dijagnoze, risk procene, therapist ID-ja ili recommendation skora. Intake prikazuje preneti izbor i traži potvrdu; ambiguous topic → support-area veza ne prefill-uje razlog.
+
+### A2.2 Opcion inline tok
+
+Pitanja su opciona inline interakcija na `/kompas`, ne obavezan wizard i ne posebna ruta. Nema jezika „korak X od Y”. Korisnik uvek može da preskoči sva pitanja, prikaže preporuke iz delimičnog izbora, vrati se na oblasti ili pređe ka stručnoj pomoći.
+
+Ose su oblast, najviše dve teme, publika, cilj i put (`explore | professional_support | both`). Sve stručne opcije dolaze iz objavljenog DB registra. „Nisam siguran/na šta mi se događa” je sentinel akcija koja odmah otvara Polazni prikaz; nikada se ne čuva kao `topicId`. Multi-select tema je nova kontrola i ne prilagođava se postojećem single-select/auto-advance UI-ju.
+
+### A2.3 Javne rute i CMS granica
+
+Kanonski skup je:
+
+- `/kompas` — kontrolisana interaktivna struktura, Polazni ili prilagođeni prikaz;
+- `/kompas/oblasti` i `/kompas/teme` — liste objavljenog registra;
+- `/kompas/oblast/[slug]` i `/kompas/tema/[slug]` — pojedinačne kanonske stranice.
+
+Nema public `[id]`, kombinacionih SEO ruta ni taxonomy izbora u query parametrima. Runtime taxonomy aliasi ostaju DB autoritet za 308 i ne upisuju se u compile-time `redirectRegistry`. `Location` se pre Next `permanentRedirect()` validira kao interna kanonska Kompas putanja bez query/hash dela i bez self-loop-a.
+
+Editabilni hero/uvod/SEO na `/kompas` može koristiti postojeći `static_page + static_information` entitet, ali CMS ne kontroliše interaktivnu strukturu. `kompas` je rezervisan custom-document slug na frontend i backend granici.
+
+### A2.4 Anonimni access
+
+Anonimni page aggregate i recommendation endpoint vraćaju samo objavljen sadržaj u istom `organization_id`/locale scope-u čiji je efektivni access eksplicitno `public`. `registered`, `staff_only`, budući `subscriber`/`purchased` i `NULL` ne izlaze. Backend vraća stvaran access podatak na kartici i ostaje jedina bezbednosna granica; UI skrivanje nije autorizacija.
+
+Eligibility se primenjuje pre determinističkog rangiranja. Engine ne izlaže numerički score, therapist reference ni slobodan URL; vraća najviše tri stabilna plain-language razloga, verziju pravila i neutralni handoff kandidat.
+
+### A2.5 Discoverability i feedback
+
+Objavljeni i odobreni pojedinačni Kompas termini mogu biti `index`, uz `BreadcrumbList`; `CollectionPage` se ne uvodi bez izmene iscrpnog JSON-LD registra. Preduga javna labela/opis daje urednički warning/Content Health finding umesto tihog skraćivanja.
+
+Kompas feedback je anonimni UX-only survey sa zasebnim `surveyId`-jem. Prikazuje se najviše jednom po browser sesiji posle smislenog angažovanja ili eksplicitnog završetka; ne pokušava da presretne zatvaranje browser taba i nikada ne utiče na recommendation request, scoring, profil ili Intake handoff.
+
+### A2.6 Redosled i dizajn
+
+Dokumentacija i API ugovori prethode produkcionom UI-ju. Kanonske stranice i aggregate prethode verziranom recommendation endpoint-u, a Engine prethodi dinamičkom prilagođenom prikazu. Finalni vizuelni F3 implementira se tek nad Milanovim Kompas design handoff-om; izostanak mockup-a ne blokira dokumentaciju, K3B aggregate/kanonske granice, K4 Engine niti preduslovni refaktor/admin „Brzi unos”.

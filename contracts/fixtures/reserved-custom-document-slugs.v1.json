@@ -1,0 +1,23 @@
+{
+  "fixtureSchemaVersion": "1",
+  "description": "Shared parity fixture for public slugs that custom legal documents may not shadow. Frontend and backend tests must compare their runtime sets with this exact list.",
+  "slugs": [
+    "booking-widget",
+    "cene",
+    "kolacici",
+    "kompas",
+    "kontakt",
+    "o-nama",
+    "podrska-roditeljima",
+    "pravila-zakazivanja",
+    "privatnost",
+    "pronadji-podrsku",
+    "rad-sa-kompanijama",
+    "radionice",
+    "tim",
+    "uslovi",
+    "usluge",
+    "zakazi",
+    "znanje"
+  ]
+}
