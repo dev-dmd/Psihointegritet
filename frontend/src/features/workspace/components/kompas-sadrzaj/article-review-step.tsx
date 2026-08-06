@@ -2,7 +2,10 @@
 
 import { useState } from "react";
 
-import type { ApprovalCapability, PublicationStatus } from "@/lib/content-governance/types";
+import type {
+  ApprovalCapability,
+  PublicationStatus,
+} from "@/lib/content-governance/types";
 
 import type { ApiReviewDecision } from "../../content-api";
 import { ReviewAssignmentManager } from "../review-assignment-manager";
@@ -75,7 +78,11 @@ export function ArticleReviewStep({
       ) as HTMLTextAreaElement | null
     )?.value?.trim();
     if (!note) return;
-    onReview?.({ capability: reviewState.capability, outcome: "rejected", note });
+    onReview?.({
+      capability: reviewState.capability,
+      outcome: "rejected",
+      note,
+    });
     setReviewState(null);
   };
 

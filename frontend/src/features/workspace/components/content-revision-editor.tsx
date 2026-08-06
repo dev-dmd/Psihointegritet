@@ -431,7 +431,9 @@ export function ContentRevisionEditor({
                   disabled={
                     lifecyclePending || decision?.outcome === "approved"
                   }
-                  onClick={() => reviewMutation.mutate({ capability, outcome: "approved" })}
+                  onClick={() =>
+                    reviewMutation.mutate({ capability, outcome: "approved" })
+                  }
                   className="border-line-strong text-ink-70 disabled:bg-badge-ok-bg disabled:text-badge-ok cursor-pointer rounded-full border bg-transparent px-3.5 py-2 text-[13px] font-semibold disabled:cursor-default"
                 >
                   {CONTENT_APPROVAL_LABELS[capability]}

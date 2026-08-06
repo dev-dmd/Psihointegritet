@@ -156,7 +156,9 @@ export function useSubmitArticleReviewMutation(
   },
 ) {
   return useMutation({
-    mutationFn: (variables: SaveRevisionVariables & { idempotencyKey: string }) =>
+    mutationFn: (
+      variables: SaveRevisionVariables & { idempotencyKey: string },
+    ) =>
       submitContentForReview(entry.entryId, entry.revisionId, {
         lockVersion: entry.lockVersion,
         idempotencyKey: variables.idempotencyKey,

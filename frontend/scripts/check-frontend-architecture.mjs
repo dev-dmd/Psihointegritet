@@ -21,12 +21,16 @@ const sourceRoot = path.join(projectRoot, "src");
  * longer exist as single files; `content-revision-editor.tsx` 643 -> 592 after
  * its network lifecycle moved into a feature hook. `taxonomy-term-editor.tsx`
  * was decomposed for F4 Quick Entry and is no longer baseline debt.
+ *
+ * Re-anchored 2026-08-06: `content-revision-editor.tsx` 593 -> 595, pure
+ * Prettier reflow (the committed file had drifted from `prettier --write`'s
+ * canonical output). No responsibility moved in or out of the file.
  */
 const largeFileBaseline = new Map([
   ["src/features/booking/booking-request-form.tsx", 659],
   ["src/features/company/company-configurator-drawer.tsx", 517],
   ["src/features/guidance/guidance-flow.tsx", 963],
-  ["src/features/workspace/components/content-revision-editor.tsx", 593],
+  ["src/features/workspace/components/content-revision-editor.tsx", 595],
 ]);
 
 /**

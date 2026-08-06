@@ -34,26 +34,39 @@ function CheckIcon({ status }: { status: ReadinessCheckStatus }) {
   }
   if (status === "ok") {
     return (
-      <span aria-label="Spremno" className="text-badge-ok shrink-0 text-[15px] leading-none">
+      <span
+        aria-label="Spremno"
+        className="text-badge-ok shrink-0 text-[15px] leading-none"
+      >
         ✓
       </span>
     );
   }
   if (status === "error") {
     return (
-      <span aria-label="Greška" className="text-badge-danger shrink-0 text-[15px] leading-none">
+      <span
+        aria-label="Greška"
+        className="text-badge-danger shrink-0 text-[15px] leading-none"
+      >
         ✗
       </span>
     );
   }
   return (
-    <span aria-label="Na čekanju" className="text-badge-amber shrink-0 text-[15px] leading-none">
+    <span
+      aria-label="Na čekanju"
+      className="text-badge-amber shrink-0 text-[15px] leading-none"
+    >
       ○
     </span>
   );
 }
 
-export function ReadinessChecklist({ checks }: { checks: readonly ReadinessCheck[] }) {
+export function ReadinessChecklist({
+  checks,
+}: {
+  checks: readonly ReadinessCheck[];
+}) {
   return (
     <div className="rounded-panel border-line bg-surface border px-6 py-5">
       <h2 className="text-forest font-serif text-[21px]">

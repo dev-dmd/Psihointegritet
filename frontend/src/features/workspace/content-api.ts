@@ -309,6 +309,65 @@ export async function newContentDraft(
   return parseOrThrow<ApiContentRevision>(response);
 }
 
+export interface ApiReviewQueueItem {
+  entryId: string;
+  revisionId: string;
+  contentType: string;
+  slug: string;
+  versionLabel: string;
+  submittedAt: string;
+  submittedByDisplayName: string | null;
+  capability: ApprovalCapability;
+  alreadyDecided: boolean;
+  decidedOutcome: "approved" | "rejected" | null;
+}
+
+export interface ApiReviewAssignment {
+  assignmentId: string;
+  userId: string;
+  displayName: string;
+  capability: ApprovalCapability;
+  active: boolean;
+}
+
+export interface ApiStaffUser {
+  userId: string;
+  displayName: string;
+  email: string;
+}
+
+/** Reviewer's queue (RW-6): revisions awaiting a decision for a capability
+ *  the signed-in reviewer is assigned to. */
+export async function fetchReviewQueue(): Promise<ApiReviewQueueItem[]> {
+  const response = await fetch("/api/content/review-queue", {
+    cache: "no-store",
+  });
+  return parseOrThrow<ApiReviewQueueItem[]>(response);
+}
+
+export async function fetchReviewAssignments(): Promise<ApiReviewAssignment[]> {
+  const response = await fetch("/api/content/review-assignments");
+  return parseOrThrow<ApiReviewAssignment[]>(response);
+}
+
+export async function fetchStaffUsers(): Promise<ApiStaffUser[]> {
+  const response = await fetch("/api/content/staff-users");
+  return parseOrThrow<ApiStaffUser[]>(response);
+}
+
+export async function createReviewAssignment(payload: {
+  userId: string;
+  capability: ApprovalCapability;
+  active: boolean;
+}): Promise<ApiReviewAssignment> {
+  const response = await fetch("/api/content/review-assignments", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  return parseOrThrow<ApiReviewAssignment>(response);
+}
+
 export async function recordContentReviewDecision(
   entryId: string,
   revisionId: string,

@@ -50,16 +50,16 @@ __all__ = [
     "ApprovalCapability",
     "ContentEntry",
     "ContentPublicationEvent",
-    "ContentReviewDecision",
     "ContentReviewAssignment",
+    "ContentReviewDecision",
     "ContentRevisionDiscovery",
-    "NotificationOutbox",
     "ContentRevisionRelation",
     "ContentRevisionTaxonomyTerm",
     "ContentSubmitIdempotency",
     "ContentTaxonomyRole",
     "ContentTemplate",
     "ContentType",
+    "NotificationOutbox",
     "ReviewOutcome",
     "RevisionStatus",
 ]
@@ -425,7 +425,9 @@ class ContentReviewAssignment(Base):
     __tablename__ = "content_review_assignments"
     __table_args__ = (
         UniqueConstraint(
-            "organization_id", "user_id", "capability",
+            "organization_id",
+            "user_id",
+            "capability",
             name="uq_content_review_assignment",
         ),
     )
@@ -441,9 +443,7 @@ class ContentReviewAssignment(Base):
         value_enum(ApprovalCapability, length=32), nullable=False
     )
     active: Mapped[bool] = mapped_column(default=True, server_default=text("true"))
-    email_notifications: Mapped[bool] = mapped_column(
-        default=True, server_default=text("true")
-    )
+    email_notifications: Mapped[bool] = mapped_column(default=True, server_default=text("true"))
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )

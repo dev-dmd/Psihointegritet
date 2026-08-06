@@ -74,11 +74,12 @@ class ContentRevisionOut(ApiSchema):
     updated_at: datetime
     # RW-4: populated when this draft was auto-created from a rejected review.
     # Contains who requested changes, the capability, the note and source rev.
-    change_request: "ContentRevisionChangeRequestOut | None" = None
+    change_request: ContentRevisionChangeRequestOut | None = None
 
 
 class ContentRevisionChangeRequestOut(ApiSchema):
     """Reason this draft was created by a rejected review (RW-4)."""
+
     requested_by: ActorSummaryOut | None = None
     requested_at: datetime
     capability: ApprovalCapability
@@ -169,6 +170,7 @@ class CreateContentReviewAssignmentRequest(ApiSchema):
 
 class ContentReviewQueueItemOut(ApiSchema):
     """One entry in the reviewer's queue (RW-6)."""
+
     entry_id: UUID
     revision_id: UUID
     content_type: ContentType
@@ -183,6 +185,7 @@ class ContentReviewQueueItemOut(ApiSchema):
 
 class StaffUserOut(ApiSchema):
     """Minimal user info for reviewer assignment dropdown."""
+
     user_id: UUID
     display_name: str
     email: str

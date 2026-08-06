@@ -8,12 +8,13 @@ with no writer would be exactly the "empty placeholder abstraction" rules
 
 from __future__ import annotations
 
+import contextlib
+import os
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from uuid import UUID
 
-import os
-from sqlalchemy import delete, func, or_, select
+from sqlalchemy import delete, func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm.exc import StaleDataError
@@ -34,7 +35,6 @@ from psihointegritet.modules.content.models import (
     ContentRevisionTaxonomyTerm,
     ContentSubmitIdempotency,
     ContentTaxonomyRole,
-    ContentTemplate,
     ContentType,
     NotificationOutbox,
     ReviewOutcome,
@@ -43,7 +43,6 @@ from psihointegritet.modules.content.publication import (
     ContentFinding,
     ContentPublishCheck,
     ReviewDecisionRecord,
-    Severity,
     check_publishable,
     effective_required_approvals,
     granted_capabilities,
@@ -83,6 +82,7 @@ from psihointegritet.modules.identity.models import InternalUser
 from psihointegritet.modules.identity.schemas import ActorSummaryOut
 from psihointegritet.shared.domain.content_management import ContentManagement
 from psihointegritet.shared.domain.publication import (
+    ApprovalCapability,
     CannotDeleteRevisionError,
     RevisionStatus,
     reissues_revision,
@@ -415,10 +415,13 @@ class ContentService:
         if revision.source_revision_id:
             source_decisions = (
                 await self._session.scalars(
-                    select(ContentReviewDecision).where(
+                    select(ContentReviewDecision)
+                    .where(
                         ContentReviewDecision.revision_id == revision.source_revision_id,
                         ContentReviewDecision.outcome == ReviewOutcome.REJECTED,
-                    ).order_by(ContentReviewDecision.decided_at.desc()).limit(1)
+                    )
+                    .order_by(ContentReviewDecision.decided_at.desc())
+                    .limit(1)
                 )
             ).first()
             if source_decisions:
@@ -696,7 +699,7 @@ class ContentService:
                 ContentFinding(
                     rule_id="KOMPAS-REF-001",
                     rule_version="1",
-                    severity=Severity.ERROR,
+                    severity="error",
                     message=str(exc),
                     remediation="Objavite termin(e) u Kompasu, pa pošaljite tekst na pregled.",
                     field_path="discovery",
@@ -912,7 +915,10 @@ class ContentService:
             revision.superseded_by_revision_id = draft.id
 
             await self._log_event(
-                draft.id, None, RevisionStatus.DRAFT, actor,
+                draft.id,
+                None,
+                RevisionStatus.DRAFT,
+                actor,
                 reason=f"changes_requested:{request.capability.value}",
             )
             await self._session.flush()
@@ -1003,9 +1009,11 @@ class ContentService:
         # implicit — any org_admin may review any capability.
         has_any_assignment = (
             await self._session.scalar(
-                select(ContentReviewAssignment.id).where(
+                select(ContentReviewAssignment.id)
+                .where(
                     ContentReviewAssignment.organization_id == org_id,
-                ).limit(1)
+                )
+                .limit(1)
             )
         ) is not None
         if has_any_assignment and not assigned_caps:
@@ -1053,9 +1061,7 @@ class ContentService:
                 user_names[user.id] = user.display_name or user.email or str(user.id)
 
         # Batch-fetch all decisions for these revisions.
-        all_decisions: dict[UUID, list[ContentReviewDecision]] = {
-            rid: [] for rid in revision_ids
-        }
+        all_decisions: dict[UUID, list[ContentReviewDecision]] = {rid: [] for rid in revision_ids}
         for dec in (
             await self._session.scalars(
                 select(ContentReviewDecision).where(
@@ -1114,10 +1120,13 @@ class ContentService:
             existing.active = request.active
             await self._session.flush()
             user = await self._session.get(InternalUser, request.user_id)
+            display_name = (
+                user.display_name or user.email or str(user.id) if user else str(request.user_id)
+            )
             return ContentReviewAssignmentOut(
                 assignment_id=existing.id,
                 user_id=existing.user_id,
-                display_name=user.display_name or user.email or str(user.id) if user else str(request.user_id),
+                display_name=display_name,
                 capability=existing.capability,
                 active=existing.active,
             )
@@ -1131,10 +1140,13 @@ class ContentService:
         self._session.add(assignment)
         await self._session.flush()
         user = await self._session.get(InternalUser, request.user_id)
+        display_name = (
+            user.display_name or user.email or str(user.id) if user else str(request.user_id)
+        )
         return ContentReviewAssignmentOut(
             assignment_id=assignment.id,
             user_id=assignment.user_id,
-            display_name=user.display_name or user.email or str(user.id) if user else str(request.user_id),
+            display_name=display_name,
             capability=assignment.capability,
             active=assignment.active,
         )
@@ -1174,9 +1186,7 @@ class ContentService:
     ) -> list[StaffUserOut]:
         """Return all internal users for the reviewer-assignment dropdown."""
         users = (
-            await self._session.scalars(
-                select(InternalUser).order_by(InternalUser.display_name)
-            )
+            await self._session.scalars(select(InternalUser).order_by(InternalUser.display_name))
         ).all()
         return [
             StaffUserOut(
@@ -1247,8 +1257,7 @@ class ContentService:
         # ---- guard: must be draft -------------------------------------------
         if revision.status is not RevisionStatus.DRAFT:
             raise ContentConflictError(
-                f"Cannot submit a revision in status {revision.status}; "
-                "return it to draft first."
+                f"Cannot submit a revision in status {revision.status}; return it to draft first."
             )
 
         # ---- lock-guard -----------------------------------------------------
@@ -1268,10 +1277,11 @@ class ContentService:
         revision.updated_by_user_id = actor.user_id
 
         # ---- Content Health check (blocking findings) -----------------------
-        decisions: list[ReviewDecisionRecord] = []
-        findings: list[ContentFinding] = []
+        findings: tuple[ContentFinding, ...] = ()
         if revision.status is RevisionStatus.DRAFT:
-            findings = structural_findings(revision.template, revision.slot_data) + authored_content_findings(entry, revision)
+            findings = structural_findings(
+                revision.template, revision.slot_data
+            ) + authored_content_findings(entry, revision)
             if any(item.severity == "error" for item in findings):
                 raise ContentConflictError(
                     "Tekst ima blokirajuće nalaze i ne može se poslati na pregled."
@@ -1300,9 +1310,7 @@ class ContentService:
         await self._submit_package_terms(actor, discovery, entry.locale)
 
         # ---- outbox: notify assigned reviewers (RW-7) ----------------------
-        await self._notify_reviewers_of_new_submission(
-            actor.organization_id, revision, entry
-        )
+        await self._notify_reviewers_of_new_submission(actor.organization_id, revision, entry)
 
         return await self._to_schema_loaded(entry, revision)
 
@@ -1316,10 +1324,12 @@ class ContentService:
         revision (RW-7).  The submitter is excluded (four-eyes)."""
         assigned_rows = (
             await self._session.scalars(
-                select(ContentReviewAssignment.user_id).where(
+                select(ContentReviewAssignment.user_id)
+                .where(
                     ContentReviewAssignment.organization_id == organization_id,
                     ContentReviewAssignment.active.is_(True),
-                ).distinct()
+                )
+                .distinct()
             )
         ).all()
         reviewer_ids = list(assigned_rows)
@@ -1419,9 +1429,7 @@ class ContentService:
         # Fetch the TaxonomyTerm rows so we have stable_ids for events.
         terms: dict[UUID, TaxonomyTerm] = {}
         for term in (
-            await self._session.scalars(
-                select(TaxonomyTerm).where(TaxonomyTerm.id.in_(term_ids))
-            )
+            await self._session.scalars(select(TaxonomyTerm).where(TaxonomyTerm.id.in_(term_ids)))
         ).all():
             terms[term.id] = term
 
@@ -1504,9 +1512,7 @@ class ContentService:
         await self._session.flush()
         return await self._to_schema_loaded(entry, draft)
 
-    async def _record_idempotency(
-        self, revision_id: UUID, idempotency_key: UUID
-    ) -> None:
+    async def _record_idempotency(self, revision_id: UUID, idempotency_key: UUID) -> None:
         """Record that *this* key was used to submit *this* revision.
 
         The table is append-only: a different key on an already-in-review
@@ -1525,14 +1531,8 @@ class ContentService:
                 processed_at=datetime.now(UTC),
             )
         )
-        try:
+        with contextlib.suppress(IntegrityError):
             await self._session.flush()
-        except IntegrityError:
-            # Another request with the same key already committed — this
-            # is a duplicate arrival, not an application error.  The
-            # previous flush already wrote the transition, so the caller
-            # will see the in-review state on its next turn.
-            pass
 
     async def delete_revision(self, actor: StaffActor, entry_id: UUID, revision_id: UUID) -> None:
         self._require_org_admin(actor)

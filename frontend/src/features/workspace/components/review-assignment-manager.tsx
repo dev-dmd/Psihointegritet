@@ -1,47 +1,14 @@
 "use client";
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 
 import type { ApprovalCapability } from "@/lib/content-governance/types";
 
-interface ApiReviewAssignment {
-  assignmentId: string;
-  userId: string;
-  displayName: string;
-  capability: ApprovalCapability;
-  active: boolean;
-}
-
-interface ApiStaffUser {
-  userId: string;
-  displayName: string;
-  email: string;
-}
-
-async function fetchAssignments(): Promise<ApiReviewAssignment[]> {
-  const response = await fetch("/api/content/review-assignments");
-  return response.ok ? response.json() : [];
-}
-
-async function fetchStaffUsers(): Promise<ApiStaffUser[]> {
-  const response = await fetch("/api/content/staff-users");
-  return response.ok ? response.json() : [];
-}
-
-async function createAssignment(payload: {
-  userId: string;
-  capability: ApprovalCapability;
-  active: boolean;
-}): Promise<ApiReviewAssignment> {
-  const response = await fetch("/api/content/review-assignments", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  });
-  if (!response.ok) throw new Error("Greška pri dodeli pregleda.");
-  return response.json();
-}
+import {
+  useCreateReviewAssignmentMutation,
+  useReviewAssignmentsQuery,
+  useStaffUsersQuery,
+} from "../hooks/use-review-assignments";
 
 const CAP_LABELS: Record<ApprovalCapability, string> = {
   clinical: "Stručni pregled",
@@ -51,27 +18,15 @@ const CAP_LABELS: Record<ApprovalCapability, string> = {
 
 /** Inline ability management inside the article editor (RW-6). */
 export function ReviewAssignmentManager() {
-  const queryClient = useQueryClient();
   const [selectedUserId, setSelectedUserId] = useState("");
-  const [selectedCap, setSelectedCap] = useState<ApprovalCapability>("clinical");
+  const [selectedCap, setSelectedCap] =
+    useState<ApprovalCapability>("clinical");
 
-  const { data: users } = useQuery({
-    queryKey: ["staff-users"],
-    queryFn: fetchStaffUsers,
-    staleTime: 120_000,
-  });
+  const { data: users } = useStaffUsersQuery();
+  const { data: assignments } = useReviewAssignmentsQuery();
 
-  const { data: assignments } = useQuery({
-    queryKey: ["review-assignments"],
-    queryFn: fetchAssignments,
-  });
-
-  const assignMutation = useMutation({
-    mutationFn: createAssignment,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["review-assignments"] });
-      setSelectedUserId("");
-    },
+  const assignMutation = useCreateReviewAssignmentMutation({
+    onAssigned: () => setSelectedUserId(""),
   });
 
   const handleAssign = () => {
@@ -133,7 +88,9 @@ export function ReviewAssignmentManager() {
           <label className="text-ink-55 text-[10px]">Vrsta pregleda</label>
           <select
             value={selectedCap}
-            onChange={(e) => setSelectedCap(e.target.value as ApprovalCapability)}
+            onChange={(e) =>
+              setSelectedCap(e.target.value as ApprovalCapability)
+            }
             className="border-line-strong rounded-lg border px-2.5 py-2 text-[12.5px]"
           >
             <option value="clinical">Stručni pregled</option>

@@ -3,6 +3,8 @@
 Each function returns a complete HTML string ready to send via Resend.
 """
 
+# ruff: noqa: E501  — inline HTML styles exceed 100 chars by design
+
 from __future__ import annotations
 
 from psihointegritet.infrastructure.email.layout import (
@@ -86,7 +88,7 @@ def review_requested_email(
     return wrap_email(
         title=f"Novi tekst na pregledu — {article_slug}",
         body_html=body,
-        preheader=f"{sender_name} je poslao/la \"{article_slug}\" na stručni pregled.",
+        preheader=f'{sender_name} je poslao/la "{article_slug}" na stručni pregled.',
     )
 
 
@@ -168,7 +170,7 @@ def changes_requested_email(
     return wrap_email(
         title=f"Izmene potrebne — {article_slug}",
         body_html=body,
-        preheader=f"{reviewer_name} je vratio/la \"{article_slug}\" na doradu.",
+        preheader=f'{reviewer_name} je vratio/la "{article_slug}" na doradu.',
     )
 
 
@@ -223,5 +225,5 @@ def review_approved_email(
     return wrap_email(
         title=f"Tekst odobren — {article_slug}",
         body_html=body,
-        preheader=f"Sva odobrenja za \"{article_slug}\" su data.",
+        preheader=f'Sva odobrenja za "{article_slug}" su data.',
     )

@@ -1,22 +1,8 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
-import Link from "next/link";
-
+import type { ApiReviewQueueItem } from "../content-api";
+import { useReviewQueueQuery } from "../hooks/use-review-queue";
 import { PageHeader } from "../components/page-header";
-
-interface ApiReviewQueueItem {
-  entryId: string;
-  revisionId: string;
-  contentType: string;
-  slug: string;
-  versionLabel: string;
-  submittedAt: string;
-  submittedByDisplayName: string | null;
-  capability: "clinical" | "business" | "legal";
-  alreadyDecided: boolean;
-  decidedOutcome: "approved" | "rejected" | null;
-}
 
 const CAPABILITY_LABELS: Record<string, string> = {
   clinical: "Stručni pregled",
@@ -24,22 +10,8 @@ const CAPABILITY_LABELS: Record<string, string> = {
   legal: "Pravni pregled",
 };
 
-async function fetchReviewQueue(): Promise<ApiReviewQueueItem[]> {
-  const response = await fetch("/api/content/review-queue", {
-    cache: "no-store",
-  });
-  if (!response.ok) {
-    throw new Error("Greška pri učitavanju pregleda.");
-  }
-  return response.json();
-}
-
 export function ReviewQueueScreen() {
-  const queue = useQuery({
-    queryKey: ["review-queue"],
-    queryFn: fetchReviewQueue,
-    refetchInterval: 30_000,
-  });
+  const queue = useReviewQueueQuery();
 
   if (queue.isLoading) {
     return <p className="text-ink-55 text-[13.5px]">Učitavanje pregleda…</p>;
@@ -135,7 +107,8 @@ export function ReviewQueueScreen() {
                             : "bg-badge-wait-bg text-badge-wait"
                         }`}
                       >
-                        {CAPABILITY_LABELS[entry.capability] ?? entry.capability}
+                        {CAPABILITY_LABELS[entry.capability] ??
+                          entry.capability}
                         {entry.alreadyDecided
                           ? entry.decidedOutcome === "approved"
                             ? " — odobreno"

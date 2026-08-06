@@ -7,7 +7,9 @@ import {
   type ReadinessCheckStatus,
 } from "./readiness-checklist";
 
-function checks(...statuses: ReadinessCheckStatus[]): readonly ReadinessCheck[] {
+function checks(
+  ...statuses: ReadinessCheckStatus[]
+): readonly ReadinessCheck[] {
   return statuses.map((status, index) => {
     const check: ReadinessCheck = {
       label: `Check ${index + 1}`,

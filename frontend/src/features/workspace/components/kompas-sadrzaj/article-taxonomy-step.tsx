@@ -4,102 +4,22 @@ import { type ChangeEvent, useCallback, useMemo, useState } from "react";
 
 import type { ApiContentDiscovery } from "../../content-api";
 import {
-  type CreateTaxonomyTermInput,
-  type TaxonomyTerm,
-} from "../../taxonomy-api";
-import {
   taxonomyErrorMessage,
   useSaveTaxonomyTermMutation,
   useTaxonomyRegistryLookupQuery,
   useTaxonomyRegistryCache,
 } from "../../hooks/use-taxonomy-registry";
+import {
+  AXIS_GROUP,
+  createAreaInput,
+  createTopicInput,
+  filterGroupTerms,
+  filterTopicTerms,
+} from "./article-taxonomy-helpers";
+import { ArticleTaxonomyTermForm } from "./article-taxonomy-term-form";
 
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-const AXIS_GROUP = "topic_group";
-const AXIS_TOPIC = "topic";
-
-function filterGroupTerms(terms: readonly TaxonomyTerm[]): TaxonomyTerm[] {
-  return terms.filter(
-    (term) => term.axis === AXIS_GROUP && term.status !== "archived",
-  );
-}
-
-function filterTopicTerms(
-  terms: readonly TaxonomyTerm[],
-  parentTermId: string | null,
-): TaxonomyTerm[] {
-  return terms.filter(
-    (term) =>
-      term.axis === AXIS_TOPIC &&
-      term.status !== "archived" &&
-      term.primaryParentTermId === parentTermId,
-  );
-}
-
-/** Strips diacritics and produces a lowercase kebab-case slug. */
-function slugFromLabel(label: string): string {
-  return label
-    .toLowerCase()
-    .replace(/[đ]/g, "dj")
-    .replace(/[ć]/g, "c")
-    .replace(/[čš]/g, (ch) => (ch === "č" ? "c" : "s"))
-    .replace(/[ž]/g, "z")
-    .replace(/ /g, "-")
-    .replace(/[^a-z0-9-]/g, "")
-    .replace(/-+/g, "-")
-    .replace(/^-|-$/g, "");
-}
-
-/**
- * Builds a minimal CreateTaxonomyTermInput for a new area.
- */
-function createAreaInput(
-  label: string,
-  description: string,
-  searchTerms: string[],
-): CreateTaxonomyTermInput {
-  return {
-    stableId: slugFromLabel(label),
-    publicLabel: label,
-    shortDescription: description,
-    axis: AXIS_GROUP,
-    locale: "sr-Latn",
-    searchTerms,
-    compassEnabled: true,
-    publicVisible: true,
-    sortOrder: 0,
-  };
-}
-
-/**
- * Builds a minimal CreateTaxonomyTermInput for a new topic.
- */
-function createTopicInput(
-  label: string,
-  description: string,
-  parentTermId: string,
-  searchTerms: string[],
-): CreateTaxonomyTermInput {
-  return {
-    stableId: slugFromLabel(label),
-    publicLabel: label,
-    shortDescription: description,
-    axis: AXIS_TOPIC,
-    locale: "sr-Latn",
-    primaryParentTermId: parentTermId,
-    searchTerms,
-    compassEnabled: true,
-    publicVisible: true,
-    sortOrder: 0,
-  };
-}
-
-// ---------------------------------------------------------------------------
-// Component
-// ---------------------------------------------------------------------------
+const selectClass =
+  "border-line-strong text-ink-90 bg-surface focus-visible:ring-coffee rounded-full border px-4 py-2 text-[13px] placeholder:text-ink-45 focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:outline-none";
 
 export function ArticleTaxonomyStep({
   discovery,
@@ -272,11 +192,6 @@ export function ArticleTaxonomyStep({
       )
     : null;
 
-  // ── Input classes ────────────────────────────────────────────────────
-  const inputClass =
-    "border-line-strong text-ink-90 bg-surface focus-visible:ring-coffee rounded-full border px-4 py-2 text-[13px] placeholder:text-ink-45 focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:outline-none";
-  const selectClass = inputClass;
-
   return (
     <section
       id="compass-step-taxonomy"
@@ -346,56 +261,22 @@ export function ArticleTaxonomyStep({
                 )}
               </>
             ) : (
-              <div className="rounded-tile border-line bg-surface flex flex-col gap-3 border px-4 py-3">
-                <p className="text-forest text-[13px] font-semibold">
-                  Nova oblast
-                </p>
-                <input
-                  type="text"
-                  value={newAreaLabel}
-                  onChange={(e) => setNewAreaLabel(e.target.value)}
-                  placeholder="Naziv oblasti"
-                  className={inputClass}
-                  disabled={isSaving}
-                />
-                <input
-                  type="text"
-                  value={newAreaDesc}
-                  onChange={(e) => setNewAreaDesc(e.target.value)}
-                  placeholder="Kratak opis"
-                  className={inputClass}
-                  disabled={isSaving}
-                />
-                <input
-                  type="text"
-                  value={newAreaTerms}
-                  onChange={(e) => setNewAreaTerms(e.target.value)}
-                  placeholder="Izrazi za pretragu, odvojeni zarezom"
-                  className={inputClass}
-                  disabled={isSaving}
-                />
-                {saveError ? (
-                  <p className="text-danger text-[12px]">{saveError}</p>
-                ) : null}
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    disabled={isSaving || !newAreaLabel.trim()}
-                    onClick={commitArea}
-                    className="border-forest bg-forest text-panel-canvas min-h-10 cursor-pointer rounded-full border px-4 text-[12px] font-semibold disabled:cursor-not-allowed disabled:opacity-60"
-                  >
-                    {isSaving ? "Čuvanje…" : "Sačuvaj oblast"}
-                  </button>
-                  <button
-                    type="button"
-                    disabled={isSaving}
-                    onClick={() => setCreatingArea(false)}
-                    className="text-ink-55 cursor-pointer text-[12px] underline"
-                  >
-                    Odustani
-                  </button>
-                </div>
-              </div>
+              <ArticleTaxonomyTermForm
+                title="Nova oblast"
+                labelPlaceholder="Naziv oblasti"
+                label={newAreaLabel}
+                onLabelChange={setNewAreaLabel}
+                description={newAreaDesc}
+                onDescriptionChange={setNewAreaDesc}
+                searchTerms={newAreaTerms}
+                onSearchTermsChange={setNewAreaTerms}
+                saving={isSaving}
+                savingLabel="Čuvanje…"
+                saveLabel="Sačuvaj oblast"
+                error={saveError}
+                onSave={commitArea}
+                onCancel={() => setCreatingArea(false)}
+              />
             )}
           </div>
 
@@ -450,56 +331,22 @@ export function ArticleTaxonomyStep({
                     : "+ Kreiraj novu temu"}
                 </button>
               ) : (
-                <div className="rounded-tile border-line bg-surface mt-1 flex flex-col gap-3 border px-4 py-3">
-                  <p className="text-forest text-[13px] font-semibold">
-                    Nova tema
-                  </p>
-                  <input
-                    type="text"
-                    value={newTopicLabel}
-                    onChange={(e) => setNewTopicLabel(e.target.value)}
-                    placeholder="Naziv teme"
-                    className={inputClass}
-                    disabled={isSaving}
-                  />
-                  <input
-                    type="text"
-                    value={newTopicDesc}
-                    onChange={(e) => setNewTopicDesc(e.target.value)}
-                    placeholder="Kratak opis"
-                    className={inputClass}
-                    disabled={isSaving}
-                  />
-                  <input
-                    type="text"
-                    value={newTopicTerms}
-                    onChange={(e) => setNewTopicTerms(e.target.value)}
-                    placeholder="Izrazi za pretragu, odvojeni zarezom"
-                    className={inputClass}
-                    disabled={isSaving}
-                  />
-                  {saveError ? (
-                    <p className="text-danger text-[12px]">{saveError}</p>
-                  ) : null}
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      disabled={isSaving || !newTopicLabel.trim()}
-                      onClick={commitTopic}
-                      className="border-forest bg-forest text-panel-canvas min-h-10 cursor-pointer rounded-full border px-4 text-[12px] font-semibold disabled:cursor-not-allowed disabled:opacity-60"
-                    >
-                      {isSaving ? "Čuvanje…" : "Sačuvaj temu"}
-                    </button>
-                    <button
-                      type="button"
-                      disabled={isSaving}
-                      onClick={() => setCreatingTopic(false)}
-                      className="text-ink-55 cursor-pointer text-[12px] underline"
-                    >
-                      Odustani
-                    </button>
-                  </div>
-                </div>
+                <ArticleTaxonomyTermForm
+                  title="Nova tema"
+                  labelPlaceholder="Naziv teme"
+                  label={newTopicLabel}
+                  onLabelChange={setNewTopicLabel}
+                  description={newTopicDesc}
+                  onDescriptionChange={setNewTopicDesc}
+                  searchTerms={newTopicTerms}
+                  onSearchTermsChange={setNewTopicTerms}
+                  saving={isSaving}
+                  savingLabel="Čuvanje…"
+                  saveLabel="Sačuvaj temu"
+                  error={saveError}
+                  onSave={commitTopic}
+                  onCancel={() => setCreatingTopic(false)}
+                />
               )}
             </div>
           ) : (

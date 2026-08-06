@@ -24,7 +24,6 @@ from psihointegritet.infrastructure.email.templates import (
     review_requested_email,
 )
 from psihointegritet.modules.content.models import (
-    ContentEntry,
     ContentRevision,
     NotificationOutbox,
 )
@@ -106,9 +105,7 @@ async def dispatch_pending(client: ResendClient, session: AsyncSession) -> int:
     return sent_count
 
 
-async def _resolve_recipient(
-    session: AsyncSession, record: NotificationOutbox
-) -> str | None:
+async def _resolve_recipient(session: AsyncSession, record: NotificationOutbox) -> str | None:
     """Get the recipient's email address."""
     if record.recipient_user_id is None:
         # Fallback: superadmin email from env
@@ -126,17 +123,11 @@ async def _build_envelope(
     payload: dict[str, object] = record.payload  # type: ignore[assignment]
 
     if record.event_type == "content.review_requested":
-        return await _review_requested_envelope(
-            session, record, recipient_email, payload
-        )
+        return await _review_requested_envelope(session, record, recipient_email, payload)
     if record.event_type == "content.changes_requested":
-        return await _changes_requested_envelope(
-            session, record, recipient_email, payload
-        )
+        return await _changes_requested_envelope(session, record, recipient_email, payload)
     if record.event_type == "content.review_approved":
-        return await _review_approved_envelope(
-            session, record, recipient_email, payload
-        )
+        return await _review_approved_envelope(session, record, recipient_email, payload)
     return None
 
 
@@ -222,11 +213,7 @@ async def _submitted_by_name(
     if revision is None or revision.created_by_user_id is None:
         return None
     user = await session.get(InternalUser, revision.created_by_user_id)
-    return (
-        user.display_name or user.email or str(user.id)
-        if user
-        else None
-    )
+    return user.display_name or user.email or str(user.id) if user else None
 
 
 async def _actor_name(
@@ -251,11 +238,7 @@ async def _actor_name(
     if event is None or event.actor_user_id is None:
         return None
     user = await session.get(InternalUser, event.actor_user_id)
-    return (
-        user.display_name or user.email or str(user.id)
-        if user
-        else None
-    )
+    return user.display_name or user.email or str(user.id) if user else None
 
 
 async def _mark_failed(

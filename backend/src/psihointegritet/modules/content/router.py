@@ -366,7 +366,10 @@ async def submit_article_for_review(
         async with session.begin():
             actor = await _org_admin_actor(session, settings, identity)
             return await ContentService(session).submit_article_for_review(
-                actor, entry_id, revision_id, request,
+                actor,
+                entry_id,
+                revision_id,
+                request,
             )
     except (
         ContentNotFoundError,
@@ -400,7 +403,10 @@ async def new_content_draft(
         async with session.begin():
             actor = await _org_admin_actor(session, settings, identity)
             return await ContentService(session).create_new_draft(
-                actor, entry_id, revision_id, request,
+                actor,
+                entry_id,
+                revision_id,
+                request,
             )
     except (
         ContentNotFoundError,

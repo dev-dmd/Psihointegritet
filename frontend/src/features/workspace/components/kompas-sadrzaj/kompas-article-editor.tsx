@@ -207,7 +207,13 @@ export function KompasArticleEditor({ entry }: { entry: ApiContentRevision }) {
   };
 
   const editable = entry.status === "draft" || entry.status === "approved";
-  const isBusy = save.isPending || transition.isPending || submit.isPending || newDraft.isPending || review.isPending || remove.isPending;
+  const isBusy =
+    save.isPending ||
+    transition.isPending ||
+    submit.isPending ||
+    newDraft.isPending ||
+    review.isPending ||
+    remove.isPending;
 
   const changeSlot = (name: string, next: unknown) => {
     setSlotData((current) => ({ ...current, [name]: next }));
@@ -326,7 +332,12 @@ export function KompasArticleEditor({ entry }: { entry: ApiContentRevision }) {
         isBusy={isBusy}
         decisions={entry.decisions}
         onSubmit={handleSendForReview}
-        {...(health.data ? { requiredApprovals: health.data.requiredApprovals, missingApprovals: health.data.missingApprovals } : {})}
+        {...(health.data
+          ? {
+              requiredApprovals: health.data.requiredApprovals,
+              missingApprovals: health.data.missingApprovals,
+            }
+          : {})}
         {...(entry.status === "in_review"
           ? { onWithdraw: handleNewDraft, onReview: handleReview }
           : {})}

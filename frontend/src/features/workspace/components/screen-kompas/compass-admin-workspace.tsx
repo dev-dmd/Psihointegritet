@@ -136,7 +136,13 @@ export function CompassAdminWorkspace({
       },
       {
         label: "Kompas Servisi",
-        status: apiLoading ? "loading" : apiHealthy ? "ok" : apiFailed ? "error" : "pending",
+        status: apiLoading
+          ? "loading"
+          : apiHealthy
+            ? "ok"
+            : apiFailed
+              ? "error"
+              : "pending",
         ...(apiFailed ? { note: "Proverite backend servise" } : {}),
       },
     ];

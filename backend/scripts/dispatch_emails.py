@@ -1,36 +1,24 @@
-"""CLI worker for dispatching pending email notifications.
-
-Run periodically via cron / QStash / scheduled job:
-
-    source .venv/bin/activate && python scripts/dispatch_emails.py
-
-Reads ``.env.local`` explicitly because ``Settings`` only loads ``.env``.
-"""
-
-from __future__ import annotations
-
 import asyncio
 import os
 import sys
 from pathlib import Path
 
-# Load .env.local explicitly before anything else touches the environment.
+from psihointegritet.core.config import Settings
+from psihointegritet.db.session import create_engine, create_session_factory
+from psihointegritet.infrastructure.email.dispatcher import dispatch_pending
+from psihointegritet.infrastructure.email.resend_client import ResendClient
+
+# Load .env.local so Settings() picks up DATABASE_URL etc.
 _ENV_LOCAL = Path(__file__).resolve().parent.parent / ".env.local"
 if _ENV_LOCAL.exists():
-    with open(_ENV_LOCAL) as fh:
+    with _ENV_LOCAL.open() as fh:
         for line in fh:
             line = line.strip()
             if not line or line.startswith("#") or "=" not in line:
                 continue
             key, _, value = line.partition("=")
-            # Only set if not already in the environment (env var overrides file)
             if key.strip() not in os.environ:
                 os.environ[key.strip()] = value.strip().strip("\"'")
-
-from psihointegritet.core.config import Settings
-from psihointegritet.db.session import create_engine, create_session_factory
-from psihointegritet.infrastructure.email.dispatcher import dispatch_pending
-from psihointegritet.infrastructure.email.resend_client import ResendClient
 
 
 async def main() -> int:

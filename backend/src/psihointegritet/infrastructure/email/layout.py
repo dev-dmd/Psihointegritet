@@ -8,9 +8,9 @@ Reusable HTML email layout wrapper for Psihointegritet platform.
 - Bulletproof email button pattern (works in Outlook)
 """
 
-from __future__ import annotations
+# ruff: noqa: E501  — inline CSS for HTML emails exceeds 100 chars by design
 
-from typing import Optional
+from __future__ import annotations
 
 
 def _url(path: str) -> str:
