@@ -1,6 +1,8 @@
 from fastapi import APIRouter
 
 from psihointegritet.api.v1 import health
+from psihointegritet.modules.booking.router import public_router as booking_public_router
+from psihointegritet.modules.booking.router import staff_router as booking_staff_router
 from psihointegritet.modules.compass.router import public_router as compass_flow_public_router
 from psihointegritet.modules.compass.router import router as compass_flow_router
 from psihointegritet.modules.content.compass_router import router as compass_public_router
@@ -35,3 +37,5 @@ api_v1_router.include_router(research_public_router)
 api_v1_router.include_router(compass_public_router)
 api_v1_router.include_router(compass_flow_public_router)
 api_v1_router.include_router(compass_flow_router)
+api_v1_router.include_router(booking_public_router)
+api_v1_router.include_router(booking_staff_router)
