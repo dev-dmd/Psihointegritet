@@ -5,7 +5,7 @@ description: >
   Use this agent when you need to implement features, fix bugs, refactor code,
   or review architecture in accordance with the project’s strict rules.
 argument-hint: "a task to implement, refactor, or review (e.g., 'Add booking endpoint' or 'Simplify Kompas admin panel')"
-tools: ["read", "search", "edit", "execute", "agent"] # agent can also delegate to other agents if needed
+tools: [vscode/memory, vscode/newWorkspace, vscode/resolveMemoryFileUri, vscode/runCommand, execute, read, agent, edit, search, web, browser, 'pylance-mcp-server/*', todo] # agent can also delegate to other agents if needed
 ---
 
 ## Role & Core Mission

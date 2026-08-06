@@ -163,7 +163,7 @@ export function KompasArticleEditor({ entry }: { entry: ApiContentRevision }) {
       setDirty(false);
       // Navigate to the newly created draft so the editor is attached to the
       // correct revisionId and the wizard is interactive again.
-      window.location.href = `/radni-prostor/kompas/${next.entryId}`;
+      window.location.href = `/radni-prostor/kompas/sadrzaj/${next.entryId}`;
     },
     onFailed: fail("Nova radna verzija nije kreirana"),
   });
@@ -181,7 +181,7 @@ export function KompasArticleEditor({ entry }: { entry: ApiContentRevision }) {
       replaceEntry(next);
       // Rejected decisions return a new draft revision — navigate to it.
       if (next.status === "draft" && next.revisionId !== entry.revisionId) {
-        window.location.href = `/radni-prostor/kompas/${next.entryId}`;
+        window.location.href = `/radni-prostor/kompas/sadrzaj/${next.entryId}`;
       }
     },
     onFailed: fail("Odluka nije zabeležena"),
@@ -328,7 +328,7 @@ export function KompasArticleEditor({ entry }: { entry: ApiContentRevision }) {
         onSubmit={handleSendForReview}
         {...(health.data ? { requiredApprovals: health.data.requiredApprovals, missingApprovals: health.data.missingApprovals } : {})}
         {...(entry.status === "in_review"
-          ? { onWithdraw: () => transition.mutate("draft"), onReview: handleReview }
+          ? { onWithdraw: handleNewDraft, onReview: handleReview }
           : {})}
         {...(entry.status === "approved" ||
         entry.status === "published" ||

@@ -72,6 +72,18 @@ class ContentRevisionOut(ApiSchema):
     created_by: ActorSummaryOut | None = None
     updated_by: ActorSummaryOut | None = None
     updated_at: datetime
+    # RW-4: populated when this draft was auto-created from a rejected review.
+    # Contains who requested changes, the capability, the note and source rev.
+    change_request: "ContentRevisionChangeRequestOut | None" = None
+
+
+class ContentRevisionChangeRequestOut(ApiSchema):
+    """Reason this draft was created by a rejected review (RW-4)."""
+    requested_by: ActorSummaryOut | None = None
+    requested_at: datetime
+    capability: ApprovalCapability
+    note: str
+    source_revision_id: UUID
 
 
 class PublicContentRevisionOut(ApiSchema):

@@ -36,12 +36,12 @@ import {
 
 const WORKSPACE_TABS = [
   { id: "overview", label: "Pregled" },
-  { id: "content", label: "Sadržaj" },
-  { id: "registry", label: "Registar" },
-  { id: "flow", label: "Tok pitanja" },
-  { id: "results", label: "Prikaz rezultata" },
-  { id: "testing", label: "Testiranje" },
-  { id: "publishing", label: "Pregled i objavljivanje" },
+  { id: "content", label: "Sadržaji" },
+  { id: "registry", label: "Oblasti i teme" },
+  { id: "flow", label: "Pitanja za korisnike" },
+  { id: "results", label: "Šta Kompas preporučuje" },
+  { id: "testing", label: "Testiraj Kompas" },
+  { id: "publishing", label: "Objavi promene" },
 ] as const;
 
 type WorkspaceTab = (typeof WORKSPACE_TABS)[number]["id"];

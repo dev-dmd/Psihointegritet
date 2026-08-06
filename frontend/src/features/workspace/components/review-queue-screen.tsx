@@ -110,7 +110,7 @@ export function ReviewQueueScreen() {
           return (
             <a
               key={entryId}
-              href={`/radni-prostor/kompas/${entryId}`}
+              href={`/radni-prostor/kompas/sadrzaj/${entryId}`}
               className="rounded-panel border-line bg-surface hover:shadow-card-hover block border px-6 py-5 transition-shadow"
             >
               <div className="flex items-start justify-between gap-4">

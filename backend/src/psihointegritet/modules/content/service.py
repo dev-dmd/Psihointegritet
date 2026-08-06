@@ -55,6 +55,7 @@ from psihointegritet.modules.content.schemas import (
     ContentHealthOut,
     ContentReviewAssignmentOut,
     ContentReviewQueueItemOut,
+    ContentRevisionChangeRequestOut,
     ContentRevisionOut,
     CreateContentEntryRequest,
     CreateContentReviewAssignmentRequest,
@@ -408,6 +409,24 @@ class ContentService:
     ) -> ContentRevisionOut:
         created_by = await self._actor_summary(revision.created_by_user_id)
         updated_by = await self._actor_summary(revision.updated_by_user_id)
+        change_request: ContentRevisionChangeRequestOut | None = None
+        if revision.source_revision_id:
+            source_decisions = (
+                await self._session.scalars(
+                    select(ContentReviewDecision).where(
+                        ContentReviewDecision.revision_id == revision.source_revision_id,
+                        ContentReviewDecision.outcome == ReviewOutcome.REJECTED,
+                    ).order_by(ContentReviewDecision.decided_at.desc()).limit(1)
+                )
+            ).first()
+            if source_decisions:
+                change_request = ContentRevisionChangeRequestOut(
+                    requested_by=await self._actor_summary(source_decisions.decided_by_user_id),
+                    requested_at=source_decisions.decided_at,
+                    capability=source_decisions.capability,
+                    note=source_decisions.note or "",
+                    source_revision_id=revision.source_revision_id,
+                )
         return ContentRevisionOut(
             entry_id=entry.id,
             revision_id=revision.id,
@@ -436,6 +455,7 @@ class ContentService:
             created_by=created_by,
             updated_by=updated_by,
             updated_at=revision.updated_at,
+            change_request=change_request,
         )
 
     async def _to_schema_loaded(
@@ -864,8 +884,6 @@ class ContentService:
                 )
             )
 
-        revision.updated_by_user_id = actor.user_id
-
         # ---- rejected → create new draft + supersede (RW-4) -----------------
         if request.outcome == ReviewOutcome.REJECTED:
             if not request.note:
@@ -930,7 +948,6 @@ class ContentService:
         if required.issubset(granted):
             from_status = revision.status
             revision.status = RevisionStatus.APPROVED
-            revision.updated_by_user_id = actor.user_id
             await self._log_event(revision.id, from_status, RevisionStatus.APPROVED, actor)
             await self._session.flush()
 
@@ -1012,6 +1029,7 @@ class ContentService:
                 .where(
                     ContentEntry.organization_id == org_id,
                     ContentRevision.status == RevisionStatus.IN_REVIEW,
+                    ContentRevision.superseded_at.is_(None),
                     ContentRevision.created_by_user_id != actor.user_id,
                 )
                 .order_by(ContentRevision.updated_at.desc())
