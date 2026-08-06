@@ -2,12 +2,9 @@
 
 Run periodically via cron / QStash / scheduled job:
 
-    python scripts/dispatch_emails.py
+    source .venv/bin/activate && python scripts/dispatch_emails.py
 
-Exit codes:
-    0 — success (including when there are no pending records)
-    1 — configuration error
-    2 — one or more sends failed
+Reads ``.env.local`` explicitly because ``Settings`` only loads ``.env``.
 """
 
 from __future__ import annotations
@@ -15,6 +12,20 @@ from __future__ import annotations
 import asyncio
 import os
 import sys
+from pathlib import Path
+
+# Load .env.local explicitly before anything else touches the environment.
+_ENV_LOCAL = Path(__file__).resolve().parent.parent / ".env.local"
+if _ENV_LOCAL.exists():
+    with open(_ENV_LOCAL) as fh:
+        for line in fh:
+            line = line.strip()
+            if not line or line.startswith("#") or "=" not in line:
+                continue
+            key, _, value = line.partition("=")
+            # Only set if not already in the environment (env var overrides file)
+            if key.strip() not in os.environ:
+                os.environ[key.strip()] = value.strip().strip("\"'")
 
 from psihointegritet.core.config import Settings
 from psihointegritet.db.session import create_engine, create_session_factory
