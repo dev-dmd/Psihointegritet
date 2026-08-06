@@ -12,6 +12,7 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from uuid import UUID
 
+import os
 from sqlalchemy import delete, func, or_, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -65,6 +66,7 @@ from psihointegritet.modules.content.schemas import (
     RecordReviewDecisionRequest,
     ReviewDecisionOut,
     SeoFields,
+    StaffUserOut,
     SubmitArticleForReviewRequest,
     TransitionRequest,
     UpdateContentRevisionRequest,
@@ -1022,10 +1024,9 @@ class ContentService:
                     ContentRevision.id,
                     ContentRevision.version_label,
                     ContentRevision.updated_at,
-                    InternalUser.display_name,
+                    ContentRevision.created_by_user_id,
                 )
                 .join(ContentRevision, ContentRevision.entry_id == ContentEntry.id)
-                .join(InternalUser, InternalUser.id == ContentRevision.created_by_user_id)
                 .where(
                     ContentEntry.organization_id == org_id,
                     ContentRevision.status == RevisionStatus.IN_REVIEW,
@@ -1040,6 +1041,17 @@ class ContentService:
             return []
 
         revision_ids = [row[3] for row in rows]
+        # Batch-resolve submitter display names
+        user_ids: set[UUID] = {row[6] for row in rows if row[6] is not None}
+        user_names: dict[UUID, str] = {}
+        if user_ids:
+            for user in (
+                await self._session.scalars(
+                    select(InternalUser).where(InternalUser.id.in_(user_ids))
+                )
+            ).all():
+                user_names[user.id] = user.display_name or user.email or str(user.id)
+
         # Batch-fetch all decisions for these revisions.
         all_decisions: dict[UUID, list[ContentReviewDecision]] = {
             rid: [] for rid in revision_ids
@@ -1057,7 +1069,8 @@ class ContentService:
         # structural + authored findings as in transition).
         results: list[ContentReviewQueueItemOut] = []
         for row in rows:
-            entry_id, ctype, slug, rev_id, version_label, submitted_at, submitted_by = row
+            entry_id, ctype, slug, rev_id, version_label, submitted_at, submitted_by_id = row
+            submitted_by = user_names.get(submitted_by_id) if submitted_by_id else None
             decisions = all_decisions.get(rev_id, [])
             decided_caps = {d.capability for d in decisions}
 
@@ -1155,6 +1168,25 @@ class ContentService:
             for assignment, display_name in rows
         ]
 
+    async def list_staff_users(
+        self,
+        organization_id: UUID,
+    ) -> list[StaffUserOut]:
+        """Return all internal users for the reviewer-assignment dropdown."""
+        users = (
+            await self._session.scalars(
+                select(InternalUser).order_by(InternalUser.display_name)
+            )
+        ).all()
+        return [
+            StaffUserOut(
+                user_id=user.id,
+                display_name=user.display_name or user.email or str(user.id),
+                email=user.email or "",
+            )
+            for user in users
+        ]
+
     async def _submission_actors(self, revision_id: UUID) -> set[UUID]:
         """Return the set of user IDs who submitted this revision for review."""
         events = (
@@ -1173,7 +1205,7 @@ class ContentService:
         *,
         organization_id: UUID,
         aggregate_id: UUID,
-        recipient_user_id: UUID,
+        recipient_user_id: UUID | None,
         payload: dict[str, object] | None = None,
     ) -> None:
         """Append a notification to the transactional outbox (RW-7)."""
@@ -1292,7 +1324,23 @@ class ContentService:
         ).all()
         reviewer_ids = list(assigned_rows)
         if not reviewer_ids:
-            return  # No explicitly assigned reviewers — implicit mode, no email
+            # No assigned reviewers — fall back to superadmin email (NULL recipient)
+            if os.getenv("SUPERADMIN_EMAIL"):
+                await self._record_notification(
+                    "content.review_requested",
+                    organization_id=organization_id,
+                    aggregate_id=revision.id,
+                    recipient_user_id=None,
+                    payload={
+                        "entryId": str(entry.id),
+                        "revisionId": str(revision.id),
+                        "slug": entry.slug,
+                        "versionLabel": revision.version_label,
+                        "contentType": entry.content_type.value,
+                        "_fallback": "no_assigned_reviewers",
+                    },
+                )
+            return
 
         payload: dict[str, object] = {
             "entryId": str(entry.id),

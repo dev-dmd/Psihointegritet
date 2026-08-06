@@ -181,6 +181,13 @@ class ContentReviewQueueItemOut(ApiSchema):
     decided_outcome: ReviewOutcome | None
 
 
+class StaffUserOut(ApiSchema):
+    """Minimal user info for reviewer assignment dropdown."""
+    user_id: UUID
+    display_name: str
+    email: str
+
+
 class ContentFindingOut(ApiSchema):
     rule_id: str
     rule_version: str

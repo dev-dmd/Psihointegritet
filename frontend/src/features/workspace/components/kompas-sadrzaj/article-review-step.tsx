@@ -5,6 +5,7 @@ import { useState } from "react";
 import type { ApprovalCapability, PublicationStatus } from "@/lib/content-governance/types";
 
 import type { ApiReviewDecision } from "../../content-api";
+import { ReviewAssignmentManager } from "../review-assignment-manager";
 import type { ArticleCompletionState } from "./article-completion";
 import { ArticleChecklist } from "./article-checklist";
 
@@ -104,6 +105,8 @@ export function ArticleReviewStep({
             Tekst je spreman za slanje. Kada pošaljete na stručni pregled, tim
             će moći da pregleda tekst i odobri ga za objavu.
           </p>
+
+          <ReviewAssignmentManager />
 
           <div className="flex flex-wrap items-center gap-3">
             <button

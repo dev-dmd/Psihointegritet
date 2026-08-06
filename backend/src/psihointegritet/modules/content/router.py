@@ -31,6 +31,7 @@ from psihointegritet.modules.content.schemas import (
     PublishBlockOut,
     RecordReviewDecisionRequest,
     RichDocFindingOut,
+    StaffUserOut,
     SubmitArticleForReviewRequest,
     TransitionRequest,
     UpdateContentRevisionRequest,
@@ -497,3 +498,54 @@ async def list_review_queue(
     async with session.begin():
         actor = await _org_admin_actor(session, settings, identity)
         return await ContentService(session).list_review_queue(actor)
+
+
+@router.get(
+    "/staff-users",
+    response_model=list[StaffUserOut],
+    operation_id="list_staff_users",
+)
+async def list_staff_users(
+    identity: CurrentIdentity,
+    session: DatabaseSession,
+    settings: AppSettings,
+) -> list[StaffUserOut]:
+    async with session.begin():
+        actor = await _org_admin_actor(session, settings, identity)
+        return await ContentService(session).list_staff_users(actor.organization_id)
+
+
+@router.post(
+    "/review-assignments",
+    response_model=ContentReviewAssignmentOut,
+    status_code=status.HTTP_201_CREATED,
+    operation_id="create_content_review_assignment",
+)
+async def create_content_review_assignment(
+    request: CreateContentReviewAssignmentRequest,
+    identity: CurrentIdentity,
+    session: DatabaseSession,
+    settings: AppSettings,
+) -> ContentReviewAssignmentOut:
+    """Assign or re-activate a reviewer for a specific capability (RW-6)."""
+    try:
+        async with session.begin():
+            actor = await _org_admin_actor(session, settings, identity)
+            return await ContentService(session).create_review_assignment(actor, request)
+    except (ContentConflictError, ValueError) as error:
+        raise _handle(error) from error
+
+
+@router.get(
+    "/review-assignments",
+    response_model=list[ContentReviewAssignmentOut],
+    operation_id="list_review_assignments",
+)
+async def list_review_assignments(
+    identity: CurrentIdentity,
+    session: DatabaseSession,
+    settings: AppSettings,
+) -> list[ContentReviewAssignmentOut]:
+    async with session.begin():
+        actor = await _org_admin_actor(session, settings, identity)
+        return await ContentService(session).list_review_assignments(actor.organization_id)
