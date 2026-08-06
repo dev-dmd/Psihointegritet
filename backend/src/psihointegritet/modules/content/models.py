@@ -53,6 +53,7 @@ __all__ = [
     "ContentReviewDecision",
     "ContentReviewAssignment",
     "ContentRevisionDiscovery",
+    "NotificationOutbox",
     "ContentRevisionRelation",
     "ContentRevisionTaxonomyTerm",
     "ContentSubmitIdempotency",
@@ -443,6 +444,40 @@ class ContentReviewAssignment(Base):
     email_notifications: Mapped[bool] = mapped_column(
         default=True, server_default=text("true")
     )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+
+
+class NotificationOutbox(Base):
+    """Durability sink for async notifications (RW-7 / D-068).
+
+    Records are appended in the same transaction as the lifecycle event
+    they notify.  A polling job (QStash / scheduler) picks them up and
+    dispatches via Resend.  A failure to send does not roll back the
+    source transaction — it only bumps the retry counter.
+    """
+
+    __tablename__ = "notification_outbox"
+
+    id: Mapped[UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid4)
+    organization_id: Mapped[UUID] = mapped_column(
+        Uuid(as_uuid=True), ForeignKey("organizations.id", ondelete="CASCADE"), index=True
+    )
+    event_type: Mapped[str] = mapped_column(String(80), nullable=False)
+    aggregate_type: Mapped[str] = mapped_column(String(40), default="content_revision")
+    aggregate_id: Mapped[UUID | None] = mapped_column(
+        Uuid(as_uuid=True), ForeignKey("content_revisions.id", ondelete="SET NULL"), nullable=True
+    )
+    recipient_user_id: Mapped[UUID | None] = mapped_column(
+        Uuid(as_uuid=True), ForeignKey("internal_users.id", ondelete="SET NULL"), nullable=True
+    )
+    payload: Mapped[dict[str, object]] = mapped_column(JSON, default=dict, nullable=False)
+    attempts: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
+    available_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+    sent_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )

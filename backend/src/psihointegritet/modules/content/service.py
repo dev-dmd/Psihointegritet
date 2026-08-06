@@ -35,6 +35,7 @@ from psihointegritet.modules.content.models import (
     ContentTaxonomyRole,
     ContentTemplate,
     ContentType,
+    NotificationOutbox,
     ReviewOutcome,
 )
 from psihointegritet.modules.content.publication import (
@@ -895,6 +896,23 @@ class ContentService:
                 reason=f"changes_requested:{request.capability.value}",
             )
             await self._session.flush()
+
+            # ---- outbox: notify the original submitter (RW-7) ---------------
+            if revision.created_by_user_id:
+                await self._record_notification(
+                    "content.changes_requested",
+                    organization_id=actor.organization_id,
+                    aggregate_id=draft.id,
+                    recipient_user_id=revision.created_by_user_id,
+                    payload={
+                        "entryId": str(entry.id),
+                        "revisionId": str(draft.id),
+                        "slug": entry.slug,
+                        "capability": request.capability.value,
+                        "note": request.note or "",
+                    },
+                )
+
             return await self._to_schema_loaded(entry, draft)
 
         await self._session.flush()
@@ -915,6 +933,21 @@ class ContentService:
             revision.updated_by_user_id = actor.user_id
             await self._log_event(revision.id, from_status, RevisionStatus.APPROVED, actor)
             await self._session.flush()
+
+            # ---- outbox: notify the original submitter (RW-7) ---------------
+            if revision.created_by_user_id:
+                await self._record_notification(
+                    "content.review_approved",
+                    organization_id=actor.organization_id,
+                    aggregate_id=revision.id,
+                    recipient_user_id=revision.created_by_user_id,
+                    payload={
+                        "entryId": str(entry.id),
+                        "revisionId": str(revision.id),
+                        "slug": entry.slug,
+                        "versionLabel": revision.version_label,
+                    },
+                )
 
         return await self._to_schema_loaded(entry, revision)
 
@@ -1116,6 +1149,27 @@ class ContentService:
         ).all()
         return {event.actor_user_id for event in events if event.actor_user_id}
 
+    async def _record_notification(
+        self,
+        event_type: str,
+        *,
+        organization_id: UUID,
+        aggregate_id: UUID,
+        recipient_user_id: UUID,
+        payload: dict[str, object] | None = None,
+    ) -> None:
+        """Append a notification to the transactional outbox (RW-7)."""
+        self._session.add(
+            NotificationOutbox(
+                organization_id=organization_id,
+                event_type=event_type,
+                aggregate_id=aggregate_id,
+                recipient_user_id=recipient_user_id,
+                payload=payload or {},
+                available_at=datetime.now(UTC),
+            )
+        )
+
     async def submit_article_for_review(
         self,
         actor: StaffActor,
@@ -1195,7 +1249,50 @@ class ContentService:
         discovery = await self._discovery(revision.id)
         await self._submit_package_terms(actor, discovery, entry.locale)
 
+        # ---- outbox: notify assigned reviewers (RW-7) ----------------------
+        await self._notify_reviewers_of_new_submission(
+            actor.organization_id, revision, entry
+        )
+
         return await self._to_schema_loaded(entry, revision)
+
+    async def _notify_reviewers_of_new_submission(
+        self,
+        organization_id: UUID,
+        revision: ContentRevision,
+        entry: ContentEntry,
+    ) -> None:
+        """Create outbox records for every reviewer eligible to review this
+        revision (RW-7).  The submitter is excluded (four-eyes)."""
+        assigned_rows = (
+            await self._session.scalars(
+                select(ContentReviewAssignment.user_id).where(
+                    ContentReviewAssignment.organization_id == organization_id,
+                    ContentReviewAssignment.active.is_(True),
+                ).distinct()
+            )
+        ).all()
+        reviewer_ids = list(assigned_rows)
+        if not reviewer_ids:
+            return  # No explicitly assigned reviewers — implicit mode, no email
+
+        payload: dict[str, object] = {
+            "entryId": str(entry.id),
+            "revisionId": str(revision.id),
+            "slug": entry.slug,
+            "versionLabel": revision.version_label,
+            "contentType": entry.content_type.value,
+        }
+        for user_id in reviewer_ids:
+            if user_id == revision.created_by_user_id:
+                continue
+            await self._record_notification(
+                "content.review_requested",
+                organization_id=organization_id,
+                aggregate_id=revision.id,
+                recipient_user_id=user_id,
+                payload=payload,
+            )
 
     async def _submit_package_terms(
         self,
