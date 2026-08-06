@@ -66,6 +66,7 @@ from psihointegritet.modules.content.schemas import (
 from psihointegritet.modules.content.system_catalog import is_system_content_definition
 from psihointegritet.modules.content.taxonomy_models import (
     TaxonomyAxis,
+    TaxonomyPublicationEvent,
     TaxonomyTerm,
     TaxonomyTermRevision,
 )
@@ -1000,7 +1001,101 @@ class ContentService:
         # ---- record idempotency key alongside the transition event ----------
         await self._record_idempotency(revision.id, request.idempotency_key)
 
+        # ---- transition draft taxonomy terms in the same package (RW-5) ----
+        discovery = await self._discovery(revision.id)
+        await self._submit_package_terms(actor, discovery, entry.locale)
+
         return await self._to_schema_loaded(entry, revision)
+
+    async def _submit_package_terms(
+        self,
+        actor: StaffActor,
+        discovery: ContentDiscoveryMetadata,
+        locale: str,
+    ) -> None:
+        """Transition all draft tenant taxonomy terms referenced by this
+        article's discovery metadata to ``in_review`` (RW-5 / D-068 rule 1).
+
+        Already-published and already-in-review terms are left unchanged.
+        Only tenant-owned terms (not system-defined) are considered.
+        """
+        import itertools
+
+        term_ids: list[UUID] = list(
+            itertools.chain(
+                [discovery.topic_group_term_id] if discovery.topic_group_term_id else [],
+                discovery.topic_term_ids,
+            )
+        )
+        if not term_ids:
+            return
+
+        org_id = actor.organization_id
+
+        # Batch-fetch latest tenant revisions for all referenced terms at once.
+        tenant_latest_sub = (
+            select(
+                TaxonomyTermRevision.term_id,
+                func.max(TaxonomyTermRevision.created_at).label("max_at"),
+            )
+            .where(
+                TaxonomyTermRevision.term_id.in_(term_ids),
+                TaxonomyTermRevision.organization_id == org_id,
+                TaxonomyTermRevision.locale == locale,
+            )
+            .group_by(TaxonomyTermRevision.term_id)
+        ).subquery("pkg_tenant_latest")
+
+        revisions: dict[UUID, TaxonomyTermRevision] = {}
+        for rev in (
+            await self._session.scalars(
+                select(TaxonomyTermRevision)
+                .join(
+                    tenant_latest_sub,
+                    (TaxonomyTermRevision.term_id == tenant_latest_sub.c.term_id)
+                    & (TaxonomyTermRevision.created_at == tenant_latest_sub.c.max_at),
+                )
+                .where(
+                    TaxonomyTermRevision.organization_id == org_id,
+                    TaxonomyTermRevision.locale == locale,
+                )
+            )
+        ).all():
+            revisions.setdefault(rev.term_id, rev)
+
+        # Fetch the TaxonomyTerm rows so we have stable_ids for events.
+        terms: dict[UUID, TaxonomyTerm] = {}
+        for term in (
+            await self._session.scalars(
+                select(TaxonomyTerm).where(TaxonomyTerm.id.in_(term_ids))
+            )
+        ).all():
+            terms[term.id] = term
+
+        for term_id in term_ids:
+            term = terms.get(term_id)
+            revision = revisions.get(term_id)
+            if term is None or revision is None:
+                continue
+            # Only transition tenant-owned drafts
+            if term.organization_id != org_id:
+                continue
+            if revision.status is not RevisionStatus.DRAFT:
+                continue
+
+            from_status = revision.status
+            revision.status = RevisionStatus.IN_REVIEW
+            revision.updated_by_user_id = actor.user_id
+
+            self._session.add(
+                TaxonomyPublicationEvent(
+                    term_revision_id=revision.id,
+                    from_status=from_status,
+                    to_status=RevisionStatus.IN_REVIEW,
+                    actor_user_id=actor.user_id,
+                    reason="submitted_via_article_package",
+                )
+            )
 
     async def create_new_draft(
         self,
