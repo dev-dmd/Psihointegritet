@@ -3,10 +3,20 @@
 Public DTOs for the booking API. Never return ORM objects directly.
 """
 
-from datetime import date, datetime
+from datetime import date, datetime, time
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_serializer, field_validator
+
+
+def _serialize_time(t: time | str | None) -> str | None:
+    """Serialize a time object to HH:MM:SS string, or pass through strings."""
+    if t is None:
+        return None
+    if isinstance(t, str):
+        return t
+    return t.strftime("%H:%M:%S")
+
 
 # ── Booking Config ───────────────────────────────────────────────────────────
 
@@ -82,6 +92,15 @@ class AvailabilityRuleOut(BaseModel):
     created_at: datetime
     updated_at: datetime
 
+    @field_serializer("start_time", "end_time")
+    def _ser_time(self, t: time | str | None) -> str | None:
+        return _serialize_time(t)
+
+    @field_validator("start_time", "end_time", mode="before")
+    @classmethod
+    def _coerce_time_to_str(cls, v: object) -> str | None:
+        return _serialize_time(v)  # type: ignore[arg-type]
+
 
 class AvailabilityExceptionIn(BaseModel):
     therapist_profile_id: UUID
@@ -104,6 +123,15 @@ class AvailabilityExceptionOut(BaseModel):
     end_time: str | None
     reason: str | None
     created_at: datetime
+
+    @field_serializer("start_time", "end_time")
+    def _ser_exc_time(self, t: time | str | None) -> str | None:
+        return _serialize_time(t)
+
+    @field_validator("start_time", "end_time", mode="before")
+    @classmethod
+    def _coerce_exc_time_to_str(cls, v: object) -> str | None:
+        return _serialize_time(v)  # type: ignore[arg-type]
 
 
 class DerivedSlotOut(BaseModel):

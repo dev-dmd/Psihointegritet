@@ -4,10 +4,11 @@ Orchestrates transactions, authorization, and event emission.
 No SQL in routers; no business logic outside this layer.
 """
 
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, datetime, time, timedelta
 from uuid import UUID, uuid4
 
-from sqlalchemy import CursorResult, delete, or_, select
+from sqlalchemy import CursorResult, delete, func, or_, select
+from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -58,12 +59,44 @@ from psihointegritet.modules.booking.schemas import (
 logger = get_logger(__name__)
 
 
+def _parse_time(value: str) -> time:
+    """Parse a time string like '07:00' or '07:00:00' into a time object."""
+    try:
+        return time.fromisoformat(value)
+    except ValueError:
+        # Try with HH:MM format
+        parts = value.strip().split(":")
+        return time(int(parts[0]), int(parts[1]), int(parts[2][:2]) if len(parts) > 2 else 0)
+
+
 class BookingConflictError(RuntimeError):
     """Optimistic concurrency or availability conflict."""
+
+    code = "BOOKING_CONFLICT"
+
+
+class BookingSlotConflictError(BookingConflictError):
+    """The DB exclusion constraint rejected an overlapping appointment insert.
+
+    Raised only after PostgreSQL itself refused the INSERT (sqlstate 23P01,
+    `appointments_no_therapist_overlap` — see 0009 migration). The
+    application-level availability re-check in `review_request`/
+    `accept_alternative` catches most conflicts earlier for a faster response,
+    but the DB is what actually decides who gets the slot under concurrency.
+    """
+
+    code = "BOOKING_SLOT_CONFLICT"
 
 
 class BookingValidationError(ValueError):
     """Input validation failure in booking domain."""
+
+
+_EXCLUSION_VIOLATION_SQLSTATE = "23P01"
+
+
+def _is_exclusion_violation(error: IntegrityError) -> bool:
+    return getattr(error.orig, "sqlstate", None) == _EXCLUSION_VIOLATION_SQLSTATE
 
 
 class BookingService:
@@ -78,8 +111,15 @@ class BookingService:
     async def upsert_booking_config(
         self, organization_id: UUID, data: ServiceBookingConfigIn
     ) -> ServiceBookingConfigOut:
-        """Create or update a booking config for a concrete offer."""
-        config = ServiceBookingConfig(
+        """Create or update a booking config for a concrete offer.
+
+        `uq_booking_config_offer` is NULLS NOT DISTINCT (0008 migration), so
+        the DB-level ON CONFLICT below is what actually enforces "one active
+        config per offer" — including offers with no location_id. A
+        select-then-insert-or-update in Python cannot be made race-free here;
+        this single statement can.
+        """
+        stmt = pg_insert(ServiceBookingConfig).values(
             id=uuid4(),
             organization_id=organization_id,
             service_id=data.service_id,
@@ -92,31 +132,19 @@ class BookingService:
             buffer_after_minutes=data.buffer_after_minutes,
             is_active=data.is_active,
         )
-        self._session.add(config)
-        try:
-            await self._session.flush()
-        except IntegrityError:
-            await self._session.rollback()
-            # Re-fetch existing and merge
-            existing = await self._session.execute(
-                select(ServiceBookingConfig).where(
-                    ServiceBookingConfig.organization_id == organization_id,
-                    ServiceBookingConfig.service_id == data.service_id,
-                    ServiceBookingConfig.therapist_profile_id == data.therapist_profile_id,
-                    ServiceBookingConfig.format == data.format,
-                    ServiceBookingConfig.location_id == data.location_id,
-                )
-            )
-            existing = existing.scalar_one_or_none()
-            if existing is None:
-                raise BookingConflictError("Concurrent delete of booking config") from None
-            existing.booking_mode = BookingMode(data.booking_mode)
-            existing.slot_duration_minutes = data.slot_duration_minutes
-            existing.buffer_before_minutes = data.buffer_before_minutes
-            existing.buffer_after_minutes = data.buffer_after_minutes
-            existing.is_active = data.is_active
-            await self._session.flush()
-            return ServiceBookingConfigOut.model_validate(existing)
+        stmt = stmt.on_conflict_do_update(
+            constraint="uq_booking_config_offer",
+            set_={
+                "booking_mode": stmt.excluded.booking_mode,
+                "slot_duration_minutes": stmt.excluded.slot_duration_minutes,
+                "buffer_before_minutes": stmt.excluded.buffer_before_minutes,
+                "buffer_after_minutes": stmt.excluded.buffer_after_minutes,
+                "is_active": stmt.excluded.is_active,
+                "updated_at": func.now(),
+            },
+        ).returning(ServiceBookingConfig)
+        result = await self._session.scalars(stmt)
+        config = result.one()
         await self._session.flush()
         return ServiceBookingConfigOut.model_validate(config)
 
@@ -130,8 +158,8 @@ class BookingService:
             organization_id=organization_id,
             therapist_profile_id=data.therapist_profile_id,
             day_of_week=data.day_of_week,
-            start_time=data.start_time,  # type: ignore[arg-type]
-            end_time=data.end_time,  # type: ignore[arg-type]
+            start_time=_parse_time(data.start_time) if data.start_time else None,
+            end_time=_parse_time(data.end_time) if data.end_time else None,
             valid_from=data.valid_from,
             valid_until=data.valid_until,
             format=data.format,
@@ -164,8 +192,8 @@ class BookingService:
     ) -> AvailabilityRuleOut:
         rule = await self._get_availability_rule(organization_id, rule_id)
         rule.day_of_week = data.day_of_week
-        rule.start_time = data.start_time  # type: ignore[arg-type]
-        rule.end_time = data.end_time  # type: ignore[arg-type]
+        rule.start_time = _parse_time(data.start_time)
+        rule.end_time = _parse_time(data.end_time)
         rule.valid_from = data.valid_from
         rule.valid_until = data.valid_until
         rule.format = data.format
@@ -175,6 +203,7 @@ class BookingService:
         rule.buffer_before_minutes = data.buffer_before_minutes
         rule.buffer_after_minutes = data.buffer_after_minutes
         await self._session.flush()
+        await self._session.refresh(rule)
         return AvailabilityRuleOut.model_validate(rule)
 
     async def delete_availability_rule(self, organization_id: UUID, rule_id: UUID) -> None:
@@ -207,8 +236,8 @@ class BookingService:
             therapist_profile_id=data.therapist_profile_id,
             exception_date=data.exception_date,
             kind=AvailabilityExceptionKind(data.kind),
-            start_time=data.start_time,  # type: ignore[arg-type]
-            end_time=data.end_time,  # type: ignore[arg-type]
+            start_time=_parse_time(data.start_time) if data.start_time else None,
+            end_time=_parse_time(data.end_time) if data.end_time else None,
             reason=data.reason,
         )
         self._session.add(exc)
@@ -501,40 +530,22 @@ class BookingService:
 
         Actions: confirm → creates Appointment, decline → closes request,
         propose_alternative → creates alternative proposals.
+
+        `confirm` locks the request row (SELECT ... FOR UPDATE) so two
+        concurrent reviews of the SAME request can't both succeed, then
+        re-checks availability at the application level to fail fast on an
+        obvious conflict — but `appointments_no_therapist_overlap` (0009
+        migration) is what actually decides who gets the slot under real
+        concurrency; see `_confirm_request`.
         """
-        req = await self._get_request(organization_id, request_id)
+        req = await self._get_request_for_update(organization_id, request_id)
         require_appointment_request_transition(req.status, AppointmentRequestStatus.UNDER_REVIEW)
         req.status = AppointmentRequestStatus.UNDER_REVIEW
         req.reviewed_by_user_id = reviewer_user_id
         req.reviewed_at = datetime.now(UTC)
 
         if action.action == "confirm":
-            require_appointment_request_transition(
-                AppointmentRequestStatus.UNDER_REVIEW,
-                AppointmentRequestStatus.CONVERTED,
-            )
-            # Transactionally create Appointment
-            appointment = Appointment(
-                id=uuid4(),
-                organization_id=organization_id,
-                therapist_profile_id=req.therapist_profile_id,
-                service_id=req.service_id,
-                appointment_request_id=req.id,
-                start_time=req.preferred_start or datetime.now(UTC),
-                end_time=req.preferred_end or datetime.now(UTC) + timedelta(hours=1),
-                format=req.format,
-                location_id=req.location_id,
-                status=AppointmentStatus.CONFIRMED,
-                client_name=req.client_name,
-                client_email=req.client_email,
-                client_phone=req.client_phone,
-                client_timezone=req.client_timezone,
-                client_note=req.client_note,
-            )
-            self._session.add(appointment)
-            req.status = AppointmentRequestStatus.CONVERTED
-            await self._session.flush()
-            return {"action": "confirmed", "appointment_id": str(appointment.id)}
+            return await self._confirm_request(req)
 
         if action.action == "decline":
             req.status = AppointmentRequestStatus.DECLINED
@@ -567,17 +578,96 @@ class BookingService:
 
         raise BookingValidationError(f"Unknown action: {action.action}")
 
+    async def _confirm_request(self, req: AppointmentRequest) -> dict[str, str]:
+        require_appointment_request_transition(req.status, AppointmentRequestStatus.CONVERTED)
+        start = req.preferred_start or datetime.now(UTC)
+        end = req.preferred_end or datetime.now(UTC) + timedelta(hours=1)
+        await self._assert_slot_still_available(
+            req.organization_id, req.therapist_profile_id, start, end
+        )
+        appointment = Appointment(
+            id=uuid4(),
+            organization_id=req.organization_id,
+            therapist_profile_id=req.therapist_profile_id,
+            service_id=req.service_id,
+            appointment_request_id=req.id,
+            start_time=start,
+            end_time=end,
+            format=req.format,
+            location_id=req.location_id,
+            status=AppointmentStatus.CONFIRMED,
+            client_name=req.client_name,
+            client_email=req.client_email,
+            client_phone=req.client_phone,
+            client_timezone=req.client_timezone,
+            client_note=req.client_note,
+        )
+        self._session.add(appointment)
+        try:
+            await self._session.flush()
+        except IntegrityError as error:
+            # No rollback here: this leaves the whole use-case's transaction
+            # unresolved on purpose, so the request's under_review mutation
+            # above never commits either — it reverts to whatever was last
+            # committed once the caller's session closes without commit
+            # (rule §17: the use case doesn't own partial rollback, the
+            # request/session boundary does).
+            if _is_exclusion_violation(error):
+                raise BookingSlotConflictError(
+                    "This time slot was just taken by another booking."
+                ) from error
+            raise
+        req.status = AppointmentRequestStatus.CONVERTED
+        await self._session.flush()
+        return {"action": "confirmed", "appointment_id": str(appointment.id)}
+
+    async def _assert_slot_still_available(
+        self,
+        organization_id: UUID,
+        therapist_profile_id: UUID,
+        start: datetime,
+        end: datetime,
+    ) -> None:
+        """Fail fast on an obvious conflict before attempting the INSERT.
+
+        Reduces wasted round trips under contention, but is not itself the
+        guarantee — `appointments_no_therapist_overlap` is (see 0009
+        migration and `_confirm_request`'s exclusion-violation handling).
+        """
+        result = await self._session.execute(
+            select(Appointment.id).where(
+                Appointment.organization_id == organization_id,
+                Appointment.therapist_profile_id == therapist_profile_id,
+                Appointment.status.in_(
+                    (
+                        AppointmentStatus.CONFIRMED,
+                        AppointmentStatus.COMPLETED,
+                        AppointmentStatus.NO_SHOW,
+                    )
+                ),
+                Appointment.start_time < end,
+                Appointment.end_time > start,
+            )
+        )
+        if result.first() is not None:
+            raise BookingSlotConflictError("This time slot is no longer available.")
+
     async def accept_alternative(
         self, organization_id: UUID, request_id: UUID, data: AcceptAlternativeRequest
     ) -> dict[str, str]:
-        """Client atomically accepts one alternative."""
-        req = await self._get_request(organization_id, request_id)
+        """Client atomically accepts one alternative.
+
+        Locks the request row (SELECT ... FOR UPDATE) so a concurrent
+        acceptance of the same request can't also succeed; the appointment
+        insert is protected exactly like `_confirm_request` — see there for
+        why the DB exclusion constraint is the real guarantee.
+        """
+        req = await self._get_request_for_update(organization_id, request_id)
         if req.status != AppointmentRequestStatus.AWAITING_CLIENT:
             raise BookingValidationError(
                 f"Request is not awaiting client choice (current: {req.status.value})"
             )
 
-        # Find and validate the chosen proposal
         result = await self._session.execute(
             select(AlternativeProposal).where(
                 AlternativeProposal.id == data.proposal_id,
@@ -589,14 +679,7 @@ class BookingService:
         if chosen is None:
             raise BookingValidationError("Alternative proposal not found or already taken")
 
-        # Accept chosen, close others
         chosen.status = AlternativeProposalStatus.ACCEPTED
-        await self._session.execute(
-            select(AlternativeProposal).where(
-                AlternativeProposal.appointment_request_id == request_id,
-                AlternativeProposal.id != data.proposal_id,
-            )
-        )
         other_result = await self._session.execute(
             select(AlternativeProposal).where(
                 AlternativeProposal.appointment_request_id == request_id,
@@ -606,8 +689,10 @@ class BookingService:
         for other in other_result.scalars().all():
             other.status = AlternativeProposalStatus.CLOSED
 
-        # Convert to Appointment
         require_appointment_request_transition(req.status, AppointmentRequestStatus.CONVERTED)
+        await self._assert_slot_still_available(
+            organization_id, req.therapist_profile_id, chosen.proposed_start, chosen.proposed_end
+        )
         appointment = Appointment(
             id=uuid4(),
             organization_id=organization_id,
@@ -626,6 +711,15 @@ class BookingService:
             client_note=req.client_note,
         )
         self._session.add(appointment)
+        try:
+            await self._session.flush()
+        except IntegrityError as error:
+            # See _confirm_request: no rollback here on purpose.
+            if _is_exclusion_violation(error):
+                raise BookingSlotConflictError(
+                    "This time slot was just taken by another booking."
+                ) from error
+            raise
         req.status = AppointmentRequestStatus.CONVERTED
         await self._session.flush()
         return {"action": "alternative_accepted", "appointment_id": str(appointment.id)}
@@ -671,6 +765,7 @@ class BookingService:
         appt.cancellation_reason = data.reason
         appt.cancelled_at = datetime.now(UTC)
         await self._session.flush()
+        await self._session.refresh(appt)
         return AppointmentOut.model_validate(appt)
 
     async def complete_appointment(
@@ -680,6 +775,7 @@ class BookingService:
         require_appointment_transition(appt.status, AppointmentStatus.COMPLETED)
         appt.status = AppointmentStatus.COMPLETED
         await self._session.flush()
+        await self._session.refresh(appt)
         return AppointmentOut.model_validate(appt)
 
     async def mark_no_show(self, organization_id: UUID, appointment_id: UUID) -> AppointmentOut:
@@ -687,6 +783,7 @@ class BookingService:
         require_appointment_transition(appt.status, AppointmentStatus.NO_SHOW)
         appt.status = AppointmentStatus.NO_SHOW
         await self._session.flush()
+        await self._session.refresh(appt)
         return AppointmentOut.model_validate(appt)
 
     async def _get_request(self, organization_id: UUID, request_id: UUID) -> AppointmentRequest:
@@ -695,6 +792,24 @@ class BookingService:
                 AppointmentRequest.id == request_id,
                 AppointmentRequest.organization_id == organization_id,
             )
+        )
+        req = result.scalar_one_or_none()
+        if req is None:
+            raise BookingValidationError("Appointment request not found")
+        return req
+
+    async def _get_request_for_update(
+        self, organization_id: UUID, request_id: UUID
+    ) -> AppointmentRequest:
+        """Like `_get_request`, but locks the row so a concurrent review/accept
+        of the SAME request has to wait instead of also succeeding."""
+        result = await self._session.execute(
+            select(AppointmentRequest)
+            .where(
+                AppointmentRequest.id == request_id,
+                AppointmentRequest.organization_id == organization_id,
+            )
+            .with_for_update()
         )
         req = result.scalar_one_or_none()
         if req is None:

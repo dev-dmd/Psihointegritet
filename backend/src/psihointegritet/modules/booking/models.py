@@ -11,6 +11,7 @@ from uuid import UUID, uuid4
 
 from sqlalchemy import (
     JSON,
+    CheckConstraint,
     Date,
     DateTime,
     ForeignKey,
@@ -23,6 +24,8 @@ from sqlalchemy import (
     Uuid,
     func,
 )
+from sqlalchemy import text as sa_text
+from sqlalchemy.dialects.postgresql import ExcludeConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 
 from psihointegritet.db.base import Base
@@ -103,6 +106,7 @@ class ServiceBookingConfig(Base):
             "format",
             "location_id",
             name="uq_booking_config_offer",
+            postgresql_nulls_not_distinct=True,
         ),
         Index("ix_booking_config_org_service", "organization_id", "service_id"),
     )
@@ -162,8 +166,8 @@ class AvailabilityRule(Base):
         index=True,
     )
     day_of_week: Mapped[int] = mapped_column(Integer)  # 0=Mon..6=Sun (ISO 8601)
-    start_time: Mapped[time] = mapped_column(Time(timezone=True))
-    end_time: Mapped[time] = mapped_column(Time(timezone=True))
+    start_time: Mapped[time] = mapped_column(Time())
+    end_time: Mapped[time] = mapped_column(Time())
     valid_from: Mapped[date] = mapped_column(Date)
     valid_until: Mapped[date | None] = mapped_column(Date, nullable=True)
     format: Mapped[str] = mapped_column(String(32))  # online | in_person
@@ -214,8 +218,8 @@ class AvailabilityException(Base):
     kind: Mapped[AvailabilityExceptionKind] = mapped_column(
         value_enum(AvailabilityExceptionKind, length=32)
     )
-    start_time: Mapped[time | None] = mapped_column(Time(timezone=True), nullable=True)
-    end_time: Mapped[time | None] = mapped_column(Time(timezone=True), nullable=True)
+    start_time: Mapped[time | None] = mapped_column(Time(), nullable=True)
+    end_time: Mapped[time | None] = mapped_column(Time(), nullable=True)
     reason: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
@@ -370,6 +374,20 @@ class Appointment(Base):
             "therapist_profile_id",
             "start_time",
         ),
+        CheckConstraint("end_time > start_time", name="ck_appointments_valid_time_range"),
+        # DB-level double-booking guard (0009 migration). PostgreSQL is the final
+        # authority: only one of two racing INSERTs for an overlapping interval on
+        # the same organization+therapist can commit; the loser raises 23P01,
+        # which the service layer maps to BookingSlotConflictError -> HTTP 409.
+        ExcludeConstraint(
+            ("organization_id", "="),
+            ("therapist_profile_id", "="),
+            (func.tstzrange(sa_text("start_time"), sa_text("end_time"), "[)"), "&&"),
+            name="appointments_no_therapist_overlap",
+            where=sa_text("status IN ('confirmed', 'completed', 'no_show')"),
+            deferrable=True,
+            initially="IMMEDIATE",
+        ),
     )
 
     id: Mapped[UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid4)
@@ -384,11 +402,7 @@ class Appointment(Base):
     service_id: Mapped[UUID] = mapped_column(
         Uuid(as_uuid=True), ForeignKey("content_entries.id", ondelete="CASCADE")
     )
-    appointment_request_id: Mapped[UUID | None] = mapped_column(
-        Uuid(as_uuid=True),
-        ForeignKey("appointment_requests.id", ondelete="SET NULL"),
-        nullable=True,
-    )
+    appointment_request_id: Mapped[UUID | None] = mapped_column(Uuid(as_uuid=True), nullable=True)
     start_time: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     end_time: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     format: Mapped[str] = mapped_column(String(32))

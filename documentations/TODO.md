@@ -85,14 +85,14 @@ Svaki ima SUPERSEDED zaglavlje sa razlogom i zamenom. Arhivirano 2026-07-17: `PR
 | ------- | --------------------------------------------------------- | -------------------------- | ----------- | -------- | -------------------------- |
 | **R0**  | Housekeeping i poravnanje dokumentacije                   | —                          | 1–2 dana    | **~45%** | u toku                     |
 | **R1**  | Javni digitalni centar (produkcijski launch)              | Faza 1 — vaučer, 0 EUR     | ~4 nedelje  | **~20%** | u toku                     |
-| **R2**  | Operativni MVP + Booking Engine                           | Faza 2 — 9.000–13.000 EUR  | 7–9 nedelja | **0%**   | ⏸️ čeka R1 + SoW           |
+| **R2**  | Operativni MVP + Booking Engine                           | Faza 2 — 9.000–13.000 EUR  | 7–9 nedelja | **~15%** | u toku — Booking R2 Foundation (2026-08-06) |
 | R3      | Content Engine / CMS + znanje i resursi                   | Faza 3 — 6.500–9.500 EUR   | 5–7 nedelja | 0%       | ⏸️                         |
 | R4      | Radionice, programi i B2B                                 | Faza 4 — 8.000–12.000 EUR  | 6–8 nedelja | 0%       | ⏸️                         |
 | R5      | Online rad, poruke, plaćanja, paketi, krediti i pretplate | Faza 5 — 7.000–10.000 EUR  | 5–7 nedelja | 0%       | ⏸️                         |
 | R6      | Business OS: analitika, dijagnostika, marketing           | Faza 6 — 10.000–14.000 EUR | 7–9 nedelja | 0%       | ⏸️                         |
 | R7+     | SaaS, marketplace, AI navigator                           | Faze 7–9                   | —           | 0%       | ⏸️ zasebne poslovne odluke |
 
-**Gde smo zaista:** frontend sada ima većinu R1 javnih ruta, uslužni/terapeutski sadržaj, vođeni izbor, demo booking/B2B tok i Pre-R2 Control Center preview. Backend sada ima prvi produkcioni Intake & Matching domen iza feature flag-ova: perzistentni `IntakeCase`, deterministički matching, verzionirane potvrde, Team Queue i atomsko preuzimanje. Pravi Booking Engine, slotovi, kalendar i naplata i dalje ne postoje; postojeći Next.js route handleri za demo nisu zamena za R2 Booking domen.
+**Gde smo zaista:** frontend sada ima većinu R1 javnih ruta, uslužni/terapeutski sadržaj, vođeni izbor, demo booking/B2B tok i Pre-R2 Control Center preview. Backend sada ima prvi produkcioni Intake & Matching domen iza feature flag-ova: perzistentni `IntakeCase`, deterministički matching, verzionirane potvrde, Team Queue i atomsko preuzimanje. **Booking Engine R2 Foundation je započet 2026-08-06:** 7 tabela, domain logika, service sloj, 20+ API ruta, ADR-015 (Availability Service Contract), Payment Strategy doc. Pravi booking slotovi, kalendar i naplata i dalje nisu povezani sa frontendom; postojeći Next.js route handleri za demo nisu zamena za R2 Booking domen.
 
 ---
 
@@ -512,6 +512,24 @@ Dokazuje `SlotSpec` registar koji pravni tok ne dokazuje (`legal_page` ima samo 
 | PRE-R2.f | Google Calendar i B2B rezervisani kapacitet                                          | ⬜     | BDS-012/BDS-013; S12 za Calendar; B2B kapacitet target R4                                                                             |
 | PRE-R2.g | Finansijski appendix: packages, credits, subscriptions, payments, refunds, invoices  | 🚫 R5  | BDS-014; samo `BLOCKED` evidencija, bez R2 dizajna/koda/tabela                                                                        |
 | PRE-R2.h | Poslati Anji kratki booking approval sheet                                           | 🟡     | `R1_6_BOOKING_BUSINESS_APPROVAL_SHEET_v0.1.md`; odgovor po stavci je `Odobravam / Želim izmenu`                                       |
+
+---
+
+### R2 Booking Engine Foundation (2026-08-06)
+
+> **Gde piše:** ADR-013 · ADR-015 · `PRE_R2_BOOKING_ENGINE_DECISION_SPEC_v0.2.md` · Master Plan §6 M2.2–M2.3
+> **Granica:** backend schema, domain, service i API foundation; bez frontend povezivanja, Redis-a, Google Calendar-a i plaćanja.
+> **Redosled:** R2.1 Booking Core → R2.2 Availability → R2.3 Request Review gate → R2.4 Notify Me (čeka biz odluke) → R2.5 Adaptive Booking Widget
+
+| ID      | Zadatak                                                                                  | Status | Napomena                                                                                                                       |
+| ------- | ---------------------------------------------------------------------------------------- | ------ | ------------------------------------------------------------------------------------------------------------------------------ |
+| R2.1    | **Booking Core:** 7 tabela, domain enumi, state machines, `SlotHold`/`AppointmentRequest`/`Appointment` agregati | ✅     | `service_booking_configs`, `availability_rules`, `availability_exceptions`, `slot_holds`, `appointment_requests`, `alternative_proposals`, `appointments`. FK ka `organizations`, `therapist_matching_profiles`, `content_entries`, `internal_users`. Alembic `0007`. |
+| R2.2    | **Availability:** `derive_slots` algoritam, `resolve_booking_mode`, recurring rules, exceptions, buffer zone, UTC/IANA | ✅     | ADR-015 zaključava ugovor. `AvailabilityWindow` i `DerivedSlot` domain objekti. `GET /booking/slots`, `POST /booking/slots/hold`. |
+| R2.3    | **Request Review gate:** pytest domain + integracioni testovi, concurrency, tenant isolation                        | ✅     | **2026-08-06.** 35 domain unit testova (resolve, derive, state machines, cancel). 21 integration test (slot hold idempotency, double booking, review lifecycle, alternative flow, cancel/complete/no-show, tenant isolation, availability). `ruff` ✅ `pyright` ✅ `pytest` ✅. |
+| R2.4    | **Notify Me / waitlist**                                                                  | ⏸️     | Čeka BDS-007B / BDS-008 / BDS-009B odobrenje (SLA, TTL, fairness).                                                            |
+| R2.5    | **Adaptive Booking Widget** — povezivanje frontenda sa pravim endpointima, uklanjanje mock podataka                | ⬜     | Booking Widget, panel „Termini", klijentski `/nalog`.                                                                           |
+| R2.6    | **Redis contention sloj** — `SET NX` za brži `SlotHold` check                                                   | ⬜     | Dokumentovano u ADR-015; PostgreSQL constraint je primarna odbrana.                                                              |
+| R2.7    | **Google Calendar** free/busy adapter (M2.6 / package 2B)                                                         | ⬜     | BDS-012; samo free/busy pull, bez upisa u eksterni kalendar.                                                                    |
 
 ---
 

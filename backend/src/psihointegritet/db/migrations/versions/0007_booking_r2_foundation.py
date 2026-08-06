@@ -24,7 +24,7 @@ from alembic import op
 
 # revision identifiers, used by Alembic.
 revision: str = "0007"
-down_revision: str | None = "359e86bf2cb4"  # 20260806_0020 content review assignments
+down_revision: str | None = "3bb47763bb91"  # 20260806_0021 notification outbox
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
@@ -123,8 +123,8 @@ def upgrade() -> None:
             index=True,
         ),
         sa.Column("day_of_week", sa.Integer, nullable=False),
-        sa.Column("start_time", sa.Time(timezone=True), nullable=False),
-        sa.Column("end_time", sa.Time(timezone=True), nullable=False),
+        sa.Column("start_time", sa.Time(), nullable=False),
+        sa.Column("end_time", sa.Time(), nullable=False),
         sa.Column("valid_from", sa.Date, nullable=False),
         sa.Column("valid_until", sa.Date, nullable=True),
         sa.Column("format", sa.String(32), nullable=False),
@@ -183,8 +183,8 @@ def upgrade() -> None:
         ),
         sa.Column("exception_date", sa.Date, nullable=False),
         sa.Column("kind", sa.String(32), nullable=False),
-        sa.Column("start_time", sa.Time(timezone=True), nullable=True),
-        sa.Column("end_time", sa.Time(timezone=True), nullable=True),
+        sa.Column("start_time", sa.Time(), nullable=True),
+        sa.Column("end_time", sa.Time(), nullable=True),
         sa.Column("reason", sa.Text, nullable=True),
         sa.Column(
             "created_at",
@@ -244,6 +244,74 @@ def upgrade() -> None:
         sa.UniqueConstraint("idempotency_key", name="uq_slot_hold_idempotency"),
     )
     op.create_index("ix_slot_hold_expires", "slot_holds", ["expires_at"])
+
+    # ── appointments ─────────────────────────────────────────────────────
+    op.create_table(
+        "appointments",
+        sa.Column("id", sa.Uuid(as_uuid=True), primary_key=True),
+        sa.Column(
+            "organization_id",
+            sa.Uuid(as_uuid=True),
+            sa.ForeignKey("organizations.id", ondelete="CASCADE"),
+            nullable=False,
+            index=True,
+        ),
+        sa.Column(
+            "therapist_profile_id",
+            sa.Uuid(as_uuid=True),
+            sa.ForeignKey("therapist_matching_profiles.id", ondelete="CASCADE"),
+            nullable=False,
+            index=True,
+        ),
+        sa.Column(
+            "service_id",
+            sa.Uuid(as_uuid=True),
+            sa.ForeignKey("content_entries.id", ondelete="CASCADE"),
+            nullable=False,
+        ),
+        sa.Column(
+            "appointment_request_id",
+            sa.Uuid(as_uuid=True),
+            nullable=True,
+        ),
+        sa.Column("start_time", sa.DateTime(timezone=True), nullable=False),
+        sa.Column("end_time", sa.DateTime(timezone=True), nullable=False),
+        sa.Column("format", sa.String(32), nullable=False),
+        sa.Column("location_id", sa.Uuid(as_uuid=True), nullable=True),
+        sa.Column(
+            "status",
+            sa.String(32),
+            nullable=False,
+            server_default="confirmed",
+        ),
+        sa.Column("client_name", sa.String(200), nullable=False),
+        sa.Column("client_email", sa.String(320), nullable=False),
+        sa.Column("client_phone", sa.String(50), nullable=True),
+        sa.Column("client_timezone", sa.String(64), nullable=False),
+        sa.Column("client_note", sa.Text, nullable=True),
+        sa.Column("cancelled_by", sa.String(32), nullable=True),
+        sa.Column("cancellation_reason", sa.Text, nullable=True),
+        sa.Column("cancelled_at", sa.DateTime(timezone=True), nullable=True),
+        sa.Column("cancellation_policy_version", sa.String(64), nullable=True),
+        sa.Column("reschedule_successor_id", sa.Uuid(as_uuid=True), nullable=True),
+        sa.Column(
+            "created_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.func.now(),
+            nullable=False,
+        ),
+        sa.Column(
+            "updated_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.func.now(),
+            nullable=False,
+        ),
+    )
+    op.create_index(
+        "ix_appointment_org_therapist_start",
+        "appointments",
+        ["organization_id", "therapist_profile_id", "start_time"],
+    )
 
     # ── appointment_requests ─────────────────────────────────────────────
     op.create_table(
@@ -376,80 +444,14 @@ def upgrade() -> None:
         ),
     )
 
-    # ── appointments ─────────────────────────────────────────────────────
-    op.create_table(
-        "appointments",
-        sa.Column("id", sa.Uuid(as_uuid=True), primary_key=True),
-        sa.Column(
-            "organization_id",
-            sa.Uuid(as_uuid=True),
-            sa.ForeignKey("organizations.id", ondelete="CASCADE"),
-            nullable=False,
-            index=True,
-        ),
-        sa.Column(
-            "therapist_profile_id",
-            sa.Uuid(as_uuid=True),
-            sa.ForeignKey("therapist_matching_profiles.id", ondelete="CASCADE"),
-            nullable=False,
-            index=True,
-        ),
-        sa.Column(
-            "service_id",
-            sa.Uuid(as_uuid=True),
-            sa.ForeignKey("content_entries.id", ondelete="CASCADE"),
-            nullable=False,
-        ),
-        sa.Column(
-            "appointment_request_id",
-            sa.Uuid(as_uuid=True),
-            sa.ForeignKey("appointment_requests.id", ondelete="SET NULL"),
-            nullable=True,
-        ),
-        sa.Column("start_time", sa.DateTime(timezone=True), nullable=False),
-        sa.Column("end_time", sa.DateTime(timezone=True), nullable=False),
-        sa.Column("format", sa.String(32), nullable=False),
-        sa.Column("location_id", sa.Uuid(as_uuid=True), nullable=True),
-        sa.Column(
-            "status",
-            sa.String(32),
-            nullable=False,
-            server_default="confirmed",
-        ),
-        sa.Column("client_name", sa.String(200), nullable=False),
-        sa.Column("client_email", sa.String(320), nullable=False),
-        sa.Column("client_phone", sa.String(50), nullable=True),
-        sa.Column("client_timezone", sa.String(64), nullable=False),
-        sa.Column("client_note", sa.Text, nullable=True),
-        sa.Column("cancelled_by", sa.String(32), nullable=True),
-        sa.Column("cancellation_reason", sa.Text, nullable=True),
-        sa.Column("cancelled_at", sa.DateTime(timezone=True), nullable=True),
-        sa.Column("cancellation_policy_version", sa.String(64), nullable=True),
-        sa.Column("reschedule_successor_id", sa.Uuid(as_uuid=True), nullable=True),
-        sa.Column(
-            "created_at",
-            sa.DateTime(timezone=True),
-            server_default=sa.func.now(),
-            nullable=False,
-        ),
-        sa.Column(
-            "updated_at",
-            sa.DateTime(timezone=True),
-            server_default=sa.func.now(),
-            nullable=False,
-        ),
-    )
-    op.create_index(
-        "ix_appointment_org_therapist_start",
-        "appointments",
-        ["organization_id", "therapist_profile_id", "start_time"],
-    )
-
 
 def downgrade() -> None:
-    op.drop_table("appointments")
+    # Reverse of creation order: appointment_requests.existing_appointment_id
+    # FKs to appointments, and alternative_proposals FKs to
+    # appointment_requests, so both must go before appointments itself.
     op.drop_table("alternative_proposals")
     op.drop_table("appointment_requests")
+    op.drop_table("appointments")
     op.drop_table("slot_holds")
     op.drop_table("availability_exceptions")
     op.drop_table("availability_rules")

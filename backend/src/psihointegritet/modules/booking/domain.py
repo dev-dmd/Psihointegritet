@@ -124,7 +124,7 @@ def derive_slots(
             # Check for conflicts with existing bookings (including buffer zones)
             block_start = slot_start - timedelta(minutes=window.buffer_before_minutes)
             block_end = slot_end + timedelta(minutes=window.buffer_after_minutes)
-            if _is_available((block_start, block_end), existing_bookings, existing_holds):
+            if is_available((block_start, block_end), existing_bookings, existing_holds):
                 slots.append(
                     DerivedSlot(
                         start=slot_start,
@@ -143,7 +143,7 @@ def derive_slots(
     return slots
 
 
-def _is_available(
+def is_available(
     candidate: tuple[datetime, datetime],
     bookings: list[tuple[datetime, datetime]],
     holds: list[tuple[datetime, datetime]],

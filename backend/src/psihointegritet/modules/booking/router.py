@@ -45,6 +45,15 @@ public_router = APIRouter(prefix="/booking", tags=["booking"])
 staff_router = APIRouter(prefix="/booking", tags=["booking-staff"])
 
 
+def _conflict_problem(error: BookingConflictError) -> HTTPException:
+    """`error.code` distinguishes a generic booking conflict from
+    BOOKING_SLOT_CONFLICT (DB exclusion-constraint rejection) for clients."""
+    return HTTPException(
+        status_code=status.HTTP_409_CONFLICT,
+        detail={"code": error.code, "message": str(error)},
+    )
+
+
 # ── Public: Slots ────────────────────────────────────────────────────────────
 
 
@@ -77,9 +86,11 @@ async def hold_slot(
     svc = BookingService(session, settings)
     org_id = await _resolve_org_id(session, settings)
     try:
-        return await svc.create_slot_hold(org_id, data)
+        result = await svc.create_slot_hold(org_id, data)
+        await session.commit()
+        return result
     except BookingConflictError as e:
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e)) from e
+        raise _conflict_problem(e) from e
 
 
 @public_router.delete("/slots/hold/{hold_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -92,6 +103,7 @@ async def release_slot_hold(
     svc = BookingService(session, settings)
     org_id = await _resolve_org_id(session, settings)
     await svc.release_slot_hold(hold_id, org_id)
+    await session.commit()
 
 
 # ── Public: Appointment Requests ─────────────────────────────────────────────
@@ -111,9 +123,11 @@ async def create_appointment_request(
     svc = BookingService(session, settings)
     org_id = await _resolve_org_id(session, settings)
     try:
-        return await svc.create_appointment_request(org_id, data)
+        result = await svc.create_appointment_request(org_id, data)
+        await session.commit()
+        return result
     except BookingConflictError as e:
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e)) from e
+        raise _conflict_problem(e) from e
     except BookingValidationError as e:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e)) from e
 
@@ -144,7 +158,11 @@ async def accept_alternative(
     svc = BookingService(session, settings)
     org_id = await _resolve_org_id(session, settings)
     try:
-        return await svc.accept_alternative(org_id, request_id, data)
+        result = await svc.accept_alternative(org_id, request_id, data)
+        await session.commit()
+        return result
+    except BookingConflictError as e:
+        raise _conflict_problem(e) from e
     except BookingValidationError as e:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e)) from e
 
@@ -166,7 +184,9 @@ async def upsert_booking_config(
     """Staff: create or update a booking config for a concrete offer."""
     svc = BookingService(session, settings)
     org_id = await _resolve_org_id(session, settings)
-    return await svc.upsert_booking_config(org_id, data)
+    result = await svc.upsert_booking_config(org_id, data)
+    await session.commit()
+    return result
 
 
 # ── Staff: Availability ──────────────────────────────────────────────────────
@@ -186,7 +206,9 @@ async def create_availability_rule(
     """Staff: create a recurring availability rule for a therapist."""
     svc = BookingService(session, settings)
     org_id = await _resolve_org_id(session, settings)
-    return await svc.create_availability_rule(org_id, data)
+    result = await svc.create_availability_rule(org_id, data)
+    await session.commit()
+    return result
 
 
 @staff_router.get(
@@ -219,7 +241,9 @@ async def update_availability_rule(
     """Staff: update a recurring availability rule."""
     svc = BookingService(session, settings)
     org_id = await _resolve_org_id(session, settings)
-    return await svc.update_availability_rule(org_id, rule_id, data)
+    result = await svc.update_availability_rule(org_id, rule_id, data)
+    await session.commit()
+    return result
 
 
 @staff_router.delete(
@@ -236,6 +260,7 @@ async def delete_availability_rule(
     svc = BookingService(session, settings)
     org_id = await _resolve_org_id(session, settings)
     await svc.delete_availability_rule(org_id, rule_id)
+    await session.commit()
 
 
 @staff_router.post(
@@ -253,9 +278,11 @@ async def create_availability_exception(
     svc = BookingService(session, settings)
     org_id = await _resolve_org_id(session, settings)
     try:
-        return await svc.create_availability_exception(org_id, data)
+        result = await svc.create_availability_exception(org_id, data)
+        await session.commit()
+        return result
     except BookingConflictError as e:
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e)) from e
+        raise _conflict_problem(e) from e
 
 
 @staff_router.delete(
@@ -272,6 +299,7 @@ async def delete_availability_exception(
     svc = BookingService(session, settings)
     org_id = await _resolve_org_id(session, settings)
     await svc.delete_availability_exception(org_id, exception_id)
+    await session.commit()
 
 
 # ── Staff: Appointment Request Review ────────────────────────────────────────
@@ -306,9 +334,13 @@ async def review_appointment_request(
     svc = BookingService(session, settings)
     org_id = await _resolve_org_id(session, settings)
     try:
-        return await svc.review_request(
+        result = await svc.review_request(
             org_id, request_id, action, _reviewer_id_from_identity(identity)
         )
+        await session.commit()
+        return result
+    except BookingConflictError as e:
+        raise _conflict_problem(e) from e
     except (BookingValidationError, ValueError) as e:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e)) from e
 
@@ -355,7 +387,9 @@ async def cancel_appointment(
     svc = BookingService(session, settings)
     org_id = await _resolve_org_id(session, settings)
     try:
-        return await svc.cancel_appointment(org_id, appointment_id, data)
+        result = await svc.cancel_appointment(org_id, appointment_id, data)
+        await session.commit()
+        return result
     except BookingValidationError as e:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e)) from e
 
@@ -373,7 +407,9 @@ async def complete_appointment(
     """Staff: mark an appointment as completed."""
     svc = BookingService(session, settings)
     org_id = await _resolve_org_id(session, settings)
-    return await svc.complete_appointment(org_id, appointment_id)
+    result = await svc.complete_appointment(org_id, appointment_id)
+    await session.commit()
+    return result
 
 
 @staff_router.post(
@@ -389,7 +425,9 @@ async def mark_no_show(
     """Staff: mark an appointment as no-show."""
     svc = BookingService(session, settings)
     org_id = await _resolve_org_id(session, settings)
-    return await svc.mark_no_show(org_id, appointment_id)
+    result = await svc.mark_no_show(org_id, appointment_id)
+    await session.commit()
+    return result
 
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
