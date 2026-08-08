@@ -6,14 +6,20 @@ Pure functions — no database, no FastAPI, no Redis.
 """
 
 from datetime import UTC, date, datetime, time, timedelta
+from uuid import UUID
 
 import pytest
 
 from psihointegritet.modules.booking.domain import (
     AvailabilityWindow,
+    CandidateStart,
     can_client_cancel,
     derive_slots,
+    flexible_grid_strategy,
+    hourly_grid_strategy,
     is_available,
+    manual_slots_strategy,
+    occupancy_resolver,
     require_appointment_request_transition,
     require_appointment_transition,
     resolve_booking_mode,
@@ -394,3 +400,154 @@ class TestCanClientCancel:
         now = datetime(2026, 8, 10, 10, 0, tzinfo=UTC)
         appointment_start = datetime(2026, 8, 11, 8, 0, tzinfo=UTC)  # 22h from now
         assert can_client_cancel(appointment_start, cancellation_notice_hours=24, now=now) is False
+
+
+# ── Strategies & Occupancy (ADR-015 v2 §2.7) ────────────────────────────────
+
+
+class TestGridStrategies:
+    def _window(self, step: int, duration: int = 60, start_hour: int = 9, end_hour: int = 12):
+        return AvailabilityWindow(
+            date=_reference_date(),
+            start_time=time(start_hour, 0),
+            end_time=time(end_hour, 0),
+            start_step_minutes=step,
+            duration_minutes=duration,
+            buffer_before_minutes=0,
+            buffer_after_minutes=0,
+            format="online",
+            location_id=None,
+        )
+
+    def test_hourly_grid_starts_on_the_hour(self) -> None:
+        candidates = hourly_grid_strategy(self._window(step=60))
+        starts = [c.start.hour for c in candidates]
+        assert starts == [9, 10, 11]
+
+    def test_flexible_grid_uses_profile_step(self) -> None:
+        candidates = flexible_grid_strategy(self._window(step=30))
+        starts = [c.start.hour * 60 + c.start.minute for c in candidates]
+        # 11:30 + 60 does not fit before 12:00, so the last candidate is 11:00
+        assert starts == [9 * 60, 9 * 60 + 30, 10 * 60, 10 * 60 + 30, 11 * 60]
+
+    def test_duration_independent_of_step(self) -> None:
+        # duration=90, step=60 → starts 09,10 (11:00+90 does not fit before 12:00)
+        candidates = hourly_grid_strategy(self._window(step=60, duration=90))
+        assert len(candidates) == 2
+        assert all(isinstance(c, CandidateStart) for c in candidates)
+
+    def test_last_candidate_must_fit_fully(self) -> None:
+        # end 11:00, duration 90 → 9:00+90 fits, 10:00+90=11:30 exceeds 11:00
+        candidates = hourly_grid_strategy(self._window(step=60, duration=90, end_hour=11))
+        assert [c.start.hour for c in candidates] == [9]
+
+    def test_manual_slots_strategy_returns_explicit_starts(self) -> None:
+        d = _reference_date()
+        starts: list[tuple[datetime, str, UUID | None]] = [
+            (datetime.combine(d, time(14, 0), tzinfo=UTC), "online", None),
+            (datetime.combine(d, time(16, 0), tzinfo=UTC), "online", None),
+        ]
+        candidates = manual_slots_strategy(starts)
+        assert [c.start.hour for c in candidates] == [14, 16]
+
+
+class TestOccupancyResolver:
+    def _candidate(self, hour: int) -> CandidateStart:
+        return CandidateStart(
+            start=datetime.combine(_reference_date(), time(hour, 0), tzinfo=UTC),
+            format="online",
+            location_id=None,
+        )
+
+    def test_unavailable_interval_blocks_overlapping_candidate(self) -> None:
+        d = _reference_date()
+        candidates = [self._candidate(9), self._candidate(10), self._candidate(11)]
+        unavailable = [
+            (
+                datetime.combine(d, time(9, 30), tzinfo=UTC),
+                datetime.combine(d, time(10, 30), tzinfo=UTC),
+            )
+        ]
+        result = occupancy_resolver(
+            candidates,
+            duration_minutes=60,
+            unavailable_intervals=unavailable,
+        )
+        # 9:00-10:00 overlaps 9:30-10:30; 10:00-11:00 overlaps it too; 11:00 free
+        assert [s.start.hour for s in result] == [11]
+
+    def test_full_day_unavailable_blocks_everything(self) -> None:
+        d = _reference_date()
+        candidates = [self._candidate(9), self._candidate(10)]
+        unavailable = [
+            (
+                datetime.combine(d, datetime.min.time(), tzinfo=UTC),
+                datetime.combine(d, datetime.max.time(), tzinfo=UTC),
+            )
+        ]
+        result = occupancy_resolver(
+            candidates,
+            duration_minutes=60,
+            unavailable_intervals=unavailable,
+        )
+        assert result == []
+
+    def test_booking_and_hold_block(self) -> None:
+        d = _reference_date()
+        candidates = [self._candidate(9), self._candidate(11)]
+        booking = [
+            (
+                datetime.combine(d, time(9, 0), tzinfo=UTC),
+                datetime.combine(d, time(10, 0), tzinfo=UTC),
+            )
+        ]
+        hold = [
+            (
+                datetime.combine(d, time(11, 0), tzinfo=UTC),
+                datetime.combine(d, time(12, 0), tzinfo=UTC),
+            )
+        ]
+        result = occupancy_resolver(
+            candidates,
+            duration_minutes=60,
+            existing_bookings=booking,
+            existing_holds=hold,
+        )
+        assert result == []
+
+    def test_adjacent_booking_does_not_block(self) -> None:
+        d = _reference_date()
+        candidates = [self._candidate(10)]
+        booking = [
+            (
+                datetime.combine(d, time(11, 0), tzinfo=UTC),
+                datetime.combine(d, time(12, 0), tzinfo=UTC),
+            )
+        ]
+        result = occupancy_resolver(
+            candidates,
+            duration_minutes=60,
+            existing_bookings=booking,
+        )
+        assert [s.start.hour for s in result] == [10]
+
+    def test_buffer_zones_extend_the_block(self) -> None:
+        d = _reference_date()
+        candidates = [self._candidate(10)]
+        booking = [
+            (
+                datetime.combine(d, time(11, 0), tzinfo=UTC),
+                datetime.combine(d, time(12, 0), tzinfo=UTC),
+            )
+        ]
+        # without buffer the candidate 10:00-11:00 does not overlap 11:00-12:00
+        free = occupancy_resolver(candidates, duration_minutes=60, existing_bookings=booking)
+        assert len(free) == 1
+        # with a 15-minute after-buffer the block becomes 10:00-11:15, a conflict
+        blocked = occupancy_resolver(
+            candidates,
+            duration_minutes=60,
+            buffer_after_minutes=15,
+            existing_bookings=booking,
+        )
+        assert blocked == []

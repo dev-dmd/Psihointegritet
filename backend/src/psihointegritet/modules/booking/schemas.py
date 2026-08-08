@@ -154,7 +154,6 @@ class AvailabilityExceptionOut(BaseModel):
 class ManualAvailabilitySlotIn(BaseModel):
     availability_profile_id: UUID
     starts_at: datetime
-    ends_at: datetime
     format: str = Field(min_length=2, max_length=32)
     location_id: UUID | None = None
     source: str = Field(default="manual", pattern=r"^(manual|weekly_generator|copied_week)$")
@@ -167,7 +166,6 @@ class ManualAvailabilitySlotOut(BaseModel):
     organization_id: UUID
     availability_profile_id: UUID
     starts_at: datetime
-    ends_at: datetime
     format: str
     location_id: UUID | None
     source: str

@@ -1369,13 +1369,11 @@ class TestManualAvailabilitySlots:
             ),
         )
         start = _now() + timedelta(days=1)
-        end = start + timedelta(hours=1)
         slot = await svc.create_manual_availability_slot(
             org.id,
             ManualAvailabilitySlotIn(
                 availability_profile_id=profile.id,
                 starts_at=start,
-                ends_at=end,
                 format="online",
             ),
         )
@@ -1407,8 +1405,20 @@ class TestManualAvailabilitySlots:
             ManualAvailabilitySlotIn(
                 availability_profile_id=profile.id,
                 starts_at=slot_start,
-                ends_at=slot_start + timedelta(hours=1),
                 format="online",
+            ),
+        )
+
+        # Per-offer duration (KOLIKO) — manual slot uses config duration
+        await svc.upsert_booking_config(
+            org.id,
+            ServiceBookingConfigIn(
+                service_id=service.id,
+                therapist_profile_id=therapist.id,
+                format="online",
+                booking_mode="slot_request",
+                duration_minutes=60,
+                availability_profile_id=profile.id,
             ),
         )
 

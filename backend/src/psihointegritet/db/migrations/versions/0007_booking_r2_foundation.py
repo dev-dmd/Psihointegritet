@@ -293,7 +293,6 @@ def upgrade() -> None:
             index=True,
         ),
         sa.Column("starts_at", sa.DateTime(timezone=True), nullable=False),
-        sa.Column("ends_at", sa.DateTime(timezone=True), nullable=False),
         sa.Column("format", sa.String(32), nullable=False),
         sa.Column("location_id", sa.Uuid(as_uuid=True), nullable=True),
         sa.Column(
@@ -308,7 +307,6 @@ def upgrade() -> None:
             server_default=sa.func.now(),
             nullable=False,
         ),
-        sa.CheckConstraint("ends_at > starts_at", name="ck_manual_slot_time_range"),
     )
     op.create_index(
         "ix_manual_slot_org_profile_start",

@@ -312,8 +312,9 @@ class ManualAvailabilitySlot(Base):
     """A concrete manual slot offered by a therapist (ADR-015 v2 §2.7.5).
 
     Used only by ``MANUAL_SLOTS`` mode — the therapist explicitly picks the
-    start, never an interval. ``source`` is audit/UX metadata and does not
-    change booking semantics.
+    start. The duration comes from ``ServiceBookingConfig.duration_minutes``
+    (the per-offer KOLIKO), so this table only stores the *start*.
+    ``source`` is audit/UX metadata and does not change booking semantics.
     """
 
     __tablename__ = "manual_availability_slots"
@@ -324,7 +325,6 @@ class ManualAvailabilitySlot(Base):
             "availability_profile_id",
             "starts_at",
         ),
-        CheckConstraint("ends_at > starts_at", name="ck_manual_slot_time_range"),
     )
 
     id: Mapped[UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid4)
@@ -337,7 +337,6 @@ class ManualAvailabilitySlot(Base):
         index=True,
     )
     starts_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
-    ends_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     format: Mapped[str] = mapped_column(String(32))  # online | in_person
     location_id: Mapped[UUID | None] = mapped_column(Uuid(as_uuid=True), nullable=True)
     source: Mapped[ManualAvailabilitySlotSource] = mapped_column(

@@ -16,8 +16,12 @@ from psihointegritet.core.config import Settings
 from psihointegritet.core.logging import get_logger
 from psihointegritet.modules.booking.domain import (
     AvailabilityWindow,
+    CandidateStart,
     can_client_cancel,
-    derive_slots,
+    flexible_grid_strategy,
+    hourly_grid_strategy,
+    manual_slots_strategy,
+    occupancy_resolver,
     require_appointment_request_transition,
     require_appointment_transition,
 )
@@ -366,7 +370,6 @@ class BookingService:
             organization_id=organization_id,
             availability_profile_id=data.availability_profile_id,
             starts_at=data.starts_at,
-            ends_at=data.ends_at,
             format=data.format,
             location_id=data.location_id,
             source=ManualAvailabilitySlotSource(data.source),
@@ -486,9 +489,8 @@ class BookingService:
                     ManualAvailabilitySlot.availability_profile_id == profile_id,
                     ManualAvailabilitySlot.starts_at
                     >= datetime.combine(params.date_from, datetime.min.time(), tzinfo=UTC),
-                    ManualAvailabilitySlot.ends_at
-                    <= datetime.combine(params.date_until, datetime.max.time(), tzinfo=UTC)
-                    + timedelta(days=1),
+                    ManualAvailabilitySlot.starts_at
+                    <= datetime.combine(params.date_until, datetime.max.time(), tzinfo=UTC),
                 )
             )
             manual_slots = list(manual_result.scalars().all())
@@ -519,24 +521,22 @@ class BookingService:
         )
         holds = [(h.slot_start, h.slot_end) for h in holds_result.scalars().all()]
 
-        # Build windows (POSITIVE AVAILABILITY = rules | extra | manual)
+        # ── POSITIVE AVAILABILITY: generate candidates per mode ───────────
+        # hourly_grid / flexible_grid → grid windows from rules + extra
+        # manual_slots → explicit starts (ADR-015 v2 §2.7.6)
         from datetime import timedelta as td
 
-        windows: list[AvailabilityWindow] = []
-        current_date = params.date_from
-        while current_date <= params.date_until:
-            day_start_utc = datetime.combine(current_date, datetime.min.time(), tzinfo=UTC)
-            day_end_utc = datetime.combine(current_date, datetime.max.time(), tzinfo=UTC)
+        candidates: list[CandidateStart] = []
 
-            # unavailable interval fully covering the day blocks it
-            blocked_day = any(
-                exc.kind == AvailabilityExceptionKind.UNAVAILABLE
-                and exc.starts_at <= day_start_utc
-                and exc.ends_at >= day_end_utc
-                for exc in exceptions
+        if profile.mode == AvailabilityMode.MANUAL_SLOTS:
+            # manual mode: only explicit therapist-chosen starts
+            candidates = manual_slots_strategy(
+                [(m.starts_at, m.format, m.location_id) for m in manual_slots]
             )
-
-            if not blocked_day:
+        else:
+            windows: list[AvailabilityWindow] = []
+            current_date = params.date_from
+            while current_date <= params.date_until:
                 for rule in rules:
                     if rule.day_of_week != current_date.weekday():
                         continue
@@ -571,32 +571,33 @@ class BookingService:
                             location_id=exc.location_id or params.location_id,
                         )
                     )
-            current_date += td(days=1)
+                current_date += td(days=1)
 
-        # Manual slots are explicit (start/end known) — add directly
-        for manual in manual_slots:
-            duration = max(1, int((manual.ends_at - manual.starts_at).total_seconds() // 60))
-            windows.append(
-                AvailabilityWindow(
-                    date=manual.starts_at.date(),
-                    start_time=manual.starts_at.time(),
-                    end_time=manual.ends_at.time(),
-                    start_step_minutes=duration,
-                    duration_minutes=duration,
-                    buffer_before_minutes=0,
-                    buffer_after_minutes=0,
-                    format=manual.format,
-                    location_id=manual.location_id,
-                )
+            strategy = (
+                hourly_grid_strategy
+                if profile.mode == AvailabilityMode.HOURLY_GRID
+                else flexible_grid_strategy
             )
+            for window in windows:
+                candidates.extend(strategy(window))
 
-        # Derive slots using domain function
-        slots = derive_slots(
-            windows=windows,
+        # ── BLOCKERS: unavailable intervals + appointments + holds ─────────
+        unavailable_intervals = [
+            (exc.starts_at, exc.ends_at)
+            for exc in exceptions
+            if exc.kind == AvailabilityExceptionKind.UNAVAILABLE
+        ]
+
+        slots = occupancy_resolver(
+            candidates,
+            duration_minutes=duration_minutes,
+            buffer_before_minutes=buffer_before,
+            buffer_after_minutes=buffer_after,
             existing_bookings=bookings,
             existing_holds=holds,
-            date_from=params.date_from,
-            date_until=params.date_until,
+            unavailable_intervals=unavailable_intervals,
+            therapist_profile_id=str(params.therapist_profile_id),
+            service_id=str(params.service_id),
         )
 
         return [
