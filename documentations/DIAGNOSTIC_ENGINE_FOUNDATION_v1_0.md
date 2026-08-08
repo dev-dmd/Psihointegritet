@@ -1,7 +1,7 @@
 # Diagnostic Engine — Foundation v1.0
 
 **Verzija:** 1.0 · **Datum:** 2026-08-07 · **Vlasnik:** Milan Dražić (CTO)
-**Status:** odobreno za implementaciju (Commit 4, planiran za 2026-08-08)
+**Status:** ✅ implementirano i zatvoreno 2026-08-08 (Commit 4 — kernel + Booking collectori + frontend connection; detalji u `DIAGNOSTIC_TODO.md`)
 **Svrha:** zaključati minimalni, generički Diagnostic Engine kernel i njegov prvi stvarni collector paket (Booking), pre nego što se piše ijedan red koda.
 
 ---

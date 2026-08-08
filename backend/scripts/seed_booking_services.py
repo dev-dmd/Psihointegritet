@@ -3,13 +3,16 @@
 The FK on appointment_requests.service_id references content_entries.
 Without these rows the booking submission will fail at the database level.
 """
+
 import asyncio
 from uuid import uuid4
 
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import create_async_engine
 
-DATABASE_URL = "postgresql+asyncpg://psihointegritet:local_only_change_me@localhost:5434/psihointegritet"
+DATABASE_URL = (
+    "postgresql+asyncpg://psihointegritet:local_only_change_me@localhost:5434/psihointegritet"
+)
 ORG_SLUG = "psihointegritet"
 SERVICES = [
     "individualna-psihoterapija",

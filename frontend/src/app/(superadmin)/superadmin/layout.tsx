@@ -6,6 +6,7 @@ import { SuperadminBottomNav } from "@/features/superadmin/components/bottom-nav
 import { SuperadminSidebar } from "@/features/superadmin/components/sidebar";
 import { SuperadminTopbar } from "@/features/superadmin/components/topbar";
 import { GatesProvider } from "@/features/superadmin/gates-context";
+import { QueryProvider } from "@/providers/query-provider";
 
 export const metadata: Metadata = {
   title: { default: "Superadmin", template: "%s · Superadmin" },
@@ -30,17 +31,19 @@ export default async function SuperadminLayout({
   await requireSuperadmin();
 
   return (
-    <GatesProvider>
-      <div className="bg-panel-canvas flex min-h-screen">
-        <SuperadminSidebar />
-        <div className="flex min-w-0 flex-1 flex-col lg:ml-[264px]">
-          <SuperadminTopbar />
-          <main className="w-full max-w-[1160px] self-center px-4 pt-[30px] pb-[104px] md:px-8 lg:pb-14">
-            {children}
-          </main>
+    <QueryProvider>
+      <GatesProvider>
+        <div className="bg-panel-canvas flex min-h-screen">
+          <SuperadminSidebar />
+          <div className="flex min-w-0 flex-1 flex-col lg:ml-[264px]">
+            <SuperadminTopbar />
+            <main className="w-full max-w-[1160px] self-center px-4 pt-[30px] pb-[104px] md:px-8 lg:pb-14">
+              {children}
+            </main>
+          </div>
+          <SuperadminBottomNav />
         </div>
-        <SuperadminBottomNav />
-      </div>
-    </GatesProvider>
+      </GatesProvider>
+    </QueryProvider>
   );
 }

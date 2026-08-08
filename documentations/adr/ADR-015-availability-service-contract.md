@@ -1,9 +1,27 @@
 # ADR-015 — Availability Service Contract
 
-**Status:** Accepted
-**Datum:** 2026-08-06
+**Status:** Accepted (v2 supersedes v1 slot-generation i exception semantiku)
+**Datum:** 2026-08-06 (v1) · **2026-08-08 (v2)**
 **Vlasnik tehničke odluke:** Milan Dražić (CTO)
 **Povezano:** ADR-013 · PRE_R2_BOOKING_ENGINE_DECISION_SPEC_v0.2.md §6 (BDS-002) · PRE_R2 §7 (BDS-003, BDS-007A)
+
+---
+
+## 0. v2 — šta se menja u odnosu na v1
+
+v2 **supersedes** sledeće delove v1:
+
+- **Slot generation contract** (v1 §2.1 `slot_duration_minutes` je upravljao i generisanjem i zauzećem): sada su **`duration_minutes`** (koliko termin zauzima) i **`start_step_minutes`** (korak mreže početaka) razdvojeni. v1 je pretpostavljao da je svaki sledeći kandidat tačno `slot_duration_minutes` posle prethodnog; to više nije tačno.
+- **Exception semantika** (v1 §2.2 `block | extra_slot | modified_hours`): zamenjena sa **`unavailable | extra_available`**, oba sa konkretnim `starts_at`/`ends_at` intervalima. v1 `block` je uklanjao ceo datum; v2 `unavailable` je proizvoljan interval.
+- **Recurring vreme** (v1 §2.3 je čuvao `start_time`/`end_time` kao UTC `time`): sada se recurring radno vreme čuva kao **lokalno wall-clock pravilo** (`start_local_time`/`end_local_time` + `timezone`), a UTC nastaje tek pri generisanju konkretnog datuma — DST ostaje ispravan.
+- **`availability_rules.service_ids`** (v1 §2.1 `UUID[]` lista usluga na pravilu): uklonjena. Veza je sada `ServiceBookingConfig → availability_profile_id → availability_rules`.
+- **Tabela `manual_availability_slots`** je novi treći izvor dostupnosti za `MANUAL_SLOTS` mod.
+
+**Nisu menjani:** v1 §2.4 `derive_slots` načelni tok (kandidati → uklanjanje zauzetih), v1 §2.5 `SlotHold` concurrency/expiry, v1 §2.6 konfigurabilni default-i po organizaciji, v1 §3 posledice (source of truth, čista domain funkcija, Calendar adapter seam).
+
+Istorija v1 ostaje u git-u.
+
+---
 
 ## 1. Kontekst
 
@@ -19,6 +37,8 @@ Pre R2 je potrebno potvrditi ili namerno isključiti:
 - pravila za izvor dostupnosti i Calendar outage.
 
 Ovaj ADR zaključava tehnički Availability Service Contract pre implementacije, a trajanja, bufferi i radno vreme ostaju konfigurabilne vrednosti po organizaciji — nijedna nije hardkodovana konstanta.
+
+---
 
 ## 2. Odluka
 
@@ -157,16 +177,168 @@ Svi rokovi i trajanja su konfigurabilni po tenantu kroz `organization_settings`:
 
 Nijedan rok nije hardkodovan u kodu; svi se čitaju iz baze.
 
+### 2.7 v2 — Availability Modes and Slot Derivation
+
+#### 2.7.1 Tri moda
+
+```text
+AvailabilityMode =
+    HOURLY_GRID       # start_step_minutes = 60
+    FLEXIBLE_GRID     # start_step_minutes = 15 / 30 / 60
+    MANUAL_SLOTS      # nema automatske mreže; terapeut eksplicitno nudi početke
+```
+
+- `hourly_grid` — radno vreme 08:00–20:00 daje kandidate 08, 09, 10, …, 19.
+- `flexible_grid` — ista granica radnog vremena, finija mreža početaka (15/30/60).
+- `manual_slots` — nema automatske mreže. Terapeut eksplicitno ponudi npr. `PON: 08 09 10 14`, `UTO: 11 12 13 14`. Occupancy engine je potpuno isti kao za ostale modove.
+
+#### 2.7.2 Granica odgovornosti (bez dupliranja source-of-truth-a)
+
+| Entitet | Odgovornost | Polja |
+|---|---|---|
+| `availability_profiles` | **KAKO** terapeut nudi vreme | `mode`, `timezone`, `start_step_minutes` (nullable — nije potreban za `manual_slots`), `enabled` |
+| `availability_rules` | **KADA** terapeut radi | `profile_id`, `weekday`, `start_local_time`, `end_local_time`, `valid_from`, `valid_until`, `format`, `location_id` |
+| `service_booking_configs` | **KOLIKO** konkretna ponuda zauzima | `duration_minutes`, `buffer_before_minutes`, `buffer_after_minutes`, `availability_profile_id`, `booking_mode` |
+
+**Zabranjeno:** duplirati `duration`/`buffer`/`start_step` između `availability_rules` i `service_booking_configs`. Postoji tačno jedan izvor za svaku vrednost.
+
+`start_step_minutes` ima tačno jedno mesto — `availability_profiles`. Primer: Anjin profil `hourly_grid / step=60`; usluge `duration 60 / 90 / 75` — svi počeci 08/09/10/…, ali zauzimaju različitu količinu vremena. Ako ista osoba kasnije treba drugačiju mrežu po usluzi, pravi se drugi `availability_profiles` red i različiti `service_booking_configs` referenciraju odgovarajući profil — bez override sistema pre nego što postoji stvaran slučaj.
+
+#### 2.7.3 Local wall-clock recurring vreme
+
+Recurring radno vreme se **čuva kao lokalno pravilo**, ne UTC:
+
+```text
+day_of_week = Monday
+start_local_time = 08:00
+end_local_time = 16:00
+timezone = Europe/Belgrade
+```
+
+Tek pri generisanju konkretnog datuma:
+
+```text
+2026-08-10 08:00 Europe/Belgrade
+↓
+UTC timestamp
+```
+
+Drugačije, fiksno `07:00 UTC` davalo bi različito lokalno radno vreme u zavisnosti od letnjeg/zimskog offseta. **Appointment, SlotHold, exception interval i konkretan DerivedSlot ostaju UTC timestamp-i.**
+
+
+#### 2.7.4 Exceptions — `unavailable` / `extra_available` sa scope-om
+
+```text
+availability_exceptions:
+    organization_id
+    therapist_profile_id
+    availability_profile_id   nullable
+    kind: unavailable | extra_available
+    starts_at
+    ends_at
+    format        nullable
+    location_id   nullable
+    reason_code   nullable
+```
+
+- `availability_profile_id = NULL` + `kind = unavailable` → terapeut je **potpuno** nedostupan (npr. „11:00–13:00 lekar" blokira online, uživo i sve profile).
+- sa `availability_profile_id` → izuzetak je vezan samo za taj raspored (npr. „profil uživo Niš 18:00–20:00 unavailable", online ostaje).
+
+`extra_available` i manual mode se **ne mešaju**:
+
+- `hourly_grid` / `flexible_grid`: `extra_available` je **interval** (18:00–20:00) → strategy generiše početke po svom step-u (18:00, 19:00 ili 18:15, 18:30, …) uz proveru trajanja.
+- `manual_slots`: dodatni termini isključivo kroz `manual_availability_slots` (18:00, 19:00 eksplicitno), nikad kroz intervalni `extra_available` — manual mode po definiciji ne zna koje početke terapeut želi.
+
+#### 2.7.5 Manual slots
+
+```text
+manual_availability_slots:
+    organization_id
+    availability_profile_id
+    starts_at
+    format
+    location_id
+    source: manual | weekly_generator | copied_week
+```
+
+`source` služi za audit i UX, ne menja booking semantiku.
+
+#### 2.7.6 Precedence — matematički, ne lanac
+
+```text
+POSITIVE AVAILABILITY = recurring generated candidates
+                        ∪ extra availability
+                        ∪ manual availability
+
+BLOCKERS = unavailable intervals
+           ∪ occupying appointments
+           ∪ active SlotHolds
+           ∪ pending requests (kada policy uklanja slot)
+           ∪ external free/busy
+
+AVAILABLE = POSITIVE AVAILABILITY − BLOCKERS
+```
+
+Regular 08–20 + extra 12:00 + unavailable 11–13 → 12:00 je u positive i u blocked → **nije available**. Ne postoji pitanje „koji korak pobeđuje".
+
+#### 2.7.7 DB invariant — sužen scope nepreklapanja
+
+Nepreklapanje recurring pravila vezano je za **`organization + availability_profile + weekday + effective validity period`**, ne globalno za terapeuta. Terapeut može legitimno imati online profil 08–16 i in-person profil 08–16 (dva profila). Isto važi za format/location ako se nalaze unutar profila.
+
+#### 2.7.8 Google Calendar seam
+
+- Interni Availability/Booking = **source of truth**.
+- Google = opcioni **external busy source** (free/busy blokovi u BLOCKERS) i kasnije mirror potvrđenog Appointment-a.
+- BDS-012 razdvojen: `APPROVED` arhitektonska granica (gore) + `DEFERRED` integracioni detalji (OAuth, izbor kalendara, cache, outage policy, webhook/polling, mirror, Meet link).
+
+#### 2.7.9 Confirmation policy — dokumentovano sada, implementirano kasnije
+
+```text
+type ConfirmationPolicy = "manual_review" | "auto_confirm"
+Default: manual_review
+```
+
+- **Nije deo ovog ADR-a za implementaciju** — beleži se ovde kao dokumentovana buduća odluka uz `service_booking_configs` (per-ponuda, ne globalno).
+- `manual_review` (default): slobodan slot → zahtev → terapeut potvrđuje → Appointment. To je jedini tok koji se implementira u ovom talasu.
+- `auto_confirm` (kasniji, Commit 14 posle stabilnog manual request-first toka): slobodan slot → korisnik izabere → DB concurrency check → Appointment odmah `confirmed`. Menja transakciju, SlotHold ponašanje, AppointmentRequest lifecycle, emailove, diagnostics, audit i concurrency testove — zato se uvodi tek posle Commit-a 13.
+- Auto-confirmovani Appointment je **isti** Appointment kao ručno potvrđen; audit `confirmation_source: manual | automatic` ili event `appointment.confirmed` (actor=system, reason=auto_confirmation_policy). Nema `AutoAppointment`/`ManualAppointment`.
+- Exclusion constraint (`appointments_no_therapist_overlap`) ostaje poslednji autoritet: A → confirmed, B → 409 BOOKING_SLOT_CONFLICT.
+
+#### 2.7.10 Attendance model — dokumentovano sada, implementirano kasnije
+
+```text
+AppointmentStatus  = confirmed | completed | cancelled
+AttendanceStatus   = unknown | attended | client_no_show | therapist_no_show
+```
+
+- Posle isteka termina: `confirmed` → termin prošao → `attendance = unknown`.
+- UI: „⚠ Evidencija dolaska nije završena → [Došao/la] [Nije došao/la]"; posle 24h operativno stanje „Potrebna evidencija". **Bez automatske pretpostavke `attended`.**
+- Opcioni reminder: 2h posle završetka (nije uneta evidencija), 24h (overdue).
+- Diagnostic kasnije: `booking.attendance_not_recorded` (termin završen pre >24h, attendance=unknown).
+- Finansijske posledice no_show pripadaju R5; Booking samo beleži činjenicu.
+
+
 ## 3. Posledice
 
 - Bez ovog ADR-a `slot_request` BookingMode ne može da se uključi ni za jednu ponudu — nema kandidat-slotova.
 - `derive_slots` je čista funkcija domain sloja; ne zavisi od FastAPI-ja, SQLAlchemy-ja ni Redis-a.
 - Calendar adapter (BDS-012), kada bude odobren, postaje opcioni izvor `free/busy` blokova u koraku 3e algoritma.
-- Buffer i trajanje se čuvaju uz `availability_rules`, ne uz `services` — ista usluga može imati različito trajanje kod različitih terapeuta.
+- Buffer i trajanje se čuvaju uz `service_booking_configs`, ne uz `services` — ista usluga može imati različito trajanje kod različitih terapeuta.
 - `SlotHold` expiry se oslanja i na PostgreSQL `expires_at` i na Redis TTL; Redis TTL je brži za cleanup, PostgreSQL je durable izvor istine.
+
+### 3.1 v2 dodatne posledice
+
+- Jedan `derive_slots` sa tri strategije (`HourlyGridStrategy | FlexibleGridStrategy | ManualSlotsStrategy`); svaka vraća isti `CandidateStart`, a zajednički occupancy resolver (candidate + `duration_minutes` + bufferi → interval → BLOCKERS provera) vraća `DerivedSlot`. Ostatak Booking Engine-a ne zna iz kog sistema slot potiče.
+- `duration_minutes ≠ start_step_minutes` je zaključan: npr. `duration=90, start_step=60` daje kandidate 08/09/10/…, svaki zauzima 08:00–09:30. `duration=75, start_step=15` → 14:00–15:15, sledeći 15:15.
+- Recurring pravila se čuvaju kao lokalno wall-clock vreme + IANA timezone; migracija podataka na v1 UTC `time` semantiku **ne sme** da počne — v2 se primenjuje pre prve Availability migracije.
+- `availability_rules.service_ids` se ne kreira; `availability_profiles` + `service_booking_configs.availability_profile_id` je jedina veza.
 
 ## 4. Supersedes / updates
 
 - PRE-R2 BDS-002 — zatvara OPEN: trajanja, bufferi, radno vreme i horizont su sada definisani kao konfigurabilne vrednosti.
 - PRE-R2 BDS-003 — slot lifecycle je formalizovan kroz `derive_slots` algoritam.
 - PRE-R2 BDS-007A — `SlotHold` TTL, concurrency, idempotency i expiry su formalizovani.
+- **v1 §2.1–§2.3 (slot generation, exceptions, recurring UTC vreme)** — superseded od v2 §0/§2.7.
+- **v1 `availability_rules.service_ids`** — uklonjeno u v2; veza ide kroz `availability_profiles`.
+- **BDS-012** — podeljen: `APPROVED` arhitektonska granica (source of truth + free/busy only) + `DEFERRED` integracioni detalji.
+- **BDS-011 / matrica ponuda / poslovni SLA kalendar** — ne blokiraju izgradnju Availability jezgra; blokiraju samo produkciono uključivanje javnog slanja zahteva.
