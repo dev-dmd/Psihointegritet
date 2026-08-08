@@ -10,7 +10,6 @@ from enum import StrEnum
 from uuid import UUID, uuid4
 
 from sqlalchemy import (
-    JSON,
     CheckConstraint,
     Date,
     DateTime,
@@ -73,9 +72,22 @@ class CancellationActor(StrEnum):
 
 
 class AvailabilityExceptionKind(StrEnum):
-    BLOCK = "block"
-    EXTRA_SLOT = "extra_slot"
-    MODIFIED_HOURS = "modified_hours"
+    UNAVAILABLE = "unavailable"
+    EXTRA_AVAILABLE = "extra_available"
+
+
+class AvailabilityMode(StrEnum):
+    """How a therapist offers time (ADR-015 v2 §2.7.1)."""
+
+    HOURLY_GRID = "hourly_grid"
+    FLEXIBLE_GRID = "flexible_grid"
+    MANUAL_SLOTS = "manual_slots"
+
+
+class ManualAvailabilitySlotSource(StrEnum):
+    MANUAL = "manual"
+    WEEKLY_GENERATOR = "weekly_generator"
+    COPIED_WEEK = "copied_week"
 
 
 class AlternativeProposalStatus(StrEnum):
@@ -131,9 +143,15 @@ class ServiceBookingConfig(Base):
         default=BookingMode.DISABLED,
         server_default=BookingMode.DISABLED.value,
     )
-    slot_duration_minutes: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    duration_minutes: Mapped[int | None] = mapped_column(Integer, nullable=True)
     buffer_before_minutes: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
     buffer_after_minutes: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
+    availability_profile_id: Mapped[UUID | None] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("availability_profiles.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
     is_active: Mapped[bool] = mapped_column(default=True, server_default="true")
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
@@ -144,38 +162,49 @@ class ServiceBookingConfig(Base):
 
 
 class AvailabilityRule(Base):
-    """Recurring weekly availability block for a therapist.
+    """Recurring weekly availability block for a therapist (ADR-015 v2).
 
     One rule = one day-of-week window. Multiple rules for the same therapist
     and day that touch or overlap are merged into a single continuous window
     during slot derivation.
+
+    Per ADR-015 v2 §2.7.2 the rule answers only *when* the therapist works:
+    it carries no duration, buffer or step — those live on the owning
+    ``AvailabilityProfile`` and on ``ServiceBookingConfig``.
     """
 
     __tablename__ = "availability_rules"
     __table_args__ = (
-        Index("ix_avail_rule_org_therapist", "organization_id", "therapist_profile_id"),
+        Index("ix_avail_rule_org_profile", "organization_id", "availability_profile_id"),
+        UniqueConstraint(
+            "organization_id",
+            "availability_profile_id",
+            "day_of_week",
+            "start_local_time",
+            "end_local_time",
+            "format",
+            name="uq_avail_rule_window",
+            postgresql_nulls_not_distinct=True,
+        ),
+        CheckConstraint("end_local_time > start_local_time", name="ck_avail_rule_time_range"),
     )
 
     id: Mapped[UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid4)
     organization_id: Mapped[UUID] = mapped_column(
         Uuid(as_uuid=True), ForeignKey("organizations.id", ondelete="CASCADE"), index=True
     )
-    therapist_profile_id: Mapped[UUID] = mapped_column(
+    availability_profile_id: Mapped[UUID] = mapped_column(
         Uuid(as_uuid=True),
-        ForeignKey("therapist_matching_profiles.id", ondelete="CASCADE"),
+        ForeignKey("availability_profiles.id", ondelete="CASCADE"),
         index=True,
     )
     day_of_week: Mapped[int] = mapped_column(Integer)  # 0=Mon..6=Sun (ISO 8601)
-    start_time: Mapped[time] = mapped_column(Time())
-    end_time: Mapped[time] = mapped_column(Time())
+    start_local_time: Mapped[time] = mapped_column(Time())
+    end_local_time: Mapped[time] = mapped_column(Time())
     valid_from: Mapped[date] = mapped_column(Date)
     valid_until: Mapped[date | None] = mapped_column(Date, nullable=True)
     format: Mapped[str] = mapped_column(String(32))  # online | in_person
     location_id: Mapped[UUID | None] = mapped_column(Uuid(as_uuid=True), nullable=True)
-    service_ids: Mapped[list[str] | None] = mapped_column(JSON, nullable=True)
-    slot_duration_minutes: Mapped[int] = mapped_column(Integer)
-    buffer_before_minutes: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
-    buffer_after_minutes: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
     is_active: Mapped[bool] = mapped_column(default=True, server_default="true")
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
@@ -185,23 +214,23 @@ class AvailabilityRule(Base):
     )
 
 
-class AvailabilityException(Base):
-    """One-off override of recurring availability (block, extra slot, modified hours)."""
+class AvailabilityProfile(Base):
+    """How a therapist offers time (ADR-015 v2 §2.7.2).
 
-    __tablename__ = "availability_exceptions"
+    ``mode`` + ``timezone`` + ``start_step_minutes`` (grid step; not needed for
+    ``manual_slots``). Availability rules belong to a profile; the profile is
+    referenced by ``ServiceBookingConfig`` (per-offer).
+    """
+
+    __tablename__ = "availability_profiles"
     __table_args__ = (
+        Index("ix_avail_profile_org_therapist", "organization_id", "therapist_profile_id"),
         UniqueConstraint(
             "organization_id",
             "therapist_profile_id",
-            "exception_date",
-            "kind",
-            name="uq_avail_exception_date_kind",
-        ),
-        Index(
-            "ix_avail_exception_org_therapist_date",
-            "organization_id",
-            "therapist_profile_id",
-            "exception_date",
+            "mode",
+            name="uq_avail_profile_therapist_mode",
+            postgresql_nulls_not_distinct=True,
         ),
     )
 
@@ -214,13 +243,108 @@ class AvailabilityException(Base):
         ForeignKey("therapist_matching_profiles.id", ondelete="CASCADE"),
         index=True,
     )
-    exception_date: Mapped[date] = mapped_column(Date)
+    mode: Mapped[AvailabilityMode] = mapped_column(
+        value_enum(AvailabilityMode, length=32),
+        default=AvailabilityMode.HOURLY_GRID,
+        server_default=AvailabilityMode.HOURLY_GRID.value,
+    )
+    timezone: Mapped[str] = mapped_column(
+        String(64), default="Europe/Belgrade", server_default="Europe/Belgrade"
+    )
+    start_step_minutes: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    enabled: Mapped[bool] = mapped_column(default=True, server_default="true")
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False
+    )
+
+
+class AvailabilityException(Base):
+    """One-off override of recurring availability (ADR-015 v2 §2.7.4).
+
+    ``kind = unavailable | extra_available`` with a concrete ``starts_at`` /
+    ``ends_at`` interval. ``availability_profile_id = NULL`` + ``unavailable``
+    means the therapist is completely unavailable for that window (blocks every
+    profile); with a profile id the exception applies only to that schedule.
+    """
+
+    __tablename__ = "availability_exceptions"
+    __table_args__ = (
+        Index(
+            "ix_avail_exception_org_therapist",
+            "organization_id",
+            "therapist_profile_id",
+        ),
+        CheckConstraint("ends_at > starts_at", name="ck_avail_exception_time_range"),
+    )
+
+    id: Mapped[UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid4)
+    organization_id: Mapped[UUID] = mapped_column(
+        Uuid(as_uuid=True), ForeignKey("organizations.id", ondelete="CASCADE"), index=True
+    )
+    therapist_profile_id: Mapped[UUID] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("therapist_matching_profiles.id", ondelete="CASCADE"),
+        index=True,
+    )
+    availability_profile_id: Mapped[UUID | None] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("availability_profiles.id", ondelete="CASCADE"),
+        nullable=True,
+        index=True,
+    )
     kind: Mapped[AvailabilityExceptionKind] = mapped_column(
         value_enum(AvailabilityExceptionKind, length=32)
     )
-    start_time: Mapped[time | None] = mapped_column(Time(), nullable=True)
-    end_time: Mapped[time | None] = mapped_column(Time(), nullable=True)
-    reason: Mapped[str | None] = mapped_column(Text, nullable=True)
+    starts_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    ends_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    format: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    location_id: Mapped[UUID | None] = mapped_column(Uuid(as_uuid=True), nullable=True)
+    reason_code: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+
+
+class ManualAvailabilitySlot(Base):
+    """A concrete manual slot offered by a therapist (ADR-015 v2 §2.7.5).
+
+    Used only by ``MANUAL_SLOTS`` mode — the therapist explicitly picks the
+    start, never an interval. ``source`` is audit/UX metadata and does not
+    change booking semantics.
+    """
+
+    __tablename__ = "manual_availability_slots"
+    __table_args__ = (
+        Index(
+            "ix_manual_slot_org_profile_start",
+            "organization_id",
+            "availability_profile_id",
+            "starts_at",
+        ),
+        CheckConstraint("ends_at > starts_at", name="ck_manual_slot_time_range"),
+    )
+
+    id: Mapped[UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid4)
+    organization_id: Mapped[UUID] = mapped_column(
+        Uuid(as_uuid=True), ForeignKey("organizations.id", ondelete="CASCADE"), index=True
+    )
+    availability_profile_id: Mapped[UUID] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("availability_profiles.id", ondelete="CASCADE"),
+        index=True,
+    )
+    starts_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    ends_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    format: Mapped[str] = mapped_column(String(32))  # online | in_person
+    location_id: Mapped[UUID | None] = mapped_column(Uuid(as_uuid=True), nullable=True)
+    source: Mapped[ManualAvailabilitySlotSource] = mapped_column(
+        value_enum(ManualAvailabilitySlotSource, length=32),
+        default=ManualAvailabilitySlotSource.MANUAL,
+        server_default=ManualAvailabilitySlotSource.MANUAL.value,
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )

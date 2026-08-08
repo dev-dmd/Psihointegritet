@@ -296,7 +296,7 @@ class TestBookingConfigUpsertRace:
                             therapist_profile_id=fx.therapist_id,
                             format="online",
                             booking_mode=mode,
-                            slot_duration_minutes=minutes,
+                            duration_minutes=minutes,
                         ),
                     )
                     await session.commit()

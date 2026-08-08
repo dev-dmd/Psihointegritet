@@ -20,10 +20,14 @@ from psihointegritet.modules.booking.schemas import (
     AppointmentRequestOut,
     AvailabilityExceptionIn,
     AvailabilityExceptionOut,
+    AvailabilityProfileIn,
+    AvailabilityProfileOut,
     AvailabilityRuleIn,
     AvailabilityRuleOut,
     CancelAppointmentRequest,
     DerivedSlotOut,
+    ManualAvailabilitySlotIn,
+    ManualAvailabilitySlotOut,
     ReviewAction,
     ServiceBookingConfigIn,
     ServiceBookingConfigOut,
@@ -212,19 +216,135 @@ async def create_availability_rule(
 
 
 @staff_router.get(
-    "/availability/rules/{therapist_profile_id}",
+    "/availability/rules/{availability_profile_id}",
     response_model=list[AvailabilityRuleOut],
 )
 async def list_availability_rules(
-    therapist_profile_id: UUID,
+    availability_profile_id: UUID,
     identity: CurrentIdentity,
     session: DatabaseSession,
     settings: AppSettings,
 ) -> list[AvailabilityRuleOut]:
-    """Staff: list active availability rules for a therapist."""
+    """Staff: list active availability rules for a profile."""
     svc = BookingService(session, settings)
     org_id = await _resolve_org_id(session, settings)
-    return await svc.list_availability_rules(org_id, therapist_profile_id)
+    return await svc.list_availability_rules(org_id, availability_profile_id)
+
+
+# ── Staff: Availability Profiles (ADR-015 v2) ───────────────────────────────
+
+
+@staff_router.post(
+    "/availability/profiles",
+    response_model=AvailabilityProfileOut,
+    status_code=status.HTTP_201_CREATED,
+)
+async def create_availability_profile(
+    data: AvailabilityProfileIn,
+    identity: CurrentIdentity,
+    session: DatabaseSession,
+    settings: AppSettings,
+) -> AvailabilityProfileOut:
+    """Staff: create an availability profile for a therapist (KAKO)."""
+    svc = BookingService(session, settings)
+    org_id = await _resolve_org_id(session, settings)
+    try:
+        result = await svc.create_availability_profile(org_id, data)
+        await session.commit()
+        return result
+    except BookingConflictError as e:
+        raise _conflict_problem(e) from e
+
+
+@staff_router.get(
+    "/availability/profiles/{therapist_profile_id}",
+    response_model=list[AvailabilityProfileOut],
+)
+async def list_availability_profiles(
+    therapist_profile_id: UUID,
+    identity: CurrentIdentity,
+    session: DatabaseSession,
+    settings: AppSettings,
+) -> list[AvailabilityProfileOut]:
+    """Staff: list availability profiles for a therapist."""
+    svc = BookingService(session, settings)
+    org_id = await _resolve_org_id(session, settings)
+    return await svc.list_availability_profiles(org_id, therapist_profile_id)
+
+
+@staff_router.put(
+    "/availability/profiles/{profile_id}",
+    response_model=AvailabilityProfileOut,
+)
+async def update_availability_profile(
+    profile_id: UUID,
+    data: AvailabilityProfileIn,
+    identity: CurrentIdentity,
+    session: DatabaseSession,
+    settings: AppSettings,
+) -> AvailabilityProfileOut:
+    """Staff: update an availability profile."""
+    svc = BookingService(session, settings)
+    org_id = await _resolve_org_id(session, settings)
+    result = await svc.update_availability_profile(org_id, profile_id, data)
+    await session.commit()
+    return result
+
+
+@staff_router.delete(
+    "/availability/profiles/{profile_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+async def delete_availability_profile(
+    profile_id: UUID,
+    identity: CurrentIdentity,
+    session: DatabaseSession,
+    settings: AppSettings,
+) -> None:
+    """Staff: delete an availability profile."""
+    svc = BookingService(session, settings)
+    org_id = await _resolve_org_id(session, settings)
+    await svc.delete_availability_profile(org_id, profile_id)
+    await session.commit()
+
+
+# ── Staff: Manual Availability Slots (ADR-015 v2) ───────────────────────────
+
+
+@staff_router.post(
+    "/availability/manual-slots",
+    response_model=ManualAvailabilitySlotOut,
+    status_code=status.HTTP_201_CREATED,
+)
+async def create_manual_availability_slot(
+    data: ManualAvailabilitySlotIn,
+    identity: CurrentIdentity,
+    session: DatabaseSession,
+    settings: AppSettings,
+) -> ManualAvailabilitySlotOut:
+    """Staff: add an explicit manual slot (manual_slots mode)."""
+    svc = BookingService(session, settings)
+    org_id = await _resolve_org_id(session, settings)
+    result = await svc.create_manual_availability_slot(org_id, data)
+    await session.commit()
+    return result
+
+
+@staff_router.delete(
+    "/availability/manual-slots/{slot_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+async def delete_manual_availability_slot(
+    slot_id: UUID,
+    identity: CurrentIdentity,
+    session: DatabaseSession,
+    settings: AppSettings,
+) -> None:
+    """Staff: remove a manual availability slot."""
+    svc = BookingService(session, settings)
+    org_id = await _resolve_org_id(session, settings)
+    await svc.delete_manual_availability_slot(org_id, slot_id)
+    await session.commit()
 
 
 @staff_router.put(

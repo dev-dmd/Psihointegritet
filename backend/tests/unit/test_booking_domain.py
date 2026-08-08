@@ -174,6 +174,7 @@ def _window(
     start_hour: int = 9,
     end_hour: int = 17,
     duration: int = 60,
+    step: int = 60,
     buffer_before: int = 0,
     buffer_after: int = 0,
 ) -> AvailabilityWindow:
@@ -182,12 +183,12 @@ def _window(
         date=d,
         start_time=time(start_hour, 0),
         end_time=time(end_hour, 0),
-        slot_duration_minutes=duration,
+        start_step_minutes=step,
+        duration_minutes=duration,
         buffer_before_minutes=buffer_before,
         buffer_after_minutes=buffer_after,
         format="online",
         location_id=None,
-        service_ids=None,
     )
 
 
@@ -211,12 +212,12 @@ class TestDeriveSlots:
             date=_reference_date(),
             start_time=time(9, 0),
             end_time=time(9, 45),
-            slot_duration_minutes=60,
+            start_step_minutes=60,
+            duration_minutes=60,
             buffer_before_minutes=0,
             buffer_after_minutes=0,
             format="online",
             location_id=None,
-            service_ids=None,
         )
         slots = derive_slots([window], [], [], _reference_date(), _reference_date())
         assert slots == []

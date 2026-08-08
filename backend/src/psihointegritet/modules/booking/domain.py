@@ -43,17 +43,23 @@ class DerivedSlot:
 
 @dataclass(frozen=True, slots=True)
 class AvailabilityWindow:
-    """Internal: a resolved availability window for one day."""
+    """Internal: a resolved availability window for one day (ADR-015 v2).
+
+    ``start_step_minutes`` is the grid step (how often candidates start);
+    ``duration_minutes`` is how long a candidate occupies the calendar. The
+    two are independent: duration=90 with step=60 gives starts 08,09,10… that
+    each occupy 90 minutes.
+    """
 
     date: date
     start_time: time
     end_time: time
-    slot_duration_minutes: int
+    start_step_minutes: int
+    duration_minutes: int
     buffer_before_minutes: int
     buffer_after_minutes: int
     format: str
     location_id: UUID | None
-    service_ids: list[str] | None
 
 
 # ── Booking Mode Resolution ──────────────────────────────────────────────────
@@ -97,6 +103,9 @@ def derive_slots(
 ) -> list[DerivedSlot]:
     """Compute candidate slots from availability windows minus conflicts.
 
+    Candidates advance by ``start_step_minutes`` (grid step); each candidate
+    occupies ``duration_minutes``. The occupancy check includes buffer zones.
+
     Args:
         windows: Resolved availability windows from rules minus exceptions.
         existing_bookings: List of (start, end) for confirmed appointments.
@@ -116,7 +125,8 @@ def derive_slots(
         # Convert window times to UTC datetimes for the given date
         day_start = datetime.combine(window.date, window.start_time, tzinfo=UTC)
         day_end = datetime.combine(window.date, window.end_time, tzinfo=UTC)
-        duration = timedelta(minutes=window.slot_duration_minutes)
+        step = timedelta(minutes=window.start_step_minutes)
+        duration = timedelta(minutes=window.duration_minutes)
         current = day_start
         while current + duration <= day_end:
             slot_start = current
@@ -133,12 +143,12 @@ def derive_slots(
                         service_id="",  # filled by caller
                         format=window.format,
                         location_id=window.location_id,
-                        slot_duration_minutes=window.slot_duration_minutes,
+                        slot_duration_minutes=window.duration_minutes,
                         buffer_before_minutes=window.buffer_before_minutes,
                         buffer_after_minutes=window.buffer_after_minutes,
                     )
                 )
-            current += duration
+            current += step
     slots.sort(key=lambda s: s.start)
     return slots
 
