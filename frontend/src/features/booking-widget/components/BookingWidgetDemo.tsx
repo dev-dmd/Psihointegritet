@@ -5,9 +5,9 @@ import { useState } from "react";
 import { BookingWidget } from "./BookingWidget";
 import {
   mockBrand,
-  mockService,
+  mockServices,
   mockSlots,
-  mockTherapist,
+  mockTherapists,
 } from "../booking-widget.mock-data";
 import type {
   BookingWidgetSubmitPayload,
@@ -37,8 +37,8 @@ export function BookingWidgetDemo() {
           key={variant}
           variant={variant}
           brand={mockBrand}
-          service={mockService}
-          therapist={mockTherapist}
+          services={mockServices}
+          therapists={mockTherapists}
           initialFormat="online"
           slots={mockSlots}
           onCancel={() => setMessage(`${variant} demo: izbor je poništen.`)}

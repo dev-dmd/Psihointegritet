@@ -19,14 +19,12 @@ import { isPastDate, toLocalDate } from "../booking-widget.config";
 import { useBookingWidget } from "../hooks/use-booking-widget";
 import type {
   BookingSlot,
-  BookingTherapist,
   BookingWidgetCopy,
   BookingWidgetTheme,
 } from "../booking-widget.types";
 
 interface BookingWidgetActionsProps {
   copy: BookingWidgetCopy;
-  therapist?: BookingTherapist;
   slots: BookingSlot[];
   showNotifyAction: boolean;
   onCancel?: () => void;
@@ -50,7 +48,6 @@ function formatNotifyDate(date: string): string {
 
 export function BookingWidgetActions({
   copy,
-  therapist,
   slots,
   showNotifyAction,
   onCancel,
@@ -63,6 +60,7 @@ export function BookingWidgetActions({
     notifyOpen,
     resetSelection,
     selectedSlotId,
+    selectedTherapistId,
     setNotifyOpen,
   } = useBookingWidget();
   const notifyCandidates = useMemo(
@@ -126,7 +124,7 @@ export function BookingWidgetActions({
           <button
             type="button"
             disabled={!selectedSlotId}
-            onClick={() => onSubmit?.(buildSubmitPayload(therapist?.id))}
+            onClick={() => onSubmit?.(buildSubmitPayload(selectedTherapistId ?? undefined))}
             className={cn(
               "focus-visible:ring-meadow inline-flex min-h-10 cursor-pointer items-center justify-center gap-3 rounded-full px-6 py-2.5 text-sm font-semibold transition-all duration-300 ease-out outline-none hover:-translate-y-0.5 focus-visible:ring-2 disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:translate-y-0",
               theme.primaryButton,

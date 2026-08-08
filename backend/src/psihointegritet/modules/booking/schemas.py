@@ -170,7 +170,7 @@ class SlotHoldOut(BaseModel):
 
 
 class AppointmentRequestIn(BaseModel):
-    therapist_profile_id: UUID
+    therapist_profile_id: UUID | None = None
     service_id: UUID
     request_type: str = Field(pattern=r"^(initial|reschedule)$")
     preferred_start: datetime | None = None
@@ -192,7 +192,7 @@ class AppointmentRequestOut(BaseModel):
 
     id: UUID
     organization_id: UUID
-    therapist_profile_id: UUID
+    therapist_profile_id: UUID | None
     service_id: UUID
     request_type: str
     status: str

@@ -11,6 +11,12 @@ from psihointegritet.infrastructure.auth.clerk.verifier import (
     ClerkTokenVerificationError,
 )
 from psihointegritet.infrastructure.auth.identity import IdentityClaims
+from psihointegritet.modules.guidance.authorization import (
+    IntakeAuthorizationError,
+    StaffActor,
+    resolve_staff_actor,
+    staff_authorization_message,
+)
 
 _bearer = HTTPBearer(auto_error=False)
 BearerCredentials = Annotated[
@@ -55,3 +61,41 @@ def get_app_settings(request: Request) -> Settings:
 
 
 AppSettings = Annotated[Settings, Depends(get_app_settings)]
+
+
+async def require_superadmin(
+    identity: CurrentIdentity,
+    session: DatabaseSession,
+    settings: AppSettings,
+) -> StaffActor:
+    """Require superadmin access (D0 — Diagnostic Engine gate).
+
+    Resolves the staff actor from the verified Clerk identity and raises HTTP 403
+    when the internal user does not carry the ``is_superadmin`` flag.
+
+    Placed here (not inside ``modules/diagnostics``) because this guard is the
+    only way for *any* future module — diagnostic runs, platform-wide settings,
+    organisation overrides — to verify platform-level privilege.
+    """
+    try:
+        actor = await resolve_staff_actor(session, identity, settings.default_organization_slug)
+    except IntakeAuthorizationError as error:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail={
+                "code": "STAFF_REQUIRED",
+                "message": staff_authorization_message(error),
+            },
+        ) from error
+    if not actor.is_superadmin:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail={
+                "code": "SUPERADMIN_REQUIRED",
+                "message": "Ova akcija je dozvoljena samo platform administratoru.",
+            },
+        )
+    return actor
+
+
+RequireSuperadmin = Annotated[StaffActor, Depends(require_superadmin)]

@@ -21,6 +21,8 @@ import type {
 } from "../booking-widget.types";
 
 export interface BookingWidgetState {
+  selectedServiceId: string;
+  selectedTherapistId: string | null;
   selectedFormat: BookingFormat;
   selectedDate: string | null;
   selectedSlotId: string | null;
@@ -29,6 +31,8 @@ export interface BookingWidgetState {
   month: Date;
   availableDates: Set<string>;
   visibleSlots: BookingSlot[];
+  setSelectedServiceId: (id: string) => void;
+  setSelectedTherapistId: (id: string) => void;
   setSelectedFormat: (format: BookingFormat) => void;
   setSelectedDate: (date: string) => void;
   setSelectedSlotId: (slotId: string) => void;
@@ -44,9 +48,11 @@ export const BookingWidgetContext = createContext<BookingWidgetState | null>(
 );
 
 interface BookingWidgetProviderProps {
-  service: BookingService;
-  slots: BookingSlot[];
+  services: BookingService[];
+  initialServiceId?: string;
+  initialTherapistId?: string;
   initialFormat?: BookingFormat;
+  slots: BookingSlot[];
   children: ReactNode;
 }
 
@@ -57,12 +63,23 @@ function initialMonth(slots: BookingSlot[]): Date {
 }
 
 export function BookingWidgetProvider({
-  service,
-  slots,
+  services,
+  initialServiceId,
+  initialTherapistId,
   initialFormat,
+  slots,
   children,
 }: BookingWidgetProviderProps) {
-  const availableFormats = service.formats;
+  const defaultServiceId = initialServiceId ?? services[0]?.id ?? "";
+  const [selectedServiceId, setSelectedServiceId] = useState(defaultServiceId);
+  const [selectedTherapistId, setSelectedTherapistId] = useState<string | null>(
+    initialTherapistId ?? null,
+  );
+  const selectedService = useMemo(
+    () => services.find((s) => s.id === selectedServiceId) ?? services[0] ?? null,
+    [selectedServiceId, services],
+  );
+  const availableFormats = selectedService?.formats ?? ["online"];
   const defaultFormat =
     initialFormat && availableFormats.includes(initialFormat)
       ? initialFormat
@@ -92,18 +109,28 @@ export function BookingWidgetProvider({
   }, [slots]);
 
   const buildSubmitPayload = useCallback(
-    (therapistId?: string): BookingWidgetSubmitPayload => ({
-      serviceId: service.id,
-      format: selectedFormat,
-      ...(therapistId ? { therapistId } : {}),
-      ...(selectedSlotId ? { slotId: selectedSlotId } : {}),
-      ...(selectedDate ? { selectedDate } : {}),
-    }),
-    [selectedDate, selectedFormat, selectedSlotId, service.id],
+    (therapistId?: string): BookingWidgetSubmitPayload => {
+      const selectedSlot = selectedSlotId
+        ? visibleSlots.find((s) => s.id === selectedSlotId)
+        : undefined;
+      return {
+        serviceId: selectedServiceId,
+        format: selectedFormat,
+        ...(therapistId ?? selectedTherapistId
+          ? { therapistId: (therapistId ?? selectedTherapistId)! }
+          : {}),
+        ...(selectedSlotId ? { slotId: selectedSlotId } : {}),
+        ...(selectedDate ? { selectedDate } : {}),
+        ...(selectedSlot?.startTime ? { selectedSlotStart: selectedSlot.startTime } : {}),
+      };
+    },
+    [selectedDate, selectedFormat, selectedSlotId, selectedServiceId, selectedTherapistId, visibleSlots],
   );
 
   const value = useMemo<BookingWidgetState>(
     () => ({
+      selectedServiceId,
+      selectedTherapistId,
       selectedFormat,
       selectedDate,
       selectedSlotId,
@@ -112,6 +139,8 @@ export function BookingWidgetProvider({
       month,
       availableDates: dates,
       visibleSlots,
+      setSelectedServiceId,
+      setSelectedTherapistId,
       setSelectedFormat,
       setSelectedDate: selectDate,
       setSelectedSlotId,
@@ -131,7 +160,9 @@ export function BookingWidgetProvider({
       selectDate,
       selectedDate,
       selectedFormat,
+      selectedServiceId,
       selectedSlotId,
+      selectedTherapistId,
       visibleSlots,
     ],
   );

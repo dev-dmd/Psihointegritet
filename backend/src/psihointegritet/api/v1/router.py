@@ -14,6 +14,7 @@ from psihointegritet.modules.content.taxonomy_router import (
     public_router as taxonomy_public_router,
 )
 from psihointegritet.modules.content.taxonomy_router import router as taxonomy_router
+from psihointegritet.modules.diagnostics.router import router as diagnostics_router
 from psihointegritet.modules.guidance.router import public_router, team_router
 from psihointegritet.modules.privacy.router import public_router as privacy_public_router
 from psihointegritet.modules.privacy.router import router as privacy_router
@@ -39,3 +40,4 @@ api_v1_router.include_router(compass_flow_public_router)
 api_v1_router.include_router(compass_flow_router)
 api_v1_router.include_router(booking_public_router)
 api_v1_router.include_router(booking_staff_router)
+api_v1_router.include_router(diagnostics_router)

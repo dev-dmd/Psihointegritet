@@ -44,6 +44,8 @@ export interface BookingTherapist {
   slug: string;
   name: string;
   avatarUrl?: string;
+  /** Service slugs this therapist provides (from catalog). */
+  serviceSlugs?: string[];
 }
 
 export interface BookingSlot {
@@ -78,13 +80,21 @@ export interface BookingWidgetSubmitPayload {
   format: BookingFormat;
   slotId?: string;
   selectedDate?: string;
+  /** The start time of the selected slot (HH:MM), if a slot was picked. */
+  selectedSlotStart?: string;
 }
 
 export interface BookingWidgetProps {
   variant: BookingWidgetVariant;
   brand: BookingWidgetBrand;
-  service: BookingService;
-  therapist?: BookingTherapist;
+  /** All available services for the selected therapist. */
+  services: BookingService[];
+  /** All available therapists. */
+  therapists: BookingTherapist[];
+  /** Pre-selected service id (optional). */
+  initialServiceId?: string;
+  /** Pre-selected therapist id (optional). */
+  initialTherapistId?: string;
   initialFormat?: BookingFormat;
   slots: BookingSlot[];
   copy?: Partial<BookingWidgetCopy>;

@@ -20,8 +20,10 @@ import { BookingWidgetSummary } from "./BookingWidgetSummary";
 export function BookingWidget({
   variant,
   brand,
-  service,
-  therapist,
+  services,
+  therapists,
+  initialServiceId,
+  initialTherapistId,
   initialFormat,
   slots,
   copy: copyOverrides,
@@ -38,8 +40,10 @@ export function BookingWidget({
 
   return (
     <BookingWidgetProvider
-      service={service}
+      services={services}
       slots={slots}
+      {...(initialServiceId ? { initialServiceId } : {})}
+      {...(initialTherapistId ? { initialTherapistId } : {})}
       {...(initialFormat ? { initialFormat } : {})}
     >
       <BookingWidgetLayout
@@ -51,7 +55,6 @@ export function BookingWidget({
       >
         <BookingWidgetHeader
           brand={brand}
-          service={service}
           copy={copy}
           theme={theme}
         />
@@ -61,10 +64,10 @@ export function BookingWidget({
           )}
         >
           <BookingWidgetSummary
-            service={service}
+            services={services}
+            therapists={therapists}
             showTherapist={showTherapist}
             theme={theme}
-            {...(therapist ? { therapist } : {})}
           />
           <div
             className={cn(
@@ -81,7 +84,6 @@ export function BookingWidget({
           slots={slots}
           showNotifyAction={showNotifyAction}
           theme={theme}
-          {...(therapist ? { therapist } : {})}
           {...(onCancel ? { onCancel } : {})}
           {...(onNotify ? { onNotify } : {})}
           {...(onSubmit ? { onSubmit } : {})}

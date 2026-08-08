@@ -12,34 +12,34 @@ Red se prebacuje na ✅ u `TODO.md` R2.3c tek kad su svi pod-zadaci ovde ✅.
 
 ## 0. Preduslov koji ne postoji još
 
-- [ ] **D0 — `require_superadmin` FastAPI zavisnost.** `internal_users.is_superadmin` kolona postoji (migracija `20260730_0006`), ali nijedna backend ruta je danas ne čita — `api/dependencies.py` nema ekvivalent frontend `requireSuperadminApi()` konvencije. Bez ovoga, test „običan admin ne može pokrenuti globalni diagnostic" (D-Common-9 niže) nema šta da proveri. Ovo je preduslov za D-API sekciju, ne opciono poliranje.
+- [x] **D0 — `require_superadmin` FastAPI zavisnost.** `internal_users.is_superadmin` kolona postoji (migracija `20260730_0006`), ali nijedna backend ruta je danas ne čita — `api/dependencies.py` nema ekvivalent frontend `requireSuperadminApi()` konvencije. Bez ovoga, test „običan admin ne može pokrenuti globalni diagnostic" (D-Common-9 niže) nema šta da proveri. Ovo je preduslov za D-API sekciju, ne opciono poliranje. **✅ Implementirano 2026-08-07 u `api/dependencies.py:require_superadmin`.**
 
 ---
 
 ## 1. Kontrakti — `modules/diagnostics/contracts.py`
 
-- [ ] D1.1 `DiagnosticStatus(StrEnum)`: `OK | INFO | WARNING | ERROR | FAILED`
-- [ ] D1.2 `DiagnosticResult(BaseModel)`: `key, status, affected_count, summary, sample_rows: list[dict[str, object]], suggestion: str | None, duration_ms: int, checked_at: datetime`
-- [ ] D1.3 `DiagnosticContext` (`@dataclass(frozen=True)`): `session: AsyncSession, organization_id: UUID | None, mode: DiagnosticMode, sample_limit: int, checked_at: datetime`
-- [ ] D1.4 `DiagnosticMode(StrEnum)`: `COMPACT | FULL`
-- [ ] D1.5 `DiagnosticDefinition`: `key, label, description, collector: Callable[[DiagnosticContext], Awaitable[DiagnosticResult]], category: str, supported_modes, max_sample_rows: int, tenant_aware: bool`
+- [x] D1.1 `DiagnosticStatus(StrEnum)`: `OK | INFO | WARNING | ERROR | FAILED`
+- [x] D1.2 `DiagnosticResult(BaseModel)`: `key, status, affected_count, summary, sample_rows: list[dict[str, object]], suggestion: str | None, duration_ms: int, checked_at: datetime`
+- [x] D1.3 `DiagnosticContext` (`@dataclass(frozen=True)`): `session: AsyncSession, organization_id: UUID | None, mode: DiagnosticMode, sample_limit: int, checked_at: datetime`
+- [x] D1.4 `DiagnosticMode(StrEnum)`: `COMPACT | FULL`
+- [x] D1.5 `DiagnosticDefinition`: `key, label, description, collector: Callable[[DiagnosticContext], Awaitable[DiagnosticResult]], category: str, supported_modes, max_sample_rows: int, tenant_aware: bool`
 
 ---
 
 ## 2. Registry — `modules/diagnostics/registry.py`
 
-- [ ] D2.1 `DIAGNOSTIC_REGISTRY: dict[str, DiagnosticDefinition]` — eksplicitan literal, **bez** dinamičkog skeniranja/plugin importa.
-- [ ] D2.2 Četiri Booking unosa (§4).
-- [ ] D2.3 Helper `get_definition(key: str) -> DiagnosticDefinition` koji baca tipiziranu grešku (ne `KeyError` direktno do API sloja) za nepoznat ključ.
+- [x] D2.1 `DIAGNOSTIC_REGISTRY: dict[str, DiagnosticDefinition]` — eksplicitan literal, **bez** dinamičkog skeniranja/plugin importa.
+- [x] D2.2 Četiri Booking unosa (§4).
+- [x] D2.3 Helper `get_definition(key: str) -> DiagnosticDefinition` koji baca tipiziranu grešku (ne `KeyError` direktno do API sloja) za nepoznat ključ.
 
 ---
 
 ## 3. Runner — `modules/diagnostics/runner.py`
 
-- [ ] D3.1 `run_one(key, context) -> DiagnosticResult` — nađe definiciju, pozove collector, izmeri `duration_ms`, uhvati **svaki** izuzetak → `DiagnosticStatus.FAILED` sa bezbednom porukom (bez stack trace-a u odgovoru; pun trace ide u structured log, `ARCHITECTURAL_RULES` §19).
-- [ ] D3.2 `run_many(keys | category, context) -> list[DiagnosticResult]` — jedan `failed` collector ne prekida ostale.
-- [ ] D3.3 Ograniči `sample_rows` na `min(zahtevani_limit, definition.max_sample_rows)`; `affected_count` uvek iz `COUNT(*)`, nikad `len(sample)`.
-- [ ] D3.4 `organization_id=None` dozvoljen samo kad poziva superadmin (provera se dešava u `router.py`, ne u runneru — runner je čist, autorizacija je adapter odgovornost po §14.1 layering pravilu).
+- [x] D3.1 `run_one(key, context) -> DiagnosticResult` — nađe definiciju, pozove collector, izmeri `duration_ms`, uhvati **svaki** izuzetak → `DiagnosticStatus.FAILED` sa bezbednom porukom (bez stack trace-a u odgovoru; pun trace ide u structured log, `ARCHITECTURAL_RULES` §19).
+- [x] D3.2 `run_many(keys | category, context) -> list[DiagnosticResult]` — jedan `failed` collector ne prekida ostale.
+- [x] D3.3 Ograniči `sample_rows` na `min(zahtevani_limit, definition.max_sample_rows)`; `affected_count` uvek iz `COUNT(*)`, nikad `len(sample)`.
+- [x] D3.4 `organization_id=None` dozvoljen samo kad poziva superadmin (provera se dešava u `router.py`, ne u runneru — runner je čist, autorizacija je adapter odgovornost po §14.1 layering pravilu).
 
 ---
 
@@ -85,12 +85,12 @@ Red se prebacuje na ✅ u `TODO.md` R2.3c tek kad su svi pod-zadaci ovde ✅.
 
 ## 6. API — `modules/diagnostics/router.py` + `schemas.py`
 
-- [ ] D6.1 `GET /api/v1/superadmin/diagnostics` — lista registrovanih definicija (key/label/description/category), bez izvršavanja.
-- [ ] D6.2 `POST /api/v1/superadmin/diagnostics/run` — telo `{ category, mode, organizationId }`, agregatni odgovor `{ results, summary: {ok,warning,error,failed}, checkedAt }`.
-- [ ] D6.3 `POST /api/v1/superadmin/diagnostics/{key}/run` — pojedinačno izvršavanje, isti odgovorni oblik sa jednim rezultatom.
-- [ ] D6.4 Sve tri rute iza `require_superadmin` (§0/D0).
-- [ ] D6.5 `organizationId: null` u telu dozvoljen samo superadminu — obican staff/admin mora poslati konkretan ID (vraća 403/422 bez njega, ne tihi globalni scope).
-- [ ] D6.6 Nema tabele za run-istoriju — rezultat je izračunat na zahtev.
+- [x] D6.1 `GET /api/v1/superadmin/diagnostics` — lista registrovanih definicija (key/label/description/category), bez izvršavanja.
+- [x] D6.2 `POST /api/v1/superadmin/diagnostics/run` — telo `{ category, mode, organizationId }`, agregatni odgovor `{ results, summary: {ok,warning,error,failed}, checkedAt }`.
+- [x] D6.3 `POST /api/v1/superadmin/diagnostics/{key}/run` — pojedinačno izvršavanje, isti odgovorni oblik sa jednim rezultatom.
+- [x] D6.4 Sve tri rute iza `require_superadmin` (§0/D0).
+- [x] D6.5 `organizationId: null` u telu dozvoljen samo superadminu — obican staff/admin mora poslati konkretan ID (vraća 403/422 bez njega, ne tihi globalni scope).
+- [x] D6.6 Nema tabele za run-istoriju — rezultat je izračunat na zahtev.
 
 **Compact/full limiti:** `compact` → 0–1 sample red; `full` → do 20 sample redova; `affectedCount` uvek ukupan broj nezavisno od režima.
 
