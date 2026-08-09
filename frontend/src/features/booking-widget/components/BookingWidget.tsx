@@ -15,16 +15,23 @@ import { BookingWidgetSummary } from "./BookingWidgetSummary";
 
 /**
  * Presentational booking surface. It intentionally has no API calls or Booking
- * Engine decisions: host code provides slots and receives callback payloads.
+ * Engine decisions: host code provides offerings and slots and receives
+ * callback payloads.
+ *
+ * What may be changed is decided solely by `selectionPolicy` — no component
+ * below this point knows which entry point the person arrived from.
  */
 export function BookingWidget({
   variant,
   brand,
-  services,
+  offerings,
   therapists,
+  selectionPolicy,
   initialServiceId,
   initialTherapistId,
   initialFormat,
+  onBack,
+  backLabel,
   slots,
   copy: copyOverrides,
   showBrandPanel = true,
@@ -40,7 +47,7 @@ export function BookingWidget({
 
   return (
     <BookingWidgetProvider
-      services={services}
+      offerings={offerings}
       slots={slots}
       {...(initialServiceId ? { initialServiceId } : {})}
       {...(initialTherapistId ? { initialTherapistId } : {})}
@@ -53,6 +60,14 @@ export function BookingWidget({
         variant={variant}
         {...(className ? { className } : {})}
       >
+        {/*
+          The format switch stays visible in every mode, including a locked
+          Intake selection: online vs in person is the one thing the person
+          explicitly chose in the guided flow, and hiding it made that choice
+          invisible. Switching it never changes the therapist or the service —
+          it re-resolves the same treatment in the other format — so it does
+          not reopen the catalogue the locked policy is there to close.
+        */}
         <BookingWidgetHeader brand={brand} copy={copy} theme={theme} />
         <div
           className={cn(
@@ -60,9 +75,10 @@ export function BookingWidget({
           )}
         >
           <BookingWidgetSummary
-            services={services}
             therapists={therapists}
             showTherapist={showTherapist}
+            selectionPolicy={selectionPolicy}
+            copy={copy}
             theme={theme}
           />
           <div
@@ -80,6 +96,8 @@ export function BookingWidget({
           slots={slots}
           showNotifyAction={showNotifyAction}
           theme={theme}
+          onBack={onBack}
+          backLabel={backLabel}
           {...(onCancel ? { onCancel } : {})}
           {...(onNotify ? { onNotify } : {})}
           {...(onSubmit ? { onSubmit } : {})}

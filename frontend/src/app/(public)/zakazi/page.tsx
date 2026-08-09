@@ -1,5 +1,10 @@
 import { PageHero } from "@/components/shared/page-hero";
 import { TherapistBookingWidget } from "@/components/booking/TherapistBookingWidget";
+import {
+  deriveBookingSelectionPolicy,
+  parseBookingContext,
+  type BookingSearchParams,
+} from "@/features/booking/booking-context";
 import { metadataForRoute } from "@/lib/content-governance/discoverability";
 import { getContentProvider } from "@/lib/content-governance/provider-resolver";
 
@@ -8,11 +13,18 @@ export async function generateMetadata() {
 }
 
 interface BookingPageProps {
-  searchParams: Promise<{ therapist?: string; source?: string }>;
+  searchParams: Promise<BookingSearchParams>;
 }
 
 export default async function BookingPage({ searchParams }: BookingPageProps) {
   const params = await searchParams;
+
+  // `parseBookingContext` is the validated entry parser: unknown slugs are
+  // dropped and an incompatible therapist/service pair is reconciled before it
+  // ever reaches the widget. The policy is derived here, once — components
+  // downstream read the policy, never `source`.
+  const context = parseBookingContext(params);
+  const selectionPolicy = deriveBookingSelectionPolicy(context.source);
 
   return (
     <>
@@ -32,8 +44,13 @@ export default async function BookingPage({ searchParams }: BookingPageProps) {
       </PageHero>
       <section className="pt-[56px] pb-[72px] md:pt-20 md:pb-24">
         <TherapistBookingWidget
-          therapistSlug={params.therapist}
-          source={params.source}
+          selectionPolicy={selectionPolicy}
+          {...(context.therapistSlug
+            ? { therapistSlug: context.therapistSlug }
+            : {})}
+          {...(context.serviceSlug ? { serviceSlug: context.serviceSlug } : {})}
+          {...(context.format ? { format: context.format } : {})}
+          {...(context.source ? { source: context.source } : {})}
         />
       </section>
     </>

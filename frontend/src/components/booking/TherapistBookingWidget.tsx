@@ -1,18 +1,27 @@
 "use client";
 
 import { useMemo, useState, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
 
 import { serviceCatalog } from "@/content/services";
 import { therapists as therapistCatalog } from "@/content/therapists";
+import type {
+  BookingFormat,
+  BookingSelectionPolicy,
+} from "@/features/booking/booking-context";
+import {
+  buildBookingOfferings,
+  offeringServiceName,
+} from "@/features/booking/booking-offering";
 import {
   mockBrand,
   mockSlots,
 } from "@/features/booking-widget/booking-widget.mock-data";
 import { BookingWidget } from "@/features/booking-widget/components/BookingWidget";
 import type {
-  BookingService,
   BookingTherapist,
+  BookingWidgetOffering,
 } from "@/features/booking-widget/booking-widget.types";
 import { BookingWidgetContactFormOverlay } from "@/features/booking-widget/components/BookingWidgetContactFormOverlay";
 import type { ContactFormData } from "@/features/booking-widget/components/BookingWidgetContactForm";
@@ -25,7 +34,24 @@ const glassTheme = bookingWidgetThemes.glass;
 
 interface TherapistBookingWidgetProps {
   therapistSlug?: string | undefined;
+  serviceSlug?: string | undefined;
+  format?: BookingFormat | undefined;
   source?: string | undefined;
+  /**
+   * Derived once by the route from `source`; this component never inspects
+   * `source` to decide UI behaviour, and neither does anything below it.
+   */
+  selectionPolicy: BookingSelectionPolicy;
+}
+
+/** „09:00" + 90 → „10:30". Empty in, empty out — never invents a time. */
+function addMinutes(startTime: string, minutes: number): string {
+  const [hours, mins] = startTime.split(":").map(Number);
+  if (hours === undefined || mins === undefined || Number.isNaN(hours))
+    return "";
+  const total = hours * 60 + mins + minutes;
+  const wrapped = ((total % 1440) + 1440) % 1440;
+  return `${String(Math.floor(wrapped / 60)).padStart(2, "0")}:${String(wrapped % 60).padStart(2, "0")}`;
 }
 
 type FlowState = "selecting" | "contact" | "confirming";
@@ -41,33 +67,42 @@ type FlowState = "selecting" | "contact" | "confirming";
  */
 export function TherapistBookingWidget({
   therapistSlug,
+  serviceSlug,
+  format,
   source,
+  selectionPolicy,
 }: TherapistBookingWidgetProps) {
-  const { services, therapists, initialTherapistId } = useMemo(() => {
-    const svc: BookingService[] = serviceCatalog.map((s) => ({
-      id: s.slug,
-      slug: s.slug,
-      name: s.name,
-      durationMinutes: parseInt(s.duration, 10) || 60,
-      price: s.priceAmount,
-      currency: "RSD",
-      formats: s.format.includes("online") ? ["online", "uzivo"] : ["uzivo"],
-    }));
+  const router = useRouter();
+
+  const { offerings, therapists } = useMemo(() => {
+    // One offering per therapist × service × format — same grain as the
+    // backend `service_booking_configs` row this projects.
+    const built: BookingWidgetOffering[] = buildBookingOfferings().map(
+      (offering) => ({
+        ...offering,
+        serviceName: offeringServiceName(offering),
+      }),
+    );
 
     const thr: BookingTherapist[] = therapistCatalog.map((t) => ({
       id: t.slug,
       slug: t.slug,
       name: t.name,
+      firstNameGenitive: t.firstNameGenitive,
+      title: t.title,
+      city: t.city,
       avatarUrl: t.image,
       serviceSlugs: t.bookingServiceSlugs,
     }));
 
-    return {
-      services: svc,
-      therapists: thr,
-      initialTherapistId: therapistSlug ?? null,
-    };
-  }, [therapistSlug]);
+    return { offerings: built, therapists: thr };
+  }, []);
+
+  // Locked selections came from the guided flow, so "back" returns there
+  // rather than unwinding arbitrary history.
+  const backToRecommendations = useCallback(() => {
+    router.push("/pronadji-podrsku");
+  }, [router]);
 
   // ── Flow overlay state ──────────────────────────────────────────────────
 
@@ -144,14 +179,17 @@ export function TherapistBookingWidget({
           description: `Potvrdu ćete dobiti na ${data.email}`,
         });
 
+        const durationMinutes = svc ? parseInt(svc.duration, 10) || 60 : 0;
+        const startTime = selectedPayload.selectedSlotStart ?? "";
         setConfirmation({
           treatmentName: svc?.name ?? "",
-          durationMinutes: svc ? parseInt(svc.duration, 10) || 60 : 0,
+          durationMinutes,
           price: svc?.priceAmount ?? 0,
           currency: "RSD",
           date: selectedPayload.selectedDate ?? "",
-          startTime: "",
-          endTime: "",
+          startTime,
+          endTime: addMinutes(startTime, durationMinutes),
+          format: selectedPayload.format,
           therapistName: thr?.name ?? "",
           clientName: data.name,
           clientEmail: data.email,
@@ -180,14 +218,20 @@ export function TherapistBookingWidget({
       <BookingWidget
         variant="glass"
         brand={mockBrand}
-        services={services}
+        offerings={offerings}
         therapists={therapists}
-        initialFormat="online"
+        selectionPolicy={selectionPolicy}
+        initialFormat={format ?? "online"}
         slots={mockSlots}
         showBrandPanel
         showTherapist
         showNotifyAction
-        {...(initialTherapistId ? { initialTherapistId } : {})}
+        {...(therapistSlug ? { initialTherapistId: therapistSlug } : {})}
+        {...(serviceSlug ? { initialServiceId: serviceSlug } : {})}
+        {...(selectionPolicy.therapist === "locked" &&
+        selectionPolicy.service === "locked"
+          ? { onBack: backToRecommendations }
+          : {})}
         onCancel={() => {}}
         onNotify={() => {}}
         onSubmit={handleSlotSelected}

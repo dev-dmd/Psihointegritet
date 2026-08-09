@@ -27,6 +27,9 @@ interface BookingWidgetActionsProps {
   copy: BookingWidgetCopy;
   slots: BookingSlot[];
   showNotifyAction: boolean;
+  /** Present only when the selection is locked (e.g. the Intake hand-off). */
+  onBack?: (() => void) | undefined;
+  backLabel?: string | undefined;
   onCancel?: () => void;
   onNotify?: () => void;
   onSubmit?: (payload: {
@@ -50,6 +53,8 @@ export function BookingWidgetActions({
   copy,
   slots,
   showNotifyAction,
+  onBack,
+  backLabel,
   onCancel,
   onNotify,
   onSubmit,
@@ -97,16 +102,38 @@ export function BookingWidgetActions({
           theme.border,
         )}
       >
-        <button
-          type="button"
-          onClick={cancel}
-          className={cn(
-            "focus-visible:ring-meadow min-h-10 cursor-pointer rounded-lg border px-5 py-2.5 text-sm font-medium transition-all duration-300 ease-out outline-none hover:-translate-y-0.5 focus-visible:ring-2",
-            theme.secondaryButton,
-          )}
-        >
-          {copy.cancelLabel}
-        </button>
+        {/*
+          „Nazad" and „Otkaži" share one row on every width and one styling.
+          On mobile „Nazad" keeps its content width while „Otkaži" takes all
+          remaining space up to the right edge, so the pair never reads as two
+          interchangeable grey buttons. On desktop the footer row is already
+          content-sized, so both fall back to their natural widths.
+        */}
+        <div className="flex items-center gap-3">
+          {onBack ? (
+            <button
+              type="button"
+              onClick={onBack}
+              aria-label={backLabel ?? copy.backAriaLabel}
+              className={cn(
+                "focus-visible:ring-meadow min-h-10 w-auto shrink-0 cursor-pointer rounded-lg border px-5 py-2.5 text-sm font-medium transition-all duration-300 ease-out outline-none hover:-translate-y-0.5 focus-visible:ring-2",
+                theme.secondaryButton,
+              )}
+            >
+              {copy.backLabel}
+            </button>
+          ) : null}
+          <button
+            type="button"
+            onClick={cancel}
+            className={cn(
+              "focus-visible:ring-meadow min-h-10 grow cursor-pointer rounded-lg border px-5 py-2.5 text-sm font-medium transition-all duration-300 ease-out outline-none hover:-translate-y-0.5 focus-visible:ring-2 sm:w-auto sm:grow-0",
+              theme.secondaryButton,
+            )}
+          >
+            {copy.cancelLabel}
+          </button>
+        </div>
         <div className="grid grid-cols-1 gap-3 sm:flex sm:items-center">
           {showNotifyAction ? (
             <button

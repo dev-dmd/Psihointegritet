@@ -10,10 +10,9 @@ from uuid import UUID
 
 from fastapi import APIRouter, HTTPException, Query, status
 
-from psihointegritet.api.dependencies import AppSettings, CurrentIdentity, DatabaseSession
+from psihointegritet.api.dependencies import AppSettings, DatabaseSession, RequireStaff
 from psihointegritet.core.config import Settings
 from psihointegritet.core.logging import get_logger
-from psihointegritet.infrastructure.auth.identity import IdentityClaims
 from psihointegritet.modules.booking.schemas import (
     AcceptAlternativeRequest,
     AppointmentOut,
@@ -182,7 +181,7 @@ async def accept_alternative(
 )
 async def upsert_booking_config(
     data: ServiceBookingConfigIn,
-    identity: CurrentIdentity,
+    actor: RequireStaff,
     session: DatabaseSession,
     settings: AppSettings,
 ) -> ServiceBookingConfigOut:
@@ -204,7 +203,7 @@ async def upsert_booking_config(
 )
 async def create_availability_rule(
     data: AvailabilityRuleIn,
-    identity: CurrentIdentity,
+    actor: RequireStaff,
     session: DatabaseSession,
     settings: AppSettings,
 ) -> AvailabilityRuleOut:
@@ -222,7 +221,7 @@ async def create_availability_rule(
 )
 async def list_availability_rules(
     availability_profile_id: UUID,
-    identity: CurrentIdentity,
+    actor: RequireStaff,
     session: DatabaseSession,
     settings: AppSettings,
 ) -> list[AvailabilityRuleOut]:
@@ -242,7 +241,7 @@ async def list_availability_rules(
 )
 async def create_availability_profile(
     data: AvailabilityProfileIn,
-    identity: CurrentIdentity,
+    actor: RequireStaff,
     session: DatabaseSession,
     settings: AppSettings,
 ) -> AvailabilityProfileOut:
@@ -263,7 +262,7 @@ async def create_availability_profile(
 )
 async def list_availability_profiles(
     therapist_profile_id: UUID,
-    identity: CurrentIdentity,
+    actor: RequireStaff,
     session: DatabaseSession,
     settings: AppSettings,
 ) -> list[AvailabilityProfileOut]:
@@ -280,7 +279,7 @@ async def list_availability_profiles(
 async def update_availability_profile(
     profile_id: UUID,
     data: AvailabilityProfileIn,
-    identity: CurrentIdentity,
+    actor: RequireStaff,
     session: DatabaseSession,
     settings: AppSettings,
 ) -> AvailabilityProfileOut:
@@ -298,7 +297,7 @@ async def update_availability_profile(
 )
 async def delete_availability_profile(
     profile_id: UUID,
-    identity: CurrentIdentity,
+    actor: RequireStaff,
     session: DatabaseSession,
     settings: AppSettings,
 ) -> None:
@@ -319,7 +318,7 @@ async def delete_availability_profile(
 )
 async def create_manual_availability_slot(
     data: ManualAvailabilitySlotIn,
-    identity: CurrentIdentity,
+    actor: RequireStaff,
     session: DatabaseSession,
     settings: AppSettings,
 ) -> ManualAvailabilitySlotOut:
@@ -337,7 +336,7 @@ async def create_manual_availability_slot(
 )
 async def delete_manual_availability_slot(
     slot_id: UUID,
-    identity: CurrentIdentity,
+    actor: RequireStaff,
     session: DatabaseSession,
     settings: AppSettings,
 ) -> None:
@@ -354,7 +353,7 @@ async def delete_manual_availability_slot(
 )
 async def list_manual_availability_slots(
     availability_profile_id: UUID,
-    identity: CurrentIdentity,
+    actor: RequireStaff,
     session: DatabaseSession,
     settings: AppSettings,
     date_from: Annotated[date, Query()],
@@ -376,7 +375,7 @@ async def list_manual_availability_slots(
 async def generate_week(
     availability_profile_id: UUID,
     week_start: Annotated[date, Query()],
-    identity: CurrentIdentity,
+    actor: RequireStaff,
     session: DatabaseSession,
     settings: AppSettings,
 ) -> list[ManualAvailabilitySlotOut]:
@@ -397,7 +396,7 @@ async def copy_week(
     availability_profile_id: UUID,
     source_week_start: Annotated[date, Query()],
     target_week_start: Annotated[date, Query()],
-    identity: CurrentIdentity,
+    actor: RequireStaff,
     session: DatabaseSession,
     settings: AppSettings,
 ) -> list[ManualAvailabilitySlotOut]:
@@ -418,7 +417,7 @@ async def copy_week(
 async def update_availability_rule(
     rule_id: UUID,
     data: AvailabilityRuleIn,
-    identity: CurrentIdentity,
+    actor: RequireStaff,
     session: DatabaseSession,
     settings: AppSettings,
 ) -> AvailabilityRuleOut:
@@ -436,7 +435,7 @@ async def update_availability_rule(
 )
 async def delete_availability_rule(
     rule_id: UUID,
-    identity: CurrentIdentity,
+    actor: RequireStaff,
     session: DatabaseSession,
     settings: AppSettings,
 ) -> None:
@@ -454,7 +453,7 @@ async def delete_availability_rule(
 )
 async def create_availability_exception(
     data: AvailabilityExceptionIn,
-    identity: CurrentIdentity,
+    actor: RequireStaff,
     session: DatabaseSession,
     settings: AppSettings,
 ) -> AvailabilityExceptionOut:
@@ -475,7 +474,7 @@ async def create_availability_exception(
 )
 async def delete_availability_exception(
     exception_id: UUID,
-    identity: CurrentIdentity,
+    actor: RequireStaff,
     session: DatabaseSession,
     settings: AppSettings,
 ) -> None:
@@ -492,7 +491,7 @@ async def delete_availability_exception(
 )
 async def list_availability_exceptions(
     therapist_profile_id: UUID,
-    identity: CurrentIdentity,
+    actor: RequireStaff,
     session: DatabaseSession,
     settings: AppSettings,
     date_from: Annotated[date, Query()],
@@ -514,7 +513,7 @@ async def list_availability_exceptions(
     response_model=list[AppointmentRequestOut],
 )
 async def list_appointment_requests(
-    identity: CurrentIdentity,
+    actor: RequireStaff,
     session: DatabaseSession,
     settings: AppSettings,
     therapist_profile_id: Annotated[UUID | None, Query()] = None,
@@ -530,7 +529,7 @@ async def list_appointment_requests(
 async def review_appointment_request(
     request_id: UUID,
     action: ReviewAction,
-    identity: CurrentIdentity,
+    actor: RequireStaff,
     session: DatabaseSession,
     settings: AppSettings,
 ) -> dict[str, str]:
@@ -538,9 +537,7 @@ async def review_appointment_request(
     svc = BookingService(session, settings)
     org_id = await _resolve_org_id(session, settings)
     try:
-        result = await svc.review_request(
-            org_id, request_id, action, _reviewer_id_from_identity(identity)
-        )
+        result = await svc.review_request(org_id, request_id, action, actor.user_id)
         await session.commit()
         return result
     except BookingConflictError as e:
@@ -554,7 +551,7 @@ async def review_appointment_request(
 
 @staff_router.get("/appointments", response_model=list[AppointmentOut])
 async def list_appointments(
-    identity: CurrentIdentity,
+    actor: RequireStaff,
     session: DatabaseSession,
     settings: AppSettings,
     therapist_profile_id: Annotated[UUID | None, Query()] = None,
@@ -583,7 +580,7 @@ async def list_appointments(
 async def cancel_appointment(
     appointment_id: UUID,
     data: CancelAppointmentRequest,
-    identity: CurrentIdentity,
+    actor: RequireStaff,
     session: DatabaseSession,
     settings: AppSettings,
 ) -> AppointmentOut:
@@ -604,7 +601,7 @@ async def cancel_appointment(
 )
 async def complete_appointment(
     appointment_id: UUID,
-    identity: CurrentIdentity,
+    actor: RequireStaff,
     session: DatabaseSession,
     settings: AppSettings,
 ) -> AppointmentOut:
@@ -622,7 +619,7 @@ async def complete_appointment(
 )
 async def mark_no_show(
     appointment_id: UUID,
-    identity: CurrentIdentity,
+    actor: RequireStaff,
     session: DatabaseSession,
     settings: AppSettings,
 ) -> AppointmentOut:
@@ -653,15 +650,3 @@ async def _resolve_org_id(session: DatabaseSession, settings: Settings) -> UUID:
             detail="Default organization not found",
         )
     return org_id
-
-
-def _reviewer_id_from_identity(identity: IdentityClaims) -> UUID:
-    """Extract internal user UUID from Clerk identity claims.
-
-    The identity.sub is the Clerk user ID; internal users table maps this.
-    For now, return a placeholder — actual mapping requires identity module.
-    """
-    try:
-        return UUID(identity.subject)
-    except ValueError:
-        return UUID("00000000-0000-0000-0000-000000000000")

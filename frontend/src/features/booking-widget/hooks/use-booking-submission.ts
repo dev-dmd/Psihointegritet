@@ -106,6 +106,7 @@ export function useBookingSubmission(
           date: params.selectedDate ?? "",
           startTime: params.selectedSlotStart ?? "",
           endTime: params.selectedSlotEnd ?? "",
+          format: params.selectedFormat === "online" ? "online" : "uzivo",
           therapistName: params.selectedTherapistName,
           clientName: data.name,
           clientEmail: data.email,

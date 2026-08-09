@@ -1,9 +1,12 @@
 "use client";
 
 import { cn } from "@/helpers/cn";
-import { formatSlotRangeSr } from "@/helpers/format-date";
+import { formatDateSr, formatSlotRangeSr } from "@/helpers/format-date";
 import { formatBookingPrice } from "../booking-widget.config";
-import type { BookingWidgetTheme } from "../booking-widget.types";
+import type {
+  BookingFormat,
+  BookingWidgetTheme,
+} from "../booking-widget.types";
 
 // ── Props ───────────────────────────────────────────────────────────────────
 
@@ -15,6 +18,8 @@ export interface ConfirmationDetails {
   date: string; // YYYY-MM-DD
   startTime: string; // HH:MM
   endTime: string; // HH:MM
+  /** Online or in person — part of the offering, so it belongs on the receipt. */
+  format: BookingFormat;
   therapistName: string;
   clientName: string;
   clientEmail: string;
@@ -27,6 +32,21 @@ interface BookingWidgetConfirmationProps {
   theme: BookingWidgetTheme;
   /** The submitted request details. */
   details: ConfirmationDetails | null;
+}
+
+/**
+ * „11.08.2026 · 09:00 – 10:00 · Online".
+ *
+ * The time half is dropped when no slot time reached us, so the line reads as
+ * a date rather than showing a dangling „–" where the hours should be.
+ */
+function formatAppointmentLine(details: ConfirmationDetails): string {
+  const when =
+    details.startTime && details.endTime
+      ? formatSlotRangeSr(details.date, details.startTime, details.endTime)
+      : formatDateSr(details.date);
+  const format = details.format === "online" ? "Online" : "Uživo";
+  return `${when} · ${format}`;
 }
 
 // ── Component ───────────────────────────────────────────────────────────────
@@ -69,7 +89,7 @@ export function BookingWidgetConfirmation({
           Termin
         </p>
         <p className={cn("text-[15px] font-medium", theme.body)}>
-          {formatSlotRangeSr(details.date, details.startTime, details.endTime)}
+          {formatAppointmentLine(details)}
         </p>
         {details.therapistName ? (
           <p className={cn("text-[13px]", theme.muted)}>

@@ -25,11 +25,15 @@ const sourceRoot = path.join(projectRoot, "src");
  * Re-anchored 2026-08-06: `content-revision-editor.tsx` 593 -> 595, pure
  * Prettier reflow (the committed file had drifted from `prettier --write`'s
  * canonical output). No responsibility moved in or out of the file.
+ *
+ * Reduced 2026-08-09: `guidance-flow.tsx` 963 -> 950 after the intro CTA row
+ * moved into `guidance-intro-actions.tsx`. The baseline is lowered so the
+ * decomposition cannot be silently undone.
  */
 const largeFileBaseline = new Map([
   ["src/features/booking/booking-request-form.tsx", 659],
   ["src/features/company/company-configurator-drawer.tsx", 517],
-  ["src/features/guidance/guidance-flow.tsx", 963],
+  ["src/features/guidance/guidance-flow.tsx", 950],
   ["src/features/workspace/components/content-revision-editor.tsx", 595],
 ]);
 

@@ -33,6 +33,7 @@ export const therapists: Therapist[] = [
     name: "Anja Stamenković",
     nameAccusative: "Anju",
     firstName: "Anja",
+    firstNameGenitive: "Anje",
     firstNameInstrumental: "Anjom",
     initials: "AS",
     title:
@@ -73,6 +74,7 @@ export const therapists: Therapist[] = [
     name: "Marija Stamenković",
     nameAccusative: "Mariju",
     firstName: "Marija",
+    firstNameGenitive: "Marije",
     firstNameInstrumental: "Marijom",
     initials: "MS",
     title: "Pedagog i sertifikovana geštalt psihoterapeutkinja",
@@ -112,6 +114,7 @@ export const therapists: Therapist[] = [
     name: "Marjan Janković",
     nameAccusative: "Marjana",
     firstName: "Marjan",
+    firstNameGenitive: "Marjana",
     firstNameInstrumental: "Marjanom",
     initials: "MJ",
     title: "Psiholog i sertifikovani geštalt psihoterapeut",

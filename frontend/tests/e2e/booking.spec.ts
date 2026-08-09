@@ -1,5 +1,12 @@
 import { expect, test, type Page } from "@playwright/test";
 
+/**
+ * `/zakazi` renders the Booking Widget. What the visitor may change is decided
+ * by `BookingSelectionPolicy`, derived once from `?source=` — these specs
+ * assert the three entry points that policy produces, not the widget's
+ * internals.
+ */
+
 async function mockBooking(page: Page, sink?: { body?: unknown }) {
   await page.route("**/api/booking-request", (route) => {
     if (sink) {
@@ -13,16 +20,25 @@ async function mockBooking(page: Page, sink?: { body?: unknown }) {
   });
 }
 
-test("direct booking explains the three starting choices", async ({ page }) => {
+async function pickFirstSlot(page: Page) {
+  const slot = page.getByRole("button", { name: /^\d{2}:\d{2}$/ }).first();
+  await slot.click();
+  await expect(slot).toHaveAttribute("aria-pressed", "true");
+  return slot;
+}
+
+test("direct booking opens on a valid therapist and offering", async ({
+  page,
+}) => {
   await page.goto("/zakazi");
 
   await expect(
     page.getByRole("heading", { level: 1, name: "Pošaljite zahtev za termin" }),
   ).toBeVisible();
-  await expect(page.getByText("Kako želite da počnete?")).toBeVisible();
-  await expect(
-    page.getByRole("link", { name: "Nisam siguran/na" }),
-  ).toHaveAttribute("href", "/pronadji-podrsku");
+
+  // Both choices are editable, so the widget must offer them.
+  await expect(page.getByText(/^Usluge kod /)).toBeVisible();
+  await expect(page.getByText("Ostali terapeuti")).toBeVisible();
 });
 
 test("therapist profile opens booking with a therapist prefill", async ({
@@ -42,7 +58,9 @@ test("therapist profile opens booking with a therapist prefill", async ({
   await expect(page).toHaveURL(
     /\/zakazi\?therapist=anja-stamenkovic&source=therapist$/,
   );
-  await expect(page.getByLabel("Terapeut")).toHaveValue("anja-stamenkovic");
+  await expect(page.getByText("Usluge kod Anje")).toBeVisible();
+  // Pre-selected, never locked: a profile visit may still change person.
+  await expect(page.getByText("Ostali terapeuti")).toBeVisible();
 });
 
 test("service detail opens booking with a service prefill", async ({
@@ -62,52 +80,79 @@ test("service detail opens booking with a service prefill", async ({
   await expect(page).toHaveURL(
     /\/zakazi\?service=individualna-psihoterapija&source=service$/,
   );
-  await expect(page.getByLabel("Usluga")).toHaveValue(
-    "individualna-psihoterapija",
-  );
+  // The service param must survive the hand-off, not be silently dropped.
+  await expect(
+    page.getByRole("heading", { name: "Individualna psihoterapija" }),
+  ).toBeVisible();
 });
 
-test("booking request submits through the demo endpoint and remains a request", async ({
+test("changing the therapist clears the previously selected slot", async ({
+  page,
+}) => {
+  await page.goto("/zakazi?therapist=anja-stamenkovic&source=therapist");
+
+  const slot = await pickFirstSlot(page);
+
+  await page
+    .getByRole("button", { name: /Marjan Janković/ })
+    .first()
+    .click();
+
+  await expect(page.getByText("Usluge kod Marjana")).toBeVisible();
+  await expect(slot).toHaveAttribute("aria-pressed", "false");
+});
+
+test("booking request submits through the endpoint and remains a request", async ({
   page,
 }) => {
   const sink: { body?: unknown } = {};
   await mockBooking(page, sink);
   await page.goto(
-    "/zakazi?service=individualna-psihoterapija&therapist=anja-stamenkovic&format=online&source=matching",
+    "/zakazi?service=individualna-psihoterapija&therapist=anja-stamenkovic&format=online&source=therapist",
   );
 
-  await expect(page.getByText(/Ovo je zahtev za termin/)).toBeVisible();
-  await page.getByRole("button", { name: "Nastavi" }).click();
-  await page.getByRole("button", { name: "Nastavi" }).click();
-
-  await page.getByLabel("Željeni datum").fill("2026-08-10");
-  await page.getByLabel("Period dana").selectOption("Popodne");
-  await page.getByRole("button", { name: "Nastavi" }).click();
+  await pickFirstSlot(page);
+  await page.getByRole("button", { name: "Zakaži" }).click();
 
   await page.getByLabel("Ime i prezime").fill("Petar Petrović");
   await page
     .getByRole("textbox", { name: "Email", exact: true })
     .fill("petar@example.com");
-  await page.getByRole("button", { name: "Nastavi" }).click();
+  await page.getByRole("checkbox").check();
+  await page.getByRole("button", { name: "Pošalji zahtev za termin" }).click();
 
-  const submit = page.getByRole("button", { name: "Pošaljite zahtev" });
-  await expect(submit).toBeDisabled();
-  await page.getByLabel(/Razumem da je ovo zahtev za termin/).check();
-  await expect(submit).toBeEnabled();
-  await submit.click();
-
-  await expect(page.getByText("Vaš zahtev je uspešno poslat")).toBeVisible();
-  await expect(
-    page.getByText(/Ovo još nije konačna potvrda termina/),
-  ).toBeVisible();
+  await expect(page.getByText(/nije konačna potvrda termina/)).toBeVisible();
 
   expect(sink.body).toMatchObject({
     therapistSlug: "anja-stamenkovic",
     serviceSlug: "individualna-psihoterapija",
     format: "online",
-    preferredDate: "2026-08-10",
-    preferredTime: "Popodne",
-    source: "matching",
   });
+  // Matching internals must never reach the public booking payload.
   expect(JSON.stringify(sink.body)).not.toContain("scoreBreakdown");
+});
+
+test("intake matching entry locks the selection and offers only a way back", async ({
+  page,
+}) => {
+  await page.goto(
+    "/zakazi?service=individualna-psihoterapija&therapist=anja-stamenkovic&format=online&source=matching",
+  );
+
+  await expect(page.getByText("Vaš izbor")).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Individualna psihoterapija" }),
+  ).toBeVisible();
+
+  // No way to turn the widget back into a marketplace.
+  await expect(page.getByText("Ostali terapeuti")).toBeHidden();
+  await expect(page.getByText(/^Usluge kod /)).toBeHidden();
+  await expect(
+    page.getByRole("button", { name: "Sledeća usluga" }),
+  ).toBeHidden();
+
+  const back = page.getByRole("button", { name: "Nazad na preporuke" });
+  await expect(back).toBeVisible();
+  await back.click();
+  await expect(page).toHaveURL(/\/pronadji-podrsku$/);
 });

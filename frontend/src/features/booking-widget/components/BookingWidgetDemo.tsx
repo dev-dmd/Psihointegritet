@@ -5,7 +5,7 @@ import { useState } from "react";
 import { BookingWidget } from "./BookingWidget";
 import {
   mockBrand,
-  mockServices,
+  mockOfferings,
   mockSlots,
   mockTherapists,
 } from "../booking-widget.mock-data";
@@ -37,8 +37,9 @@ export function BookingWidgetDemo() {
           key={variant}
           variant={variant}
           brand={mockBrand}
-          services={mockServices}
+          offerings={mockOfferings}
           therapists={mockTherapists}
+          selectionPolicy={{ therapist: "editable", service: "editable" }}
           initialFormat="online"
           slots={mockSlots}
           onCancel={() => setMessage(`${variant} demo: izbor je poništen.`)}

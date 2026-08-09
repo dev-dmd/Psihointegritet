@@ -2,6 +2,7 @@
 
 **Status:** Accepted (v2 supersedes v1 slot-generation i exception semantiku)
 **Datum:** 2026-08-06 (v1) · **2026-08-08 (v2)**
+**Implementacija:** 🟡 delimična — **§2.7.3 (timezone) nije implementiran**, vidi §5 (dodato 2026-08-09)
 **Vlasnik tehničke odluke:** Milan Dražić (CTO)
 **Povezano:** ADR-013 · PRE_R2_BOOKING_ENGINE_DECISION_SPEC_v0.2.md §6 (BDS-002) · PRE_R2 §7 (BDS-003, BDS-007A)
 
@@ -225,6 +226,8 @@ UTC timestamp
 
 Drugačije, fiksno `07:00 UTC` davalo bi različito lokalno radno vreme u zavisnosti od letnjeg/zimskog offseta. **Appointment, SlotHold, exception interval i konkretan DerivedSlot ostaju UTC timestamp-i.**
 
+> ⚠️ **NIJE IMPLEMENTIRANO (utvrđeno 2026-08-09).** Kod trenutno radi suprotno od ove sekcije — vidi §5. Ovaj pasus ostaje **obavezujući ugovor**, ne opis zatečenog stanja.
+
 
 #### 2.7.4 Exceptions — `unavailable` / `extra_available` sa scope-om
 
@@ -342,3 +345,56 @@ AttendanceStatus   = unknown | attended | client_no_show | therapist_no_show
 - **v1 `availability_rules.service_ids`** — uklonjeno u v2; veza ide kroz `availability_profiles`.
 - **BDS-012** — podeljen: `APPROVED` arhitektonska granica (source of truth + free/busy only) + `DEFERRED` integracioni detalji.
 - **BDS-011 / matrica ponuda / poslovni SLA kalendar** — ne blokiraju izgradnju Availability jezgra; blokiraju samo produkciono uključivanje javnog slanja zahteva.
+
+---
+
+## 5. Status implementacije — 2026-08-09
+
+Ova sekcija razdvaja **ugovor** (§2, obavezujući) od **zatečenog koda**. ADR se ne menja zbog koda; kod se popravlja prema ADR-u. Utvrđeno čitanjem koda posle Commit-a 7.
+
+| Deo ugovora | Kod | Stanje |
+|---|---|---|
+| §2.7.1 tri moda (`hourly_grid`/`flexible_grid`/`manual_slots`) | `booking/domain.py`, `AvailabilityMode` | ✅ |
+| §2.7.2 granica odgovornosti (profil/pravila/config) | `availability_profiles`, `availability_rules`, `service_booking_configs` | ✅ migracija `0007` |
+| §2.7.3 **local wall-clock → UTC preko IANA zone** | `booking/domain.py` `_grid_candidates` | ❌ **nije implementirano** |
+| §2.7.4 exceptions `unavailable`/`extra_available` | `AvailabilityException` | ✅ shema; `extra_available` se rešava u `get_available_slots` |
+| §2.7.5 manual slots + `weekly_generator`/`copied_week` | `manual_availability_slots`, `generate_week`, `copy_week` | 🟡 postoji, vidi D30 |
+| §2.7.6 precedence kao skupovna razlika | `occupancy_resolver` | ✅ |
+| §2.7.7 DB invariant nepreklapanja po profilu | migracija `0007`/`0009` | ✅ |
+| §2.7.8 Google Calendar seam | — | ⬜ nije počet (BDS-012 `DEFERRED`) |
+| §2.7.9 confirmation policy | — | ⬜ namerno odloženo (Commit 14) |
+| §2.7.10 attendance model | — | ⬜ namerno odloženo |
+
+### 5.1 Otvoreno odstupanje — D29: lokalno vreme se pečatira kao UTC
+
+`_grid_candidates` radi:
+
+```python
+day_start = datetime.combine(window.date, window.start_time, tzinfo=UTC)
+```
+
+`window.start_time` dolazi iz `AvailabilityRule.start_local_time`, tj. **lokalno wall-clock vreme** (08:00 Beograd). Kod ga proglašava za 08:00 **UTC**. Posledica je tačno ono na šta §2.7.3 upozorava:
+
+- leti (CEST, +02) slot ponuđen kao „08:00" stvarno je 10:00 po Beogradu;
+- zimi (CET, +01) isti slot je 09:00;
+- prelazak na letnje/zimsko računanje vremena se ne primenjuje uopšte.
+
+`derive_slots(..., tz_offset_hours: int = 2)` je deklarisan i opisan u docstring-u, ali se **u telu funkcije nigde ne koristi** — fiksan offset ionako ne bi bio rešenje, jer §2.7.3 traži `ZoneInfo(profile.timezone)`, ne konstantu.
+
+`AvailabilityProfile.timezone` (`String(64)`, default `Europe/Belgrade`) **postoji u bazi i ne čita se nigde pri generisanju slotova**.
+
+**Popravka pripada Availability radu, pre nego što javno slanje zahteva uđe u produkciju** — dok su slotovi mock (vidi `TODO.md` R2.5), greška se ne vidi krajnjem korisniku, ali svaki test koji sada „prolazi" fiksira pogrešnu semantiku.
+
+### 5.2 Otvoreno odstupanje — D30: `generate_week` hardkoduje trajanje
+
+`BookingService.generate_week` (§2.7.5 `weekly_generator`) koristi:
+
+```python
+duration = timedelta(minutes=60)
+```
+
+kao uslov „da li slot staje pre kraja prozora". §2.6 kaže **„Nijedan rok nije hardkodovan u kodu; svi se čitaju iz baze"**, a §2.7.2 da trajanje ima tačno jedan izvor — `service_booking_configs.duration_minutes`.
+
+Profil ne zna trajanje ponude, pa je izbor nesporan samo ako se dokumentuje: generator materijalizuje **početke**, a ne zauzeća (`manual_availability_slots` od Commit-a 7 nema `ends_at`). Traži se odluka — ili se granica prozora računa iz najduže povezane `service_booking_configs.duration_minutes`, ili se `60` zameni konfigurabilnom vrednošću na profilu. Do tada je vrednost proizvoljna konstanta koja ćuti.
+
+`generate_week` uz to ponavlja D29 obrazac (`datetime.combine(..., tzinfo=UTC)` nad `start_local_time`).

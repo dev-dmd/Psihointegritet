@@ -24,6 +24,12 @@ export interface Therapist {
   nameAccusative: string;
   /** Nominative, e.g. „Usluge koje pruža {firstName}". */
   firstName: string;
+  /**
+   * Genitive case, for „Usluge kod {firstNameGenitive}" — Anja → Anje.
+   * Authored per person on purpose: Serbian case endings cannot be built
+   * programmatically, and a wrong ending misnames a real person.
+   */
+  firstNameGenitive: string;
   /** Instrumental case, for „razgovor sa {firstNameInstrumental}" — Anja → Anjom. */
   firstNameInstrumental: string;
   initials: string;

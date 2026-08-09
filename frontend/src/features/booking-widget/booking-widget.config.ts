@@ -14,7 +14,31 @@ export const defaultBookingWidgetCopy: BookingWidgetCopy = {
   bookLabel: "Zakaži",
   onlineLabel: "Online",
   inPersonLabel: "Uživo",
+  offeringsHeadingTemplate: "Usluge kod {name}",
+  otherTherapistsLabel: "Ostali terapeuti",
+  yourSelectionLabel: "Vaš izbor",
+  backLabel: "Nazad",
+  backAriaLabel: "Nazad na preporuke",
+  previousOfferingLabel: "Prethodna usluga",
+  nextOfferingLabel: "Sledeća usluga",
+  previousTherapistsLabel: "Prethodni terapeuti",
+  nextTherapistsLabel: "Sledeći terapeuti",
+  loadingOfferingsLabel: "Učitavanje usluga…",
+  noOfferingsMessage:
+    "Za izabranog terapeuta trenutno nema dostupnih usluga. Izaberite drugog terapeuta.",
+  availabilityErrorMessage:
+    "Termini trenutno nisu mogli da se učitaju. Pokušajte ponovo.",
 };
+
+/** Fills a single `{name}` placeholder without touching the rest of the copy. */
+export function formatBookingCopy(
+  template: string,
+  values: Record<string, string>,
+): string {
+  return template.replace(/\{(\w+)\}/g, (match, key: string) =>
+    key in values ? (values[key] ?? match) : match,
+  );
+}
 
 export const bookingWeekdayLabels = [
   "Pon",
@@ -113,4 +137,13 @@ export function monthGrid(month: Date): Array<Date | null> {
 
   while (days.length % 7 !== 0) days.push(null);
   return days;
+}
+
+/** Honours the OS "reduce motion" setting; safe in SSR and in jsdom. */
+export function prefersReducedMotion(): boolean {
+  return (
+    typeof window !== "undefined" &&
+    typeof window.matchMedia === "function" &&
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches
+  );
 }

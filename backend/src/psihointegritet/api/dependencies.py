@@ -99,3 +99,38 @@ async def require_superadmin(
 
 
 RequireSuperadmin = Annotated[StaffActor, Depends(require_superadmin)]
+
+
+async def require_staff(
+    identity: CurrentIdentity,
+    session: DatabaseSession,
+    settings: AppSettings,
+) -> StaffActor:
+    """Require an active staff role: ``org_admin``, ``therapist`` or superadmin.
+
+    ``resolve_staff_actor`` already refuses an account with no active
+    membership (``NO_ACTIVE_STAFF_ROLE``) and, per D-051, admits a platform
+    superadmin with or without membership rows — so resolving the actor *is*
+    the check. Nothing further is needed to express "superadmin, org_admin or
+    therapist".
+
+    Being authenticated by Clerk is deliberately **not** enough: a Clerk
+    account is any signed-in visitor, while these routes approve requests and
+    cancel other people's appointments.
+
+    Ownership rules (a therapist may only touch their own appointments) are a
+    separate, per-route concern and are not decided here.
+    """
+    try:
+        return await resolve_staff_actor(session, identity, settings.default_organization_slug)
+    except IntakeAuthorizationError as error:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail={
+                "code": "STAFF_REQUIRED",
+                "message": staff_authorization_message(error),
+            },
+        ) from error
+
+
+RequireStaff = Annotated[StaffActor, Depends(require_staff)]
