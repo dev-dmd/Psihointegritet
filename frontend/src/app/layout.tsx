@@ -29,7 +29,7 @@ export const metadata: Metadata = {
   description:
     "Psihointegritet povezuje psihoterapiju, savetovanje, edukativne sadržaje, radionice i programe ličnog razvoja — online i uživo.",
 };
-
+// RootLayout is a Server Component by default. If you want to use a Client Component inside it, you need to add the "use client" directive at the top of the file.
 export default function RootLayout({
   children,
 }: Readonly<{
