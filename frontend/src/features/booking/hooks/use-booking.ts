@@ -89,10 +89,10 @@ export function useAcceptAlternative() {
 
 export const staffBookingQueryKeys = {
   all: ["staff", "booking"] as const,
-  requests: (params?: { therapist_id?: string; status?: string }) =>
+  requests: (params?: { therapist_profile_id?: string; status?: string }) =>
     [...staffBookingQueryKeys.all, "requests", params] as const,
   appointments: (params?: {
-    therapist_id?: string;
+    therapist_profile_id?: string;
     date_from?: string;
     date_until?: string;
   }) => [...staffBookingQueryKeys.all, "appointments", params] as const,
@@ -100,7 +100,7 @@ export const staffBookingQueryKeys = {
 
 /** Fetch appointment requests for staff review. */
 export function useStaffAppointmentRequests(params?: {
-  therapist_id?: string;
+  therapist_profile_id?: string;
   status?: string;
 }) {
   return useQuery({

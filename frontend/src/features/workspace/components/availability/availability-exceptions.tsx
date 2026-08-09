@@ -3,19 +3,24 @@
 import { useState } from "react";
 
 import { formatDateSr } from "@/helpers/format-date";
+import type { Appointment } from "@/lib/api/booking";
 import {
   useAvailabilityExceptions,
   useCreateAvailabilityException,
   useDeleteAvailabilityException,
 } from "../../hooks/use-availability";
+import { reasonLabel } from "../../availability-model";
+import { useExceptionConflicts } from "../../hooks/use-exception-conflicts";
+import { AvailabilityConflictModal } from "./availability-conflict-modal";
 import {
-  exceptionReasons,
-  isReasonClientVisible,
-  reasonLabel,
-} from "../../availability-model";
+  AvailabilityExceptionForm,
+  type ExceptionDraft,
+} from "./availability-exception-form";
 
 interface AvailabilityExceptionsProps {
   therapistProfileId: string;
+  /** `manual_slots` cannot express extra availability as an interval. */
+  manualMode?: boolean;
 }
 
 function isoDay(offsetDays: number): string {
@@ -26,95 +31,84 @@ function isoDay(offsetDays: number): string {
 }
 
 /**
+ * A whole-day absence in the therapist's own zone.
+ *
+ * `${date}T00:00:00Z` — the previous shape — is 02:00 in Belgrade, so the first
+ * two hours of the day stayed bookable. Building the boundary from a local
+ * `Date` lets the runtime apply the correct offset, DST included.
+ */
+function localDayBoundary(day: string, endOfDay: boolean): string {
+  const [year, month, date] = day.split("-").map(Number);
+  const local = endOfDay
+    ? new Date(year ?? 0, (month ?? 1) - 1, date ?? 1, 23, 59, 59)
+    : new Date(year ?? 0, (month ?? 1) - 1, date ?? 1, 0, 0, 0);
+  return local.toISOString();
+}
+
+/**
  * Layer 3 — non-working days, annual leave and one-off absences.
  *
- * Colleagues see the reason so the team can plan; only annual leave is ever
- * shown to a client (CTO, 2026-08-09), which is why the reason list carries an
- * explicit visibility flag rather than a free-text field.
+ * An exception never cancels a booked session: when one covers confirmed
+ * appointments the therapist is asked to confirm and contact those clients
+ * (handoff §7.5).
  */
 export function AvailabilityExceptions({
   therapistProfileId,
+  manualMode = false,
 }: AvailabilityExceptionsProps) {
   const [from, setFrom] = useState(() => isoDay(0));
   const [until, setUntil] = useState(() => isoDay(180));
-  const [reason, setReason] = useState("vacation");
+  const [pendingDraft, setPendingDraft] = useState<ExceptionDraft | null>(null);
+  const [conflicts, setConflicts] = useState<Appointment[]>([]);
 
   const exceptions = useAvailabilityExceptions(therapistProfileId, from, until);
   const create = useCreateAvailabilityException();
   const remove = useDeleteAvailabilityException();
+  const checkConflicts = useExceptionConflicts();
 
-  const [newFrom, setNewFrom] = useState(() => isoDay(1));
-  const [newUntil, setNewUntil] = useState(() => isoDay(1));
-
-  const add = () => {
+  const persist = (draft: ExceptionDraft) => {
     create.mutate({
       therapist_profile_id: therapistProfileId,
-      // Whole calendar days: the therapist is away, not away "from 09:00".
       kind: "unavailable",
-      starts_at: `${newFrom}T00:00:00Z`,
-      ends_at: `${newUntil}T23:59:59Z`,
-      reason_code: reason,
+      starts_at: localDayBoundary(draft.from, false),
+      ends_at: localDayBoundary(draft.until, true),
+      reason_code: draft.reasonCode,
+      note: draft.note.trim() === "" ? null : draft.note.trim(),
+      client_visible: draft.clientVisible,
     });
+  };
+
+  const submit = async (draft: ExceptionDraft) => {
+    const booked = await checkConflicts.mutateAsync({
+      therapistProfileId,
+      startsAt: localDayBoundary(draft.from, false),
+      endsAt: localDayBoundary(draft.until, true),
+    });
+    if (booked.length > 0) {
+      setPendingDraft(draft);
+      setConflicts(booked);
+      return;
+    }
+    persist(draft);
   };
 
   return (
     <div className="flex flex-col gap-3.5">
-      <div className="rounded-card border-forest/25 bg-forest text-canvas border px-5 py-5">
-        <div className="text-canvas/70 mb-3 text-[11.5px] font-semibold tracking-[0.14em] uppercase">
-          Dodaj neradne dane
-        </div>
-        <div className="flex flex-wrap items-end gap-3">
-          <label className="flex flex-col gap-1 text-[12.5px] font-semibold">
-            Od
-            <input
-              type="date"
-              value={newFrom}
-              onChange={(event) => setNewFrom(event.target.value)}
-              className="border-canvas/30 text-canvas min-h-9 rounded-lg border bg-transparent px-3 text-[13.5px] outline-none"
-            />
-          </label>
-          <label className="flex flex-col gap-1 text-[12.5px] font-semibold">
-            Do
-            <input
-              type="date"
-              value={newUntil}
-              onChange={(event) => setNewUntil(event.target.value)}
-              className="border-canvas/30 text-canvas min-h-9 rounded-lg border bg-transparent px-3 text-[13.5px] outline-none"
-            />
-          </label>
-          <label className="flex flex-col gap-1 text-[12.5px] font-semibold">
-            Razlog
-            <select
-              value={reason}
-              onChange={(event) => setReason(event.target.value)}
-              className="border-canvas/30 text-canvas min-h-9 rounded-lg border bg-transparent px-3 text-[13.5px] outline-none"
-            >
-              {exceptionReasons.map((item) => (
-                <option
-                  key={item.code}
-                  value={item.code}
-                  className="text-coffee"
-                >
-                  {item.label}
-                </option>
-              ))}
-            </select>
-          </label>
-          <button
-            type="button"
-            onClick={add}
-            disabled={create.isPending || newUntil < newFrom}
-            className="bg-canvas text-forest min-h-9 cursor-pointer rounded-full px-5 text-[13px] font-semibold transition-opacity disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            {create.isPending ? "Dodajem…" : "Dodaj"}
-          </button>
-        </div>
-        <p className="text-canvas/70 mt-3 text-[12.5px] leading-[1.5]">
-          {isReasonClientVisible(reason)
-            ? "Klijenti će videti da ste na godišnjem odmoru."
-            : "Klijenti neće videti razlog — samo da termin nije dostupan. Kolege vide razlog."}
-        </p>
-      </div>
+      <AvailabilityExceptionForm
+        manualMode={manualMode}
+        isSubmitting={create.isPending || checkConflicts.isPending}
+        onSubmit={(draft) => void submit(draft)}
+      />
+
+      <AvailabilityConflictModal
+        open={pendingDraft !== null}
+        conflicts={conflicts}
+        onCancel={() => setPendingDraft(null)}
+        onConfirm={() => {
+          if (pendingDraft) persist(pendingDraft);
+          setPendingDraft(null);
+        }}
+      />
 
       <div className="rounded-card border-line bg-surface border px-5 py-4">
         <div className="mb-3 flex flex-wrap items-end justify-between gap-3">
@@ -162,7 +156,8 @@ export function AvailabilityExceptions({
                 </span>
                 <span className="text-ink-55 text-[12.5px]">
                   {reasonLabel(item.reason_code)}
-                  {isReasonClientVisible(item.reason_code)
+                  {item.note ? ` · ${item.note}` : ""}
+                  {item.client_visible
                     ? " · vidljivo klijentima"
                     : " · samo interno"}
                 </span>

@@ -29,14 +29,16 @@ export const availabilityModeHints: Record<AvailabilityMode, string> = {
 /**
  * Reasons a therapist can give for a non-working period.
  *
- * `clientVisible` is the whole point of the list: the team may see why a
- * colleague is away, but a client is only ever told about annual leave (CTO,
- * 2026-08-09). Anything else reaches the public side as plain unavailability
- * with no reason attached — a health or family matter must not leak through a
- * dropdown.
+ * `clientVisible` is only the **default** for the per-record toggle (D-072):
+ * annual leave is pre-checked because a client benefits from knowing the
+ * therapist is away and has not stopped working. Everything else starts
+ * private, and the therapist decides — a longer absence may be worth showing,
+ * a health matter never is.
+ *
+ * The free-text `note` is always internal, whatever this flag says.
  *
  * Client-facing endpoints do not expose exceptions at all yet; when one is
- * added, this flag has to be enforced on the backend, not here.
+ * added, `client_visible` has to be enforced on the backend, not here.
  */
 export interface ExceptionReason {
   code: string;
@@ -58,6 +60,7 @@ export function reasonLabel(code: string | null): string {
   return exceptionReasons.find((r) => r.code === code)?.label ?? code;
 }
 
+/** Default for the visibility toggle when a reason is picked. */
 export function isReasonClientVisible(code: string | null): boolean {
   if (code === null) return false;
   return exceptionReasons.find((r) => r.code === code)?.clientVisible ?? false;
@@ -182,4 +185,83 @@ export function validateWeek(week: WeekShifts): Record<number, string> {
     }
   }
   return errors;
+}
+
+// ── Card 1: grouped working hours ───────────────────────────────────────────
+
+export interface WorkingHoursGroup {
+  /** „Ponedeljak i sreda" — days sharing one identical interval. */
+  daysLabel: string;
+  /** „14:00 — 20:00" */
+  timeLabel: string;
+  /** „online" / „uživo" — omitted when every rule in the group agrees. */
+  formatLabel: string | null;
+  firstDay: number;
+}
+
+function joinDays(days: number[]): string {
+  const labels = days.map((day) => weekdayLabels[day] ?? String(day));
+  if (labels.length === 1) return labels[0] ?? "";
+  const last = labels[labels.length - 1] ?? "";
+  return `${labels.slice(0, -1).join(", ")} i ${last}`;
+}
+
+/**
+ * Collapses recurring rules into one row per identical interval, as the design
+ * shows them: „Ponedeljak i sreda · 14:00 — 20:00".
+ *
+ * Times are printed exactly as stored — they are local wall clock in the
+ * profile's zone (ADR-015 §2.7.3), so converting anything here would undo the
+ * whole point of storing them that way.
+ */
+export function groupWorkingHours(
+  rules: {
+    day_of_week: number;
+    start_local_time: string;
+    end_local_time: string;
+    format: string;
+  }[],
+): WorkingHoursGroup[] {
+  const buckets = new Map<
+    string,
+    { days: Set<number>; group: WorkingHoursGroup }
+  >();
+
+  for (const rule of rules) {
+    const start = toInputTime(rule.start_local_time);
+    const end = toInputTime(rule.end_local_time);
+    const key = `${start}-${end}-${rule.format}`;
+    const existing = buckets.get(key);
+    if (existing) {
+      existing.days.add(rule.day_of_week);
+      continue;
+    }
+    buckets.set(key, {
+      days: new Set([rule.day_of_week]),
+      group: {
+        daysLabel: "",
+        timeLabel: `${start} — ${end}`,
+        formatLabel: rule.format === "online" ? "online" : "uživo",
+        firstDay: rule.day_of_week,
+      },
+    });
+  }
+
+  const groups: WorkingHoursGroup[] = [];
+  for (const { days, group } of buckets.values()) {
+    const sorted = [...days].sort((left, right) => left - right);
+    groups.push({
+      ...group,
+      daysLabel: joinDays(sorted),
+      firstDay: sorted[0] ?? 0,
+    });
+  }
+
+  // A single format across the whole week needs no per-row annotation.
+  const formats = new Set(groups.map((group) => group.formatLabel));
+  const annotate = formats.size > 1;
+
+  return groups
+    .map((group) => (annotate ? group : { ...group, formatLabel: null }))
+    .sort((left, right) => left.firstDay - right.firstDay);
 }

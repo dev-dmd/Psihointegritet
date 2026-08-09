@@ -40,11 +40,26 @@ def test_clerk_ids_are_unique_across_the_team() -> None:
             assert owner == key, f"{clerk_id} is claimed by both {owner} and {key}"
 
 
-def test_every_therapist_holds_both_roles_per_d026() -> None:
+def test_every_clinician_holds_the_therapist_role() -> None:
+    """A therapist profile without the therapist role is a broken entry.
+
+    This used to demand `org_admin` too, because D-026 gave all three founding
+    therapists both. The 2026-08-09 team no longer works that way: Maria runs
+    the centre, Elsa and John see clients (D-074). `org_admin` opens Kompanije,
+    Usluge i cene, Terapeuti and Podešavanja and lets the holder read a
+    colleague's schedule, so it is now asserted per person rather than blanket.
+    """
     for key, person in TEAM.items():
         if person.therapist_slug is None:
             continue
-        assert person.roles == frozenset({MembershipRole.ORG_ADMIN, MembershipRole.THERAPIST}), key
+        assert MembershipRole.THERAPIST in person.roles, key
+
+    admins = {key for key, person in TEAM.items() if MembershipRole.ORG_ADMIN in person.roles}
+    assert "maria" in admins, "the centre needs an administrator"
+    assert admins.isdisjoint({"elsa", "john"}), (
+        "Elsa and John are staff clinicians; org_admin would hand them the "
+        "business surfaces and their colleagues' schedules"
+    )
 
 
 def test_the_platform_operator_is_an_admin_but_never_a_clinician() -> None:
@@ -57,11 +72,32 @@ def test_the_platform_operator_is_an_admin_but_never_a_clinician() -> None:
         assert person.therapist_slug is None, person.key
 
 
-def test_no_production_ids_are_recorded_yet() -> None:
-    # Production Clerk has no accounts (O-17/O-18); a value here would be a
-    # guess, and a guess would provision the wrong person.
-    for key, person in TEAM.items():
+def test_production_ids_exist_only_for_the_current_team() -> None:
+    """O-17/O-18 opened for the incoming team on 2026-08-09, not for everyone.
+
+    The founding three never had production accounts, so a value there would be
+    a guess — and a guess provisions the wrong person.
+    """
+    for key in ("maria", "elsa", "john"):
+        person = member(key)
+        assert person is not None, key
+        assert person.clerk_id_for(CLERK_PRODUCTION) is not None, key
+
+    for key in ("anja", "marija", "marjan"):
+        person = member(key)
+        assert person is not None, key
         assert person.clerk_id_for(CLERK_PRODUCTION) is None, key
+
+
+def test_development_and_production_ids_are_never_the_same_value() -> None:
+    # Two Clerk instances mean two separate accounts. The same string in both
+    # is a copy-paste, and it would send a production run at an id that cannot
+    # sign in there.
+    for key, person in TEAM.items():
+        development = person.clerk_id_for(CLERK_DEVELOPMENT)
+        production = person.clerk_id_for(CLERK_PRODUCTION)
+        if development is not None and production is not None:
+            assert development != production, key
 
 
 def test_development_ids_exist_for_the_accounts_that_were_created() -> None:
@@ -89,8 +125,14 @@ def test_only_production_resolves_to_the_production_clerk_instance() -> None:
 
 
 def test_known_keys_are_sorted_and_complete() -> None:
+    # Inventory, not a safety net: it fails whenever the team changes, which is
+    # the point — someone has to look. The three incoming accounts were added
+    # 2026-08-09 when Maria, Elsa and John replaced the founding therapists.
     assert known_keys() == (
         "anja",
+        "elsa",
+        "john",
+        "maria",
         "marija",
         "marjan",
         "milan",

@@ -56,6 +56,8 @@ const exceptionSchema = z.object({
   format: z.string().nullable(),
   location_id: z.string().nullable(),
   reason_code: z.string().nullable(),
+  note: z.string().nullable(),
+  client_visible: z.boolean(),
 });
 
 export type AvailabilityProfile = z.infer<typeof profileSchema>;
@@ -86,9 +88,22 @@ const myTherapistSchema = z.object({
   id: z.string(),
   slug: z.string(),
   display_name: z.string(),
+  /** A superadmin is standing in for this therapist (never in production). */
+  acting_as: z.boolean().default(false),
 });
 
 export type MyTherapistProfile = z.infer<typeof myTherapistSchema>;
+
+/** Therapists whose schedule the caller may open (superadmin sees the team). */
+export async function listAvailabilityTherapists(): Promise<
+  MyTherapistProfile[]
+> {
+  return request(
+    "/api/booking/staff/availability/therapists",
+    { method: "GET" },
+    z.array(myTherapistSchema),
+  );
+}
 
 /**
  * The browser only knows a Clerk user; the availability tables key on
@@ -215,6 +230,9 @@ export interface AvailabilityExceptionInput {
   format?: string | null;
   location_id?: string | null;
   reason_code?: string | null;
+  /** Internal detail — never shown to a client (D-072). */
+  note?: string | null;
+  client_visible?: boolean;
 }
 
 export async function createAvailabilityException(
@@ -235,4 +253,156 @@ export async function deleteAvailabilityException(
     { method: "DELETE" },
   );
   if (!response.ok) throw new Error("Brisanje izuzetka nije uspelo.");
+}
+
+// ── Layer 2: generated slots ────────────────────────────────────────────────
+
+const manualSlotSchema = z.object({
+  id: z.string(),
+  availability_profile_id: z.string(),
+  starts_at: z.string(),
+  format: z.string(),
+  location_id: z.string().nullable(),
+  source: z.string(),
+});
+
+export type ManualSlot = z.infer<typeof manualSlotSchema>;
+
+export async function listManualSlots(
+  profileId: string,
+  dateFrom: string,
+  dateUntil: string,
+): Promise<ManualSlot[]> {
+  const query = new URLSearchParams({
+    date_from: dateFrom,
+    date_until: dateUntil,
+  });
+  return request(
+    `/api/booking/staff/availability/manual-slots/${profileId}?${query.toString()}`,
+    { method: "GET" },
+    z.array(manualSlotSchema),
+  );
+}
+
+/** Materialises the recurring rules of one week into explicit starts. */
+export async function generateWeek(
+  profileId: string,
+  weekStart: string,
+): Promise<ManualSlot[]> {
+  const query = new URLSearchParams({ week_start: weekStart });
+  return request(
+    `/api/booking/staff/availability/profiles/${profileId}/generate-week?${query.toString()}`,
+    { method: "POST" },
+    z.array(manualSlotSchema),
+  );
+}
+
+export async function copyWeek(
+  profileId: string,
+  sourceWeekStart: string,
+  targetWeekStart: string,
+): Promise<ManualSlot[]> {
+  const query = new URLSearchParams({
+    source_week_start: sourceWeekStart,
+    target_week_start: targetWeekStart,
+  });
+  return request(
+    `/api/booking/staff/availability/profiles/${profileId}/copy-week?${query.toString()}`,
+    { method: "POST" },
+    z.array(manualSlotSchema),
+  );
+}
+
+export async function deleteManualSlot(slotId: string): Promise<void> {
+  const response = await fetch(
+    `/api/booking/staff/availability/manual-slots/${slotId}`,
+    { method: "DELETE" },
+  );
+  if (!response.ok) throw new Error("Brisanje termina nije uspelo.");
+}
+
+// ── Summary for the four profile cards ──────────────────────────────────────
+
+const reservedCapacitySchema = z.object({
+  company_name: z.string(),
+  day_of_week: z.number(),
+  start_local_time: z.string(),
+  end_local_time: z.string(),
+  format: z.string().nullable().default(null),
+  location_label: z.string().nullable().default(null),
+});
+
+const summarySchema = z.object({
+  therapist_profile_id: z.string(),
+  availability_profile_id: z.string().nullable(),
+  mode: z.string().nullable(),
+  timezone: z.string(),
+  min_lead_time_hours: z.number(),
+  cancellation_notice_hours: z.number(),
+  rules: z.array(ruleSchema),
+  week_start: z.string(),
+  derived_slot_count: z.number(),
+  service_id: z.string().nullable(),
+  duration_minutes: z.number(),
+  buffer_after_minutes: z.number(),
+  mixed_durations: z.boolean(),
+  exceptions: z.array(exceptionSchema),
+  reserved_capacity: z.array(reservedCapacitySchema),
+});
+
+export type AvailabilitySummary = z.infer<typeof summarySchema>;
+export type ReservedCapacity = z.infer<typeof reservedCapacitySchema>;
+
+export async function getAvailabilitySummary(
+  therapistProfileId: string,
+  weekStart: string,
+): Promise<AvailabilitySummary> {
+  const query = new URLSearchParams({
+    therapist_profile_id: therapistProfileId,
+    week_start: weekStart,
+  });
+  return request(
+    `/api/booking/staff/availability/summary?${query.toString()}`,
+    { method: "GET" },
+    summarySchema,
+  );
+}
+
+/**
+ * Replace a profile's whole week in one transaction. The previous flow deleted
+ * rules one by one and re-created them, so a failure halfway through left a
+ * half-written schedule.
+ */
+export async function replaceAvailabilityRules(
+  availabilityProfileId: string,
+  rules: AvailabilityRuleInput[],
+): Promise<AvailabilityRule[]> {
+  return request(
+    "/api/booking/staff/availability/rules/bulk",
+    {
+      method: "PUT",
+      headers: jsonHeaders,
+      body: JSON.stringify({
+        availability_profile_id: availabilityProfileId,
+        rules,
+      }),
+    },
+    z.array(ruleSchema),
+  );
+}
+
+export interface ManualSlotInput {
+  availability_profile_id: string;
+  starts_at: string;
+  format: string;
+}
+
+export async function createManualSlot(
+  payload: ManualSlotInput,
+): Promise<ManualSlot> {
+  return request(
+    "/api/booking/staff/availability/manual-slots",
+    { method: "POST", headers: jsonHeaders, body: JSON.stringify(payload) },
+    manualSlotSchema,
+  );
 }

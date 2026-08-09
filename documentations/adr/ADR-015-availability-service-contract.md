@@ -350,6 +350,83 @@ AttendanceStatus   = unknown | attended | client_no_show | therapist_no_show
 
 ---
 
+## 4A. Amandman 2 — 2026-08-09: format, kanali i lanac politika
+
+Povod: `HANDOFF-moj-profil-dostupnost.md` je pretpostavio da se dostupnost deli
+na profil „online" i profil „uživo Niš". Šema to ne dozvoljava
+(`uq_avail_profile_therapist_mode`), a ni ne treba — format nije osobina
+vremenske mreže.
+
+### 4A.1 Efektivni format je presek, ne polje
+
+```
+Service.allowedFormats
+  ∩ TherapistServiceOffering.allowedFormats
+  ∩ AvailabilityRule.channels
+```
+
+Usluga određuje **koji su formati uopšte dozvoljeni**; ponuda terapeuta sužava
+na ono što on stvarno pruža; pravilo dostupnosti određuje **kada je koji format
+stvarno dostupan**. Slot ništa ne bira ručno — nasleđuje rezultat.
+
+Primer: „Individualna psihoterapija" dozvoljava `[online, in_person]`, Anjina
+ponuda takođe, ali pravilo pon 09–13 nosi `online`, a uto 14–18 `in_person:nis`.
+Korisnik u ponedeljak vidi samo online, u utorak samo uživo — iako usluga
+podržava oba.
+
+### 4A.2 Profil se ne deli po formatu
+
+`uq_avail_profile_therapist_mode` **ostaje**. Jedan `hourly_grid` profil bez
+obzira na broj formata. Zabranjeno kao identitet profila:
+
+```
+❌ hourly_grid-online
+❌ hourly_grid-in-person-nis
+✅ jedan hourly_grid profil + više pravila/kanala
+```
+
+### 4A.3 Kanali po intervalu — kada zatreba
+
+Dok jedan interval nosi tačno jedan format, sadašnji model (`format`,
+`location_id` na `availability_rules`) je dovoljan i ostaje.
+
+Onog trenutka kada isti interval treba da primi klijenta **ili** online **ili**
+uživo, interval se odvaja od kanala:
+
+```
+availability_rules            → id, profile_id, weekday, starts_at, ends_at
+availability_rule_channels    → rule_id, format, location_id (nullable)
+```
+
+Tada 09:00–10:00 ima dve opcije, ali **jedan** kapacitet terapeuta. Da dva
+formata ne bi napravila dva nezavisna kapaciteta, hold ide na occurrence, ne na
+opciju:
+
+```
+AvailabilityOccurrence  → therapist_id, starts_at, ends_at, capacity_key
+AvailabilityOption      → occurrence_id, format, location_id
+```
+
+Zahtev za online termin u 10:00 čini isti termin uživo nedostupnim za drugi
+zahtev, po zaključanoj BDS-007B politici. Ovo je **odloženo**, ne odbačeno.
+
+### 4A.4 Rokovi su default-i, ne konačne vrednosti
+
+Ovo dopunjuje anotaciju uz §2.6. `min_lead_time_hours` i
+`cancellation_notice_hours` na profilu su **podrazumevane vrednosti**. Efektivna
+vrednost:
+
+```
+channel override ?? offering override ?? profil ?? organizacija
+```
+
+Rok otkazivanja je poslovna politika **usluge**, ne osobina vremenske mreže —
+zato ne treba duplirati profile samo da bi online i uživo jednog dana mogli
+imati različita pravila. Kada `Appointment` nastane, čuva **verziju politike**
+koja je tada važila.
+
+---
+
 ## 5. Status implementacije — 2026-08-09
 
 Ova sekcija razdvaja **ugovor** (§2, obavezujući) od **zatečenog koda**. ADR se ne menja zbog koda; kod se popravlja prema ADR-u. Utvrđeno čitanjem koda posle Commit-a 7.

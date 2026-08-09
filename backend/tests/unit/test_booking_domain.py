@@ -10,6 +10,7 @@ from uuid import UUID
 
 import pytest
 
+from psihointegritet.core.config import Environment, Settings
 from psihointegritet.modules.booking.domain import (
     AvailabilityWindow,
     CandidateStart,
@@ -602,3 +603,29 @@ class TestLocalWallClockToUtc:
             [self._belgrade_window(date(2026, 1, 12))], [], [], date(2026, 1, 12), date(2026, 1, 12)
         )
         assert len(summer) == len(winter) == 4
+
+
+# ── Superadmin schedule access (environment allowlist) ──────────────────────
+
+
+class TestSuperadminMayActAsTherapist:
+    """The privilege is an allowlist, so an unknown environment loses it.
+
+    Written as its own test because `not is_production` would have quietly
+    granted the privilege to any future environment name.
+    """
+
+    def _settings(self, environment: str) -> Settings:
+        return Settings(environment=Environment(environment))
+
+    def test_development_and_staging_may(self) -> None:
+        assert self._settings("development").superadmin_may_act_as_therapist
+        assert self._settings("staging").superadmin_may_act_as_therapist
+
+    def test_production_may_not(self) -> None:
+        assert not self._settings("production").superadmin_may_act_as_therapist
+
+    def test_every_environment_is_decided_explicitly(self) -> None:
+        # If someone adds an environment, this fails until they choose a side.
+        decided = {Environment.DEVELOPMENT, Environment.STAGING, Environment.PRODUCTION}
+        assert set(Environment) == decided

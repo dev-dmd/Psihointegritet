@@ -1,7 +1,6 @@
 "use client";
 
 import Image from "next/image";
-import Link from "next/link";
 import { useState } from "react";
 
 import { KV } from "@/components/panel/kv";
@@ -11,11 +10,8 @@ import { Chip } from "@/components/ui/chip";
 import { formatRsd, serviceCatalog } from "@/content/services";
 import { findTherapist } from "@/content/therapists";
 
-import {
-  availabilityLayers,
-  matchingPreferences,
-  myProfileSlug,
-} from "../data";
+import { matchingPreferences, myProfileSlug } from "../data";
+import { AvailabilityOverviewCards } from "./availability/availability-overview-cards";
 import { LockIcon } from "./icons";
 import { PageHeader } from "./page-header";
 
@@ -185,51 +181,7 @@ export function ScreenProfil() {
         </div>
       ) : null}
 
-      {tab === "dostupnost" ? (
-        <div className="flex flex-col gap-3.5">
-          <div className="bg-meadow/22 border-sage/30 text-coffee rounded-tile border px-4 py-3 text-[13px] leading-[1.5]">
-            <span className="font-bold">Četiri odvojena sloja:</span> radno
-            vreme → slotovi → izuzeci → rezervisani kapacitet. Booking engine ih
-            čita zasebno — raspoloživost nije isto što i termin.
-          </div>
-          <div className="grid grid-cols-1 gap-3.5 lg:grid-cols-2">
-            {availabilityLayers.map((layer) => {
-              // Layers 1 and 3 are editable; 2 is generated from 1 and 4 is
-              // company capacity (R4), so both stay explainer cards for now.
-              const editable = layer.index === 1 || layer.index === 3;
-              return (
-                <div
-                  key={layer.index}
-                  className="rounded-card border-line bg-surface flex flex-col justify-between border px-6 py-5"
-                >
-                  <div>
-                    <div className="text-sage mb-2.5 text-[11.5px] font-semibold tracking-[0.14em] uppercase">
-                      {layer.index} · {layer.title}
-                    </div>
-                    <p className="text-coffee/80 text-[13.5px] leading-[1.65] whitespace-pre-line">
-                      {layer.body}
-                    </p>
-                  </div>
-                  {editable ? (
-                    <Link
-                      href="/radni-prostor/profil/dostupnost"
-                      className="border-line text-coffee hover:border-sage mt-4 inline-flex min-h-10 w-fit items-center rounded-full border px-5 text-[13px] font-semibold no-underline transition-colors"
-                    >
-                      Uredi
-                    </Link>
-                  ) : (
-                    <span className="text-ink-55 mt-4 text-[12.5px] font-semibold">
-                      {layer.index === 2
-                        ? "Nastaje iz radnog vremena"
-                        : "Uskoro"}
-                    </span>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      ) : null}
+      {tab === "dostupnost" ? <AvailabilityOverviewCards /> : null}
     </section>
   );
 }

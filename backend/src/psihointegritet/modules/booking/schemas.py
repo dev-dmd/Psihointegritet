@@ -71,6 +71,10 @@ class MyTherapistProfileOut(BaseModel):
     id: UUID
     slug: str
     display_name: str
+    #: True when a superadmin is acting on someone else's schedule outside
+    #: production. The UI must say so — an operator must never think they are
+    #: editing their own week.
+    acting_as: bool = False
 
 
 class AvailabilityProfileIn(BaseModel):
@@ -150,6 +154,8 @@ class AvailabilityExceptionIn(BaseModel):
     format: str | None = Field(default=None, min_length=2, max_length=32)
     location_id: UUID | None = None
     reason_code: str | None = Field(default=None, max_length=64)
+    note: str | None = Field(default=None, max_length=200)
+    client_visible: bool = False
 
 
 class AvailabilityExceptionOut(BaseModel):
@@ -165,7 +171,66 @@ class AvailabilityExceptionOut(BaseModel):
     format: str | None
     location_id: UUID | None
     reason_code: str | None
+    note: str | None
+    client_visible: bool
     created_at: datetime
+
+
+class AvailabilityRulesBulkIn(BaseModel):
+    """Full replacement of one profile's recurring rules.
+
+    Replace, not merge: the list sent is the schedule after saving. The old
+    flow deleted rules one by one and re-created them, so a failure halfway
+    through left a half-written week.
+    """
+
+    availability_profile_id: UUID
+    #: Required on purpose: an empty schedule must be sent as an explicit `[]`,
+    #: so a malformed body can never be read as "clear this therapist's week".
+    rules: list[AvailabilityRuleIn] = Field(max_length=200)
+
+
+class ReservedCapacityOut(BaseModel):
+    """Company-reserved capacity (BDS-013 / D-073).
+
+    Always empty until R4 — the seam exists so the profile card can render its
+    real empty state instead of a placeholder.
+    """
+
+    company_name: str
+    day_of_week: int
+    start_local_time: str
+    end_local_time: str
+    format: str | None = None
+    location_label: str | None = None
+
+
+class AvailabilitySummaryOut(BaseModel):
+    """Everything the four profile cards need, in one call.
+
+    `derived_slot_count` goes through the same `get_available_slots` path the
+    public booking uses, for the offering named in `service_id` — otherwise the
+    number on the card would be a second, quietly diverging calculation.
+    """
+
+    therapist_profile_id: UUID
+    availability_profile_id: UUID | None
+    mode: str | None
+    timezone: str
+    min_lead_time_hours: int
+    cancellation_notice_hours: int
+    rules: list[AvailabilityRuleOut]
+    week_start: date
+    derived_slot_count: int
+    #: Offering the count was computed for; `None` when no config exists yet.
+    service_id: UUID | None
+    duration_minutes: int
+    buffer_after_minutes: int
+    #: Offerings on this profile do not share one duration, so the card must
+    #: say "trajanje i pauza zavise od usluge" instead of naming minutes.
+    mixed_durations: bool
+    exceptions: list[AvailabilityExceptionOut]
+    reserved_capacity: list[ReservedCapacityOut]
 
 
 # ── Manual Availability Slot (ADR-015 v2 §2.7.5) ────────────────────────────

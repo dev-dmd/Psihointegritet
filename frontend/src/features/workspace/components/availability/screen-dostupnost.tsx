@@ -1,7 +1,11 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import type { Route } from "next";
+import Link from "next/link";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useCallback, useMemo, useState } from "react";
 
+import { StatusBadge } from "@/components/panel/status-badge";
 import { TabPills } from "@/components/panel/tab-pills";
 import { cn } from "@/helpers/cn";
 import {
@@ -15,25 +19,34 @@ import {
   emptyWeek,
   validateWeek,
   weekFromRules,
+  weekTemplates,
   type WeekShifts,
 } from "../../availability-model";
 import {
   useAvailabilityProfiles,
   useAvailabilityRules,
-  useCreateAvailabilityRule,
-  useDeleteAvailabilityRule,
+  useAvailabilityTherapists,
   useMyTherapistProfile,
+  useReplaceAvailabilityRules,
   useSaveAvailabilityProfile,
 } from "../../hooks/use-availability";
 import { PageHeader } from "../page-header";
 import { AvailabilityExceptions } from "./availability-exceptions";
 import { AvailabilitySettingsRow } from "./availability-settings-row";
+import { AvailabilitySlots } from "./availability-slots";
 import { AvailabilityWeekEditor } from "./availability-week-editor";
 
 const layerTabs = [
   { id: "radno-vreme", label: "1 · Radno vreme" },
+  { id: "slotovi", label: "2 · Termini" },
   { id: "izuzeci", label: "3 · Izuzeci" },
-];
+] as const;
+
+type LayerTab = (typeof layerTabs)[number]["id"];
+
+function isLayerTab(value: string | null): value is LayerTab {
+  return layerTabs.some((tab) => tab.id === value);
+}
 
 /**
  * Layers 1 and 3 of the four-layer availability model (design handoff §8.1).
@@ -41,10 +54,41 @@ const layerTabs = [
  * Layer 2 (generated slots) and layer 4 (company capacity) stay read-only
  * explainer cards on the profile overview until their own passes.
  */
-export function ScreenDostupnost() {
-  const [layer, setLayer] = useState("radno-vreme");
+export function ScreenDostupnost({
+  initialTab = null,
+}: {
+  initialTab?: string | null;
+} = {}) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const [layer, setLayer] = useState<LayerTab>(
+    isLayerTab(initialTab) ? initialTab : "radno-vreme",
+  );
+
+  // Keep the tab in the URL, not just in state: §2 wants a link to open one
+  // layer directly and the choice to survive a refresh. `replace` so the back
+  // button leaves the screen rather than walking the tabs.
+  const openLayer = useCallback(
+    (next: string) => {
+      if (!isLayerTab(next)) return;
+      setLayer(next);
+      const params = new URLSearchParams(searchParams.toString());
+      params.set("tab", next);
+      router.replace(`${pathname}?${params.toString()}` as Route, {
+        scroll: false,
+      });
+    },
+    [pathname, router, searchParams],
+  );
   const me = useMyTherapistProfile();
-  const therapistId = me.data?.id ?? null;
+  const therapists = useAvailabilityTherapists();
+
+  // A superadmin outside production may work on someone else's schedule, so the
+  // chosen therapist — not the signed-in account — decides what is edited.
+  const [pickedId, setPickedId] = useState<string | null>(null);
+  const therapistId = pickedId ?? me.data?.id ?? null;
+  const isStandIn = me.data?.acting_as === true;
 
   const profiles = useAvailabilityProfiles(therapistId);
   const profile = profiles.data?.[0] ?? null;
@@ -57,6 +101,9 @@ export function ScreenDostupnost() {
   const [week, setWeek] = useState<WeekShifts>(emptyWeek);
   const [saved, setSaved] = useState(false);
   const [syncedProfileId, setSyncedProfileId] = useState<string | null>(null);
+  const [appliedTemplateId, setAppliedTemplateId] = useState<string | null>(
+    null,
+  );
 
   // Seed the form from the server exactly once per profile, adjusting state
   // during render rather than in an effect. A refetch must not overwrite edits
@@ -74,11 +121,9 @@ export function ScreenDostupnost() {
   const hasErrors = Object.keys(errors).length > 0;
 
   const saveProfile = useSaveAvailabilityProfile(therapistId);
-  const createRule = useCreateAvailabilityRule(profile?.id ?? null);
-  const deleteRule = useDeleteAvailabilityRule(profile?.id ?? null);
+  const replaceRules = useReplaceAvailabilityRules(profile?.id ?? null);
 
-  const isBusy =
-    saveProfile.isPending || createRule.isPending || deleteRule.isPending;
+  const isBusy = saveProfile.isPending || replaceRules.isPending;
 
   const save = async () => {
     if (therapistId === null || hasErrors) return;
@@ -97,23 +142,28 @@ export function ScreenDostupnost() {
       },
     });
 
-    // Rules have no bulk endpoint yet: replace what changed, leave the rest.
-    const existing = rules.data ?? [];
-    for (const rule of existing) {
-      await deleteRule.mutateAsync(rule.id);
-    }
-    const today = new Date().toISOString().slice(0, 10);
-    for (const [dayKey, shifts] of Object.entries(week)) {
-      for (const shift of shifts) {
-        await createRule.mutateAsync({
-          availability_profile_id: savedProfile.id,
-          day_of_week: Number(dayKey),
-          start_local_time: shift.start,
-          end_local_time: mode === "manual_slots" ? shift.start : shift.end,
-          valid_from: today,
-          format: "online",
-        });
-      }
+    // One transaction replaces the whole week. The previous flow deleted each
+    // rule then re-created it, so a failure halfway through left the therapist
+    // with half a schedule.
+    // `manual_slots` has no recurring intervals at all — the therapist enters
+    // explicit starts in the Termini tab, and `get_available_slots` reads
+    // `manual_availability_slots` there, never rules. Writing a rule with
+    // `end == start` would also fail `ck_avail_rule_time_range`.
+    if (mode !== "manual_slots") {
+      const today = new Date().toISOString().slice(0, 10);
+      await replaceRules.mutateAsync({
+        availabilityProfileId: savedProfile.id,
+        rules: Object.entries(week).flatMap(([dayKey, shifts]) =>
+          shifts.map((shift) => ({
+            availability_profile_id: savedProfile.id,
+            day_of_week: Number(dayKey),
+            start_local_time: shift.start,
+            end_local_time: shift.end,
+            valid_from: today,
+            format: "online" as const,
+          })),
+        ),
+      });
     }
     setSaved(true);
   };
@@ -151,22 +201,63 @@ export function ScreenDostupnost() {
 
   return (
     <section className="animate-fade-up">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <PageHeader
-          title="Dostupnost"
-          description={`Raspored za ${me.data?.display_name ?? ""}. Raspoloživost nije isto što i termin.`}
-        />
-        {layer === "radno-vreme" ? saveButton : null}
-      </div>
+      <PageHeader
+        title="Dostupnost"
+        description="Radno vreme, ponuđeni termini i izuzeci — osnova javnog bookinga."
+        actions={
+          <>
+            <StatusBadge tone={profile?.enabled === false ? "wait" : "ok"}>
+              {profile?.enabled === false ? "Pauziran" : "Aktivan raspored"}
+            </StatusBadge>
+            <Link
+              href="/radni-prostor/profil"
+              className="text-forest hover:text-coffee text-[13px] font-semibold no-underline transition-colors"
+            >
+              Nazad na profil
+            </Link>
+            {layer === "radno-vreme" ? saveButton : null}
+          </>
+        }
+      />
 
       <TabPills
-        tabs={layerTabs}
+        tabs={[...layerTabs]}
         activeId={layer}
-        onChange={setLayer}
+        onChange={openLayer}
         className="mb-5"
       />
 
-      {layer === "radno-vreme" ? (
+      {isStandIn || (therapists.data ?? []).length > 1 ? (
+        <div className="rounded-card border-warm/45 bg-warm/20 text-coffee mb-3.5 flex flex-wrap items-center gap-3 border px-5 py-3.5">
+          <span className="text-[12.5px] font-semibold">
+            {isStandIn
+              ? "Vaš nalog nije terapeut — uređujete tuđi raspored (samo van produkcije)."
+              : "Izaberite čiji raspored uređujete."}
+          </span>
+          <select
+            aria-label="Terapeut"
+            value={therapistId ?? ""}
+            onChange={(event) => {
+              setPickedId(event.target.value);
+              setSyncedProfileId(null);
+            }}
+            className="border-line text-coffee min-h-9 rounded-lg border bg-transparent px-3 text-[13px] outline-none"
+          >
+            {(therapists.data ?? []).map((item) => (
+              <option key={item.id} value={item.id}>
+                {item.display_name}
+              </option>
+            ))}
+          </select>
+        </div>
+      ) : null}
+
+      {layer === "slotovi" ? (
+        <AvailabilitySlots
+          profileId={profile?.id ?? null}
+          manualMode={mode === "manual_slots"}
+        />
+      ) : layer === "radno-vreme" ? (
         <div className="flex flex-col gap-3.5">
           <AvailabilitySettingsRow
             mode={mode}
@@ -180,17 +271,45 @@ export function ScreenDostupnost() {
             onStepChange={setStep}
             onLeadChange={setLeadHours}
             onCancelChange={setCancelHours}
-            onOpenExceptions={() => setLayer("izuzeci")}
+            onOpenExceptions={() => openLayer("izuzeci")}
           />
 
-          {rules.isPending && profile ? (
+          {mode === "manual_slots" ? (
+            <div className="rounded-card border-line bg-surface border px-5 py-4">
+              <p className="text-coffee text-[13.5px] leading-[1.6]">
+                U ovom režimu nema nedeljnog radnog vremena — svaki termin
+                birate ručno u tabu{" "}
+                <button
+                  type="button"
+                  onClick={() => openLayer("slotovi")}
+                  className="text-forest cursor-pointer font-semibold underline"
+                >
+                  Termini
+                </button>
+                . Ovde podešavate samo rokove i način nuđenja.
+              </p>
+            </div>
+          ) : rules.isPending && profile ? (
             <p className="text-ink-55 text-[13px]">Učitavanje rasporeda…</p>
           ) : (
             <AvailabilityWeekEditor
               week={week}
               errors={errors}
-              manualMode={mode === "manual_slots"}
-              onChange={setWeek}
+              appliedTemplateId={appliedTemplateId}
+              onApplyTemplate={(templateId) => {
+                const template = weekTemplates.find(
+                  (candidate) => candidate.id === templateId,
+                );
+                if (!template) return;
+                setWeek(template.build());
+                setAppliedTemplateId(templateId);
+                setSaved(false);
+              }}
+              onChange={(next) => {
+                setWeek(next);
+                setAppliedTemplateId(null);
+                setSaved(false);
+              }}
             />
           )}
 
@@ -210,7 +329,10 @@ export function ScreenDostupnost() {
           </div>
         </div>
       ) : (
-        <AvailabilityExceptions therapistProfileId={therapistId} />
+        <AvailabilityExceptions
+          therapistProfileId={therapistId}
+          manualMode={mode === "manual_slots"}
+        />
       )}
     </section>
   );

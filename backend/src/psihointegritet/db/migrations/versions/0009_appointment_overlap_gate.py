@@ -37,6 +37,24 @@ _RANGE_CHECK_NAME = "ck_appointments_valid_time_range"
 _EXCLUDE_NAME = "appointments_no_therapist_overlap"
 
 
+def _constraint_exists(conn: sa.engine.Connection, name: str) -> bool:
+    return bool(
+        conn.scalar(
+            sa.text(
+                """
+                SELECT EXISTS (
+                    SELECT 1
+                    FROM pg_constraint
+                    WHERE conrelid = 'appointments'::regclass
+                      AND conname = :constraint_name
+                )
+                """
+            ),
+            {"constraint_name": name},
+        )
+    )
+
+
 def upgrade() -> None:
     conn = op.get_bind()
     op.execute("CREATE EXTENSION IF NOT EXISTS btree_gist")
@@ -75,24 +93,26 @@ def upgrade() -> None:
             f"re-running this migration:\n{report}"
         )
 
-    op.create_check_constraint(
-        op.f(_RANGE_CHECK_NAME),
-        "appointments",
-        "end_time > start_time",
-    )
-    op.execute(
-        f"""
-        ALTER TABLE appointments
-        ADD CONSTRAINT {_EXCLUDE_NAME}
-        EXCLUDE USING gist (
-            organization_id WITH =,
-            therapist_profile_id WITH =,
-            tstzrange(start_time, end_time, '[)') WITH &&
+    if not _constraint_exists(conn, _RANGE_CHECK_NAME):
+        op.create_check_constraint(
+            op.f(_RANGE_CHECK_NAME),
+            "appointments",
+            "end_time > start_time",
         )
-        WHERE (status IN {_GUARDED_STATUSES!r})
-        DEFERRABLE INITIALLY IMMEDIATE
-        """
-    )
+    if not _constraint_exists(conn, _EXCLUDE_NAME):
+        op.execute(
+            f"""
+            ALTER TABLE appointments
+            ADD CONSTRAINT {_EXCLUDE_NAME}
+            EXCLUDE USING gist (
+                organization_id WITH =,
+                therapist_profile_id WITH =,
+                tstzrange(start_time, end_time, '[)') WITH &&
+            )
+            WHERE (status IN {_GUARDED_STATUSES!r})
+            DEFERRABLE INITIALLY IMMEDIATE
+            """
+        )
 
 
 def downgrade() -> None:

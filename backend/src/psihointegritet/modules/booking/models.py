@@ -318,6 +318,18 @@ class AvailabilityException(Base):
     format: Mapped[str | None] = mapped_column(String(32), nullable=True)
     location_id: Mapped[UUID | None] = mapped_column(Uuid(as_uuid=True), nullable=True)
     reason_code: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    #: Free-text detail such as "Konferencija · Beograd". **Always internal** —
+    #: D-072 keeps it off every client-facing surface, so a health or family
+    #: matter typed here can never leak through a public endpoint.
+    note: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    #: Whether a client may be told this absence exists (never *why* beyond the
+    #: controlled `reason_code` label). Annual leave defaults to visible in the
+    #: UI so clients know the therapist is away and has not stopped working;
+    #: the column itself defaults to false, so nothing becomes public by
+    #: accident (D-072).
+    client_visible: Mapped[bool] = mapped_column(
+        default=False, server_default="false", nullable=False
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )

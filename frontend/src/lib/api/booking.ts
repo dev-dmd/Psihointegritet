@@ -217,11 +217,13 @@ export async function acceptAlternative(
 // ── Staff endpoints (through BFF — session auth forwarded) ───────────────────
 
 export async function listStaffAppointmentRequests(params?: {
-  therapist_id?: string;
+  therapist_profile_id?: string;
   status?: string;
 }): Promise<AppointmentRequest[]> {
   const qs = new URLSearchParams();
-  if (params?.therapist_id) qs.set("therapist_id", params.therapist_id);
+  if (params?.therapist_profile_id) {
+    qs.set("therapist_profile_id", params.therapist_profile_id);
+  }
   if (params?.status) qs.set("status", params.status);
   const q = qs.toString();
   return requestJson(
@@ -246,13 +248,22 @@ export async function reviewRequest(
   );
 }
 
+/**
+ * The parameter is `therapist_profile_id`, not `therapist_id`: FastAPI ignores
+ * unknown query params, so the old name silently returned *every* therapist's
+ * appointments instead of filtering to one.
+ */
 export async function listStaffAppointments(params?: {
-  therapist_id?: string;
+  therapist_profile_id?: string;
+  status?: string;
   date_from?: string;
   date_until?: string;
 }): Promise<Appointment[]> {
   const qs = new URLSearchParams();
-  if (params?.therapist_id) qs.set("therapist_id", params.therapist_id);
+  if (params?.therapist_profile_id) {
+    qs.set("therapist_profile_id", params.therapist_profile_id);
+  }
+  if (params?.status) qs.set("status", params.status);
   if (params?.date_from) qs.set("date_from", params.date_from);
   if (params?.date_until) qs.set("date_until", params.date_until);
   const q = qs.toString();
