@@ -290,6 +290,8 @@ O-24 više nije otvorena arhitektonska blokada. Implementacija se prati u `KOMPA
 ### O-08 · S7 — Pravila otkazivanja
 
 > **Gde piše:** MP §13 S7 · Proposal §4 #7 · **Blokira:** seed `cancellation_policies` (M2.3)
+>
+> ⚠️ **Napomena 2026-08-09 (D-070):** `cancellation_notice_hours` sada **postoji kao kolona po terapeutu** (`availability_profiles`, migracija `0023`, default 24) i podešava se na ekranu „Dostupnost". To je **samo skladište broja** — S7 i dalje nije rešen. Konačna pravila (šta se dešava pri kasnom otkazivanju, nedolasku, ko snosi trošak) i dalje čekaju Anjinu odluku i mogu suziti ili nadjačati vrednost po terapeutu.
 
 Nacrt iz materijala: otkazivanje 24 h ranije; kasnije se naplaćuje; kašnjenje skraćuje termin. Treba **potvrda** — ovo se seeduje u bazu i ulazi u pravnu stranicu.
 

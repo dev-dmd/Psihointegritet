@@ -61,6 +61,7 @@ from psihointegritet.modules.booking.schemas import (
     DerivedSlotOut,
     ManualAvailabilitySlotIn,
     ManualAvailabilitySlotOut,
+    MyTherapistProfileOut,
     ReviewAction,
     ServiceBookingConfigIn,
     ServiceBookingConfigOut,
@@ -68,6 +69,7 @@ from psihointegritet.modules.booking.schemas import (
     SlotHoldRequest,
     SlotQueryParams,
 )
+from psihointegritet.modules.guidance.models import TherapistMatchingProfile
 
 logger = get_logger(__name__)
 
@@ -163,6 +165,23 @@ class BookingService:
         await self._session.flush()
         return ServiceBookingConfigOut.model_validate(config)
 
+    async def get_therapist_profile_for_user(
+        self, organization_id: UUID, user_id: UUID
+    ) -> MyTherapistProfileOut | None:
+        """Resolve the therapist a staff account is assigned to, if any.
+
+        An ``org_admin`` who does not see clients has no matching profile; that
+        is a legitimate answer, not an error, so the caller decides what to do.
+        """
+        result = await self._session.execute(
+            select(TherapistMatchingProfile).where(
+                TherapistMatchingProfile.organization_id == organization_id,
+                TherapistMatchingProfile.assigned_user_id == user_id,
+            )
+        )
+        profile = result.scalar_one_or_none()
+        return None if profile is None else MyTherapistProfileOut.model_validate(profile)
+
     # ── Availability Profiles (ADR-015 v2) ────────────────────────────────
 
     async def create_availability_profile(
@@ -176,6 +195,7 @@ class BookingService:
             timezone=data.timezone,
             start_step_minutes=data.start_step_minutes,
             min_lead_time_hours=data.min_lead_time_hours,
+            cancellation_notice_hours=data.cancellation_notice_hours,
             enabled=data.enabled,
         )
         self._session.add(profile)

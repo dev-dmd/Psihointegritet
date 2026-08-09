@@ -58,6 +58,21 @@ class ServiceBookingConfigOut(BaseModel):
 # ── Availability Profile (ADR-015 v2 §2.7.2) ────────────────────────────────
 
 
+class MyTherapistProfileOut(BaseModel):
+    """Which therapist the signed-in staff member *is*.
+
+    The availability screens edit one therapist's schedule, and the browser only
+    knows a Clerk user. Resolving the link server-side keeps the mapping (and
+    the possibility of not being a therapist at all) out of the client.
+    """
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: UUID
+    slug: str
+    display_name: str
+
+
 class AvailabilityProfileIn(BaseModel):
     therapist_profile_id: UUID
     mode: str = Field(pattern=r"^(hourly_grid|flexible_grid|manual_slots)$")
@@ -65,6 +80,7 @@ class AvailabilityProfileIn(BaseModel):
     start_step_minutes: int | None = Field(default=None, ge=5, le=120)
     #: 0 disables the rule; the cap keeps a typo from hiding a whole month.
     min_lead_time_hours: int = Field(default=24, ge=0, le=720)
+    cancellation_notice_hours: int = Field(default=24, ge=0, le=720)
     enabled: bool = True
 
 
@@ -78,6 +94,7 @@ class AvailabilityProfileOut(BaseModel):
     timezone: str
     start_step_minutes: int | None
     min_lead_time_hours: int
+    cancellation_notice_hours: int
     enabled: bool
     created_at: datetime
     updated_at: datetime

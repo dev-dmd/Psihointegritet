@@ -28,6 +28,7 @@ from psihointegritet.modules.booking.schemas import (
     DerivedSlotOut,
     ManualAvailabilitySlotIn,
     ManualAvailabilitySlotOut,
+    MyTherapistProfileOut,
     ReviewAction,
     ServiceBookingConfigIn,
     ServiceBookingConfigOut,
@@ -191,6 +192,27 @@ async def upsert_booking_config(
     result = await svc.upsert_booking_config(org_id, data)
     await session.commit()
     return result
+
+
+@staff_router.get("/availability/me", response_model=MyTherapistProfileOut)
+async def get_my_therapist_profile(
+    actor: RequireStaff,
+    session: DatabaseSession,
+    settings: AppSettings,
+) -> MyTherapistProfileOut:
+    """Staff: which therapist the signed-in account is, for the availability screens."""
+    svc = BookingService(session, settings)
+    org_id = await _resolve_org_id(session, settings)
+    profile = await svc.get_therapist_profile_for_user(org_id, actor.user_id)
+    if profile is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={
+                "code": "NO_THERAPIST_PROFILE",
+                "message": "Ovaj nalog nije povezan ni sa jednim terapeutskim profilom.",
+            },
+        )
+    return profile
 
 
 # ── Staff: Availability ──────────────────────────────────────────────────────

@@ -178,6 +178,8 @@ Svi rokovi i trajanja su konfigurabilni po tenantu kroz `organization_settings`:
 
 Nijedan rok nije hardkodovan u kodu; svi se čitaju iz baze.
 
+> **Anotacija 2026-08-09 (D-069 / D-070):** dva roka su se odselila sa organizacije na **terapeuta**, na `availability_profiles`: `min_lead_time_hours` (novo, default 24) i `cancellation_notice_hours` (bio `24` na nivou organizacije, sada kolona po profilu). Organizaciona vrednost ostaje fallback za sve što nije vezano za konkretnog terapeuta. `cancellation_notice_hours` po terapeutu **preduhitruje STOP stavku S7** — čuva broj, ne donosi poslovnu politiku otkazivanja.
+
 ### 2.7 v2 — Availability Modes and Slot Derivation
 
 #### 2.7.1 Tri moda

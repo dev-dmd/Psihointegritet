@@ -259,6 +259,14 @@ class AvailabilityProfile(Base):
     min_lead_time_hours: Mapped[int] = mapped_column(
         Integer, default=24, server_default="24", nullable=False
     )
+    #: Latest a client may cancel without consequence, in hours before the start.
+    #: D-066 moves this from the organisation level (ADR-015 §2.6) to the
+    #: therapist, alongside the booking notice, because the two are read and set
+    #: together on one screen. The organisation value remains the fallback for
+    #: anything not scoped to a therapist.
+    cancellation_notice_hours: Mapped[int] = mapped_column(
+        Integer, default=24, server_default="24", nullable=False
+    )
     enabled: Mapped[bool] = mapped_column(default=True, server_default="true")
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
