@@ -11,7 +11,7 @@ Default 24. Existing rows get it from the server default, so no backfill is
 needed and no therapist silently ends up with zero notice.
 
 Revision ID: a25320e3f34e
-Revises: 0009
+Revises: 20260810_0022
 Create Date: 2026-08-09 05:28:50.777207
 
 """
@@ -23,7 +23,7 @@ from alembic import op
 
 # revision identifiers, used by Alembic.
 revision: str = "a25320e3f34e"
-down_revision: str | Sequence[str] | None = "0009"
+down_revision: str | Sequence[str] | None = "20260810_0022"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
