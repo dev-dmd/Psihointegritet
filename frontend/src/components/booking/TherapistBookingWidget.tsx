@@ -62,7 +62,11 @@ export function TherapistBookingWidget({
       serviceSlugs: t.bookingServiceSlugs,
     }));
 
-    return { services: svc, therapists: thr, initialTherapistId: therapistSlug ?? null };
+    return {
+      services: svc,
+      therapists: thr,
+      initialTherapistId: therapistSlug ?? null,
+    };
   }, [therapistSlug]);
 
   // ── Flow overlay state ──────────────────────────────────────────────────
@@ -70,7 +74,9 @@ export function TherapistBookingWidget({
   const [flowState, setFlowState] = useState<FlowState>("selecting");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
-  const [confirmation, setConfirmation] = useState<ConfirmationDetails | null>(null);
+  const [confirmation, setConfirmation] = useState<ConfirmationDetails | null>(
+    null,
+  );
   const [selectedPayload, setSelectedPayload] =
     useState<BookingWidgetSubmitPayload | null>(null);
 
@@ -78,7 +84,9 @@ export function TherapistBookingWidget({
 
   const { user, isSignedIn } = useUser();
   const clerkName = isSignedIn ? (user?.fullName ?? "") : "";
-  const clerkEmail = isSignedIn ? (user?.primaryEmailAddress?.emailAddress ?? "") : "";
+  const clerkEmail = isSignedIn
+    ? (user?.primaryEmailAddress?.emailAddress ?? "")
+    : "";
 
   const handleSlotSelected = useCallback(
     (payload: BookingWidgetSubmitPayload) => {
@@ -101,13 +109,16 @@ export function TherapistBookingWidget({
       setSubmitError(null);
 
       // Resolve service/therapist data from the catalog
-      const svc = serviceCatalog.find((s) => s.slug === selectedPayload.serviceId);
-      const thr = therapistCatalog.find((t) => t.slug === selectedPayload.therapistId);
+      const svc = serviceCatalog.find(
+        (s) => s.slug === selectedPayload.serviceId,
+      );
+      const thr = therapistCatalog.find(
+        (t) => t.slug === selectedPayload.therapistId,
+      );
 
       try {
-        const { submitBookingRequest } = await import(
-          "@/lib/api/booking-request"
-        );
+        const { submitBookingRequest } =
+          await import("@/lib/api/booking-request");
         await submitBookingRequest({
           therapistSlug: selectedPayload.therapistId ?? null,
           serviceSlug: selectedPayload.serviceId,

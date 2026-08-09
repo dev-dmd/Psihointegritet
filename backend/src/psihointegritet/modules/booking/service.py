@@ -4,7 +4,7 @@ Orchestrates transactions, authorization, and event emission.
 No SQL in routers; no business logic outside this layer.
 """
 
-from datetime import UTC, datetime, time, timedelta
+from datetime import UTC, date, datetime, time, timedelta
 from uuid import UUID, uuid4
 
 from sqlalchemy import CursorResult, delete, func, or_, select
@@ -388,6 +388,164 @@ class BookingService:
         if isinstance(result, CursorResult) and result.rowcount == 0:
             raise BookingValidationError("Manual availability slot not found")
         await self._session.flush()
+
+    async def list_availability_exceptions(
+        self,
+        organization_id: UUID,
+        therapist_profile_id: UUID,
+        date_from: date,
+        date_until: date,
+    ) -> list[AvailabilityExceptionOut]:
+        """List exceptions for a therapist overlapping the given date range."""
+        result = await self._session.execute(
+            select(AvailabilityException)
+            .where(
+                AvailabilityException.organization_id == organization_id,
+                AvailabilityException.therapist_profile_id == therapist_profile_id,
+                AvailabilityException.ends_at
+                >= datetime.combine(date_from, datetime.min.time(), tzinfo=UTC),
+                AvailabilityException.starts_at
+                <= datetime.combine(date_until, datetime.max.time(), tzinfo=UTC),
+            )
+            .order_by(AvailabilityException.starts_at)
+        )
+        return [AvailabilityExceptionOut.model_validate(e) for e in result.scalars().all()]
+
+    async def list_manual_availability_slots(
+        self,
+        organization_id: UUID,
+        availability_profile_id: UUID,
+        date_from: date,
+        date_until: date,
+    ) -> list[ManualAvailabilitySlotOut]:
+        """List manual slots for a profile overlapping the given date range."""
+        result = await self._session.execute(
+            select(ManualAvailabilitySlot)
+            .where(
+                ManualAvailabilitySlot.organization_id == organization_id,
+                ManualAvailabilitySlot.availability_profile_id == availability_profile_id,
+                ManualAvailabilitySlot.starts_at
+                >= datetime.combine(date_from, datetime.min.time(), tzinfo=UTC),
+                ManualAvailabilitySlot.starts_at
+                <= datetime.combine(date_until, datetime.max.time(), tzinfo=UTC),
+            )
+            .order_by(ManualAvailabilitySlot.starts_at)
+        )
+        return [ManualAvailabilitySlotOut.model_validate(s) for s in result.scalars().all()]
+
+    async def generate_week(
+        self,
+        organization_id: UUID,
+        availability_profile_id: UUID,
+        week_start: date,
+    ) -> list[ManualAvailabilitySlotOut]:
+        """Generate explicit manual slots for one week from recurring rules.
+
+        ADR-015 v2 §2.7.5: ``weekly_generator`` materializes the recurring
+        rules of a profile into explicit ``manual_availability_slots`` so the
+        therapist can then delete/add individual starts. Uses the profile's
+        grid step; ``HOURLY_GRID`` falls back to 60.
+        """
+        profile = await self._get_availability_profile_row(organization_id, availability_profile_id)
+        step = profile.start_step_minutes or 60
+        week_end = week_start + timedelta(days=6)
+
+        rules_result = await self._session.execute(
+            select(AvailabilityRule).where(
+                AvailabilityRule.organization_id == organization_id,
+                AvailabilityRule.availability_profile_id == availability_profile_id,
+                AvailabilityRule.is_active == True,  # noqa: E712
+                AvailabilityRule.valid_from <= week_end,
+                or_(
+                    AvailabilityRule.valid_until.is_(None),
+                    AvailabilityRule.valid_until >= week_start,
+                ),
+            )
+        )
+        rules = list(rules_result.scalars().all())
+
+        rows: list[ManualAvailabilitySlot] = []
+        current_day = week_start
+        while current_day <= week_end:
+            for rule in rules:
+                if rule.day_of_week != current_day.weekday():
+                    continue
+                window_start = datetime.combine(current_day, rule.start_local_time, tzinfo=UTC)
+                window_end = datetime.combine(current_day, rule.end_local_time, tzinfo=UTC)
+                duration = timedelta(minutes=60)
+                step_td = timedelta(minutes=step)
+                slot_start = window_start
+                while slot_start + duration <= window_end:
+                    row = ManualAvailabilitySlot(
+                        id=uuid4(),
+                        organization_id=organization_id,
+                        availability_profile_id=availability_profile_id,
+                        starts_at=slot_start,
+                        format=rule.format,
+                        location_id=rule.location_id,
+                        source=ManualAvailabilitySlotSource.WEEKLY_GENERATOR,
+                    )
+                    self._session.add(row)
+                    rows.append(row)
+                    slot_start += step_td
+            current_day += timedelta(days=1)
+        await self._session.flush()
+        return [ManualAvailabilitySlotOut.model_validate(r) for r in rows]
+
+    async def copy_week(
+        self,
+        organization_id: UUID,
+        availability_profile_id: UUID,
+        source_week_start: date,
+        target_week_start: date,
+    ) -> list[ManualAvailabilitySlotOut]:
+        """Copy the manual slots of one week into another (offset 7 days).
+
+        ADR-015 v2 §2.7.5: ``copied_week`` marks slots produced by the weekly
+        copy. Only ``manual_availability_slots`` are copied — recurring rules
+        already apply every matching weekday.
+        """
+        source_week_end = source_week_start + timedelta(days=6)
+        result = await self._session.execute(
+            select(ManualAvailabilitySlot).where(
+                ManualAvailabilitySlot.organization_id == organization_id,
+                ManualAvailabilitySlot.availability_profile_id == availability_profile_id,
+                ManualAvailabilitySlot.starts_at
+                >= datetime.combine(source_week_start, datetime.min.time(), tzinfo=UTC),
+                ManualAvailabilitySlot.starts_at
+                <= datetime.combine(source_week_end, datetime.max.time(), tzinfo=UTC),
+            )
+        )
+        offset = target_week_start - source_week_start
+        rows: list[ManualAvailabilitySlot] = []
+        for source in result.scalars().all():
+            row = ManualAvailabilitySlot(
+                id=uuid4(),
+                organization_id=organization_id,
+                availability_profile_id=availability_profile_id,
+                starts_at=source.starts_at + offset,
+                format=source.format,
+                location_id=source.location_id,
+                source=ManualAvailabilitySlotSource.COPIED_WEEK,
+            )
+            self._session.add(row)
+            rows.append(row)
+        await self._session.flush()
+        return [ManualAvailabilitySlotOut.model_validate(r) for r in rows]
+
+    async def _get_availability_profile_row(
+        self, organization_id: UUID, profile_id: UUID
+    ) -> AvailabilityProfile:
+        result = await self._session.execute(
+            select(AvailabilityProfile).where(
+                AvailabilityProfile.id == profile_id,
+                AvailabilityProfile.organization_id == organization_id,
+            )
+        )
+        profile = result.scalar_one_or_none()
+        if profile is None:
+            raise BookingValidationError("Availability profile not found")
+        return profile
 
     # ── Slot Derivation & Hold ──────────────────────────────────────────
 

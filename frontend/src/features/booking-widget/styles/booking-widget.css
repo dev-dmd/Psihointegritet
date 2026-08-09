@@ -1,8 +1,10 @@
 .booking-widget--glass {
   background:
-    linear-gradient(135deg,
+    linear-gradient(
+      135deg,
       rgb(from var(--color-surface) r g b / 0.72),
-      rgb(from var(--color-canvas) r g b / 0.42)),
+      rgb(from var(--color-canvas) r g b / 0.42)
+    ),
     var(--color-canvas);
 }
 
@@ -11,10 +13,12 @@
 }
 
 .booking-widget--light {
-  background: linear-gradient(145deg,
-      var(--color-surface) 0%,
-      color-mix(in srgb, var(--color-warm) 8%, var(--color-surface)) 55%,
-      color-mix(in srgb, var(--color-meadow) 28%, var(--color-surface)) 100%);
+  background: linear-gradient(
+    145deg,
+    var(--color-surface) 0%,
+    color-mix(in srgb, var(--color-warm) 8%, var(--color-surface)) 55%,
+    color-mix(in srgb, var(--color-meadow) 28%, var(--color-surface)) 100%
+  );
 }
 
 .booking-widget--dark {
@@ -81,31 +85,35 @@
   position: absolute;
   filter: blur(80px);
   opacity: 0.2;
-  clip-path: polygon(74.1% 44.1%,
-      100% 61.6%,
-      97.5% 26.9%,
-      85.5% 0.1%,
-      80.7% 2%,
-      72.5% 32.5%,
-      60.2% 62.4%,
-      52.4% 68.1%,
-      47.5% 58.3%,
-      45.2% 34.5%,
-      27.5% 76.7%,
-      0.1% 64.9%,
-      17.9% 100%,
-      27.6% 76.8%,
-      76.1% 97.7%,
-      74.1% 44.1%);
+  clip-path: polygon(
+    74.1% 44.1%,
+    100% 61.6%,
+    97.5% 26.9%,
+    85.5% 0.1%,
+    80.7% 2%,
+    72.5% 32.5%,
+    60.2% 62.4%,
+    52.4% 68.1%,
+    47.5% 58.3%,
+    45.2% 34.5%,
+    27.5% 76.7%,
+    0.1% 64.9%,
+    17.9% 100%,
+    27.6% 76.8%,
+    76.1% 97.7%,
+    74.1% 44.1%
+  );
 }
 
 .booking-widget--glass .booking-widget-content-ambient {
   display: block;
   width: 46rem;
   aspect-ratio: 1155 / 678;
-  background: linear-gradient(45deg,
-      rgb(from var(--color-sage) r g b / 0.78),
-      rgb(from var(--color-meadow) r g b / 0.32));
+  background: linear-gradient(
+    45deg,
+    rgb(from var(--color-sage) r g b / 0.78),
+    rgb(from var(--color-meadow) r g b / 0.32)
+  );
 }
 
 .booking-widget-content-ambient--one {
@@ -136,7 +144,6 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-
   .booking-widget *,
   .booking-widget *::before,
   .booking-widget *::after {

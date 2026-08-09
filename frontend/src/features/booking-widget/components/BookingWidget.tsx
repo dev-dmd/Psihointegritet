@@ -53,11 +53,7 @@ export function BookingWidget({
         variant={variant}
         {...(className ? { className } : {})}
       >
-        <BookingWidgetHeader
-          brand={brand}
-          copy={copy}
-          theme={theme}
-        />
+        <BookingWidgetHeader brand={brand} copy={copy} theme={theme} />
         <div
           className={cn(
             "grid gap-6 py-6 lg:grid-cols-[minmax(190px,0.9fr)_minmax(220px,1fr)_minmax(220px,1fr)] lg:gap-6",

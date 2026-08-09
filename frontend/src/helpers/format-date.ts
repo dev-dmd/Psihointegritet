@@ -12,12 +12,12 @@ import from here instead.
  * @example formatDateSr("2026-08-15T14:00:00Z") // "15.08.2026"
  */
 export function formatDateSr(dateStr: string): string {
-    const date = new Date(dateStr);
-    if (Number.isNaN(date.getTime())) return dateStr;
-    const day = String(date.getDate()).padStart(2, "0");
-    const month = String(date.getMonth() + 1).padStart(2, "0");
-    const year = date.getFullYear();
-    return `${day}.${month}.${year}`;
+  const date = new Date(dateStr);
+  if (Number.isNaN(date.getTime())) return dateStr;
+  const day = String(date.getDate()).padStart(2, "0");
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const year = date.getFullYear();
+  return `${day}.${month}.${year}`;
 }
 
 /**
@@ -27,17 +27,17 @@ export function formatDateSr(dateStr: string): string {
  * @example formatTimeSr("2026-08-15T14:30:00Z") // "14:30"
  */
 export function formatTimeSr(timeStr: string): string {
-    // If it has a T, extract the time portion
-    if (timeStr.includes("T")) {
-        const match = timeStr.match(/T(\d{2}:\d{2})/);
-        if (match) return match[1]!;
-    }
-    // Already HH:MM or similar
-    const parts = timeStr.split(":");
-    if (parts.length >= 2) {
-        return `${parts[0]!.padStart(2, "0")}:${parts[1]!.padStart(2, "0")}`;
-    }
-    return timeStr;
+  // If it has a T, extract the time portion
+  if (timeStr.includes("T")) {
+    const match = timeStr.match(/T(\d{2}:\d{2})/);
+    if (match) return match[1]!;
+  }
+  // Already HH:MM or similar
+  const parts = timeStr.split(":");
+  if (parts.length >= 2) {
+    return `${parts[0]!.padStart(2, "0")}:${parts[1]!.padStart(2, "0")}`;
+  }
+  return timeStr;
 }
 
 /**
@@ -47,9 +47,9 @@ export function formatTimeSr(timeStr: string): string {
  *   // "15.08.2026 · 09:00 – 10:00"
  */
 export function formatSlotRangeSr(
-    dateStr: string,
-    startTime: string,
-    endTime: string,
+  dateStr: string,
+  startTime: string,
+  endTime: string,
 ): string {
-    return `${formatDateSr(dateStr)} · ${formatTimeSr(startTime)} – ${formatTimeSr(endTime)}`;
+  return `${formatDateSr(dateStr)} · ${formatTimeSr(startTime)} – ${formatTimeSr(endTime)}`;
 }

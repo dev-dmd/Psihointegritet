@@ -4,6 +4,7 @@ Public endpoints for clients and staff endpoints for therapists/admins.
 No SQL, no business logic — delegates to BookingService.
 """
 
+from datetime import date
 from typing import Annotated
 from uuid import UUID
 
@@ -347,6 +348,69 @@ async def delete_manual_availability_slot(
     await session.commit()
 
 
+@staff_router.get(
+    "/availability/manual-slots/{availability_profile_id}",
+    response_model=list[ManualAvailabilitySlotOut],
+)
+async def list_manual_availability_slots(
+    availability_profile_id: UUID,
+    identity: CurrentIdentity,
+    session: DatabaseSession,
+    settings: AppSettings,
+    date_from: Annotated[date, Query()],
+    date_until: Annotated[date, Query()],
+) -> list[ManualAvailabilitySlotOut]:
+    """Staff: list manual slots for a profile in a date range."""
+    svc = BookingService(session, settings)
+    org_id = await _resolve_org_id(session, settings)
+    return await svc.list_manual_availability_slots(
+        org_id, availability_profile_id, date_from, date_until
+    )
+
+
+@staff_router.post(
+    "/availability/profiles/{availability_profile_id}/generate-week",
+    response_model=list[ManualAvailabilitySlotOut],
+    status_code=status.HTTP_201_CREATED,
+)
+async def generate_week(
+    availability_profile_id: UUID,
+    week_start: Annotated[date, Query()],
+    identity: CurrentIdentity,
+    session: DatabaseSession,
+    settings: AppSettings,
+) -> list[ManualAvailabilitySlotOut]:
+    """Staff: materialize one week of recurring rules into manual slots."""
+    svc = BookingService(session, settings)
+    org_id = await _resolve_org_id(session, settings)
+    result = await svc.generate_week(org_id, availability_profile_id, week_start)
+    await session.commit()
+    return result
+
+
+@staff_router.post(
+    "/availability/profiles/{availability_profile_id}/copy-week",
+    response_model=list[ManualAvailabilitySlotOut],
+    status_code=status.HTTP_201_CREATED,
+)
+async def copy_week(
+    availability_profile_id: UUID,
+    source_week_start: Annotated[date, Query()],
+    target_week_start: Annotated[date, Query()],
+    identity: CurrentIdentity,
+    session: DatabaseSession,
+    settings: AppSettings,
+) -> list[ManualAvailabilitySlotOut]:
+    """Staff: copy a week of manual slots into another week."""
+    svc = BookingService(session, settings)
+    org_id = await _resolve_org_id(session, settings)
+    result = await svc.copy_week(
+        org_id, availability_profile_id, source_week_start, target_week_start
+    )
+    await session.commit()
+    return result
+
+
 @staff_router.put(
     "/availability/rules/{rule_id}",
     response_model=AvailabilityRuleOut,
@@ -420,6 +484,26 @@ async def delete_availability_exception(
     org_id = await _resolve_org_id(session, settings)
     await svc.delete_availability_exception(org_id, exception_id)
     await session.commit()
+
+
+@staff_router.get(
+    "/availability/exceptions/{therapist_profile_id}",
+    response_model=list[AvailabilityExceptionOut],
+)
+async def list_availability_exceptions(
+    therapist_profile_id: UUID,
+    identity: CurrentIdentity,
+    session: DatabaseSession,
+    settings: AppSettings,
+    date_from: Annotated[date, Query()],
+    date_until: Annotated[date, Query()],
+) -> list[AvailabilityExceptionOut]:
+    """Staff: list exceptions for a therapist in a date range."""
+    svc = BookingService(session, settings)
+    org_id = await _resolve_org_id(session, settings)
+    return await svc.list_availability_exceptions(
+        org_id, therapist_profile_id, date_from, date_until
+    )
 
 
 # ── Staff: Appointment Request Review ────────────────────────────────────────

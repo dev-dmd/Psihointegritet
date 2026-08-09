@@ -124,7 +124,9 @@ export function BookingWidgetActions({
           <button
             type="button"
             disabled={!selectedSlotId}
-            onClick={() => onSubmit?.(buildSubmitPayload(selectedTherapistId ?? undefined))}
+            onClick={() =>
+              onSubmit?.(buildSubmitPayload(selectedTherapistId ?? undefined))
+            }
             className={cn(
               "focus-visible:ring-meadow inline-flex min-h-10 cursor-pointer items-center justify-center gap-3 rounded-full px-6 py-2.5 text-sm font-semibold transition-all duration-300 ease-out outline-none hover:-translate-y-0.5 focus-visible:ring-2 disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:translate-y-0",
               theme.primaryButton,

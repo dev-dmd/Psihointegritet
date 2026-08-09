@@ -86,7 +86,7 @@ export async function POST(request: Request): Promise<Response> {
 
   // Resolve slugs
   const therapistProfileId = payload.therapistSlug
-    ? THERAPIST_SLUG_TO_ID[payload.therapistSlug] ?? null
+    ? (THERAPIST_SLUG_TO_ID[payload.therapistSlug] ?? null)
     : null;
   const serviceId = SERVICE_SLUG_TO_ID[payload.serviceSlug];
 

@@ -557,6 +557,9 @@ def downgrade() -> None:
     # Reverse of creation order: appointment_requests.existing_appointment_id
     # FKs to appointments, and alternative_proposals FKs to
     # appointment_requests, so both must go before appointments itself.
+    # service_booking_configs.availability_profile_id FKs to
+    # availability_profiles, so it must go before availability_profiles too —
+    # availability_profiles is created first in upgrade(), so it is dropped last.
     op.drop_table("alternative_proposals")
     op.drop_table("appointment_requests")
     op.drop_table("appointments")
@@ -564,5 +567,5 @@ def downgrade() -> None:
     op.drop_table("manual_availability_slots")
     op.drop_table("availability_exceptions")
     op.drop_table("availability_rules")
-    op.drop_table("availability_profiles")
     op.drop_table("service_booking_configs")
+    op.drop_table("availability_profiles")

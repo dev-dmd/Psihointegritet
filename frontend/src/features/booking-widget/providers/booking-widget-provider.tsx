@@ -76,7 +76,8 @@ export function BookingWidgetProvider({
     initialTherapistId ?? null,
   );
   const selectedService = useMemo(
-    () => services.find((s) => s.id === selectedServiceId) ?? services[0] ?? null,
+    () =>
+      services.find((s) => s.id === selectedServiceId) ?? services[0] ?? null,
     [selectedServiceId, services],
   );
   const availableFormats = selectedService?.formats ?? ["online"];
@@ -116,15 +117,24 @@ export function BookingWidgetProvider({
       return {
         serviceId: selectedServiceId,
         format: selectedFormat,
-        ...(therapistId ?? selectedTherapistId
+        ...((therapistId ?? selectedTherapistId)
           ? { therapistId: (therapistId ?? selectedTherapistId)! }
           : {}),
         ...(selectedSlotId ? { slotId: selectedSlotId } : {}),
         ...(selectedDate ? { selectedDate } : {}),
-        ...(selectedSlot?.startTime ? { selectedSlotStart: selectedSlot.startTime } : {}),
+        ...(selectedSlot?.startTime
+          ? { selectedSlotStart: selectedSlot.startTime }
+          : {}),
       };
     },
-    [selectedDate, selectedFormat, selectedSlotId, selectedServiceId, selectedTherapistId, visibleSlots],
+    [
+      selectedDate,
+      selectedFormat,
+      selectedSlotId,
+      selectedServiceId,
+      selectedTherapistId,
+      visibleSlots,
+    ],
   );
 
   const value = useMemo<BookingWidgetState>(

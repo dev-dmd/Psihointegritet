@@ -6,10 +6,10 @@ import { parseBookingWidgetSearchParams } from "./booking-widget.config";
 import { BookingWidget } from "./components/BookingWidget";
 import type { BookingWidgetProps } from "./booking-widget.types";
 
-interface BookingWidgetFromSearchParamsProps extends Omit<
+type BookingWidgetFromSearchParamsProps = Omit<
   BookingWidgetProps,
   "initialFormat" | "initialServiceId" | "initialTherapistId"
-> {}
+>;
 
 /**
  * Thin route adapter for public booking URLs. The widget itself remains URL

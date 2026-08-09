@@ -7,7 +7,7 @@ Requires real PostgreSQL (docker compose up -d postgres).
 Tests run inside rolled-back transactions — no rows persist.
 """
 
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
 from uuid import UUID, uuid4
 
 import pytest
@@ -1433,3 +1433,109 @@ class TestManualAvailabilitySlots:
             ),
         )
         assert any(s.start == slot_start for s in slots)
+
+
+# ── Weekly Generation & Copy (ADR-015 v2 §2.7.5) ─────────────────────────────
+
+
+class TestWeeklyOperations:
+    async def test_generate_week_materializes_rules(self, db_session: AsyncSession) -> None:
+        suffix = uuid4().hex[:10]
+        org = await _seed_org(db_session, suffix)
+        therapist = await _seed_therapist(db_session, org, suffix)
+        svc = _svc(db_session)
+
+        # Use a Monday as week start so a fixed weekday rule always lands inside
+        profile_id = await _seed_availability_profile(db_session, org, therapist, step=60)
+        week_start = date(2026, 8, 10)  # Monday
+        await svc.create_availability_rule(
+            org.id,
+            AvailabilityRuleIn(
+                availability_profile_id=profile_id,
+                day_of_week=0,  # Monday
+                start_local_time="08:00",
+                end_local_time="10:00",
+                valid_from=week_start,
+                format="online",
+            ),
+        )
+
+        created = await svc.generate_week(org.id, profile_id, week_start)
+        # 08:00 and 09:00 on Monday only
+        assert len(created) == 2
+        assert all(s.source == "weekly_generator" for s in created)
+        assert all(s.starts_at.date() == week_start for s in created)
+
+    async def test_copy_week_copies_manual_slots(self, db_session: AsyncSession) -> None:
+        suffix = uuid4().hex[:10]
+        org = await _seed_org(db_session, suffix)
+        therapist = await _seed_therapist(db_session, org, suffix)
+        svc = _svc(db_session)
+
+        profile_id = await _seed_availability_profile(
+            db_session, org, therapist, mode="manual_slots"
+        )
+        source_week = date(2026, 8, 10)  # Monday
+        slot_start = datetime.combine(source_week, datetime.min.time(), tzinfo=UTC) + timedelta(
+            hours=9
+        )
+        await svc.create_manual_availability_slot(
+            org.id,
+            ManualAvailabilitySlotIn(
+                availability_profile_id=profile_id,
+                starts_at=slot_start,
+                format="online",
+            ),
+        )
+
+        target_week = date(2026, 8, 17)  # next Monday
+        copied = await svc.copy_week(org.id, profile_id, source_week, target_week)
+        assert len(copied) == 1
+        assert copied[0].source == "copied_week"
+        assert copied[0].starts_at == slot_start + timedelta(days=7)
+
+    async def test_list_manual_slots_and_exceptions(self, db_session: AsyncSession) -> None:
+        suffix = uuid4().hex[:10]
+        org = await _seed_org(db_session, suffix)
+        therapist = await _seed_therapist(db_session, org, suffix)
+        svc = _svc(db_session)
+
+        profile_id = await _seed_availability_profile(
+            db_session, org, therapist, mode="manual_slots"
+        )
+        target_date = (_now() + timedelta(days=3)).date()
+        slot_start = datetime.combine(target_date, datetime.min.time(), tzinfo=UTC) + timedelta(
+            hours=10
+        )
+        await svc.create_manual_availability_slot(
+            org.id,
+            ManualAvailabilitySlotIn(
+                availability_profile_id=profile_id,
+                starts_at=slot_start,
+                format="online",
+            ),
+        )
+        exc_start = datetime.combine(target_date, datetime.min.time(), tzinfo=UTC) + timedelta(
+            hours=14
+        )
+        await svc.create_availability_exception(
+            org.id,
+            AvailabilityExceptionIn(
+                therapist_profile_id=therapist.id,
+                kind="unavailable",
+                starts_at=exc_start,
+                ends_at=exc_start + timedelta(hours=2),
+                reason_code="doctor",
+            ),
+        )
+
+        slots = await svc.list_manual_availability_slots(
+            org.id, profile_id, target_date, target_date
+        )
+        assert len(slots) == 1
+
+        exceptions = await svc.list_availability_exceptions(
+            org.id, therapist.id, target_date, target_date
+        )
+        assert len(exceptions) == 1
+        assert exceptions[0].reason_code == "doctor"
