@@ -31,6 +31,7 @@ from psihointegritet.modules.booking.schemas import (
     AvailabilityProfileIn,
     AvailabilityRuleIn,
     CancelAppointmentRequest,
+    DerivedSlotOut,
     ManualAvailabilitySlotIn,
     ReviewAction,
     ServiceBookingConfigIn,
@@ -117,12 +118,21 @@ async def _seed_availability_profile(
     therapist: TherapistMatchingProfile,
     mode: str = "hourly_grid",
     step: int = 60,
+    timezone: str = "UTC",
+    min_lead_time_hours: int = 0,
 ) -> UUID:
-    """Seed an AvailabilityProfile (ADR-015 v2) and return its id."""
+    """Seed an AvailabilityProfile (ADR-015 v2) and return its id.
+
+    Defaults to a UTC profile with no notice period so existing slot tests keep
+    asserting grid arithmetic rather than the local-time and lead-time rules,
+    which have their own coverage.
+    """
     profile = AvailabilityProfile(
         organization_id=org.id,
         therapist_profile_id=therapist.id,
         mode=AvailabilityMode(mode),
+        timezone=timezone,
+        min_lead_time_hours=min_lead_time_hours,
         start_step_minutes=step,
     )
     db.add(profile)
@@ -1539,3 +1549,81 @@ class TestWeeklyOperations:
         )
         assert len(exceptions) == 1
         assert exceptions[0].reason_code == "doctor"
+
+
+# ── Minimum notice (D29 / migration 0022) ────────────────────────────────────
+
+
+class TestMinimumLeadTime:
+    """A free slot inside the notice window must not be offered at all.
+
+    The rule lives on the availability profile — per therapist, never per
+    organisation (CTO decision 2026-08-09).
+    """
+
+    async def _seed_open_week(
+        self, db: AsyncSession, lead_hours: int
+    ) -> tuple[Organization, TherapistMatchingProfile, UUID]:
+        suffix = uuid4().hex[:10]
+        org = await _seed_org(db, suffix)
+        therapist = await _seed_therapist(db, org, suffix)
+        profile_id = await _seed_availability_profile(
+            db, org, therapist, min_lead_time_hours=lead_hours
+        )
+        svc = _svc(db)
+        # Open every weekday so the query range always has candidate days.
+        for weekday in range(7):
+            await svc.create_availability_rule(
+                org.id,
+                AvailabilityRuleIn(
+                    availability_profile_id=profile_id,
+                    day_of_week=weekday,
+                    start_local_time="00:00",
+                    end_local_time="23:00",
+                    valid_from=(_now() - timedelta(days=1)).date(),
+                    format="online",
+                ),
+            )
+        return org, therapist, profile_id
+
+    async def _slots(
+        self,
+        db: AsyncSession,
+        org: Organization,
+        therapist: TherapistMatchingProfile,
+        days_ahead: int,
+    ) -> list[DerivedSlotOut]:
+        target = (_now() + timedelta(days=days_ahead)).date()
+        return await _svc(db).get_available_slots(
+            org.id,
+            SlotQueryParams(
+                service_id=uuid4(),
+                therapist_profile_id=therapist.id,
+                format="online",
+                date_from=target,
+                date_until=target,
+            ),
+        )
+
+    async def test_no_lead_time_offers_today(self, db_session: AsyncSession) -> None:
+        org, therapist, _ = await self._seed_open_week(db_session, lead_hours=0)
+        assert len(await self._slots(db_session, org, therapist, days_ahead=0)) > 0
+
+    async def test_default_notice_hides_slots_inside_the_window(
+        self, db_session: AsyncSession
+    ) -> None:
+        org, therapist, _ = await self._seed_open_week(db_session, lead_hours=24)
+        assert await self._slots(db_session, org, therapist, days_ahead=0) == []
+
+    async def test_slots_beyond_the_window_stay_bookable(self, db_session: AsyncSession) -> None:
+        org, therapist, _ = await self._seed_open_week(db_session, lead_hours=24)
+        assert len(await self._slots(db_session, org, therapist, days_ahead=3)) > 0
+
+    async def test_forty_eight_hours_reaches_further_than_twenty_four(
+        self, db_session: AsyncSession
+    ) -> None:
+        org_a, therapist_a, _ = await self._seed_open_week(db_session, lead_hours=24)
+        org_b, therapist_b, _ = await self._seed_open_week(db_session, lead_hours=48)
+        # Tomorrow is inside a 48h notice period but not fully inside a 24h one.
+        assert len(await self._slots(db_session, org_a, therapist_a, days_ahead=1)) > 0
+        assert await self._slots(db_session, org_b, therapist_b, days_ahead=1) == []

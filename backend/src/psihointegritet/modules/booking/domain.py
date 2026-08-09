@@ -6,6 +6,7 @@ Pure functions and value objects. No FastAPI, SQLAlchemy, or Redis imports.
 from dataclasses import dataclass
 from datetime import UTC, date, datetime, time, timedelta
 from uuid import UUID
+from zoneinfo import ZoneInfo
 
 from .models import (
     AppointmentRequestStatus,
@@ -54,6 +55,10 @@ class AvailabilityWindow:
     date: date
     start_time: time
     end_time: time
+    #: IANA zone the wall-clock times belong to (ADR-015 v2 §2.7.3). Recurring
+    #: rules are stored as local time; UTC only exists once a concrete date is
+    #: known, so the summer/winter offset is applied per day rather than fixed.
+    timezone: str
     start_step_minutes: int
     duration_minutes: int
     buffer_before_minutes: int
@@ -131,8 +136,12 @@ def _grid_candidates(window: AvailabilityWindow, step_minutes: int) -> list[Cand
     Each candidate occupies ``window.duration_minutes``; the loop stops once
     the candidate no longer fits fully before the window end.
     """
-    day_start = datetime.combine(window.date, window.start_time, tzinfo=UTC)
-    day_end = datetime.combine(window.date, window.end_time, tzinfo=UTC)
+    zone = ZoneInfo(window.timezone)
+    # Local wall clock → UTC instant. Stamping the local time as UTC (the
+    # previous behaviour) shifted every slot by the zone offset and ignored DST
+    # entirely: 08:00 Belgrade is 06:00Z in summer and 07:00Z in winter.
+    day_start = datetime.combine(window.date, window.start_time, tzinfo=zone).astimezone(UTC)
+    day_end = datetime.combine(window.date, window.end_time, tzinfo=zone).astimezone(UTC)
     step = timedelta(minutes=step_minutes)
     duration = timedelta(minutes=window.duration_minutes)
     candidates: list[CandidateStart] = []
@@ -199,7 +208,6 @@ def derive_slots(
     existing_holds: list[tuple[datetime, datetime]],
     date_from: date,
     date_until: date,
-    tz_offset_hours: int = 2,  # Europe/Belgrade default
 ) -> list[DerivedSlot]:
     """Compute candidate slots from availability windows minus conflicts.
 
@@ -213,7 +221,6 @@ def derive_slots(
         existing_holds: List of (start, end) for active slot holds.
         date_from: Start of query range (inclusive).
         date_until: End of query range (inclusive).
-        tz_offset_hours: UTC offset for the organization's timezone.
 
     Returns:
         Chronologically sorted list of available DerivedSlot objects.

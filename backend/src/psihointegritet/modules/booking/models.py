@@ -252,6 +252,13 @@ class AvailabilityProfile(Base):
         String(64), default="Europe/Belgrade", server_default="Europe/Belgrade"
     )
     start_step_minutes: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    #: Earliest a free slot may be booked, in hours before its start.
+    #: Deliberately per availability profile — i.e. per therapist — and never
+    #: at organisation level (CTO decision 2026-08-09): one therapist wanting
+    #: two days of notice must not impose it on the rest of the team.
+    min_lead_time_hours: Mapped[int] = mapped_column(
+        Integer, default=24, server_default="24", nullable=False
+    )
     enabled: Mapped[bool] = mapped_column(default=True, server_default="true")
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False

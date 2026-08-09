@@ -2,7 +2,7 @@
 
 **Status:** Accepted (v2 supersedes v1 slot-generation i exception semantiku)
 **Datum:** 2026-08-06 (v1) · **2026-08-08 (v2)**
-**Implementacija:** 🟡 delimična — **§2.7.3 (timezone) nije implementiran**, vidi §5 (dodato 2026-08-09)
+**Implementacija:** 🟡 delimična — §2.7.3 (timezone) **zatvoren 2026-08-09**; ostaje D30, vidi §5
 **Vlasnik tehničke odluke:** Milan Dražić (CTO)
 **Povezano:** ADR-013 · PRE_R2_BOOKING_ENGINE_DECISION_SPEC_v0.2.md §6 (BDS-002) · PRE_R2 §7 (BDS-003, BDS-007A)
 
@@ -226,7 +226,7 @@ UTC timestamp
 
 Drugačije, fiksno `07:00 UTC` davalo bi različito lokalno radno vreme u zavisnosti od letnjeg/zimskog offseta. **Appointment, SlotHold, exception interval i konkretan DerivedSlot ostaju UTC timestamp-i.**
 
-> ⚠️ **NIJE IMPLEMENTIRANO (utvrđeno 2026-08-09).** Kod trenutno radi suprotno od ove sekcije — vidi §5. Ovaj pasus ostaje **obavezujući ugovor**, ne opis zatečenog stanja.
+> ✅ **Implementirano 2026-08-09** (migracija `0022`, `_grid_candidates` koristi `ZoneInfo(profile.timezone)`). Pokriveno testovima za letnji i zimski offset i za očuvanu dužinu radnog dana preko DST prelaza.
 
 
 #### 2.7.4 Exceptions — `unavailable` / `extra_available` sa scope-om
@@ -356,7 +356,7 @@ Ova sekcija razdvaja **ugovor** (§2, obavezujući) od **zatečenog koda**. ADR 
 |---|---|---|
 | §2.7.1 tri moda (`hourly_grid`/`flexible_grid`/`manual_slots`) | `booking/domain.py`, `AvailabilityMode` | ✅ |
 | §2.7.2 granica odgovornosti (profil/pravila/config) | `availability_profiles`, `availability_rules`, `service_booking_configs` | ✅ migracija `0007` |
-| §2.7.3 **local wall-clock → UTC preko IANA zone** | `booking/domain.py` `_grid_candidates` | ❌ **nije implementirano** |
+| §2.7.3 **local wall-clock → UTC preko IANA zone** | `booking/domain.py` `_grid_candidates` | ✅ 2026-08-09 |
 | §2.7.4 exceptions `unavailable`/`extra_available` | `AvailabilityException` | ✅ shema; `extra_available` se rešava u `get_available_slots` |
 | §2.7.5 manual slots + `weekly_generator`/`copied_week` | `manual_availability_slots`, `generate_week`, `copy_week` | 🟡 postoji, vidi D30 |
 | §2.7.6 precedence kao skupovna razlika | `occupancy_resolver` | ✅ |
@@ -365,7 +365,7 @@ Ova sekcija razdvaja **ugovor** (§2, obavezujući) od **zatečenog koda**. ADR 
 | §2.7.9 confirmation policy | — | ⬜ namerno odloženo (Commit 14) |
 | §2.7.10 attendance model | — | ⬜ namerno odloženo |
 
-### 5.1 Otvoreno odstupanje — D29: lokalno vreme se pečatira kao UTC
+### 5.1 ~~Otvoreno odstupanje~~ — D29 zatvoren 2026-08-09
 
 `_grid_candidates` radi:
 
@@ -383,7 +383,11 @@ day_start = datetime.combine(window.date, window.start_time, tzinfo=UTC)
 
 `AvailabilityProfile.timezone` (`String(64)`, default `Europe/Belgrade`) **postoji u bazi i ne čita se nigde pri generisanju slotova**.
 
-**Popravka pripada Availability radu, pre nego što javno slanje zahteva uđe u produkciju** — dok su slotovi mock (vidi `TODO.md` R2.5), greška se ne vidi krajnjem korisniku, ali svaki test koji sada „prolazi" fiksira pogrešnu semantiku.
+**Rešeno 2026-08-09.** `AvailabilityWindow` je dobio `timezone`, `_grid_candidates` radi `datetime.combine(date, local_time, tzinfo=ZoneInfo(tz)).astimezone(UTC)`, a mrtvi parametar `tz_offset_hours` je uklonjen iz `derive_slots`. Izuzeci (`extra_available`) nose konkretne UTC trenutke i sada se prikazuju u zoni profila, pa `start_time`/`end_time` na prozoru imaju jedno značenje. Testovi: leto 08:00 Beograd → 06:00Z, zima → 07:00Z, i isti broj ponuđenih sati sa obe strane DST prelaza.
+
+#### 5.1.1 Minimalni rok zakazivanja (uz istu izmenu)
+
+**Odluka CTO 2026-08-09:** slobodan slot se može zakazati najranije `min_lead_time_hours` sati unapred. Kolona stoji na **`availability_profiles`** — dakle po terapeutu — i **nikada na nivou organizacije**: terapeut kome trebaju dva dana najave ne sme to da nametne ostatku tima. Default je **24** (migracija `0022`, `server_default='24'`, bez backfilla). `0` isključuje pravilo. Filtrira se nad kandidatima, ne nad opsegom upita — klijent sme da pregleda sutrašnji dan, samo ne može da uzme termin unutar roka.
 
 ### 5.2 Otvoreno odstupanje — D30: `generate_week` hardkoduje trajanje
 

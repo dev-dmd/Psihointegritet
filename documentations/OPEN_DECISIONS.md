@@ -314,6 +314,7 @@ Koji kalendar po terapeutu, koji scope-ovi. Free/busy only, nikad naslovi (T15).
 | O-11 · S4 | Model saglasnosti/zaštite za adolescente       | MP §13 S4 · T10            | Self-service za maloletnike (posle R2) |
 | O-12 · S8 | Ko prima uplate i izdaje račune                | MP §13 S8 · Proposal §4 #9 | R5; izričito van R2 (D-031)            |
 | O-13 · S9 | Provajder meeting linkova + rezervna procedura | MP §13 S9                  | R5                                     |
+| O-14 · S9 | **Video poziv na platformi.** CTO napomena 2026-08-09: razmotriti da sastanak ide kroz jedan provajder da klijent i terapeut ne žongliraju različite aplikacije. U panelima terapeuta i klijenta stajala bi ikonica provajdera (npr. Google Meet) i vreme početka. **Nije odlučeno i ne ulazi u tekući Booking obim** — beleži se da se ne izgubi; dodiruje O-13 (provajder linkova) i M2.6 (Google). Link se ne generiše dok provajder i rezervna procedura ne budu odlučeni |
 
 ---
 

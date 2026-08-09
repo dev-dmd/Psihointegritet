@@ -63,6 +63,8 @@ class AvailabilityProfileIn(BaseModel):
     mode: str = Field(pattern=r"^(hourly_grid|flexible_grid|manual_slots)$")
     timezone: str = Field(default="Europe/Belgrade", max_length=64)
     start_step_minutes: int | None = Field(default=None, ge=5, le=120)
+    #: 0 disables the rule; the cap keeps a typo from hiding a whole month.
+    min_lead_time_hours: int = Field(default=24, ge=0, le=720)
     enabled: bool = True
 
 
@@ -75,6 +77,7 @@ class AvailabilityProfileOut(BaseModel):
     mode: str
     timezone: str
     start_step_minutes: int | None
+    min_lead_time_hours: int
     enabled: bool
     created_at: datetime
     updated_at: datetime

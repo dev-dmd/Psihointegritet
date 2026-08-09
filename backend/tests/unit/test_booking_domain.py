@@ -183,12 +183,14 @@ def _window(
     step: int = 60,
     buffer_before: int = 0,
     buffer_after: int = 0,
+    timezone: str = "UTC",
 ) -> AvailabilityWindow:
     d = d or _reference_date()
     return AvailabilityWindow(
         date=d,
         start_time=time(start_hour, 0),
         end_time=time(end_hour, 0),
+        timezone=timezone,
         start_step_minutes=step,
         duration_minutes=duration,
         buffer_before_minutes=buffer_before,
@@ -218,6 +220,7 @@ class TestDeriveSlots:
             date=_reference_date(),
             start_time=time(9, 0),
             end_time=time(9, 45),
+            timezone="UTC",
             start_step_minutes=60,
             duration_minutes=60,
             buffer_before_minutes=0,
@@ -411,6 +414,7 @@ class TestGridStrategies:
             date=_reference_date(),
             start_time=time(start_hour, 0),
             end_time=time(end_hour, 0),
+            timezone="UTC",
             start_step_minutes=step,
             duration_minutes=duration,
             buffer_before_minutes=0,
@@ -551,3 +555,50 @@ class TestOccupancyResolver:
             existing_bookings=booking,
         )
         assert blocked == []
+
+
+# ── Timezone / DST (ADR-015 v2 §2.7.3, D29) ─────────────────────────────────
+
+
+class TestLocalWallClockToUtc:
+    """Recurring rules are local wall clock; UTC exists only per concrete date.
+
+    Before this was fixed, `datetime.combine(date, start_time, tzinfo=UTC)`
+    stamped 08:00 Belgrade as 08:00Z, so every published slot was two hours off
+    in summer and one in winter, and DST never applied at all.
+    """
+
+    def _belgrade_window(self, d: date) -> AvailabilityWindow:
+        return AvailabilityWindow(
+            date=d,
+            start_time=time(8, 0),
+            end_time=time(12, 0),
+            timezone="Europe/Belgrade",
+            start_step_minutes=60,
+            duration_minutes=60,
+            buffer_before_minutes=0,
+            buffer_after_minutes=0,
+            format="online",
+            location_id=None,
+        )
+
+    def test_summer_local_eight_is_six_utc(self) -> None:
+        day = date(2026, 8, 10)  # CEST, UTC+2
+        slots = derive_slots([self._belgrade_window(day)], [], [], day, day)
+        assert slots[0].start == datetime(2026, 8, 10, 6, 0, tzinfo=UTC)
+
+    def test_winter_local_eight_is_seven_utc(self) -> None:
+        day = date(2026, 1, 12)  # CET, UTC+1
+        slots = derive_slots([self._belgrade_window(day)], [], [], day, day)
+        assert slots[0].start == datetime(2026, 1, 12, 7, 0, tzinfo=UTC)
+
+    def test_working_day_keeps_its_local_length_across_the_dst_switch(self) -> None:
+        # The therapist works 08:00-12:00 local on both days; the UTC instants
+        # differ but the number of hours offered must not.
+        summer = derive_slots(
+            [self._belgrade_window(date(2026, 8, 10))], [], [], date(2026, 8, 10), date(2026, 8, 10)
+        )
+        winter = derive_slots(
+            [self._belgrade_window(date(2026, 1, 12))], [], [], date(2026, 1, 12), date(2026, 1, 12)
+        )
+        assert len(summer) == len(winter) == 4

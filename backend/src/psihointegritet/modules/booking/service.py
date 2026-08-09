@@ -6,6 +6,7 @@ No SQL in routers; no business logic outside this layer.
 
 from datetime import UTC, date, datetime, time, timedelta
 from uuid import UUID, uuid4
+from zoneinfo import ZoneInfo
 
 from sqlalchemy import CursorResult, delete, func, or_, select
 from sqlalchemy.dialects.postgresql import insert as pg_insert
@@ -174,6 +175,7 @@ class BookingService:
             mode=AvailabilityMode(data.mode),
             timezone=data.timezone,
             start_step_minutes=data.start_step_minutes,
+            min_lead_time_hours=data.min_lead_time_hours,
             enabled=data.enabled,
         )
         self._session.add(profile)
@@ -602,6 +604,7 @@ class BookingService:
         if profile is None:
             return []
         start_step = profile.start_step_minutes or 60
+        zone = ZoneInfo(profile.timezone)
         profile_id = profile.id
 
         # Availability rules (KADA) on the resolved profile
@@ -703,6 +706,7 @@ class BookingService:
                             date=current_date,
                             start_time=rule.start_local_time,
                             end_time=rule.end_local_time,
+                            timezone=profile.timezone,
                             start_step_minutes=start_step,
                             duration_minutes=duration_minutes,
                             buffer_before_minutes=buffer_before,
@@ -719,8 +723,9 @@ class BookingService:
                     windows.append(
                         AvailabilityWindow(
                             date=current_date,
-                            start_time=exc.starts_at.time(),
-                            end_time=exc.ends_at.time(),
+                            start_time=exc.starts_at.astimezone(zone).time(),
+                            end_time=exc.ends_at.astimezone(zone).time(),
+                            timezone=profile.timezone,
                             start_step_minutes=start_step,
                             duration_minutes=duration_minutes,
                             buffer_before_minutes=0,
@@ -745,6 +750,13 @@ class BookingService:
             for exc in exceptions
             if exc.kind == AvailabilityExceptionKind.UNAVAILABLE
         ]
+
+        # Minimum notice (per therapist, ADR-015 §5.1 / migration 0022). Applied
+        # to candidates rather than to the query range: the client may legitimately
+        # browse tomorrow, they just cannot take a slot inside the notice window.
+        if profile.min_lead_time_hours > 0:
+            earliest = datetime.now(UTC) + timedelta(hours=profile.min_lead_time_hours)
+            candidates = [c for c in candidates if c.start >= earliest]
 
         slots = occupancy_resolver(
             candidates,
