@@ -26,23 +26,23 @@ const ASSIGNMENTS = [
     publicMetadata: { superadmin: true },
   },
   {
-    email: "anja.stamenkovic@psihointegritet.com",
+    email: "maria.bullock@psihointegritet.com",
     publicMetadata: {
       roles: ["org_admin", "therapist"],
       org: "psihointegritet",
     },
   },
   {
-    email: "marija.stamenkovic@psihointegritet.com",
+    email: "elsa.browers@psihointegritet.com",
     publicMetadata: {
-      roles: ["org_admin", "therapist"],
+      roles: ["therapist"],
       org: "psihointegritet",
     },
   },
   {
-    email: "marjan.jankovic@psihointegritet.com",
+    email: "john.francis@psihointegritet.com",
     publicMetadata: {
-      roles: ["org_admin", "therapist"],
+      roles: ["therapist"],
       org: "psihointegritet",
     },
   },

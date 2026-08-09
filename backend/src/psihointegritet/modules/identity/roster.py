@@ -94,11 +94,11 @@ TEAM: Mapping[str, TeamMember] = {
     # Three new Clerk accounts take over the three therapist slots:
     # Maria → Anja's, Elsa → Marija's, John → Marjan's (CTO, 2026-08-09).
     #
-    # `clerk_ids` is deliberately empty. The ids live on a Clerk instance this
-    # repository has never seen, and this module's own rule is that an id which
-    # is not recorded must be passed explicitly — guessing it is exactly the
-    # mismatch the roster exists to prevent. `provision_team.py` reads them from
-    # the environment at run time.
+    # Both Clerk-instance ids are recorded here after being verified against
+    # Clerk. Normal provisioning therefore needs no per-person Vercel/Railway
+    # variables; an explicit flag is only an emergency override and must match
+    # the recorded value. Keeping the immutable provider id next to the email,
+    # role set and profile slug is what prevents cross-person pairing.
     #
     # Each incoming person gets **their own** therapist profile. Pointing them
     # at the outgoing therapists' slugs was the first attempt and

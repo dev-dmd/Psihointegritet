@@ -9,10 +9,10 @@ accounts live and old ones still able to sign in. Running the single-person
 command six times by hand is exactly how that happens. Everything underneath
 reuses `provision_staff` / `revoke_staff`; no provisioning logic is duplicated.
 
-Clerk ids are **not** recorded in the roster: they belong to a Clerk instance
-this repository has never seen, and `roster.py` refuses to guess an id it does
-not know. Pass them as flags, or as environment variables — which is how
-Railway supplies them:
+Clerk ids are recorded in the roster per Clerk instance. Normal runs therefore
+need no per-person Vercel/Railway variables. Flags and environment variables
+remain emergency overrides, and are rejected when they disagree with the
+recorded id:
 
     --maria user_...  --elsa user_...  --john user_...
     THERAPIST_CLERK_ID_MARIA / _ELSA / _JOHN
@@ -43,12 +43,13 @@ Locally the virtualenv is not on PATH, so prefix with `uv run`:
 `--keep-previous` provisions the incoming accounts without touching the
 outgoing ones, for a rehearsal where nobody may lose access yet.
 
-**Out of scope, on purpose.** This command moves *logins*. It does not rename
-`therapist_matching_profiles`, their public slugs, biographies, titles or
-areas of expertise — those are published content about named professionals,
-including certification wording that STOP item S1/D-042 governs. Leaving the
-existing profiles in place also keeps their bookings, availability and service
-configs attached. Renaming them is a separate, reviewed content change.
+**Out of scope, on purpose.** This command creates each incoming person's own
+`therapist_matching_profiles` row and reconciles its operational matching
+attributes (including FK-backed support areas) from the predecessor. It does
+not copy biographies, titles or credentials — those are published claims about
+named professionals, including certification wording governed by STOP item
+S1/D-042. It also does not silently reassign historical requests, appointments
+or clinical ownership to a different person.
 """
 
 import argparse
@@ -56,13 +57,20 @@ import asyncio
 import os
 import sys
 
-from sqlalchemy import select
+from sqlalchemy import delete, select
 from sqlalchemy.engine import make_url
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from psihointegritet.core.config import Settings, get_settings
 from psihointegritet.db.session import create_engine, create_session_factory
-from psihointegritet.modules.guidance.models import TherapistMatchingProfile
+from psihointegritet.modules.content.taxonomy_models import (
+    TherapistMatchingProfileSupportArea,
+)
+from psihointegritet.modules.guidance.models import (
+    AcceptanceStatus,
+    CapacityStatus,
+    TherapistMatchingProfile,
+)
 from psihointegritet.modules.identity.provisioning import (
     ProvisioningError,
     StaffProvisioningRequest,
@@ -112,13 +120,13 @@ def _database_label(settings: Settings) -> str:
     return f"{url.host or 'local socket'}:{url.port or 5432}/{url.database or '?'}"
 
 
-async def _ensure_therapist_profile(
+async def ensure_therapist_profile(
     session: AsyncSession,
     organization_slug: str,
     person: TeamMember,
     inherit_from_slug: str | None,
 ) -> tuple[bool, str | None]:
-    """Create the incoming therapist's own matching profile if it is missing.
+    """Create or reconcile the incoming therapist's matching profile.
 
     `provision_staff` links an existing profile; it does not invent one. These
     three people are new, so nothing to link exists yet — and pointing them at
@@ -133,6 +141,11 @@ async def _ensure_therapist_profile(
     identity, and copying them is the mismatch this whole module exists to
     prevent. The public biography and title are not touched either; they live
     in the content catalogue and are claims about a named professional.
+
+    Reconciliation is intentional: the first production run may already have
+    created the incoming profile before this command learned how to copy every
+    matching attribute.  Returning early for an existing target would make the
+    repair permanently impossible to apply idempotently.
 
     Returns `(created, inherited_from)`.
     """
@@ -151,9 +164,6 @@ async def _ensure_therapist_profile(
             TherapistMatchingProfile.slug == person.therapist_slug,
         )
     )
-    if existing is not None:
-        return False, None
-
     source: TherapistMatchingProfile | None = None
     if inherit_from_slug is not None:
         source = await session.scalar(
@@ -162,6 +172,9 @@ async def _ensure_therapist_profile(
                 TherapistMatchingProfile.slug == inherit_from_slug,
             )
         )
+
+    if source is None and existing is not None:
+        return False, None
 
     if source is None:
         # Nothing to inherit: start closed. Empty `services`/`areas` means the
@@ -184,27 +197,70 @@ async def _ensure_therapist_profile(
         await session.flush()
         return True, None
 
-    session.add(
-        TherapistMatchingProfile(
+    created = existing is None
+    target = existing
+    if target is None:
+        target = TherapistMatchingProfile(
             organization_id=organization.id,
             slug=person.therapist_slug,
             display_name=person.display_name,
-            accepting_new_clients=source.accepting_new_clients,
-            capacity_status=source.capacity_status,
-            acceptance_status=source.acceptance_status,
-            presence_status=source.presence_status,
-            accepted_age_bands=list(source.accepted_age_bands),
-            service_capabilities=list(source.service_capabilities),
-            supported_formats=list(source.supported_formats),
-            services=list(source.services),
-            areas=list(source.areas),
-            formats=list(source.formats),
-            locations=list(source.locations),
-            min_child_age=source.min_child_age,
+        )
+        session.add(target)
+
+    # Identity fields stay on the incoming person. Everything that controls
+    # matching eligibility is declaratively reconciled from the predecessor.
+    target.display_name = person.display_name
+    if created:
+        # These values are live state, not permanent capabilities. Inherit them
+        # once, then let the incoming therapist manage their own state. This is
+        # also what keeps a repeated run idempotent after the predecessor is
+        # paused below.
+        target.accepting_new_clients = source.accepting_new_clients
+        target.capacity_status = source.capacity_status
+        target.acceptance_status = source.acceptance_status
+        target.presence_status = source.presence_status
+        target.absence_until = source.absence_until
+    target.accepted_age_bands = list(source.accepted_age_bands)
+    target.service_capabilities = list(source.service_capabilities)
+    target.supported_formats = list(source.supported_formats)
+    target.services = list(source.services)
+    target.areas = list(source.areas)
+    target.formats = list(source.formats)
+    target.locations = list(source.locations)
+    target.min_child_age = source.min_child_age
+    await session.flush()
+
+    # The FK-backed support-area registry is authoritative in the matching
+    # service. Copying only the legacy JSON `areas` column makes the new person
+    # look correct in a raw row while still disappearing from recommendations.
+    support_area_ids = list(
+        await session.scalars(
+            select(TherapistMatchingProfileSupportArea.support_area_term_id).where(
+                TherapistMatchingProfileSupportArea.therapist_profile_id == source.id
+            )
         )
     )
+    await session.execute(
+        delete(TherapistMatchingProfileSupportArea).where(
+            TherapistMatchingProfileSupportArea.therapist_profile_id == target.id
+        )
+    )
+    session.add_all(
+        TherapistMatchingProfileSupportArea(
+            therapist_profile_id=target.id,
+            support_area_term_id=support_area_id,
+        )
+        for support_area_id in support_area_ids
+    )
+
+    # Removing a login is not enough: Matching reads therapist profiles, not
+    # memberships. Without pausing the predecessor, both old and new people are
+    # recommended after a successful account swap.
+    source.accepting_new_clients = False
+    source.capacity_status = CapacityStatus.PAUSED
+    source.acceptance_status = AcceptanceStatus.PAUSED
     await session.flush()
-    return True, inherit_from_slug
+    return created, inherit_from_slug
 
 
 def _require_member(key: str) -> TeamMember:
@@ -344,7 +400,7 @@ async def run(args: argparse.Namespace) -> int:
                 if not args.no_inherit:
                     outgoing = _require_member(replaced_by_key[person.key])
                     outgoing_slug = outgoing.therapist_slug
-                created_profile, inherited_from = await _ensure_therapist_profile(
+                created_profile, inherited_from = await ensure_therapist_profile(
                     session, args.organization, person, outgoing_slug
                 )
                 result = await provision_staff(
@@ -370,6 +426,8 @@ async def run(args: argparse.Namespace) -> int:
                     profile_note = f" (novo, nasleđeno od {inherited_from})"
                 elif created_profile:
                     profile_note = " (novo, prazno — ne prima klijente)"
+                elif inherited_from:
+                    profile_note = f" (postojeći, usklađen sa {inherited_from})"
                 else:
                     profile_note = ""
                 print(f"    terapeutski profil: {result.therapist_linked or '-'}{profile_note}")
