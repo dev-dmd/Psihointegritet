@@ -19,6 +19,7 @@
   @keyframes ccFade { from { opacity: 0; } to { opacity: 1; } }
   @keyframes ccDrawer { from { transform: translateX(48px); opacity: 0; } to { transform: none; opacity: 1; } }
   @keyframes ccSheet { from { transform: translateY(56px); opacity: 0; } to { transform: none; opacity: 1; } }
+  @keyframes ccSpin { to { transform: rotate(360deg); } }
   .cc-bottomnav { display: none !important; }
   .cc-mob { display: none !important; }
   @media (max-width: 1023px) {
@@ -756,11 +757,16 @@
           <div style="background: #FFFFFF; border: 1px solid rgba(58,46,40,0.06); border-radius: 20px; padding: 22px 24px;">
             <div style="font-size: 11.5px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: #8A9D82; margin-bottom: 12px;">1 · Radno vreme</div>
             <div style="font-size: 14px; line-height: 2; color: rgba(58,46,40,0.8);">Ponedeljak i sreda · <span style="font-weight: 600; color: #2E3B2E;">14:00 — 20:00</span><br>Utorak i četvrtak · <span style="font-weight: 600; color: #2E3B2E;">10:00 — 16:00</span><br>Petak · <span style="font-weight: 600; color: #2E3B2E;">10:00 — 14:00</span></div>
+            <div style="border-top: 1px solid rgba(58,46,40,0.07); margin-top: 14px; padding-top: 13px; display: flex; justify-content: flex-end;">
+              <button onClick="{{ goUskoro }}" style="cursor: pointer; background: none; border: 1.5px solid rgba(58,46,40,0.22); color: #3A2E28; font-family: 'Instrument Sans', sans-serif; font-size: 13px; font-weight: 600; padding: 9px 20px; border-radius: 999px; transition: all 0.2s ease; min-height: 44px;" style-hover="border-color: #8A9D82; background: rgba(198,213,168,0.15);">Uredi</button>
+            </div>
           </div>
           <div style="background: #FFFFFF; border: 1px solid rgba(58,46,40,0.06); border-radius: 20px; padding: 22px 24px;">
             <div style="font-size: 11.5px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: #8A9D82; margin-bottom: 12px;">2 · Raspoloživi slotovi</div>
-            <p style="margin: 0 0 12px; font-size: 14px; line-height: 1.6; color: rgba(58,46,40,0.75);">Generišu se iz radnog vremena: 60 min + 15 min pauze. Klijent u javnom bookingu vidi samo ovo.</p>
-            <span style="display: inline-flex; font-size: 12.5px; font-weight: 600; color: #2E3B2E; background: rgba(198,213,168,0.3); padding: 6px 13px; border-radius: 999px;">18 slotova ove nedelje</span>
+            <p style="margin: 0; font-size: 14px; line-height: 1.6; color: rgba(58,46,40,0.75);">Generišu se iz radnog vremena: 60 min + 15 min pauze. Klijent u javnom bookingu vidi samo ovo. — <span style="font-weight: 600; color: #2E3B2E;">18 slotova ove nedelje</span></p>
+            <div style="border-top: 1px solid rgba(58,46,40,0.07); margin-top: 14px; padding-top: 13px; display: flex; justify-content: flex-end; align-items: center; min-height: 44px;">
+              <span style="font-size: 13px; font-style: italic; color: rgba(58,46,40,0.5);">Nastaje iz radnog vremena</span>
+            </div>
           </div>
           <div style="background: #FFFFFF; border: 1px solid rgba(58,46,40,0.06); border-radius: 20px; padding: 22px 24px;">
             <div style="font-size: 11.5px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: #8A9D82; margin-bottom: 12px;">3 · Izuzeci</div>
@@ -768,12 +774,17 @@
               <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px;"><span style="font-size: 14px; font-weight: 600; color: #3A2E28;">Godišnji odmor</span><span style="font-size: 13px; color: rgba(58,46,40,0.6);">3 — 14. avgust</span></div>
               <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px;"><span style="font-size: 14px; font-weight: 600; color: #3A2E28;">Konferencija · Beograd</span><span style="font-size: 13px; color: rgba(58,46,40,0.6);">25. jul</span></div>
             </div>
-            <button onClick="{{ openQuick }}" style="cursor: pointer; margin-top: 14px; background: none; border: 1.5px dashed rgba(58,46,40,0.25); color: rgba(58,46,40,0.6); font-family: 'Instrument Sans', sans-serif; font-size: 12.5px; font-weight: 600; padding: 8px 16px; border-radius: 999px; transition: all 0.2s ease;" style-hover="border-color: #8A9D82; color: #2E3B2E;">+ Blokiraj vreme</button>
+            <div style="border-top: 1px solid rgba(58,46,40,0.07); margin-top: 14px; padding-top: 13px; display: flex; justify-content: flex-end;">
+              <button onClick="{{ goUskoro }}" style="cursor: pointer; background: none; border: 1.5px solid rgba(58,46,40,0.22); color: #3A2E28; font-family: 'Instrument Sans', sans-serif; font-size: 13px; font-weight: 600; padding: 9px 20px; border-radius: 999px; transition: all 0.2s ease; min-height: 44px;" style-hover="border-color: #8A9D82; background: rgba(198,213,168,0.15);">Uredi</button>
+            </div>
           </div>
           <div style="background: #FFFFFF; border: 1px solid rgba(58,46,40,0.06); border-radius: 20px; padding: 22px 24px;">
             <div style="font-size: 11.5px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: #8A9D82; margin-bottom: 12px;">4 · Rezervisani kapacitet</div>
             <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 8px;"><span style="font-size: 14px; font-weight: 600; color: #3A2E28;">TechNiš d.o.o.</span><span style="font-size: 13px; color: rgba(58,46,40,0.6);">Četvrtak · 16:00 — 18:00</span></div>
             <p style="margin: 0; font-size: 13px; line-height: 1.55; color: rgba(58,46,40,0.6);">Nedostupno javnom bookingu — koristi se samo kroz kompanijski program.</p>
+            <div style="border-top: 1px solid rgba(58,46,40,0.07); margin-top: 14px; padding-top: 13px; display: flex; justify-content: flex-end;">
+              <button onClick="{{ goUskoro }}" style="cursor: pointer; background: none; border: 1.5px solid rgba(58,46,40,0.22); color: #3A2E28; font-family: 'Instrument Sans', sans-serif; font-size: 13px; font-weight: 600; padding: 9px 20px; border-radius: 999px; transition: all 0.2s ease; min-height: 44px;" style-hover="border-color: #8A9D82; background: rgba(198,213,168,0.15);">Uredi</button>
+            </div>
           </div>
         </div>
       </div>
@@ -788,38 +799,99 @@
         <h1 class="cc-h1" style="margin: 0 0 6px; font-family: 'Newsreader', serif; font-weight: 400; font-size: 34px; line-height: 1.1; color: #2E3B2E;">Usluge i cene</h1>
         <p style="margin: 0; font-size: 14.5px; color: rgba(58,46,40,0.6);">Centralni katalog iz kojeg Booking i Matching engine čitaju podatke.</p>
       </div>
-      <button onClick="{{ openQuick }}" class="cc-desk" style="cursor: pointer; background: none; border: 1.5px solid rgba(58,46,40,0.22); color: #3A2E28; font-family: 'Instrument Sans', sans-serif; font-size: 13.5px; font-weight: 600; padding: 10px 20px; border-radius: 999px; transition: all 0.2s ease;" style-hover="border-color: #8A9D82; background: rgba(198,213,168,0.15);">+ Nova usluga</button>
+      <button onClick="{{ openWiz }}" style="cursor: pointer; border: none; background: #2E3B2E; color: #FAF8F3; font-family: 'Instrument Sans', sans-serif; font-size: 13.5px; font-weight: 600; padding: 12px 22px; border-radius: 999px; display: inline-flex; align-items: center; gap: 8px; transition: background 0.2s ease; min-height: 46px;" style-hover="background: #3d4d3d;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg>Dodaj uslugu</button>
     </div>
     <div class="cc-grid2" style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
       <sc-for list="{{ services }}" as="u" hint-placeholder-count="4">
         <article style="background: #FFFFFF; border: 1px solid rgba(58,46,40,0.06); border-radius: 20px; padding: 24px 26px; display: flex; flex-direction: column; gap: 14px;">
           <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;">
             <div>
+              <div style="font-size: 11px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: #8A9D82; margin-bottom: 5px;">Service · {{ u.kind }}</div>
               <div style="font-family: 'Newsreader', serif; font-size: 22px; line-height: 1.15; color: #2E3B2E;">{{ u.name }}</div>
               <div style="font-family: ui-monospace, Menlo, monospace; font-size: 11.5px; color: rgba(58,46,40,0.45); margin-top: 4px; letter-spacing: 0.04em;">{{ u.code }}</div>
             </div>
             <span style="display: inline-flex; align-items: center; gap: 6px; font-size: 11.5px; font-weight: 600; padding: 5px 11px; border-radius: 999px; white-space: nowrap; background: {{ u.stBg }}; color: {{ u.stFg }};"><span style="width: 5px; height: 5px; border-radius: 50%; background: {{ u.stFg }};"></span>{{ u.stLabel }}</span>
           </div>
-          <div style="display: flex; gap: 22px; flex-wrap: wrap; border-top: 1px solid rgba(58,46,40,0.07); padding-top: 13px;">
-            <span><span style="display: block; font-size: 11px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(58,46,40,0.45);">Trajanje</span><span style="display: block; font-family: 'Newsreader', serif; font-size: 18px; color: #2E3B2E; margin-top: 2px;">{{ u.dur }}</span></span>
-            <span><span style="display: block; font-size: 11px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(58,46,40,0.45);">Cena</span><span style="display: block; font-family: 'Newsreader', serif; font-size: 18px; color: #2E3B2E; margin-top: 2px;">{{ u.price }}</span></span>
-            <span><span style="display: block; font-size: 11px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(58,46,40,0.45);">Format</span><span style="display: block; font-size: 14px; font-weight: 600; color: #3A2E28; margin-top: 4px;">{{ u.fmt }}</span></span>
-            <span><span style="display: block; font-size: 11px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(58,46,40,0.45);">Terapeuti</span><span style="display: block; font-size: 14px; font-weight: 600; color: #3A2E28; margin-top: 4px;">{{ u.ters }}</span></span>
+          <div style="border-top: 1px solid rgba(58,46,40,0.07); padding-top: 13px;">
+            <span style="display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin-bottom: 9px;"><span style="font-size: 11px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(58,46,40,0.45);">ServiceOffering</span><span style="font-size: 11.5px; font-weight: 600; color: rgba(58,46,40,0.5);">{{ u.offCount }}</span></span>
+            <sc-if value="{{ u.hasOff }}" hint-placeholder-val="{{ true }}">
+              <div style="display: flex; flex-direction: column; gap: 8px;">
+                <sc-for list="{{ u.offerings }}" as="o" hint-placeholder-count="2">
+                  <div style="background: rgba(198,213,168,0.14); border-radius: 12px; padding: 10px 13px;">
+                    <div style="font-size: 13.5px; font-weight: 600; color: #3A2E28;">{{ o.ter }} · {{ o.fmt }} · {{ o.loc }}</div>
+                    <div style="font-size: 12px; color: rgba(58,46,40,0.6); margin-top: 3px;">{{ o.dur }} + {{ o.buf }} pauze · {{ o.mode }} · {{ o.policy }}</div>
+                  </div>
+                </sc-for>
+              </div>
+            </sc-if>
+            <sc-if value="{{ u.noOff }}" hint-placeholder-val="{{ false }}">
+              <div style="font-size: 13px; font-style: italic; color: #96562F;">Nema dodeljenog terapeuta — usluga se ne može aktivirati.</div>
+            </sc-if>
           </div>
-          <div>
-            <span style="display: block; font-size: 11px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(58,46,40,0.45); margin-bottom: 8px;">Varijante cena</span>
-            <div style="display: flex; flex-wrap: wrap; gap: 7px;">
-              <sc-for list="{{ u.variants }}" as="v" hint-placeholder-count="3">
-                <span style="font-size: 12.5px; font-weight: 500; color: #3A2E28; background: rgba(198,213,168,0.22); border: 1px solid rgba(138,157,130,0.25); padding: 5px 12px; border-radius: 999px;">{{ v }}</span>
-              </sc-for>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; border-top: 1px solid rgba(58,46,40,0.07); padding-top: 13px;">
+            <div>
+              <span style="display: block; font-size: 11px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(58,46,40,0.45); margin-bottom: 8px;">PriceVariant</span>
+              <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+                <sc-for list="{{ u.variants }}" as="v" hint-placeholder-count="3">
+                  <span style="font-size: 12.5px; font-weight: 500; color: #3A2E28; background: rgba(198,213,168,0.22); border: 1px solid rgba(138,157,130,0.25); padding: 5px 11px; border-radius: 999px;">{{ v.l }} · {{ v.p }}</span>
+                </sc-for>
+              </div>
+            </div>
+            <div>
+              <span style="display: block; font-size: 11px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(58,46,40,0.45); margin-bottom: 8px;">CommercialOffer</span>
+              <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+                <sc-for list="{{ u.offers }}" as="o" hint-placeholder-count="2">
+                  <span style="font-size: 12.5px; font-weight: 500; color: #3A2E28; background: rgba(209,164,140,0.2); border: 1px solid rgba(209,164,140,0.45); padding: 5px 11px; border-radius: 999px;">{{ o.l }} · {{ o.p }}</span>
+                </sc-for>
+              </div>
             </div>
           </div>
-          <div style="display: flex; gap: 18px; flex-wrap: wrap; font-size: 12.5px; color: rgba(58,46,40,0.6); border-top: 1px solid rgba(58,46,40,0.07); padding-top: 12px;">
+          <sc-if value="{{ u.hasIntake }}" hint-placeholder-val="{{ true }}">
+            <div style="border-top: 1px solid rgba(58,46,40,0.07); padding-top: 13px;">
+              <span style="display: block; font-size: 11px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(58,46,40,0.45); margin-bottom: 8px;">Intake publika</span>
+              <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+                <sc-for list="{{ u.intake }}" as="i" hint-placeholder-count="3">
+                  <span style="font-size: 12.5px; font-weight: 500; color: rgba(58,46,40,0.7); background: rgba(58,46,40,0.05); padding: 5px 11px; border-radius: 999px;">{{ i }}</span>
+                </sc-for>
+              </div>
+            </div>
+          </sc-if>
+          <div style="display: flex; align-items: center; gap: 18px; flex-wrap: wrap; font-size: 12.5px; color: rgba(58,46,40,0.6); border-top: 1px solid rgba(58,46,40,0.07); padding-top: 12px;">
             <span>Ručna potvrda: <span style="font-weight: 600; color: #3A2E28;">{{ u.manual }}</span></span>
-            <span>Booking buffer: <span style="font-weight: 600; color: #3A2E28;">{{ u.buffer }}</span></span>
-            <span>Otkazivanje do: <span style="font-weight: 600; color: #3A2E28;">{{ u.cancel }}</span></span>
+            <span>Otkazivanje: <span style="font-weight: 600; color: #3A2E28;">{{ u.cancel }}</span></span>
+            <sc-if value="{{ u.isDraft }}" hint-placeholder-val="{{ false }}">
+              <button onClick="{{ u.resume }}" style="cursor: pointer; margin-left: auto; border: none; background: #2E3B2E; color: #FAF8F3; font-family: 'Instrument Sans', sans-serif; font-size: 12.5px; font-weight: 600; padding: 9px 16px; border-radius: 999px; min-height: 44px;" style-hover="background: #3d4d3d;">Nastavi unos →</button>
+            </sc-if>
           </div>
         </article>
+      </sc-for>
+    </div>
+    <div style="margin-top: 16px; background: #FFFFFF; border: 1px solid rgba(58,46,40,0.06); border-radius: 22px; padding: 22px 24px 14px;">
+      <div style="display: flex; align-items: flex-end; justify-content: space-between; gap: 14px; flex-wrap: wrap; margin-bottom: 6px;">
+        <div>
+          <div style="font-size: 11.5px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: #8A9D82; margin-bottom: 5px;">Dijagnostika kreiranja usluge</div>
+          <p style="margin: 0; font-size: 13px; color: rgba(58,46,40,0.6);">Mockup provere toka — pokreće se ručno, ne dira podatke.</p>
+        </div>
+        <sc-if value="{{ notDiagRunning }}" hint-placeholder-val="{{ true }}">
+          <button onClick="{{ runDiag }}" style="cursor: pointer; background: none; border: 1.5px solid rgba(58,46,40,0.22); color: #3A2E28; font-family: 'Instrument Sans', sans-serif; font-size: 13px; font-weight: 600; padding: 10px 18px; border-radius: 999px; transition: all 0.2s ease; min-height: 44px;" style-hover="border-color: #8A9D82; background: rgba(198,213,168,0.15);">Pokreni provere</button>
+        </sc-if>
+        <sc-if value="{{ diagRunning }}" hint-placeholder-val="{{ false }}">
+          <span style="display: inline-flex; align-items: center; gap: 9px; font-size: 13px; font-weight: 600; color: rgba(58,46,40,0.6); min-height: 44px;"><span style="width: 15px; height: 15px; border-radius: 50%; border: 2px solid rgba(58,46,40,0.15); border-top-color: #8A9D82; animation: ccSpin 0.8s linear infinite; display: inline-block;"></span>Provere u toku…</span>
+        </sc-if>
+      </div>
+      <sc-for list="{{ diag }}" as="d" hint-placeholder-count="6">
+        <div style="display: grid; grid-template-columns: 22px 1fr auto; align-items: center; gap: 13px; padding: 12px 2px; border-top: 1px solid rgba(58,46,40,0.06);">
+          <span style="display: inline-flex; align-items: center; justify-content: center;">
+            <sc-if value="{{ d.isPending }}" hint-placeholder-val="{{ true }}"><span style="width: 15px; height: 15px; border-radius: 50%; border: 2px solid rgba(58,46,40,0.16); display: inline-block;"></span></sc-if>
+            <sc-if value="{{ d.isRun }}" hint-placeholder-val="{{ false }}"><span style="width: 15px; height: 15px; border-radius: 50%; border: 2px solid rgba(58,46,40,0.15); border-top-color: #96562F; animation: ccSpin 0.8s linear infinite; display: inline-block;"></span></sc-if>
+            <sc-if value="{{ d.isPass }}" hint-placeholder-val="{{ false }}"><span style="width: 19px; height: 19px; border-radius: 50%; background: rgba(198,213,168,0.5); color: #3D6B3D; display: inline-flex; align-items: center; justify-content: center;"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12.5l5 5L20 6.5"></path></svg></span></sc-if>
+          </span>
+          <span style="min-width: 0;">
+            <span style="display: block; font-size: 14px; font-weight: 600; color: {{ d.nfg }};">{{ d.t }}</span>
+            <span style="display: block; font-family: ui-monospace, Menlo, monospace; font-size: 11.5px; color: rgba(58,46,40,0.5); margin-top: 2px;">{{ d.d }}</span>
+          </span>
+          <span style="font-size: 12px; font-weight: 600; color: {{ d.nfg }}; white-space: nowrap;">{{ d.note }}</span>
+        </div>
       </sc-for>
     </div>
   </section>
@@ -1017,6 +1089,232 @@
   </div>
 </sc-if>
 
+<!-- ============ WIZARD: NOVA USLUGA ============ -->
+<sc-if value="{{ wizOpen }}" hint-placeholder-val="{{ false }}">
+  <div onClick="{{ closeWiz }}" style="position: fixed; inset: 0; z-index: 90; background: rgba(58,46,40,0.5); animation: ccFade 0.25s ease both;"></div>
+  <div class="cc-drawer" role="dialog" aria-label="Nova usluga" style="position: fixed; top: 0; right: 0; bottom: 0; z-index: 91; width: 560px; background: #FAF8F3; box-shadow: -24px 0 64px rgba(58,46,40,0.25); overflow-y: auto; animation: ccDrawer 0.35s cubic-bezier(0.22,1,0.36,1) both; box-sizing: border-box; padding: 24px 26px 30px;">
+    <div style="width: 40px; height: 4px; border-radius: 999px; background: rgba(58,46,40,0.15); margin: 0 auto 14px; display: none;" class="cc-mob"></div>
+    <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; margin-bottom: 18px;">
+      <div>
+        <div style="font-size: 11px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: #8A9D82; margin-bottom: 7px;">{{ wzKicker }}</div>
+        <h2 style="margin: 0; font-family: 'Newsreader', serif; font-weight: 400; font-size: 25px; line-height: 1.12; color: #2E3B2E;">{{ wzTitle }}</h2>
+      </div>
+      <button onClick="{{ closeWiz }}" aria-label="Zatvori" style="cursor: pointer; border: 1px solid rgba(58,46,40,0.12); background: #FFFFFF; width: 38px; height: 38px; border-radius: 50%; color: #3A2E28; display: flex; align-items: center; justify-content: center; flex-shrink: 0;" style-hover="border-color: #8A9D82;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"></path></svg></button>
+    </div>
+    <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 20px; flex-wrap: wrap;">
+      <sc-for list="{{ wzSteps }}" as="s" hint-placeholder-count="5">
+        <button onClick="{{ s.go }}" style="cursor: pointer; border: none; background: none; display: inline-flex; align-items: center; gap: 7px; padding: 4px 8px 4px 4px; border-radius: 999px; font-family: 'Instrument Sans', sans-serif;">
+          <span style="width: 24px; height: 24px; border-radius: 50%; font-size: 12px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; background: {{ s.bg }}; color: {{ s.fg }};">{{ s.n }}</span>
+          <span style="font-size: 12.5px; font-weight: 600; color: {{ s.lfg }};">{{ s.label }}</span>
+        </button>
+      </sc-for>
+    </div>
+
+    <sc-if value="{{ wzStep1 }}" hint-placeholder-val="{{ true }}">
+      <div style="display: flex; flex-direction: column; gap: 18px;">
+        <div>
+          <label for="wz-name" style="display: block; font-size: 11px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(58,46,40,0.5); margin-bottom: 7px;">Naziv usluge — javno vidljiv</label>
+          <input id="wz-name" value="{{ wzName }}" onChange="{{ setWzName }}" placeholder="npr. Individualna psihoterapija" style="width: 100%; box-sizing: border-box; background: #FFFFFF; border: 1.5px solid rgba(58,46,40,0.15); border-radius: 13px; padding: 13px 15px; font-family: 'Instrument Sans', sans-serif; font-size: 14.5px; color: #3A2E28; outline: none;" style-focus="border-color: #8A9D82;">
+        </div>
+        <div>
+          <span style="display: block; font-size: 11px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(58,46,40,0.5); margin-bottom: 9px;">Tip usluge — Service</span>
+          <div style="display: flex; flex-wrap: wrap; gap: 7px;">
+            <sc-for list="{{ wzKinds }}" as="o" hint-placeholder-count="6">
+              <button onClick="{{ o.pick }}" style="cursor: pointer; font-family: 'Instrument Sans', sans-serif; font-size: 12.5px; font-weight: 600; padding: 9px 15px; border-radius: 999px; transition: all 0.2s ease; min-height: 44px; border: 1px solid {{ o.bd }}; background: {{ o.bg }}; color: {{ o.fg }};">{{ o.label }}</button>
+            </sc-for>
+          </div>
+        </div>
+        <div style="background: #FFFFFF; border: 1px solid rgba(58,46,40,0.06); border-radius: 16px; padding: 16px 18px;">
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
+            <span><span style="display: block; font-size: 11px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(58,46,40,0.45);">Interna šifra — generiše sistem</span><span style="display: block; font-family: ui-monospace, Menlo, monospace; font-size: 17px; color: #2E3B2E; margin-top: 4px; letter-spacing: 0.04em;">{{ wzCode }}</span></span>
+            <span style="display: inline-flex; align-items: center; gap: 6px; font-size: 11.5px; font-weight: 600; padding: 5px 11px; border-radius: 999px; background: {{ wzCodeBg }}; color: {{ wzCodeFg }};"><span style="width: 5px; height: 5px; border-radius: 50%; background: {{ wzCodeFg }};"></span>{{ wzCodeLabel }}</span>
+          </div>
+          <sc-if value="{{ wzConflict }}" hint-placeholder-val="{{ false }}">
+            <div style="margin-top: 13px; background: rgba(209,164,140,0.18); border: 1px solid rgba(209,164,140,0.45); border-radius: 13px; padding: 12px 14px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+              <span style="flex: 1; font-size: 13px; line-height: 1.5; color: #3A2E28;">Šifra je već u upotrebi. Predlog: <span style="font-family: ui-monospace, Menlo, monospace; font-weight: 700;">{{ wzSuggest }}</span></span>
+              <button onClick="{{ useSuggest }}" style="cursor: pointer; border: none; background: #2E3B2E; color: #FAF8F3; font-family: 'Instrument Sans', sans-serif; font-size: 12.5px; font-weight: 600; padding: 9px 16px; border-radius: 999px; min-height: 44px;" style-hover="background: #3d4d3d;">Koristi predlog</button>
+            </div>
+          </sc-if>
+        </div>
+        <p style="margin: 0; font-size: 12.5px; font-style: italic; color: rgba(58,46,40,0.5);">Naziv i tip su dovoljni za minimalni draft — ostalo možete dopuniti kasnije.</p>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ wzStep2 }}" hint-placeholder-val="{{ false }}">
+      <div style="display: flex; flex-direction: column; gap: 18px;">
+        <div style="background: rgba(198,213,168,0.22); border: 1px solid rgba(138,157,130,0.3); border-radius: 14px; padding: 12px 16px; font-size: 12.5px; line-height: 1.5; color: #3A2E28;"><span style="font-weight: 700;">ServiceOffering</span> = usluga + terapeut + format + lokacija + trajanje + buffer + režim + policy. Svaki terapeut dobija svoju ponudu.</div>
+        <div>
+          <span style="display: block; font-size: 11px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(58,46,40,0.5); margin-bottom: 9px;">Trajanje</span>
+          <div style="display: flex; flex-wrap: wrap; gap: 7px;">
+            <sc-for list="{{ wzDurs }}" as="o" hint-placeholder-count="4">
+              <button onClick="{{ o.pick }}" style="cursor: pointer; font-family: 'Instrument Sans', sans-serif; font-size: 12.5px; font-weight: 600; padding: 9px 15px; border-radius: 999px; transition: all 0.2s ease; min-height: 44px; border: 1px solid {{ o.bd }}; background: {{ o.bg }}; color: {{ o.fg }};">{{ o.label }}</button>
+            </sc-for>
+          </div>
+        </div>
+        <div>
+          <span style="display: block; font-size: 11px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(58,46,40,0.5); margin-bottom: 9px;">Format</span>
+          <div style="display: flex; flex-wrap: wrap; gap: 7px;">
+            <sc-for list="{{ wzFmts }}" as="o" hint-placeholder-count="3">
+              <button onClick="{{ o.pick }}" style="cursor: pointer; font-family: 'Instrument Sans', sans-serif; font-size: 12.5px; font-weight: 600; padding: 9px 15px; border-radius: 999px; transition: all 0.2s ease; min-height: 44px; border: 1px solid {{ o.bd }}; background: {{ o.bg }}; color: {{ o.fg }};">{{ o.label }}</button>
+            </sc-for>
+          </div>
+        </div>
+        <sc-if value="{{ wzNeedsLoc }}" hint-placeholder-val="{{ false }}">
+          <div>
+            <span style="display: block; font-size: 11px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(58,46,40,0.5); margin-bottom: 9px;">Lokacija</span>
+            <div style="display: flex; flex-wrap: wrap; gap: 7px;">
+              <sc-for list="{{ wzLocs }}" as="o" hint-placeholder-count="3">
+                <button onClick="{{ o.pick }}" style="cursor: pointer; font-family: 'Instrument Sans', sans-serif; font-size: 12.5px; font-weight: 600; padding: 9px 15px; border-radius: 999px; transition: all 0.2s ease; min-height: 44px; border: 1px solid {{ o.bd }}; background: {{ o.bg }}; color: {{ o.fg }};">{{ o.label }}</button>
+              </sc-for>
+            </div>
+          </div>
+        </sc-if>
+        <div>
+          <span style="display: block; font-size: 11px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(58,46,40,0.5); margin-bottom: 9px;">Pauza posle termina</span>
+          <div style="display: flex; flex-wrap: wrap; gap: 7px;">
+            <sc-for list="{{ wzBufs }}" as="o" hint-placeholder-count="3">
+              <button onClick="{{ o.pick }}" style="cursor: pointer; font-family: 'Instrument Sans', sans-serif; font-size: 12.5px; font-weight: 600; padding: 9px 15px; border-radius: 999px; transition: all 0.2s ease; min-height: 44px; border: 1px solid {{ o.bd }}; background: {{ o.bg }}; color: {{ o.fg }};">{{ o.label }}</button>
+            </sc-for>
+          </div>
+        </div>
+        <div>
+          <span style="display: block; font-size: 11px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(58,46,40,0.5); margin-bottom: 9px;">Booking režim</span>
+          <div style="display: flex; flex-wrap: wrap; gap: 7px;">
+            <sc-for list="{{ wzModes }}" as="o" hint-placeholder-count="3">
+              <button onClick="{{ o.pick }}" style="cursor: pointer; font-family: 'Instrument Sans', sans-serif; font-size: 12.5px; font-weight: 600; padding: 9px 15px; border-radius: 999px; transition: all 0.2s ease; min-height: 44px; border: 1px solid {{ o.bd }}; background: {{ o.bg }}; color: {{ o.fg }};">{{ o.label }}</button>
+            </sc-for>
+          </div>
+        </div>
+        <div>
+          <span style="display: block; font-size: 11px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(58,46,40,0.5); margin-bottom: 9px;">Booking policy</span>
+          <div style="display: flex; flex-wrap: wrap; gap: 7px;">
+            <sc-for list="{{ wzPolicies }}" as="o" hint-placeholder-count="3">
+              <button onClick="{{ o.pick }}" style="cursor: pointer; font-family: 'Instrument Sans', sans-serif; font-size: 12.5px; font-weight: 600; padding: 9px 15px; border-radius: 999px; transition: all 0.2s ease; min-height: 44px; border: 1px solid {{ o.bd }}; background: {{ o.bg }}; color: {{ o.fg }};">{{ o.label }}</button>
+            </sc-for>
+          </div>
+        </div>
+        <div>
+          <span style="display: block; font-size: 11px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(58,46,40,0.5); margin-bottom: 9px;">Dodeljeni terapeuti — može više</span>
+          <div style="display: flex; flex-wrap: wrap; gap: 7px;">
+            <sc-for list="{{ wzTers }}" as="o" hint-placeholder-count="3">
+              <button onClick="{{ o.pick }}" style="cursor: pointer; font-family: 'Instrument Sans', sans-serif; font-size: 12.5px; font-weight: 600; padding: 9px 15px; border-radius: 999px; transition: all 0.2s ease; min-height: 44px; border: 1px solid {{ o.bd }}; background: {{ o.bg }}; color: {{ o.fg }};">{{ o.label }}</button>
+            </sc-for>
+          </div>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ wzStep3 }}" hint-placeholder-val="{{ false }}">
+      <div style="display: flex; flex-direction: column; gap: 20px;">
+        <div>
+          <span style="display: block; font-size: 11px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(58,46,40,0.5); margin-bottom: 4px;">PriceVariant — cena po kriterijumu</span>
+          <p style="margin: 0 0 11px; font-size: 12.5px; color: rgba(58,46,40,0.55);">Cena pojedinačne usluge za određenu grupu klijenata.</p>
+          <div style="display: flex; flex-wrap: wrap; gap: 7px; margin-bottom: 10px;">
+            <sc-for list="{{ wzVLabels }}" as="o" hint-placeholder-count="4">
+              <button onClick="{{ o.pick }}" style="cursor: pointer; font-family: 'Instrument Sans', sans-serif; font-size: 12.5px; font-weight: 600; padding: 9px 15px; border-radius: 999px; transition: all 0.2s ease; min-height: 44px; border: 1px solid {{ o.bd }}; background: {{ o.bg }}; color: {{ o.fg }};">{{ o.label }}</button>
+            </sc-for>
+          </div>
+          <div style="display: flex; gap: 9px; align-items: center;">
+            <input value="{{ wzVPrice }}" onChange="{{ setVPrice }}" placeholder="Cena u RSD, npr. 3500" style="flex: 1; min-width: 0; box-sizing: border-box; background: #FFFFFF; border: 1.5px solid rgba(58,46,40,0.15); border-radius: 13px; padding: 12px 15px; font-family: 'Instrument Sans', sans-serif; font-size: 14px; color: #3A2E28; outline: none;" style-focus="border-color: #8A9D82;">
+            <button onClick="{{ addVariant }}" style="cursor: pointer; border: none; background: #2E3B2E; color: #FAF8F3; font-family: 'Instrument Sans', sans-serif; font-size: 13px; font-weight: 600; padding: 12px 18px; border-radius: 999px; white-space: nowrap; min-height: 46px;" style-hover="background: #3d4d3d;">+ Dodaj</button>
+          </div>
+          <div style="display: flex; flex-wrap: wrap; gap: 7px; margin-top: 11px;">
+            <sc-for list="{{ wzVariants }}" as="v" hint-placeholder-count="2">
+              <span style="display: inline-flex; align-items: center; gap: 8px; font-size: 12.5px; font-weight: 600; color: #3A2E28; background: rgba(198,213,168,0.28); border: 1px solid rgba(138,157,130,0.3); padding: 6px 8px 6px 13px; border-radius: 999px;">{{ v.l }} · {{ v.p }}<button onClick="{{ v.del }}" aria-label="Ukloni" style="cursor: pointer; border: none; background: none; color: rgba(58,46,40,0.45); display: inline-flex; padding: 2px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"></path></svg></button></span>
+            </sc-for>
+          </div>
+          <sc-if value="{{ wzNoVariants }}" hint-placeholder-val="{{ true }}">
+            <p style="margin: 10px 0 0; font-size: 12.5px; font-style: italic; color: #96562F;">Bez najmanje jedne cenovne varijante usluga ne može da se aktivira.</p>
+          </sc-if>
+        </div>
+        <div style="border-top: 1px solid rgba(58,46,40,0.1); padding-top: 18px;">
+          <span style="display: block; font-size: 11px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(58,46,40,0.5); margin-bottom: 4px;">CommercialOffer — komercijalni paket</span>
+          <p style="margin: 0 0 11px; font-size: 12.5px; color: rgba(58,46,40,0.55);">Ono što klijent zaista kupuje: seansa, paket, mesečni program, radionica ili kompanijski plan.</p>
+          <div style="display: flex; flex-wrap: wrap; gap: 7px; margin-bottom: 10px;">
+            <sc-for list="{{ wzOLabels }}" as="o" hint-placeholder-count="6">
+              <button onClick="{{ o.pick }}" style="cursor: pointer; font-family: 'Instrument Sans', sans-serif; font-size: 12.5px; font-weight: 600; padding: 9px 15px; border-radius: 999px; transition: all 0.2s ease; min-height: 44px; border: 1px solid {{ o.bd }}; background: {{ o.bg }}; color: {{ o.fg }};">{{ o.label }}</button>
+            </sc-for>
+          </div>
+          <div style="display: flex; gap: 9px; align-items: center;">
+            <input value="{{ wzOPrice }}" onChange="{{ setOPrice }}" placeholder="Cena paketa, npr. 16.000 RSD" style="flex: 1; min-width: 0; box-sizing: border-box; background: #FFFFFF; border: 1.5px solid rgba(58,46,40,0.15); border-radius: 13px; padding: 12px 15px; font-family: 'Instrument Sans', sans-serif; font-size: 14px; color: #3A2E28; outline: none;" style-focus="border-color: #8A9D82;">
+            <button onClick="{{ addOffer }}" style="cursor: pointer; border: none; background: #2E3B2E; color: #FAF8F3; font-family: 'Instrument Sans', sans-serif; font-size: 13px; font-weight: 600; padding: 12px 18px; border-radius: 999px; white-space: nowrap; min-height: 46px;" style-hover="background: #3d4d3d;">+ Dodaj</button>
+          </div>
+          <div style="display: flex; flex-wrap: wrap; gap: 7px; margin-top: 11px;">
+            <sc-for list="{{ wzOffers }}" as="o" hint-placeholder-count="2">
+              <span style="display: inline-flex; align-items: center; gap: 8px; font-size: 12.5px; font-weight: 600; color: #3A2E28; background: rgba(209,164,140,0.22); border: 1px solid rgba(209,164,140,0.45); padding: 6px 8px 6px 13px; border-radius: 999px;">{{ o.l }} · {{ o.p }}<button onClick="{{ o.del }}" aria-label="Ukloni" style="cursor: pointer; border: none; background: none; color: rgba(58,46,40,0.45); display: inline-flex; padding: 2px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"></path></svg></button></span>
+            </sc-for>
+          </div>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ wzStep4 }}" hint-placeholder-val="{{ false }}">
+      <div style="display: flex; flex-direction: column; gap: 16px;">
+        <div>
+          <span style="display: block; font-size: 11px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(58,46,40,0.5); margin-bottom: 4px;">Intake publika</span>
+          <p style="margin: 0 0 11px; font-size: 12.5px; color: rgba(58,46,40,0.55);">Oblasti iz Intake upitnika za koje Matching engine predlaže ovu uslugu.</p>
+          <div style="display: flex; flex-wrap: wrap; gap: 7px;">
+            <sc-for list="{{ wzIntake }}" as="o" hint-placeholder-count="7">
+              <button onClick="{{ o.pick }}" style="cursor: pointer; font-family: 'Instrument Sans', sans-serif; font-size: 12.5px; font-weight: 600; padding: 9px 15px; border-radius: 999px; transition: all 0.2s ease; min-height: 44px; border: 1px solid {{ o.bd }}; background: {{ o.bg }}; color: {{ o.fg }};">{{ o.label }}</button>
+            </sc-for>
+          </div>
+        </div>
+        <div style="background: rgba(198,213,168,0.22); border: 1px solid rgba(138,157,130,0.3); border-radius: 14px; padding: 13px 16px; font-size: 12.5px; line-height: 1.55; color: #3A2E28;">Povezivanje je pomoć pri usmeravanju — ne prikazuje se klijentu kao dijagnoza ni kao obavezujuća preporuka.</div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ wzStep5 }}" hint-placeholder-val="{{ false }}">
+      <div style="display: flex; flex-direction: column; gap: 16px;">
+        <div style="background: #FFFFFF; border: 1px solid rgba(58,46,40,0.06); border-radius: 18px; padding: 20px 22px;">
+          <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin-bottom: 10px;">
+            <span style="font-size: 11px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(58,46,40,0.45);">Readiness</span>
+            <span style="font-family: 'Newsreader', serif; font-size: 21px; color: #2E3B2E;">{{ wzPct }}% <span style="font-family: 'Instrument Sans', sans-serif; font-size: 12.5px; color: rgba(58,46,40,0.5);">{{ wzReadyCount }} / {{ wzTotal }}</span></span>
+          </div>
+          <span style="display: block; height: 9px; border-radius: 999px; background: rgba(58,46,40,0.07); overflow: hidden; margin-bottom: 16px;"><span style="display: block; height: 100%; border-radius: 999px; background: #8A9D82; width: {{ wzPctW }};"></span></span>
+          <div style="display: flex; flex-direction: column;">
+            <sc-for list="{{ wzReady }}" as="r" hint-placeholder-count="9">
+              <span style="display: flex; align-items: center; gap: 11px; padding: 9px 0; border-top: 1px solid rgba(58,46,40,0.06);">
+                <span style="width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; background: {{ r.dot }};"></span>
+                <span style="flex: 1; font-size: 13.5px; font-weight: 600; color: #3A2E28;">{{ r.t }}</span>
+                <span style="font-size: 12px; font-weight: 600; color: {{ r.dot }};">{{ r.note }}</span>
+              </span>
+            </sc-for>
+          </div>
+          <p style="margin: 14px 0 0; font-size: 12.5px; line-height: 1.5; color: rgba(58,46,40,0.6);">{{ wzMissingText }}</p>
+        </div>
+        <div style="background: #FFFFFF; border: 1px solid rgba(58,46,40,0.06); border-radius: 18px; padding: 6px 20px;">
+          <sc-for list="{{ wzSummary }}" as="m" hint-placeholder-count="4">
+            <span style="display: flex; align-items: center; gap: 12px; padding: 12px 0; border-top: 1px solid rgba(58,46,40,0.06);">
+              <span style="font-family: ui-monospace, Menlo, monospace; font-size: 11.5px; font-weight: 700; color: #8A9D82; width: 132px; flex-shrink: 0;">{{ m.t }}</span>
+              <span style="flex: 1;"><span style="display: block; font-size: 13.5px; font-weight: 600; color: #3A2E28;">{{ m.v }}</span><span style="display: block; font-size: 11.5px; color: rgba(58,46,40,0.5);">{{ m.d }}</span></span>
+            </span>
+          </sc-for>
+        </div>
+        <p style="margin: 0; font-size: 12.5px; font-style: italic; color: rgba(58,46,40,0.55);">{{ wzCapNote }}</p>
+        <div style="display: flex; flex-direction: column; gap: 9px;">
+          <button onClick="{{ wzActivate }}" style="cursor: pointer; border: none; font-family: 'Instrument Sans', sans-serif; font-size: 14.5px; font-weight: 600; padding: 14px; border-radius: 999px; transition: background 0.2s ease; min-height: 48px; background: {{ wzActS.bg }}; color: {{ wzActS.fg }};">Aktiviraj uslugu</button>
+          <button onClick="{{ wzSubmit }}" style="cursor: pointer; font-family: 'Instrument Sans', sans-serif; font-size: 13.5px; font-weight: 600; padding: 12px; border-radius: 999px; transition: all 0.2s ease; min-height: 46px; border: 1.5px solid {{ wzSubS.bd }}; background: {{ wzSubS.bg }}; color: {{ wzSubS.fg }};">Pošalji na pregled</button>
+        </div>
+      </div>
+    </sc-if>
+
+    <div style="display: flex; align-items: center; gap: 9px; border-top: 1px solid rgba(58,46,40,0.1); margin-top: 22px; padding-top: 16px;">
+      <sc-if value="{{ wzShowBack }}" hint-placeholder-val="{{ false }}">
+        <button onClick="{{ wzBack }}" style="cursor: pointer; background: none; border: 1.5px solid rgba(58,46,40,0.22); color: #3A2E28; font-family: 'Instrument Sans', sans-serif; font-size: 13.5px; font-weight: 600; padding: 12px 20px; border-radius: 999px; transition: all 0.2s ease; min-height: 46px;" style-hover="border-color: #8A9D82;">← Nazad</button>
+      </sc-if>
+      <button onClick="{{ wzSaveDraft }}" style="cursor: pointer; background: none; border: 1.5px dashed rgba(58,46,40,0.25); color: rgba(58,46,40,0.7); font-family: 'Instrument Sans', sans-serif; font-size: 13.5px; font-weight: 600; padding: 12px 20px; border-radius: 999px; transition: all 0.2s ease; min-height: 46px;" style-hover="border-color: #8A9D82; color: #2E3B2E;">Sačuvaj draft</button>
+      <span style="flex: 1;"></span>
+      <sc-if value="{{ wzShowNext }}" hint-placeholder-val="{{ true }}">
+        <button onClick="{{ wzNext }}" style="cursor: pointer; border: none; background: #2E3B2E; color: #FAF8F3; font-family: 'Instrument Sans', sans-serif; font-size: 13.5px; font-weight: 600; padding: 13px 24px; border-radius: 999px; transition: background 0.2s ease; min-height: 46px;" style-hover="background: #3d4d3d;">Sledeći korak →</button>
+      </sc-if>
+    </div>
+  </div>
+</sc-if>
+
+<sc-if value="{{ hasToast }}" hint-placeholder-val="{{ false }}">
+  <div style="position: fixed; bottom: 26px; left: 50%; transform: translateX(-50%); z-index: 95; background: #2E3B2E; color: #FAF8F3; font-size: 13.5px; font-weight: 600; padding: 13px 22px; border-radius: 999px; box-shadow: 0 14px 34px rgba(58,46,40,0.25); animation: ccSheet 0.3s cubic-bezier(0.22,1,0.36,1) both; max-width: 90vw; text-align: center;">{{ toast }}</div>
+</sc-if>
+
 </div>
 </x-dc>
 <script type="text/x-dc" data-dc-script data-props="{&quot;startScreen&quot;: {&quot;editor&quot;: &quot;enum&quot;, &quot;default&quot;: &quot;pregled&quot;, &quot;options&quot;: [&quot;pregled&quot;, &quot;termini&quot;, &quot;klijenti&quot;, &quot;kompanije&quot;, &quot;usluge&quot;, &quot;istrazivanja&quot;, &quot;terapeuti&quot;], &quot;tsType&quot;: &quot;string&quot;, &quot;section&quot;: &quot;Demo&quot;}, &quot;role&quot;: {&quot;editor&quot;: &quot;enum&quot;, &quot;default&quot;: &quot;vlasnik&quot;, &quot;options&quot;: [&quot;vlasnik&quot;, &quot;terapeut&quot;], &quot;tsType&quot;: &quot;string&quot;, &quot;section&quot;: &quot;Demo&quot;}}">
@@ -1043,6 +1341,7 @@ class Component extends DCLogic {
     usAktivna: ['Aktivna', '#3D6B3D', 'rgba(198,213,168,0.45)'],
     usPriprema: ['U pripremi', '#8A6A3B', 'rgba(209,164,140,0.22)'],
     usNacrt: ['Nacrt', 'rgba(58,46,40,0.6)', 'rgba(58,46,40,0.07)'],
+    usPregled: ['Na pregledu', '#8A6A3B', 'rgba(209,164,140,0.22)'],
   };
   AG = [
     { time: '09:00', end: '10:00', client: 'Ana Marković', init: 'AM', svc: 'Individualna psihoterapija', fmt: 'Online', ter: 'Anja S.', src: 'Javni booking', st: 'potvrdjen', intake: 'Anksioznost i iscrpljenost na poslu · u terapiji od marta.' },
@@ -1106,10 +1405,56 @@ class Component extends DCLogic {
     { id: 'k4', name: 'Hotel Ambasador', st: 'koNovi', contact: 'Upit preko sajta · juče', model: 'Još nije definisan', bought: 0, used: 0, res: 0, carry: 0, expires: '—', emp: 40, fmtx: '—', loc: 'Niš', cilj: 'Upit: podrška za uslužni tim tokom sezone.' },
   ];
   US = [
-    { name: 'Individualna psihoterapija', code: 'IND-60', st: 'usAktivna', dur: '60 min', price: '3.500 RSD', fmt: 'Online i uživo', ters: 'Anja · Marija · Marjan', variants: ['Standardna · 3.500', 'Studenti · 2.800', 'Kompanijska · 4.200', 'Paket 5× · 16.000'], manual: 'Ne', buffer: '12h', cancel: '24h' },
-    { name: 'Partnersko savjetovanje', code: 'PAR-90', st: 'usAktivna', dur: '90 min', price: '5.000 RSD', fmt: 'Online i uživo', ters: 'Anja · Marjan', variants: ['Standardna · 5.000', 'Paket 5× · 23.000'], manual: 'Ne', buffer: '12h', cancel: '24h' },
-    { name: 'Savjetovanje adolescenata', code: 'ADO-60', st: 'usAktivna', dur: '60 min', price: '3.200 RSD', fmt: 'Uživo · Niš', ters: 'Marija', variants: ['Standardna · 3.200', 'Kompanijska · 3.800'], manual: 'Da · min. 14 god.', buffer: '24h', cancel: '24h' },
-    { name: 'Radionica — Prevencija burnouta', code: 'RAD-B1', st: 'usPriprema', dur: '120 min', price: 'Na upit', fmt: 'Uživo · kompanije', ters: 'Anja', variants: ['Kompanijska · na upit'], manual: 'Da', buffer: '72h', cancel: '7 dana' },
+    { id: 's1', name: 'Individualna psihoterapija', kind: 'Individualna psihoterapija', code: 'IND-60', st: 'usAktivna',
+      offerings: [
+        { ter: 'Anja Stamenković', fmt: 'Online', loc: 'Bez lokacije', dur: '60 min', buf: '15 min', mode: 'Puni sat', policy: 'Otkazivanje 24h' },
+        { ter: 'Marija Stamenković', fmt: 'Online', loc: 'Bez lokacije', dur: '60 min', buf: '15 min', mode: 'Puni sat', policy: 'Otkazivanje 24h' },
+        { ter: 'Marjan Janković', fmt: 'Uživo', loc: 'Niš · Obrenovićeva', dur: '60 min', buf: '15 min', mode: 'Puni sat', policy: 'Otkazivanje 24h' },
+      ],
+      variants: [{ l: 'Standardna', p: '3.500 RSD' }, { l: 'Studentska', p: '2.800 RSD' }, { l: 'Kompanijska', p: '4.200 RSD' }],
+      offers: [{ l: 'Pojedinačna seansa', p: '3.500 RSD' }, { l: 'Paket 5×', p: '16.000 RSD' }],
+      intake: ['Anksioznost', 'Burnout', 'Lični razvoj'], manual: 'Ne', cancel: '24h' },
+    { id: 's2', name: 'Partnersko savjetovanje', kind: 'Partnersko savetovanje', code: 'PAR-90', st: 'usAktivna',
+      offerings: [
+        { ter: 'Anja Stamenković', fmt: 'Online', loc: 'Bez lokacije', dur: '90 min', buf: '15 min', mode: 'Puni sat', policy: 'Otkazivanje 24h' },
+        { ter: 'Marjan Janković', fmt: 'Uživo', loc: 'Niš · Obrenovićeva', dur: '90 min', buf: '30 min', mode: 'Puni sat', policy: 'Otkazivanje 24h' },
+      ],
+      variants: [{ l: 'Standardna', p: '5.000 RSD' }],
+      offers: [{ l: 'Pojedinačna seansa', p: '5.000 RSD' }, { l: 'Paket 5×', p: '23.000 RSD' }],
+      intake: ['Partnerski odnosi'], manual: 'Ne', cancel: '24h' },
+    { id: 's3', name: 'Savjetovanje adolescenata', kind: 'Savetovanje adolescenata', code: 'ADO-60', st: 'usAktivna',
+      offerings: [
+        { ter: 'Marija Stamenković', fmt: 'Uživo', loc: 'Niš · Obrenovićeva', dur: '60 min', buf: '15 min', mode: 'Puni sat', policy: 'Ručna potvrda' },
+      ],
+      variants: [{ l: 'Standardna', p: '3.200 RSD' }, { l: 'Kompanijska', p: '3.800 RSD' }],
+      offers: [{ l: 'Pojedinačna seansa', p: '3.200 RSD' }],
+      intake: ['Adolescenti', 'Roditeljstvo'], manual: 'Da · min. 14 god.', cancel: '24h' },
+    { id: 's4', name: 'Radionica — Prevencija burnouta', kind: 'Radionica', code: 'RAD-B1', st: 'usPriprema',
+      offerings: [
+        { ter: 'Anja Stamenković', fmt: 'Uživo', loc: 'Kod kompanije', dur: '120 min', buf: '30 min', mode: 'Ručno biram termine', policy: 'Ručna potvrda' },
+      ],
+      variants: [{ l: 'Kompanijska', p: 'Na upit' }],
+      offers: [{ l: 'Radionica', p: 'Na upit' }, { l: 'Kompanijski plan', p: 'Po ugovoru' }],
+      intake: ['Kompanije', 'Burnout'], manual: 'Da', cancel: '7 dana' },
+  ];
+  KINDS = ['Individualna psihoterapija', 'Partnersko savetovanje', 'Savetovanje adolescenata', 'Podrška roditeljima', 'Radionica', 'Program za kompanije'];
+  DURS = [45, 60, 90, 120];
+  FMTS = ['Online', 'Uživo', 'Online i uživo'];
+  LOCS = ['Niš · Obrenovićeva', 'Kod kompanije', 'Bez lokacije'];
+  BUFS = [0, 15, 30];
+  MODES = ['Puni sat', 'Fleksibilno 30 min', 'Ručno biram termine'];
+  POLICIES = ['Otkazivanje 24h', 'Otkazivanje 48h', 'Ručna potvrda'];
+  TERS = ['Anja Stamenković', 'Marija Stamenković', 'Marjan Janković'];
+  INTAKE = ['Anksioznost', 'Burnout', 'Partnerski odnosi', 'Adolescenti', 'Roditeljstvo', 'Kompanije', 'Lični razvoj'];
+  VLABELS = ['Standardna', 'Studentska', 'Kompanijska', 'Promotivna'];
+  OLABELS = ['Pojedinačna seansa', 'Paket 5×', 'Paket 10×', 'Mesečni program', 'Radionica', 'Kompanijski plan'];
+  DIAG = [
+    ['Prikaz konflikta šifre', 'IND-60 je zauzeta → predlog IND-60-2'],
+    ['Čuvanje minimalnog drafta', 'Naziv + tip usluge → status Nacrt'],
+    ['Nastavak nedovršenog drafta', 'Wizard se otvara na koraku 3 od 5'],
+    ['Promena taba preko URL-a', '?korak=cene otvara korak Cene'],
+    ['Dodavanje cenovne varijante', 'Studentska · 2.800 RSD → PriceVariant'],
+    ['Dodavanje paketa', 'Paket 5× · 16.000 RSD → CommercialOffer'],
   ];
   RES = {
     stats: [['Otvoreni draweri', '412'], ['Započeti odgovori', '168'], ['Završeni odgovori', '121'], ['Completion rate', '72%']],
@@ -1130,6 +1475,7 @@ class Component extends DCLogic {
   state = {
     screen: null, role: null, tt: 'danas', kt: 'svi', cpt: 'pregled', kot: 'pregled', tpt: 'javni',
     appt: null, quick: false, vise: false, tf: 0, client: null, company: null, therapist: null,
+    wiz: false, wizStep: 1, wz: null, drafts: [], diag: null, diagRunning: false, toast: null,
     requests: [
       { id: 1, client: 'Nikola Đorđević', init: 'NĐ', svc: 'Individualna psihoterapija', pref: 'Uto, 21. jul · 10:00', fmt: 'Online', ter: 'Anja S.', ago: 'pre 4 sata', src: 'Javni booking', intake: 'Anksioznost i stres na poslu · prvi put u terapiji.', st: 'ceka' },
       { id: 2, client: 'Tamara Kostić', init: 'TK', svc: 'Savjetovanje adolescenata', pref: 'Sre, 22. jul · 17:00', fmt: 'Uživo · Niš', ter: 'Marija S.', ago: 'pre 2 sata', src: 'Vođeni izbor', intake: 'Podrška za ćerku (16) · trema u školi.', st: 'ceka' },
@@ -1141,6 +1487,84 @@ class Component extends DCLogic {
     ],
   };
   st(k) { const s = Component.ST[k] || Component.ST.zavrsen; return { stKey: k, stLabel: s[0], stFg: s[1], stBg: s[2] }; }
+  blankWz() {
+    return { id: null, name: '', kind: '', code: '', codeManual: false, dur: 60, fmt: 'Online', loc: 'Bez lokacije',
+      buf: 15, mode: 'Puni sat', policy: 'Otkazivanje 24h', ters: [], variants: [], offers: [], intake: [],
+      vLabel: 'Standardna', vPrice: '', oLabel: 'Pojedinačna seansa', oPrice: '' };
+  }
+  wz() { return this.state.wz || this.blankWz(); }
+  wzSet(p) { this.setState(s => ({ wz: Object.assign({}, s.wz || this.blankWz(), p) })); }
+  codeFrom(name, dur) {
+    const map = { 'č': 'c', 'ć': 'c', 'đ': 'd', 'š': 's', 'ž': 'z' };
+    const clean = (name || '').toLowerCase().replace(/[čćđšž]/g, m => map[m]).replace(/[^a-z0-9 ]/g, ' ');
+    const w = clean.split(/\s+/).filter(Boolean);
+    const base = w.length ? (w[0].length >= 3 ? w[0].slice(0, 3) : (w[0] + (w[1] || 'usl')).slice(0, 3)) : 'USL';
+    return base.toUpperCase() + '-' + dur;
+  }
+  takenCodes(selfId) {
+    return this.US.concat(this.state.drafts).filter(x => x.id !== selfId).map(x => x.code);
+  }
+  suggestCode(code, selfId) {
+    const taken = this.takenCodes(selfId);
+    let i = 2, next = code + '-' + i;
+    while (taken.indexOf(next) >= 0) { i++; next = code + '-' + i; }
+    return next;
+  }
+  mkOpts(list, cur, key, sfx) {
+    return list.map(v => {
+      const p = this.pill(cur === v);
+      return { label: sfx ? v + sfx : String(v), bg: p.bg, fg: p.fg, bd: p.bd, pick: () => this.wzSet({ [key]: v }) };
+    });
+  }
+  mkMulti(list, cur, key) {
+    return list.map(v => {
+      const on = cur.indexOf(v) >= 0, p = this.pill(on);
+      return { label: v, bg: p.bg, fg: p.fg, bd: p.bd, pick: () => this.wzSet({ [key]: on ? cur.filter(x => x !== v) : cur.concat([v]) }) };
+    });
+  }
+  plural(n, one, few, many) { const r = n % 10, rr = n % 100; return n + ' ' + (r === 1 && rr !== 11 ? one : r >= 2 && r <= 4 && (rr < 12 || rr > 14) ? few : many); }
+  money(v) {
+    const raw = String(v == null ? '' : v).replace(/[^0-9]/g, '');
+    if (!raw) return 'Na upit';
+    return Number(raw).toLocaleString('sr-RS') + ' RSD';
+  }
+  cancelShort(policy) { return policy === 'Otkazivanje 24h' ? '24h' : policy === 'Otkazivanje 48h' ? '48h' : 'Ručna potvrda'; }
+  toastMsg(m) {
+    this.setState({ toast: m });
+    clearTimeout(this._tm);
+    this._tm = setTimeout(() => this.setState({ toast: null }), 2800);
+  }
+  persist(stKey, msg) {
+    const w = this.wz();
+    const code = w.codeManual ? w.code : this.codeFrom(w.name, w.dur);
+    const id = w.id || 'd' + Date.now();
+    const entry = {
+      id, st: stKey, isDraft: stKey === 'usNacrt', name: w.name || 'Usluga bez naziva', kind: w.kind || 'Nije izabran tip',
+      code, offerings: w.ters.map(t => ({ ter: t, fmt: w.fmt, loc: w.fmt === 'Online' ? 'Bez lokacije' : w.loc, dur: w.dur + ' min', buf: w.buf + ' min', mode: w.mode, policy: w.policy })),
+      variants: w.variants, offers: w.offers, intake: w.intake,
+      manual: (w.mode === 'Ručno biram termine' || w.policy === 'Ručna potvrda') ? 'Da' : 'Ne', cancel: this.cancelShort(w.policy),
+      draftStep: this.state.wizStep, snap: Object.assign({}, w, { id, code, codeManual: true }),
+    };
+    this.setState(s => ({
+      drafts: s.drafts.some(d => d.id === id) ? s.drafts.map(d => d.id === id ? entry : d) : [entry].concat(s.drafts),
+      wiz: false, wz: null, wizStep: 1,
+    }));
+    this.toastMsg(msg);
+  }
+  runDiag() {
+    const n = this.DIAG.length;
+    this.setState({ diag: this.DIAG.map(() => 'pending'), diagRunning: true });
+    let i = 0;
+    const tick = () => {
+      if (i >= n) { this.setState({ diagRunning: false }); return; }
+      this.setState(s => { const d = (s.diag || []).slice(); d[i] = 'run'; return { diag: d }; });
+      setTimeout(() => {
+        this.setState(s => { const d = (s.diag || []).slice(); d[i] = 'pass'; return { diag: d }; });
+        i++; tick();
+      }, 540);
+    };
+    tick();
+  }
   scr() { return this.state.screen ?? this.props.startScreen ?? 'pregled'; }
   role() { return this.state.role ?? this.props.role ?? 'vlasnik'; }
   go(s, extra) { this.setState(Object.assign({ screen: s, vise: false, quick: false }, extra || {})); window.scrollTo(0, 0); }
@@ -1194,6 +1618,24 @@ class Component extends DCLogic {
     ko.left = Math.max(0, comp.bought - comp.used - comp.res);
     const ter = { ...(s.therapist || this.TH[0]) };
     const tp = { ...ter, popW: ter.pop + '%', primaLabel: ter.prima ? 'Prima nove klijente' : 'Trenutno ne prima nove', primaFg: ter.prima ? '#3D6B3D' : '#96562F', primaBg: ter.prima ? 'rgba(198,213,168,0.45)' : 'rgba(209,164,140,0.30)' };
+    const w = s.wz || this.blankWz();
+    const wzCode = w.codeManual ? w.code : this.codeFrom(w.name, w.dur);
+    const wzConflict = !!w.name && this.takenCodes(w.id).indexOf(wzCode) >= 0;
+    const readyRows = [
+      { t: 'Naziv usluge', ok: !!w.name.trim() },
+      { t: 'Tip usluge', ok: !!w.kind },
+      { t: 'Slobodna šifra', ok: !!wzCode && !wzConflict },
+      { t: 'Trajanje i format', ok: !!w.dur && !!w.fmt },
+      { t: 'Dodeljen terapeut', ok: w.ters.length > 0 },
+      { t: 'Booking policy', ok: !!w.policy },
+      { t: 'Cenovna varijanta', ok: w.variants.length > 0 },
+      { t: 'Komercijalna ponuda', ok: w.offers.length > 0 },
+      { t: 'Intake publika', ok: w.intake.length > 0 },
+    ].map(r => ({ ...r, dot: r.ok ? '#3D6B3D' : '#96562F', note: r.ok ? 'Uneto' : 'Nedostaje' }));
+    const wzPct = Math.round(readyRows.filter(r => r.ok).length / readyRows.length * 100);
+    const allOk = readyRows.every(r => r.ok);
+    const coreOk = !!w.name.trim() && !!w.kind && !wzConflict && w.ters.length > 0 && w.variants.length > 0;
+    const canActivate = allOk && role === 'vlasnik';
     const V = {
       danas, pozdrav, tfLabel, reqCount: String(reqCount), unasCount: String(unasCount),
       roleVlasnik: role === 'vlasnik', roleTerapeut: role === 'terapeut',
@@ -1272,7 +1714,81 @@ class Component extends DCLogic {
       kotPregled: s.kot === 'pregled', kotProgram: s.kot === 'program', kotKapacitet: s.kot === 'kapacitet',
       koPregledS: this.pill(s.kot === 'pregled'), koProgramS: this.pill(s.kot === 'program'), koKapacitetS: this.pill(s.kot === 'kapacitet'),
       setKOPregled: () => this.setState({ kot: 'pregled' }), setKOProgram: () => this.setState({ kot: 'program' }), setKOKapacitet: () => this.setState({ kot: 'kapacitet' }),
-      services: this.US.map(u => ({ ...u, ...this.st(u.st) })),
+      services: s.drafts.concat(this.US).map(u => ({
+        ...u, ...this.st(u.st),
+        offCount: u.offerings.length ? this.plural(u.offerings.length, 'ponuda', 'ponude', 'ponuda') : 'Bez ponude',
+        hasOff: u.offerings.length > 0, noOff: u.offerings.length === 0,
+        hasVar: u.variants.length > 0, hasOffers: u.offers.length > 0, hasIntake: u.intake.length > 0,
+        resume: () => this.setState({ wiz: true, wz: u.snap || this.blankWz(), wizStep: u.draftStep || 1 }),
+      })),
+      openWiz: () => this.setState({ wiz: true, wz: this.blankWz(), wizStep: 1 }),
+      wizOpen: s.wiz,
+      closeWiz: () => this.setState({ wiz: false }),
+      wzKicker: w.id ? 'Nastavak drafta' : 'Nova usluga',
+      wzTitle: w.name || 'Nova usluga',
+      wzName: w.name, setWzName: (e) => this.wzSet({ name: e.target.value }),
+      wzSteps: [1, 2, 3, 4, 5].map(n => ({
+        n: String(n), label: ['Usluga', 'Ponuda', 'Cene', 'Intake', 'Aktivacija'][n - 1],
+        bg: n === s.wizStep ? '#2E3B2E' : n < s.wizStep ? 'rgba(198,213,168,0.5)' : 'rgba(58,46,40,0.07)',
+        fg: n === s.wizStep ? '#FAF8F3' : n < s.wizStep ? '#3D6B3D' : 'rgba(58,46,40,0.5)',
+        lfg: n === s.wizStep ? '#2E3B2E' : 'rgba(58,46,40,0.5)',
+        go: () => this.setState({ wizStep: n }),
+      })),
+      wzStep1: s.wizStep === 1, wzStep2: s.wizStep === 2, wzStep3: s.wizStep === 3, wzStep4: s.wizStep === 4, wzStep5: s.wizStep === 5,
+      wzShowBack: s.wizStep > 1, wzShowNext: s.wizStep < 5,
+      wzBack: () => this.setState(x => ({ wizStep: Math.max(1, x.wizStep - 1) })),
+      wzNext: () => this.setState(x => ({ wizStep: Math.min(5, x.wizStep + 1) })),
+      wzCode: wzCode, wzCodeOk: !wzConflict, wzConflict: wzConflict,
+      wzSuggest: wzConflict ? this.suggestCode(wzCode, w.id) : '',
+      useSuggest: () => this.wzSet({ code: this.suggestCode(wzCode, w.id), codeManual: true }),
+      wzCodeFg: wzConflict ? '#96562F' : '#3D6B3D', wzCodeBg: wzConflict ? 'rgba(209,164,140,0.30)' : 'rgba(198,213,168,0.45)',
+      wzCodeLabel: wzConflict ? 'Šifra je zauzeta' : 'Šifra je slobodna',
+      wzKinds: this.mkOpts(this.KINDS, w.kind, 'kind'),
+      wzDurs: this.mkOpts(this.DURS, w.dur, 'dur', ' min'),
+      wzFmts: this.FMTS.map(v => {
+        const p = this.pill(w.fmt === v);
+        return { label: v, bg: p.bg, fg: p.fg, bd: p.bd, pick: () => this.wzSet(v === 'Online' ? { fmt: v, loc: 'Bez lokacije' } : { fmt: v, loc: w.loc === 'Bez lokacije' ? this.LOCS[0] : w.loc }) };
+      }),
+      wzLocs: this.mkOpts(this.LOCS, w.loc, 'loc'),
+      wzBufs: this.mkOpts(this.BUFS, w.buf, 'buf', ' min'),
+      wzModes: this.mkOpts(this.MODES, w.mode, 'mode'),
+      wzPolicies: this.mkOpts(this.POLICIES, w.policy, 'policy'),
+      wzTers: this.mkMulti(this.TERS, w.ters, 'ters'),
+      wzIntake: this.mkMulti(this.INTAKE, w.intake, 'intake'),
+      wzNeedsLoc: w.fmt !== 'Online',
+      wzVLabels: this.mkOpts(this.VLABELS, w.vLabel, 'vLabel'),
+      wzVPrice: w.vPrice, setVPrice: (e) => this.wzSet({ vPrice: e.target.value }),
+      addVariant: () => this.wzSet({ variants: w.variants.concat([{ l: w.vLabel, p: this.money(w.vPrice) }]), vPrice: '' }),
+      wzVariants: w.variants.map((v, i) => ({ ...v, del: () => this.wzSet({ variants: w.variants.filter((_, j) => j !== i) }) })),
+      wzNoVariants: w.variants.length === 0,
+      wzOLabels: this.mkOpts(this.OLABELS, w.oLabel, 'oLabel'),
+      wzOPrice: w.oPrice, setOPrice: (e) => this.wzSet({ oPrice: e.target.value }),
+      addOffer: () => this.wzSet({ offers: w.offers.concat([{ l: w.oLabel, p: this.money(w.oPrice) }]), oPrice: '' }),
+      wzOffers: w.offers.map((o, i) => ({ ...o, del: () => this.wzSet({ offers: w.offers.filter((_, j) => j !== i) }) })),
+      wzNoOffers: w.offers.length === 0,
+      wzReady: readyRows, wzPctW: wzPct + '%', wzPct: String(wzPct),
+      wzReadyCount: String(readyRows.filter(r => r.ok).length), wzTotal: String(readyRows.length),
+      wzAllOk: allOk, wzMissingText: allOk ? 'Svi obavezni podaci su uneti — usluga može da se aktivira.' : 'Nedostaje: ' + readyRows.filter(r => !r.ok).map(r => r.t.toLowerCase()).join(', ') + '.',
+      wzSummary: [
+        { t: 'Service', v: w.kind || 'Tip nije izabran', d: 'vrsta podrške' },
+        { t: 'ServiceOffering', v: this.plural(w.ters.length || 0, 'ponuda', 'ponude', 'ponuda') + ' · ' + w.fmt.toLowerCase() + ' · ' + w.dur + ' min', d: 'terapeut + format + trajanje + policy' },
+        { t: 'PriceVariant', v: this.plural(w.variants.length, 'varijanta', 'varijante', 'varijanti'), d: 'cena po kriterijumu' },
+        { t: 'CommercialOffer', v: this.plural(w.offers.length, 'ponuda', 'ponude', 'ponuda'), d: 'seansa, paket, program' },
+      ],
+      wzSaveDraft: () => this.persist('usNacrt', 'Draft je sačuvan — nalazi se u listi kao Nacrt.'),
+      wzSubmit: () => coreOk ? this.persist('usPregled', 'Usluga je poslata na pregled.') : this.toastMsg('Unesite naziv, tip, terapeuta i najmanje jednu cenu.'),
+      wzActivate: () => canActivate ? this.persist('usAktivna', 'Usluga je aktivirana i vidljiva u katalogu.') : this.toastMsg(role === 'vlasnik' ? 'Readiness nije 100% — dopunite obavezne podatke.' : 'Aktivaciju odobrava vlasnica centra.'),
+      wzSubS: coreOk ? { bg: '#FFFFFF', fg: '#3A2E28', bd: 'rgba(58,46,40,0.22)' } : { bg: '#FFFFFF', fg: 'rgba(58,46,40,0.35)', bd: 'rgba(58,46,40,0.1)' },
+      wzActS: canActivate ? { bg: '#2E3B2E', fg: '#FAF8F3' } : { bg: 'rgba(58,46,40,0.12)', fg: 'rgba(58,46,40,0.4)' },
+      wzCapNote: role === 'vlasnik' ? 'Vaša uloga može direktno da aktivira uslugu.' : 'Kao terapeut možete poslati uslugu na pregled — aktivira vlasnica centra.',
+      diag: (s.diag || this.DIAG.map(() => 'pending')).map((v, i) => ({
+        t: this.DIAG[i][0], d: this.DIAG[i][1], isPending: v === 'pending', isRun: v === 'run', isPass: v === 'pass',
+        nfg: v === 'pass' ? '#3D6B3D' : v === 'run' ? '#96562F' : 'rgba(58,46,40,0.45)',
+        note: v === 'pass' ? 'Prošao' : v === 'run' ? 'Izvršava se…' : 'Nije pokrenut',
+      })),
+      diagRunning: s.diagRunning, notDiagRunning: !s.diagRunning,
+      runDiag: () => this.runDiag(),
+      hasToast: !!s.toast, toast: s.toast || '',
       resStats: this.RES.stats.map(x => ({ t: x[0], n: x[1] })),
       survey: { ...this.RES.survey, ...this.st(this.RES.survey.st), nStr: String(this.RES.survey.n) },
       surveyQ: this.RES.survey.questions.map(q => ({ q: q.q, bars: q.bars.map(b => ({ label: b[0], pct: b[1] + '%', n: b[1] })) })),
