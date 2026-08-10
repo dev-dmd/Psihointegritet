@@ -18,7 +18,7 @@ export interface BookingRequestPayload {
   therapistSlug: string | null;
   serviceSlug: string;
   format: BookingFormat;
-  location: "Niš" | "Leskovac" | null;
+  location: "Chicago" | "Milwaukee" | "Madison" | null;
   preferredDate: string;
   preferredTime?: string;
   alternativeDate?: string;

@@ -19,6 +19,12 @@ DEFAULT_MIGRATION_URL = (
     "postgresql+psycopg://psihointegritet:local_only_change_me@localhost:5434/psihointegritet"
 )
 
+#: Current head. Pinned rather than read from the script directory: these tests
+#: assert that `upgrade head` lands on the revision we *expect*, which is the
+#: thing the Railway incident got wrong. Bump it in the same commit as any new
+#: migration.
+HEAD_REVISION = "d1c7a4e90b52"
+
 
 def _alembic_config() -> Config:
     config = Config(str(BACKEND_ROOT / "alembic.ini"))
@@ -158,7 +164,7 @@ def test_upgrade_recovers_complete_v1_schema_after_marker_rewind(
 
     with engine.connect() as connection:
         assert connection.scalar(sa.text("SELECT version_num FROM alembic_version")) == (
-            "cbecea5ab37d"
+            HEAD_REVISION
         )
         row = connection.execute(
             sa.text(
@@ -274,7 +280,7 @@ def test_fresh_chain_round_trips_through_reconciliation(
     engine = sa.create_engine(isolated_migration_database)
     with engine.connect() as connection:
         assert connection.scalar(sa.text("SELECT version_num FROM alembic_version")) == (
-            "cbecea5ab37d"
+            HEAD_REVISION
         )
         tables = set(sa.inspect(connection).get_table_names())
         assert "availability_profiles" in tables

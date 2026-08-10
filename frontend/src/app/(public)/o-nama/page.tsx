@@ -42,8 +42,8 @@ export default function AboutPage() {
               Gde radimo
             </h2>
             <p className="text-coffee/75 mt-4 mb-4 text-[15px] leading-[1.65]">
-              Online rad je dostupan, a susreti uživo se dogovaraju u Nišu i
-              Leskovcu.
+              Online rad je dostupan, a susreti uživo se dogovaraju u Chicagu
+              (Illinois), Milwaukeeju i Madisonu (Wisconsin).
             </p>
             <Link
               href="/zakazi"

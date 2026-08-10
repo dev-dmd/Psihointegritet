@@ -18,8 +18,10 @@ const maria = {
   quote:
     "Moj pristup se oslanja na geštalt psihoterapiju, koja podstiče razvoj svesnosti, autentičnosti i preuzimanje odgovornosti za sopstveni život.",
   formats: "Individualni rad · Rad sa parovima · Online i uživo",
-  city: "Niš",
-  cityLocative: "Nišu",
+  city: "Chicago",
+  cityLocative: "Chicagu",
+  cityRegion: "Illinois",
+  cityRegionCode: "IL",
   areas: [
     "Anksioznost i depresija",
     "Burnout",
@@ -48,8 +50,10 @@ const elsa = {
   quote:
     "Podržavam adolescente i odrasle u ličnom razvoju, emocionalnim teškoćama i unapređenju odnosa sa drugima.",
   formats: "Individualni rad · Adolescenti i odrasli · Online i uživo",
-  city: "Leskovac",
-  cityLocative: "Leskovcu",
+  city: "Milwaukee",
+  cityLocative: "Milwaukeeju",
+  cityRegion: "Wisconsin",
+  cityRegionCode: "WI",
   areas: ["Adolescenti", "Samopouzdanje", "Emocionalne teškoće", "Odnosi", "Razvoj identiteta", "Rad na emocijama"],
   additionalServices: [{ title: "Savetovanje adolescenata", duration: null, price: null }],
   bookingServiceSlugs: ["individualna-psihoterapija", "roditeljsko-savetovanje"],

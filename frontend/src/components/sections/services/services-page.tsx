@@ -36,8 +36,8 @@ export function ServicesPage({
           </h1>
           <p className="text-coffee/72 text-[16.5px] leading-[1.65]">
             Svaka usluga jasno definiše šta uključuje, koliko traje i kome
-            odgovara. Rad je moguć online i uživo, u Nišu i Leskovcu, u tempu
-            koji vama odgovara.
+            odgovara. Rad je moguć online i uživo, u Chicagu, Milwaukeeju i
+            Madisonu, u tempu koji vama odgovara.
           </p>
         </div>
       </PageHero>

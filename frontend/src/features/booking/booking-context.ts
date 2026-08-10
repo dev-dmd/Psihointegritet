@@ -61,8 +61,9 @@ export function deriveBookingSelectionPolicy(
 }
 
 export const bookingLocations = [
-  { value: "nis", label: "Niš" },
-  { value: "leskovac", label: "Leskovac" },
+  { value: "chicago", label: "Chicago" },
+  { value: "milwaukee", label: "Milwaukee" },
+  { value: "madison", label: "Madison" },
 ] as const;
 export type BookingLocation = (typeof bookingLocations)[number]["value"];
 export type BookingLocationLabel = (typeof bookingLocations)[number]["label"];
@@ -170,8 +171,17 @@ export function therapistsForService(serviceSlug: string) {
   );
 }
 
+/**
+ * Looked up rather than branched: with three locations a chain of ternaries
+ * silently falls through to the last city for any unknown value, which reads
+ * as "this therapist works there" on the confirmation screen.
+ */
 export function locationLabel(location: BookingLocation): BookingLocationLabel {
-  return location === "nis" ? "Niš" : "Leskovac";
+  const match = bookingLocations.find((item) => item.value === location);
+  if (!match) {
+    throw new Error(`Nepoznata lokacija: ${location}`);
+  }
+  return match.label;
 }
 
 export function therapistWorksAtLocation(

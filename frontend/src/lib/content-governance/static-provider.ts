@@ -177,14 +177,14 @@ const staticPages: readonly StaticPageEntity[] = [
     seo: {
       title: "Psihointegritet",
       description:
-        "Psihoterapija, savetovanje i programi podrške online i uživo u Nišu i Leskovcu.",
+        "Psihoterapija, savetovanje i programi podrške online i uživo u Chicagu, Milwaukeeju i Madisonu.",
     },
     textFields: [
       { field: "h1", value: siteSettings.name, limit: "pageH1" },
       {
         field: "heroLead",
         value:
-          "Psihoterapija, savetovanje i programi podrške online i uživo u Nišu i Leskovcu.",
+          "Psihoterapija, savetovanje i programi podrške online i uživo u Chicagu, Milwaukeeju i Madisonu.",
         limit: "heroLead",
       },
       ...faqItems.flatMap((item) => [
@@ -220,7 +220,7 @@ const staticPages: readonly StaticPageEntity[] = [
     seo: {
       title: "O nama",
       description:
-        "Psihointegritet pruža podršku online i uživo u Nišu i Leskovcu.",
+        "Psihointegritet pruža podršku online i uživo u Chicagu, Milwaukeeju i Madisonu.",
     },
     textFields: [
       {

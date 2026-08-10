@@ -106,7 +106,7 @@ describe("evaluateIntake", () => {
         participants: PARTICIPANTS.alone,
         goal: GOALS.emotions,
         format: WORK_FORMATS.inPerson,
-        location: LOCATIONS.nis,
+        location: LOCATIONS.chicago,
       }),
     );
 

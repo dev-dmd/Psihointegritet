@@ -95,7 +95,7 @@ export const footerServiceLinks: NavLink[] = [
 
 export const trustItems: TrustItem[] = [
   { icon: "screen", label: "Online i uživo" },
-  { icon: "pin", label: "Niš, Leskovac i druge lokacije" },
+  { icon: "pin", label: "Chicago, Milwaukee, Madison i online" },
   { icon: "people", label: "Individualni i partnerski rad" },
   { icon: "shield", label: "Poverljivost i stručnost" },
 ];

@@ -57,7 +57,8 @@ export function TherapistContactSection({
                   Format
                 </div>
                 <div className="text-coffee font-serif text-[22px]">
-                  Online ili uživo u {therapist.cityLocative}
+                  Online ili uživo u {therapist.cityLocative} (
+                  {therapist.cityRegion})
                 </div>
               </div>
               <div>

@@ -91,10 +91,20 @@ export const WORK_FORMATS = {
 } as const;
 
 export const LOCATIONS = {
-  nis: "Niš",
-  leskovac: "Leskovac",
+  chicago: "Chicago",
+  milwaukee: "Milwaukee",
+  madison: "Madison",
   other: "Druga lokacija",
 } as const;
+
+/** Every answer except „Druga lokacija" — the cities a profile can be filtered by. */
+export const IN_PERSON_CITIES = [
+  LOCATIONS.chicago,
+  LOCATIONS.milwaukee,
+  LOCATIONS.madison,
+] as const;
+
+export type InPersonCity = (typeof IN_PERSON_CITIES)[number];
 
 // --- Intake copy ----------------------------------------------------------
 
@@ -238,7 +248,7 @@ export interface TherapistMatchingProfile {
   serviceCapabilities: readonly string[];
   acceptedAgeBands: readonly string[];
   supportedFormats: readonly string[];
-  locations: readonly ("Niš" | "Leskovac")[];
+  locations: readonly InPersonCity[];
   acceptanceStatus: "accepting" | "limited" | "paused";
   presenceStatus: "active" | "temporarily_absent";
   /** Grammatically correct reason sentences (gender-aware). */
@@ -263,11 +273,11 @@ export const therapistMatchingConfig: Record<Slug, TherapistMatchingProfile> = {
     ],
     acceptedAgeBands: ["16–17 godina", "18 i više"],
     supportedFormats: ["online", "in_person"],
-    locations: ["Niš"],
+    locations: ["Chicago"],
     acceptanceStatus: "accepting",
     presenceStatus: "active",
     onlineReason: "Dostupna je za online rad.",
-    inPersonReason: "Radi uživo u Nišu.",
+    inPersonReason: "Radi uživo u Chicagu (Illinois).",
   },
   [ELSA]: {
     slug: ELSA,
@@ -279,11 +289,11 @@ export const therapistMatchingConfig: Record<Slug, TherapistMatchingProfile> = {
     ],
     acceptedAgeBands: SUBJECT_AGE_BANDS,
     supportedFormats: ["online", "in_person"],
-    locations: ["Leskovac"],
+    locations: ["Milwaukee"],
     acceptanceStatus: "accepting",
     presenceStatus: "active",
     onlineReason: "Dostupna je za online rad.",
-    inPersonReason: "Radi uživo u Leskovcu.",
+    inPersonReason: "Radi uživo u Milwaukeeju (Wisconsin).",
   },
   [JOHN]: {
     slug: JOHN,
@@ -296,11 +306,11 @@ export const therapistMatchingConfig: Record<Slug, TherapistMatchingProfile> = {
     ],
     acceptedAgeBands: ["16–17 godina", "18 i više"],
     supportedFormats: ["online", "in_person"],
-    locations: ["Leskovac"],
+    locations: ["Madison"],
     acceptanceStatus: "accepting",
     presenceStatus: "active",
     onlineReason: "Dostupan je za online rad.",
-    inPersonReason: "Radi uživo u Leskovcu.",
+    inPersonReason: "Radi uživo u Madisonu (Wisconsin).",
   },
 };
 
@@ -470,11 +480,7 @@ function buildReasons(
   }
 
   const selectedLocation =
-    answers.location === LOCATIONS.nis
-      ? "Niš"
-      : answers.location === LOCATIONS.leskovac
-        ? "Leskovac"
-        : null;
+    IN_PERSON_CITIES.find((city) => city === answers.location) ?? null;
   if (
     answers.format === WORK_FORMATS.inPerson &&
     (selectedLocation !== null || answers.location === LOCATIONS.other)
@@ -575,26 +581,17 @@ export function evaluateIntake(answers: IntakeAnswers): IntakeMatchResult {
       therapistMatchingConfig[slug].supportedFormats.includes("online"),
     );
   } else if (answers.format === WORK_FORMATS.inPerson) {
-    if (answers.location === LOCATIONS.nis) {
+    // One branch per city was fine with two of them; with three it is how a
+    // new location gets added to the question and silently never filters.
+    const selectedCity = IN_PERSON_CITIES.find(
+      (city) => city === answers.location,
+    );
+    if (selectedCity !== undefined) {
       const inCity = eligible.filter(
         (slug) =>
           therapistMatchingConfig[slug].supportedFormats.includes(
             "in_person",
-          ) && therapistMatchingConfig[slug].locations.includes("Niš"),
-      );
-      eligible =
-        inCity.length > 0
-          ? inCity
-          : eligible.filter((slug) =>
-              therapistMatchingConfig[slug].supportedFormats.includes("online"),
-            );
-      onlineFallback = inCity.length === 0;
-    } else if (answers.location === LOCATIONS.leskovac) {
-      const inCity = eligible.filter(
-        (slug) =>
-          therapistMatchingConfig[slug].supportedFormats.includes(
-            "in_person",
-          ) && therapistMatchingConfig[slug].locations.includes("Leskovac"),
+          ) && therapistMatchingConfig[slug].locations.includes(selectedCity),
       );
       eligible =
         inCity.length > 0

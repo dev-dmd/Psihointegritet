@@ -47,9 +47,10 @@ test("therapist profile renders the full bio, services and booking strip", async
   // Prices per Anja's answers, still flagged as indicative.
   await expect(page.locator("body")).toContainText("Cene su okvirne");
 
-  // T8: John works from Leskovac — the handoff hard-coded Niš everywhere.
+  // T8/D-076: John works from Madison — the handoff hard-coded one city for
+  // everyone, and the site's own copy has to name the therapist's own city.
   await expect(page.locator("#zakazivanje")).toContainText(
-    "Online ili uživo u Leskovcu",
+    "Online ili uživo u Madisonu (Wisconsin)",
   );
 
   await expect(page.getByRole("link", { name: /Elsa Browers/ })).toBeVisible();
@@ -91,12 +92,13 @@ test("team pages have no critical accessibility violations", async ({
 });
 
 test("booking strip uses the correct grammatical cases", async ({ page }) => {
-  // Serbian needs real case forms: „sa Marijom" (instrumental), „u Nišu"
-  // (locative). Interpolating the nominative would render „sa Maria / u Niš".
+  // Serbian needs real case forms: „sa Marijom" (instrumental), „u Chicagu"
+  // (locative) — and English city names decline too, so „Milwaukee" becomes
+  // „Milwaukeeju". Interpolating the nominative renders „sa Maria / u Chicago".
   for (const [slug, expected] of [
-    ["maria-bullock", ["sa Marijom", "u Nišu"]],
-    ["elsa-browers", ["sa Elsom", "u Leskovcu"]],
-    ["john-francis", ["sa Johnom", "u Leskovcu"]],
+    ["maria-bullock", ["sa Marijom", "u Chicagu"]],
+    ["elsa-browers", ["sa Elsom", "u Milwaukeeju"]],
+    ["john-francis", ["sa Johnom", "u Madisonu"]],
   ] as const) {
     await page.goto(`/tim/${slug}`);
     const strip = page.locator("#zakazivanje");

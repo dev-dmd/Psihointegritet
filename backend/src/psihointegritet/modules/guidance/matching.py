@@ -68,7 +68,17 @@ GOALS = {
 }
 
 WORK_FORMATS = {"online": "Online", "in_person": "Uživo", "any": "Svejedno"}
-LOCATIONS = {"nis": "Niš", "leskovac": "Leskovac", "other": "Druga lokacija"}
+LOCATIONS = {
+    "chicago": "Chicago",
+    "milwaukee": "Milwaukee",
+    "madison": "Madison",
+    "other": "Druga lokacija",
+}
+
+#: Every location answer except „Druga lokacija" — the cities a profile can be
+#: filtered by. Derived rather than listed a second time, so adding a city to
+#: LOCATIONS cannot leave the filter silently ignoring it.
+IN_PERSON_CITIES = frozenset(LOCATIONS.values()) - {LOCATIONS["other"]}
 SUBJECT_AGE_BANDS = {
     SubjectAgeBand.UNDER_12: "Mlađe od 12 godina",
     SubjectAgeBand.TWELVE_TO_FIFTEEN: "12–15 godina",  # noqa: RUF001 - public option parity
@@ -184,7 +194,7 @@ DEFAULT_PROFILES = (
             SubjectAgeBand.ADULT,
         ),
         supported_formats=("online", "in_person"),
-        locations=("Niš",),
+        locations=("Chicago",),
     ),
     MatchingProfile(
         slug=ELSA,
@@ -203,7 +213,7 @@ DEFAULT_PROFILES = (
             SubjectAgeBand.ADULT,
         ),
         supported_formats=("online", "in_person"),
-        locations=("Leskovac",),
+        locations=("Milwaukee",),
     ),
     MatchingProfile(
         slug=JOHN,
@@ -225,7 +235,7 @@ DEFAULT_PROFILES = (
             SubjectAgeBand.ADULT,
         ),
         supported_formats=("online", "in_person"),
-        locations=("Leskovac",),
+        locations=("Madison",),
     ),
 )
 
@@ -428,7 +438,7 @@ def _apply_format_and_age_constraints(
         eligible = [profile for profile in eligible if "online" in profile.supported_formats]
     elif input.format == WORK_FORMATS["in_person"]:
         city = input.location
-        if city in {LOCATIONS["nis"], LOCATIONS["leskovac"]}:
+        if city in IN_PERSON_CITIES:
             in_city = [
                 profile
                 for profile in eligible

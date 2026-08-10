@@ -16,9 +16,13 @@ import type { Therapist } from "@/types/therapist";
  *   what this file now carries.
  * - Each incoming person keeps the *matching attributes* of the person they
  *   replace, per D-074: Maria ← Anja, Elsa ← Marija, John ← Marjan. That is
- *   why `areas`, `bookingServiceSlugs`, `city` and `additionalServices` are
- *   unchanged — the owner's material lists the same areas of work, and a slot
- *   that stops matching would make the person invisible to guided selection.
+ *   why `areas`, `bookingServiceSlugs` and `additionalServices` are unchanged —
+ *   the owner's material lists the same areas of work, and a slot that stops
+ *   matching would make the person invisible to guided selection.
+ * - Cities are **not** inherited (D-076): the centre works from Chicago (IL),
+ *   Milwaukee (WI) and Madison (WI). Niš and Leskovac are gone from every
+ *   surface, including the booking location picker and the guided-selection
+ *   filter, which compare the answer against these values.
  * - Titles state certification, per D-042 / STOP S1 and §4 R0.2. The owner's
  *   material writes „pod supervizijom" for all three; that wording is
  *   deliberately not used here (CTO, 2026-08-10) and must not be reintroduced
@@ -53,8 +57,10 @@ export const therapists: Therapist[] = [
     quote:
       "Moj pristup se oslanja na geštalt psihoterapiju, koja podstiče razvoj svesnosti, autentičnosti i preuzimanje odgovornosti za sopstveni život.",
     formats: "Individualni rad · Rad sa parovima · Online i uživo",
-    city: "Niš",
-    cityLocative: "Nišu",
+    city: "Chicago",
+    cityLocative: "Chicagu",
+    cityRegion: "Illinois",
+    cityRegionCode: "IL",
     areas: [
       "Anksioznost i depresija",
       "Burnout",
@@ -69,7 +75,7 @@ export const therapists: Therapist[] = [
       "bracno-savetovanje",
       "roditeljsko-savetovanje",
     ],
-    image: "/images/therapists/maria_bullock.webp",
+    image: "/images/therapists/maria-profile-pic.webp",
     // Doubles as the page's SEO description (limit 170) — keep it short enough
     // that Content Health stays green; the full sentence lives in `bio[0]`.
     cardExcerpt:
@@ -93,8 +99,10 @@ export const therapists: Therapist[] = [
     quote:
       "Podržavam adolescente i odrasle u ličnom razvoju, emocionalnim teškoćama i unapređenju odnosa sa drugima.",
     formats: "Individualni rad · Adolescenti i odrasli · Online i uživo",
-    city: "Leskovac",
-    cityLocative: "Leskovcu",
+    city: "Milwaukee",
+    cityLocative: "Milwaukeeju",
+    cityRegion: "Wisconsin",
+    cityRegionCode: "WI",
     areas: [
       "Adolescenti",
       "Samopouzdanje",
@@ -110,7 +118,7 @@ export const therapists: Therapist[] = [
       "individualna-psihoterapija",
       "roditeljsko-savetovanje",
     ],
-    image: "/images/therapists/elsa_browers.webp",
+    image: "/images/therapists/elsa-profile-pic.webp",
     cardExcerpt:
       "Radim sa adolescentima i odraslima kroz individualni psihoterapijski rad, pružajući podršku u ličnom razvoju, emocionalnim teškoćama i unapređenju međuljudskih odnosa.",
     bio: [
@@ -130,8 +138,10 @@ export const therapists: Therapist[] = [
     quote:
       "Posebno me zanimaju emocionalna regulacija, razvoj partnerskog odnosa, stres i lični razvoj.",
     formats: "Individualni rad · Rad sa parovima · Online i uživo",
-    city: "Leskovac",
-    cityLocative: "Leskovcu",
+    city: "Madison",
+    cityLocative: "Madisonu",
+    cityRegion: "Wisconsin",
+    cityRegionCode: "WI",
     areas: [
       "Partnerski odnosi",
       "Emocionalna regulacija",
@@ -141,7 +151,7 @@ export const therapists: Therapist[] = [
     ],
     additionalServices: [],
     bookingServiceSlugs: ["individualna-psihoterapija", "bracno-savetovanje"],
-    image: "/images/therapists/john_francis.webp",
+    image: "/images/therapists/john-profile-pic.webp",
     cardExcerpt:
       "Radim sa odraslima i parovima, sa posebnim interesovanjem za emocionalnu regulaciju, razvoj partnerskog odnosa, stres i lični razvoj.",
     bio: [

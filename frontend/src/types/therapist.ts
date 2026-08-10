@@ -41,8 +41,16 @@ export interface Therapist {
   formats: string;
   /** City the therapist works from in person, nominative case (T8). */
   city: string;
-  /** Locative case of `city`, for „uživo u {cityLocative}" — Niš → Nišu. */
+  /**
+   * Locative case of `city`, for „uživo u {cityLocative}" — Chicago → Chicagu.
+   * English city names keep their English spelling and take a Serbian ending;
+   * they are not transcribed (D-076), so „Milwaukee" becomes „Milwaukeeju".
+   */
   cityLocative: string;
+  /** US state, English spelling — shown next to the city: „u Chicagu (Illinois)". */
+  cityRegion: string;
+  /** Two-letter state code, for tight surfaces like the footer: „Chicago, IL". */
+  cityRegionCode: string;
   areas: string[];
   /** Non-catalog services with intentionally unconfirmed commercial details. */
   additionalServices: TherapistAdditionalService[];

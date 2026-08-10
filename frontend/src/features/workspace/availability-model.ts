@@ -1,3 +1,5 @@
+import { joinSerbianList } from "@/lib/format/serbian-list";
+
 import type {
   AvailabilityMode,
   AvailabilityRule,
@@ -200,10 +202,7 @@ export interface WorkingHoursGroup {
 }
 
 function joinDays(days: number[]): string {
-  const labels = days.map((day) => weekdayLabels[day] ?? String(day));
-  if (labels.length === 1) return labels[0] ?? "";
-  const last = labels[labels.length - 1] ?? "";
-  return `${labels.slice(0, -1).join(", ")} i ${last}`;
+  return joinSerbianList(days.map((day) => weekdayLabels[day] ?? String(day)));
 }
 
 /**

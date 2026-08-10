@@ -35,7 +35,7 @@ export const mockTherapist: BookingTherapist = {
   name: "Maria Bullock",
   firstNameGenitive: "Marije",
   title: "Sertifikovana geštalt psihoterapeutkinja",
-  avatarUrl: "/images/therapists/maria_bullock.webp",
+  avatarUrl: "/images/therapists/maria-profile-pic.webp",
 };
 
 export const mockOfferings: BookingWidgetOffering[] = [

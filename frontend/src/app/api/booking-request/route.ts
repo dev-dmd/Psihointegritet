@@ -52,7 +52,7 @@ const payloadSchema = z.object({
   therapistSlug: z.enum(therapistSlugs).nullable(),
   serviceSlug: z.string().min(1).max(120),
   format: z.enum(["online", "uzivo"]),
-  location: z.enum(["Niš", "Leskovac"]).nullable(),
+  location: z.enum(["Chicago", "Milwaukee", "Madison"]).nullable(),
   preferredDate: z.string().min(1).max(40),
   preferredTime: z.string().min(1).max(80).optional(),
   alternativeDate: z.string().max(40).optional(),

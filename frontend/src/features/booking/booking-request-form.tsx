@@ -446,8 +446,7 @@ function BookingRequestFormContent(props: BookingRequestFormProps) {
               </select>
               {selectedTherapist ? (
                 <span className="text-coffee/55 mt-2 block text-[13px] font-normal">
-                  {selectedTherapist.firstName} radi uživo u{" "}
-                  {selectedTherapist.cityLocative}.
+                  {`${selectedTherapist.firstName} radi uživo u ${selectedTherapist.cityLocative} (${selectedTherapist.cityRegion}).`}
                 </span>
               ) : null}
             </label>

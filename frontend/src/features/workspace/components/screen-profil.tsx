@@ -72,7 +72,9 @@ export function ScreenProfil() {
               {`„${therapist.quote}“`}
             </p>
             <div className="grid grid-cols-2 gap-3.5">
-              <KV label="Grad i format">{therapist.city} · online</KV>
+              <KV label="Grad i format">
+                {therapist.city}, {therapist.cityRegionCode} · online
+              </KV>
               <KV label="Formati">{therapist.formats}</KV>
             </div>
           </div>
