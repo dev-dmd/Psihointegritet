@@ -13,30 +13,28 @@ test("team page lists every therapist and links to their profile", async ({
     }),
   ).toBeVisible();
 
-  for (const name of [
-    "Anja Stamenković",
-    "Marija Stamenković",
-    "Marjan Janković",
-  ]) {
+  for (const name of ["Maria Bullock", "Elsa Browers", "John Francis"]) {
     await expect(page.getByRole("heading", { name })).toBeVisible();
   }
 
-  await page.getByRole("link", { name: /Upoznaj Anju/ }).click();
-  await expect(page).toHaveURL(/\/tim\/anja-stamenkovic$/);
+  await page.getByRole("link", { name: /Upoznaj Mariju/ }).click();
+  await expect(page).toHaveURL(/\/tim\/maria-bullock$/);
 });
 
 test("therapist profile renders the full bio, services and booking strip", async ({
   page,
 }) => {
-  await page.goto("/tim/marjan-jankovic");
+  await page.goto("/tim/john-francis");
 
   await expect(
-    page.getByRole("heading", { level: 1, name: "Marjan Janković" }),
+    page.getByRole("heading", { level: 1, name: "John Francis" }),
   ).toBeVisible();
 
   // Bio is never truncated — the therapist's closing paragraph must be present.
+  // The 2026-08-10 team (D-074) has one paragraph each until the owner sends
+  // the fuller texts, so this asserts the end of that paragraph.
   await expect(page.locator("body")).toContainText(
-    "temelj svake istinske promene",
+    "razvoj partnerskog odnosa, stres i lični razvoj",
   );
 
   // T1: the couples service is „Bračno savetovanje" — the design handoff had
@@ -49,20 +47,18 @@ test("therapist profile renders the full bio, services and booking strip", async
   // Prices per Anja's answers, still flagged as indicative.
   await expect(page.locator("body")).toContainText("Cene su okvirne");
 
-  // T8: Marjan works from Leskovac — the handoff hard-coded Niš everywhere.
+  // T8: John works from Leskovac — the handoff hard-coded Niš everywhere.
   await expect(page.locator("#zakazivanje")).toContainText(
     "Online ili uživo u Leskovcu",
   );
 
-  await expect(
-    page.getByRole("link", { name: /Marija Stamenković/ }),
-  ).toBeVisible();
+  await expect(page.getByRole("link", { name: /Elsa Browers/ })).toBeVisible();
 });
 
 test("Savetovanje adolescenata shows no invented duration or price", async ({
   page,
 }) => {
-  await page.goto("/tim/marija-stamenkovic");
+  await page.goto("/tim/elsa-browers");
 
   const adolescents = page
     .locator("#usluge-terapeuta div")
@@ -84,7 +80,7 @@ test("unknown therapist slug returns 404", async ({ page }) => {
 test("team pages have no critical accessibility violations", async ({
   page,
 }) => {
-  for (const path of ["/tim", "/tim/anja-stamenkovic"]) {
+  for (const path of ["/tim", "/tim/maria-bullock"]) {
     await page.goto(path);
     const results = await new AxeBuilder({ page }).analyze();
     const critical = results.violations.filter(
@@ -95,12 +91,12 @@ test("team pages have no critical accessibility violations", async ({
 });
 
 test("booking strip uses the correct grammatical cases", async ({ page }) => {
-  // Serbian needs real case forms: „sa Anjom" (instrumental), „u Nišu"
-  // (locative). Interpolating the nominative would render „sa Anja / u Niš".
+  // Serbian needs real case forms: „sa Marijom" (instrumental), „u Nišu"
+  // (locative). Interpolating the nominative would render „sa Maria / u Niš".
   for (const [slug, expected] of [
-    ["anja-stamenkovic", ["sa Anjom", "u Nišu"]],
-    ["marija-stamenkovic", ["sa Marijom", "u Leskovcu"]],
-    ["marjan-jankovic", ["sa Marjanom", "u Leskovcu"]],
+    ["maria-bullock", ["sa Marijom", "u Nišu"]],
+    ["elsa-browers", ["sa Elsom", "u Leskovcu"]],
+    ["john-francis", ["sa Johnom", "u Leskovcu"]],
   ] as const) {
     await page.goto(`/tim/${slug}`);
     const strip = page.locator("#zakazivanje");

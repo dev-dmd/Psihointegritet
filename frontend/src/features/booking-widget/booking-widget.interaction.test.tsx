@@ -16,14 +16,14 @@ describe("changing therapist", () => {
   it("keeps a compatible service and resets the slot", async () => {
     const user = userEvent.setup();
     renderWidget(editable, {
-      initialTherapistId: "anja",
+      initialTherapistId: "maria",
       initialServiceId: "bracno",
     });
     await selectFirstSlot(user);
 
-    await user.click(screen.getByRole("button", { name: /Marjan Janković/ }));
+    await user.click(screen.getByRole("button", { name: /John Francis/ }));
 
-    expect(screen.getByText("Usluge kod Marjana")).toBeInTheDocument();
+    expect(screen.getByText("Usluge kod Johna")).toBeInTheDocument();
     expect(
       screen.getByRole("heading", { name: "Bračno savetovanje" }),
     ).toBeInTheDocument();
@@ -36,14 +36,14 @@ describe("changing therapist", () => {
   it("never leaves an invalid pair when the service is not provided", async () => {
     const user = userEvent.setup();
     renderWidget(editable, {
-      initialTherapistId: "anja",
+      initialTherapistId: "maria",
       initialServiceId: "individualna",
     });
     await selectFirstSlot(user);
 
-    await user.click(screen.getByRole("button", { name: /Marjan Janković/ }));
+    await user.click(screen.getByRole("button", { name: /John Francis/ }));
 
-    // Marjan does not provide „Individualna psihoterapija".
+    // John does not provide „Individualna psihoterapija".
     expect(
       screen.queryByRole("heading", { name: "Individualna psihoterapija" }),
     ).not.toBeInTheDocument();
@@ -62,7 +62,7 @@ describe("changing therapist", () => {
 describe("changing offering", () => {
   it("keeps the therapist, swaps the offering and resets the slot", async () => {
     const user = userEvent.setup();
-    renderWidget(editable, { initialTherapistId: "anja" });
+    renderWidget(editable, { initialTherapistId: "maria" });
     await selectFirstSlot(user);
 
     const bracno = within(offeringsGroup()).getByRole("radio", {
@@ -70,7 +70,7 @@ describe("changing offering", () => {
     });
     await user.click(bracno);
 
-    expect(screen.getByText("Usluge kod Anje")).toBeInTheDocument();
+    expect(screen.getByText("Usluge kod Marije")).toBeInTheDocument();
     expect(
       screen.getByRole("heading", { name: "Bračno savetovanje" }),
     ).toBeInTheDocument();
@@ -83,7 +83,7 @@ describe("changing offering", () => {
 
   it("updates duration and price immediately", async () => {
     const user = userEvent.setup();
-    renderWidget(editable, { initialTherapistId: "anja" });
+    renderWidget(editable, { initialTherapistId: "maria" });
 
     expect(screen.getByText(/60 minuta/)).toBeInTheDocument();
     await user.click(
@@ -99,7 +99,7 @@ describe("changing offering", () => {
 
 describe("offering arrows", () => {
   it("are absent when the therapist has a single offering", () => {
-    renderWidget(editable, { initialTherapistId: "marjan" });
+    renderWidget(editable, { initialTherapistId: "john" });
     expect(
       screen.queryByRole("button", { name: "Sledeća usluga" }),
     ).not.toBeInTheDocument();
@@ -107,7 +107,7 @@ describe("offering arrows", () => {
 
   it("are keyboard reachable buttons when there is more than one", async () => {
     const user = userEvent.setup();
-    renderWidget(editable, { initialTherapistId: "anja" });
+    renderWidget(editable, { initialTherapistId: "maria" });
 
     const next = screen.getByRole("button", { name: "Sledeća usluga" });
     expect(next.tagName).toBe("BUTTON");
@@ -124,12 +124,12 @@ describe("offering arrows", () => {
 
 describe("policy is the only authority", () => {
   it("renders identically for any entry as long as the policy matches", () => {
-    const first = renderWidget(editable, { initialTherapistId: "anja" });
+    const first = renderWidget(editable, { initialTherapistId: "maria" });
     const withPolicyOnly = first.container.innerHTML;
     first.unmount();
 
     // No `source` is passed to the widget at all — it cannot branch on it.
-    const second = renderWidget(editable, { initialTherapistId: "anja" });
+    const second = renderWidget(editable, { initialTherapistId: "maria" });
     expect(second.container.innerHTML).toBe(withPolicyOnly);
   });
 });
@@ -139,7 +139,7 @@ describe("policy is the only authority", () => {
 describe("initial format from the query", () => {
   it("preselects the in-person switch when the entry asked for it", () => {
     renderWidget(editable, {
-      initialTherapistId: "anja",
+      initialTherapistId: "maria",
       initialServiceId: "individualna",
       initialFormat: "uzivo",
     });
@@ -157,7 +157,7 @@ describe("initial format from the query", () => {
 
   it("reflects the chosen format in the locked Intake entry", () => {
     renderWidget(locked, {
-      initialTherapistId: "anja",
+      initialTherapistId: "maria",
       initialServiceId: "individualna",
       initialFormat: "uzivo",
     });
@@ -172,7 +172,7 @@ describe("initial format from the query", () => {
 
   it("lists only the offerings available in the chosen format", () => {
     renderWidget(editable, {
-      initialTherapistId: "anja",
+      initialTherapistId: "maria",
       initialFormat: "uzivo",
     });
 
@@ -191,7 +191,7 @@ describe("tapping a partly visible offering", () => {
     // jsdom implements no scrolling, so the call itself is the observable.
     Element.prototype.scrollIntoView = scrollIntoView;
 
-    renderWidget(editable, { initialTherapistId: "anja" });
+    renderWidget(editable, { initialTherapistId: "maria" });
 
     const bracno = within(offeringsGroup()).getByRole("radio", {
       name: /Bračno savetovanje/,

@@ -31,17 +31,17 @@ export const slots: BookingSlot[] = ["09:00", "10:00"].map((startTime) => ({
 
 export const therapists: BookingTherapist[] = [
   {
-    id: "anja",
-    slug: "anja",
-    name: "Anja Stamenković",
-    firstNameGenitive: "Anje",
+    id: "maria",
+    slug: "maria",
+    name: "Maria Bullock",
+    firstNameGenitive: "Marije",
     title: "Geštalt psihoterapeutkinja",
   },
   {
-    id: "marjan",
-    slug: "marjan",
-    name: "Marjan Janković",
-    firstNameGenitive: "Marjana",
+    id: "john",
+    slug: "john",
+    name: "John Francis",
+    firstNameGenitive: "Johna",
     title: "Psiholog",
   },
 ];
@@ -66,11 +66,11 @@ function offering(
 }
 
 export const offerings: BookingWidgetOffering[] = [
-  offering("anja", "individualna", "Individualna psihoterapija"),
-  offering("anja", "individualna", "Individualna psihoterapija", 60, "uzivo"),
-  offering("anja", "bracno", "Bračno savetovanje", 90),
-  offering("anja", "bracno", "Bračno savetovanje", 90, "uzivo"),
-  offering("marjan", "bracno", "Bračno savetovanje", 90),
+  offering("maria", "individualna", "Individualna psihoterapija"),
+  offering("maria", "individualna", "Individualna psihoterapija", 60, "uzivo"),
+  offering("maria", "bracno", "Bračno savetovanje", 90),
+  offering("maria", "bracno", "Bračno savetovanje", 90, "uzivo"),
+  offering("john", "bracno", "Bračno savetovanje", 90),
 ];
 
 export const editable: BookingSelectionPolicy = {

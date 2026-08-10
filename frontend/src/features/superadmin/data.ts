@@ -44,7 +44,7 @@ export const psihointegritetTenant: Tenant = {
   name: "Psihointegritet",
   slug: "psihointegritet",
   domain: "psihointegritet.com",
-  owner: "Anja Stamenković",
+  owner: "Maria Bullock",
   plan: "Partner / Development",
   status: "active",
   trial: "Trial do 30. sep 2026.",
@@ -167,7 +167,7 @@ export const initialActivity: ActivityItem[] = [
     kind: "sys",
   },
   {
-    title: "Dodat terapeut — Marjan Janković",
+    title: "Dodat terapeut — John Francis",
     detail: "2. jun · tenant psihointegritet",
     kind: "ok",
   },

@@ -6,14 +6,14 @@ describe("booking context", () => {
   it("accepts a known service, therapist, format and source", () => {
     const context = parseBookingContext({
       service: "individualna-psihoterapija",
-      therapist: "anja-stamenkovic",
+      therapist: "maria-bullock",
       format: "online",
       source: "matching",
     });
 
     expect(context).toMatchObject({
       serviceSlug: "individualna-psihoterapija",
-      therapistSlug: "anja-stamenkovic",
+      therapistSlug: "maria-bullock",
       format: "online",
       source: "matching",
       messages: [],
@@ -37,7 +37,7 @@ describe("booking context", () => {
   it("keeps the service but clears an incompatible therapist", () => {
     const context = parseBookingContext({
       service: "bracno-savetovanje",
-      therapist: "marija-stamenkovic",
+      therapist: "elsa-browers",
     });
 
     expect(context.serviceSlug).toBe("bracno-savetovanje");
@@ -62,7 +62,7 @@ describe("booking context", () => {
   it("creates a URL from allowlisted identifiers only", () => {
     const unsafeContext = {
       service: "individualna-psihoterapija",
-      therapist: "anja-stamenkovic",
+      therapist: "maria-bullock",
       format: "online" as const,
       source: "matching" as const,
       email: "petar@example.com",
@@ -72,7 +72,7 @@ describe("booking context", () => {
     const href = buildBookingHref(unsafeContext);
 
     expect(href).toBe(
-      "/zakazi?service=individualna-psihoterapija&therapist=anja-stamenkovic&format=online&source=matching",
+      "/zakazi?service=individualna-psihoterapija&therapist=maria-bullock&format=online&source=matching",
     );
     expect(href).not.toContain("example.com");
     expect(href).not.toContain("Ne%20%C5%BEelim");

@@ -44,21 +44,21 @@ test("direct booking opens on a valid therapist and offering", async ({
 test("therapist profile opens booking with a therapist prefill", async ({
   page,
 }) => {
-  await page.goto("/tim/anja-stamenkovic");
+  await page.goto("/tim/maria-bullock");
 
   const bookingLink = page
     .locator("#zakazivanje")
     .getByRole("link", { name: "Zakaži termin" });
   await expect(bookingLink).toHaveAttribute(
     "href",
-    "/zakazi?therapist=anja-stamenkovic&source=therapist",
+    "/zakazi?therapist=maria-bullock&source=therapist",
   );
   await bookingLink.click();
 
   await expect(page).toHaveURL(
-    /\/zakazi\?therapist=anja-stamenkovic&source=therapist$/,
+    /\/zakazi\?therapist=maria-bullock&source=therapist$/,
   );
-  await expect(page.getByText("Usluge kod Anje")).toBeVisible();
+  await expect(page.getByText("Usluge kod Marije")).toBeVisible();
   // Pre-selected, never locked: a profile visit may still change person.
   await expect(page.getByText("Ostali terapeuti")).toBeVisible();
 });
@@ -89,16 +89,16 @@ test("service detail opens booking with a service prefill", async ({
 test("changing the therapist clears the previously selected slot", async ({
   page,
 }) => {
-  await page.goto("/zakazi?therapist=anja-stamenkovic&source=therapist");
+  await page.goto("/zakazi?therapist=maria-bullock&source=therapist");
 
   const slot = await pickFirstSlot(page);
 
   await page
-    .getByRole("button", { name: /Marjan Janković/ })
+    .getByRole("button", { name: /John Francis/ })
     .first()
     .click();
 
-  await expect(page.getByText("Usluge kod Marjana")).toBeVisible();
+  await expect(page.getByText("Usluge kod Johna")).toBeVisible();
   await expect(slot).toHaveAttribute("aria-pressed", "false");
 });
 
@@ -108,7 +108,7 @@ test("booking request submits through the endpoint and remains a request", async
   const sink: { body?: unknown } = {};
   await mockBooking(page, sink);
   await page.goto(
-    "/zakazi?service=individualna-psihoterapija&therapist=anja-stamenkovic&format=online&source=therapist",
+    "/zakazi?service=individualna-psihoterapija&therapist=maria-bullock&format=online&source=therapist",
   );
 
   await pickFirstSlot(page);
@@ -124,7 +124,7 @@ test("booking request submits through the endpoint and remains a request", async
   await expect(page.getByText(/nije konačna potvrda termina/)).toBeVisible();
 
   expect(sink.body).toMatchObject({
-    therapistSlug: "anja-stamenkovic",
+    therapistSlug: "maria-bullock",
     serviceSlug: "individualna-psihoterapija",
     format: "online",
   });
@@ -136,7 +136,7 @@ test("intake matching entry locks the selection and offers only a way back", asy
   page,
 }) => {
   await page.goto(
-    "/zakazi?service=individualna-psihoterapija&therapist=anja-stamenkovic&format=online&source=matching",
+    "/zakazi?service=individualna-psihoterapija&therapist=maria-bullock&format=online&source=matching",
   );
 
   await expect(page.getByText("Vaš izbor")).toBeVisible();

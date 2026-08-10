@@ -60,7 +60,7 @@ export function articleAuthorTargetId(
   return targetId.length > 0 ? targetId : null;
 }
 
-/** `therapist:marjan-jankovic` → `marjan-jankovic`. */
+/** `therapist:john-francis` → `john-francis`. */
 export function therapistSlugFromTargetId(
   targetId: string | null,
 ): string | null {

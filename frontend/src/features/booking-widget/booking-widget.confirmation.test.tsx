@@ -19,7 +19,7 @@ function details(
     startTime: "09:00",
     endTime: "10:00",
     format: "online",
-    therapistName: "Anja Stamenković",
+    therapistName: "Maria Bullock",
     clientName: "Petar Petrović",
     clientEmail: "petar@example.com",
     requestId: "req-1",

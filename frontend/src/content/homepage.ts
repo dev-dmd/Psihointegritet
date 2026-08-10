@@ -2,10 +2,11 @@ import { headerNavLinks, type SiteNavLink } from "@/content/site-navigation";
 
 /**
  * Typed staging content for the public homepage, extracted from the Claude
- * Design handoff. Ekavica is the site-wide default (T9) — the only exception
- * is Anja Stamenković's personal voice (quotes/bio), which lives separately in
- * `content/therapists.ts`, not here. Replaced by CMS/backend data in later
- * milestones.
+ * Design handoff. Ekavica is the site-wide default (T9), now without exception:
+ * the ijekavica carve-out under D-017 was personal to Anja Stamenković and left
+ * with the 2026-08-10 team replacement (D-074). Therapists' personal voice
+ * (quotes/bio) still lives in `content/therapists.ts`, not here. Replaced by
+ * CMS/backend data in later milestones.
  */
 
 export type NavLink = SiteNavLink;

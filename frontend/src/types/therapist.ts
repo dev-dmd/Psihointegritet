@@ -25,12 +25,13 @@ export interface Therapist {
   /** Nominative, e.g. „Usluge koje pruža {firstName}". */
   firstName: string;
   /**
-   * Genitive case, for „Usluge kod {firstNameGenitive}" — Anja → Anje.
+   * Genitive case, for „Usluge kod {firstNameGenitive}" — Maria → Marije.
    * Authored per person on purpose: Serbian case endings cannot be built
-   * programmatically, and a wrong ending misnames a real person.
+   * programmatically, and a wrong ending misnames a real person. Foreign
+   * spellings decline too — John → Johna, not John.
    */
   firstNameGenitive: string;
-  /** Instrumental case, for „razgovor sa {firstNameInstrumental}" — Anja → Anjom. */
+  /** Instrumental case, for „razgovor sa {firstNameInstrumental}" — Maria → Marijom. */
   firstNameInstrumental: string;
   initials: string;
   /** Confirmed certification wording (D-042 closed S1); never „pod supervizijom". */

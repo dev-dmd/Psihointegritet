@@ -65,7 +65,7 @@ describe("IntakeRequestForm", () => {
           format: WORK_FORMATS.online,
         }}
         submissionKind="request"
-        preferredTherapistSlug="anja-stamenkovic"
+        preferredTherapistSlug="maria-bullock"
         dataProcessingNoticeVersion="notice-v1"
         requestAcknowledgementVersion="request-v1"
         onBack={vi.fn()}
@@ -96,7 +96,7 @@ describe("IntakeRequestForm", () => {
     >;
     expect(payload).toMatchObject({
       submissionKind: "request",
-      preferredTherapistSlug: "anja-stamenkovic",
+      preferredTherapistSlug: "maria-bullock",
       guardianConsentStatus: "not_applicable",
       freeText: "Kratka dodatna poruka.",
     });

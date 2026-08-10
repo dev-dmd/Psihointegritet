@@ -97,7 +97,7 @@ describe("content governance contract", () => {
         {
           label: "Neispravno",
           action: "BOOK_SERVICE",
-          targetId: "therapist:anja-stamenkovic",
+          targetId: "therapist:maria-bullock",
         },
         staticContentProvider,
       ),

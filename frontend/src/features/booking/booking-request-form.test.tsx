@@ -14,7 +14,7 @@ function renderForm() {
     <BookingRequestForm
       initialContext={{
         serviceSlug: "individualna-psihoterapija",
-        therapistSlug: "anja-stamenkovic",
+        therapistSlug: "maria-bullock",
         format: "online",
         source: "service",
         messages: [],
@@ -42,7 +42,7 @@ describe("BookingRequestForm", () => {
     const matchingSummary = {
       answers: [{ question: "Razlog", answer: "Burnout" }],
       recommendedService: "Individualna psihoterapija",
-      recommendedTherapist: "Anja Stamenković",
+      recommendedTherapist: "Maria Bullock",
       reasons: ["Radi sa temama burnouta i stresa."],
     };
     storeBookingSummary(matchingSummary);

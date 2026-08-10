@@ -31,11 +31,11 @@ export const mockService: BookingService = {
 
 export const mockTherapist: BookingTherapist = {
   id: "therapist-1",
-  slug: "anja-stamenkovic",
-  name: "Anja Stamenković",
-  firstNameGenitive: "Anje",
+  slug: "maria-bullock",
+  name: "Maria Bullock",
+  firstNameGenitive: "Marije",
   title: "Sertifikovana geštalt psihoterapeutkinja",
-  avatarUrl: "/images/therapists/anja.jpeg",
+  avatarUrl: "/images/therapists/maria_bullock.webp",
 };
 
 export const mockOfferings: BookingWidgetOffering[] = [

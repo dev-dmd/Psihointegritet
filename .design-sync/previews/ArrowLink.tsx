@@ -27,7 +27,7 @@ export function UnderlineStrong() {
 
 export function Circled() {
   return (
-    <ArrowLink href="/tim/anja-stamenkovic" circled>
+    <ArrowLink href="/tim/maria-bullock" circled>
       Upoznaj terapeuta
     </ArrowLink>
   );

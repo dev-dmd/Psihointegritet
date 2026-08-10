@@ -18,14 +18,20 @@ import { serverEnv } from "@/lib/validation/env";
 
 // ── Slug → UUID mapping (hardcoded — tech debt tracked for CMS migration) ───
 //
-// Therapist UUIDs from therapist_matching_profiles (provision_staff.py).
+// Therapist UUIDs from therapist_matching_profiles (provision_team.py).
 // Service UUIDs from content_entries (seed_booking_services.py).
-// Populated from development DB 2026-08-08.
+// Populated from development DB 2026-08-08; therapists re-read 2026-08-10
+// after the D-074 team replacement created the incoming profiles.
+//
+// These ids are per-database. `provision_team.py` lets Postgres generate them,
+// so staging and production hold *different* UUIDs for the same three slugs —
+// re-read this table from each environment after running the swap there, or a
+// request arrives with `therapist_profile_id: null` and no error to explain it.
 
 const THERAPIST_SLUG_TO_ID: Record<string, string> = {
-  "anja-stamenkovic": "e75861d7-d975-4413-b19d-0b50d329f49c",
-  "marija-stamenkovic": "a43cab8f-b51b-4f22-8594-a107bfdf44c3",
-  "marjan-jankovic": "677a794b-c870-4a51-afd5-960e711b86b3",
+  "maria-bullock": "1d163c01-1bea-4098-913c-087f1d81137f",
+  "elsa-browers": "f0990ab2-76fb-42a6-97a3-1aa201805212",
+  "john-francis": "9fd95a7f-0f1b-4b12-ba60-4fb4d1fcbecb",
 };
 
 const SERVICE_SLUG_TO_ID: Record<string, string> = {
@@ -37,9 +43,9 @@ const SERVICE_SLUG_TO_ID: Record<string, string> = {
 // ── Payload validation (same schema as before) ──────────────────────────────
 
 const therapistSlugs = [
-  "anja-stamenkovic",
-  "marija-stamenkovic",
-  "marjan-jankovic",
+  "maria-bullock",
+  "elsa-browers",
+  "john-francis",
 ] as const;
 
 const payloadSchema = z.object({

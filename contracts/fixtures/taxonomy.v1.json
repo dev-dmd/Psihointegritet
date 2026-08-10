@@ -27,7 +27,7 @@
     {
       "id": "addiction_related_support",
       "label": "Zavisnost",
-      "primaryTherapistSlugs": ["anja-stamenkovic"],
+      "primaryTherapistSlugs": ["maria-bullock"],
       "handoffAllowed": true
     }
   ]

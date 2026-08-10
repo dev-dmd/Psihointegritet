@@ -36,9 +36,9 @@ SYSTEM_CONTENT_TEMPLATES: Final[dict[tuple[ContentType, str], ContentTemplate]] 
     (ContentType.SERVICE, "bracno-savetovanje"): ContentTemplate.SERVICE_DETAIL,
     (ContentType.SERVICE, "roditeljsko-savetovanje"): ContentTemplate.SERVICE_DETAIL,
     # Current therapist profiles.
-    (ContentType.THERAPIST, "anja-stamenkovic"): ContentTemplate.THERAPIST_PROFILE,
-    (ContentType.THERAPIST, "marija-stamenkovic"): ContentTemplate.THERAPIST_PROFILE,
-    (ContentType.THERAPIST, "marjan-jankovic"): ContentTemplate.THERAPIST_PROFILE,
+    (ContentType.THERAPIST, "maria-bullock"): ContentTemplate.THERAPIST_PROFILE,
+    (ContentType.THERAPIST, "elsa-browers"): ContentTemplate.THERAPIST_PROFILE,
+    (ContentType.THERAPIST, "john-francis"): ContentTemplate.THERAPIST_PROFILE,
     # Current program detail routes.
     (ContentType.PROGRAM, "postpartalni-period"): ContentTemplate.PROGRAM_DETAIL,
     (ContentType.PROGRAM, "roditeljstvo-0-3"): ContentTemplate.PROGRAM_DETAIL,

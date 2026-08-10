@@ -9,13 +9,13 @@ describe("parseBookingWidgetSearchParams", () => {
   it("keeps only the allowlisted public booking context", () => {
     const result = parseBookingWidgetSearchParams(
       new URLSearchParams(
-        "service=bracno-savetovanje&therapist=marjan-jankovic&format=uzivo&source=matching",
+        "service=bracno-savetovanje&therapist=john-francis&format=uzivo&source=matching",
       ),
     );
 
     expect(result).toEqual({
       serviceSlug: "bracno-savetovanje",
-      therapistSlug: "marjan-jankovic",
+      therapistSlug: "john-francis",
       format: "uzivo",
       source: "matching",
     });

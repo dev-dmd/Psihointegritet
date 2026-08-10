@@ -18,17 +18,20 @@ Usage. Prefer `--person`: the roster keeps the Clerk id, email, roles and
 therapist profile together, so they cannot be paired wrongly.
 
     uv run python scripts/provision_staff.py --list
-    uv run python scripts/provision_staff.py --person marija --dry-run
-    uv run python scripts/provision_staff.py --person marija
+    uv run python scripts/provision_staff.py --person elsa --dry-run
+    uv run python scripts/provision_staff.py --person elsa
 
-Someone without a recorded id (a new Clerk instance, or Marjan who has no
-account yet) still needs the explicit form:
+Someone without a recorded id for the instance being provisioned still needs
+the explicit form:
 
     uv run python scripts/provision_staff.py \\
         --external-id user_2ab... \\
-        --email marjan.jankovic@psihointegritet.com \\
-        --roles org_admin,therapist \\
-        --therapist-slug marjan-jankovic
+        --email elsa.browers@psihointegritet.com \\
+        --roles therapist \\
+        --therapist-slug elsa-browers
+
+To swap the whole therapist team at once, use `provision_team.py` instead —
+this command provisions one person.
 
 Inside a deployed container there is no `uv` — the runtime stage only carries
 the built virtualenv, which is already on PATH. Drop the `uv run` prefix:

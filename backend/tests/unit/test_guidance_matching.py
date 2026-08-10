@@ -42,14 +42,14 @@ def test_partner_path_returns_couples_service_and_equal_candidates() -> None:
 
     assert result.service.slug == "bracno-savetovanje"
     assert [candidate.slug for candidate in result.candidates[:2]] == [
-        "anja-stamenkovic",
-        "marjan-jankovic",
+        "maria-bullock",
+        "john-francis",
     ]
     assert result.show_multiple_options is True
     assert result.requires_human_review is False
 
 
-def test_addiction_prioritizes_anja_and_preserves_team_handoff_contract() -> None:
+def test_addiction_prioritizes_maria_and_preserves_team_handoff_contract() -> None:
     result = StaticMatchingAdapter().evaluate(
         MatchingInput(
             reason=REASONS["addiction"],
@@ -59,13 +59,13 @@ def test_addiction_prioritizes_anja_and_preserves_team_handoff_contract() -> Non
         )
     )
 
-    assert result.candidates[0].slug == "anja-stamenkovic"
+    assert result.candidates[0].slug == "maria-bullock"
     assert ADDICTION_RELATED_SUPPORT in DEFAULT_PROFILES[0].service_capabilities
     assert TAXONOMY_FIXTURE["specialties"] == [
         {
             "id": ADDICTION_RELATED_SUPPORT,
             "label": "Zavisnost",
-            "primaryTherapistSlugs": ["anja-stamenkovic"],
+            "primaryTherapistSlugs": ["maria-bullock"],
             "handoffAllowed": True,
         }
     ]
@@ -113,7 +113,7 @@ def test_adolescent_path_can_suggest_a_profile_but_requires_human_review() -> No
     assert result.requires_human_review is True
 
 
-def test_marjan_is_eligible_for_confirmed_parenting_support_from_age_sixteen() -> None:
+def test_john_is_eligible_for_confirmed_parenting_support_from_age_sixteen() -> None:
     result = StaticMatchingAdapter().evaluate(
         MatchingInput(
             reason=REASONS["parenting"],
@@ -125,14 +125,14 @@ def test_marjan_is_eligible_for_confirmed_parenting_support_from_age_sixteen() -
         )
     )
 
-    assert "marjan-jankovic" in [candidate.slug for candidate in result.candidates]
+    assert "john-francis" in [candidate.slug for candidate in result.candidates]
     assert result.requires_human_review is True
 
 
 def test_paused_profile_is_a_hard_matching_gate() -> None:
     profiles = tuple(
         replace(profile, acceptance_status=AcceptanceStatus.PAUSED)
-        if profile.slug == "anja-stamenkovic"
+        if profile.slug == "maria-bullock"
         else profile
         for profile in DEFAULT_PROFILES
     )
@@ -146,7 +146,7 @@ def test_paused_profile_is_a_hard_matching_gate() -> None:
         )
     )
 
-    assert "anja-stamenkovic" not in [candidate.slug for candidate in result.candidates]
+    assert "maria-bullock" not in [candidate.slug for candidate in result.candidates]
 
 
 def test_no_eligible_profile_falls_back_to_team_review() -> None:

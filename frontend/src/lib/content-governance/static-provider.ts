@@ -233,7 +233,7 @@ const staticPages: readonly StaticPageEntity[] = [
       {
         label: "Upoznajte tim",
         action: "VIEW_THERAPIST",
-        targetId: "therapist:anja-stamenkovic",
+        targetId: "therapist:maria-bullock",
       },
     ],
     widgets: noWidgets,

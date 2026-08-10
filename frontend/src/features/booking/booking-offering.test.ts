@@ -131,7 +131,7 @@ describe("offering queries", () => {
 
   it("lists therapists in catalogue order from real offerings", () => {
     const ids = therapistIdsWithOfferings(buildBookingOfferings());
-    expect(ids).toContain("anja-stamenkovic");
+    expect(ids).toContain("maria-bullock");
     expect(new Set(ids).size).toBe(ids.length);
   });
 });

@@ -7,40 +7,51 @@ import type { Therapist } from "@/types/therapist";
  * Content is a fallback layer (D-038): the CMS overrides any field the team
  * fills in, and nothing here is deleted when it does.
  *
- * - Titles state certification. The design handoff and the delivered bios said
- *   „pod supervizijom" for all three, which T3 recorded as outdated; D-042
- *   closes STOP S1 by confirming all three are certified gestalt therapists.
- * - Bios are the therapists' own first-person texts, kept verbatim apart from
- *   one mandated edit: Marjan's opening sentence had „pod supervizijom"
- *   removed per §4 R0.2 („remove/neutralize any unconfirmed credential
- *   strings from staging copy"). Dialect is intentional, not a typo (decision
- *   D-017, corrects D-001's wrong assumption): Anja is from Prijedor and
- *   personally speaks/writes ijekavica — her quote, bio and cardExcerpt stay
- *   ijekavica. Marija and Marjan speak/write exclusively ekavica, matching the
- *   site-wide default (T9). Fixed service names (T1/T2, e.g. „Bračno
- *   savetovanje") never change per therapist — they are product terminology,
- *   not personal speech.
+ * - **Team as of 2026-08-10 (D-074).** Maria Bullock, Elsa Browers and John
+ *   Francis replace Anja Stamenković, Marija Stamenković and Marjan Janković.
+ *   D-074 provisioned the accounts and the matching profiles but explicitly
+ *   left this public catalog out, because biographies, titles and areas of
+ *   expertise are claims about named professionals and needed text from the
+ *   owner. That text arrived (`psihointegritet_en.pdf`, 2026-08-10) and is
+ *   what this file now carries.
+ * - Each incoming person keeps the *matching attributes* of the person they
+ *   replace, per D-074: Maria ← Anja, Elsa ← Marija, John ← Marjan. That is
+ *   why `areas`, `bookingServiceSlugs`, `city` and `additionalServices` are
+ *   unchanged — the owner's material lists the same areas of work, and a slot
+ *   that stops matching would make the person invisible to guided selection.
+ * - Titles state certification, per D-042 / STOP S1 and §4 R0.2. The owner's
+ *   material writes „pod supervizijom" for all three; that wording is
+ *   deliberately not used here (CTO, 2026-08-10) and must not be reintroduced
+ *   without a decision that reopens S1.
+ * - Dialect is ekavica throughout, the site-wide default (T9). The ijekavica
+ *   exception recorded under D-017 was personal to Anja and left with her.
+ * - Bios are short on purpose: the owner's material calls its biography
+ *   section a starting direction that will be expanded, and §6 R0 forbids
+ *   inventing text about a named professional. `quote` and `cardExcerpt` for
+ *   Elsa and John therefore restate the one paragraph they have rather than
+ *   adding claims. Replace all three when the fuller texts arrive.
  * - Service names follow T1 („Bračno savetovanje", never „partnersko
  *   savetovanje" / „partnerska terapija"). „Psihoterapijsko savetovanje" was
- *   removed from the catalog per Anja's answers (D-025) and must not reappear.
- * - Prices follow Anja's answers (odgovor-za-matching-anketa.pdf, 2026-07-18;
- *   supersede the T7 draft) and must always be shown as „okvirne". A null
- *   duration/price means there is no confirmed figure — never invent one.
+ *   removed from the catalog (D-025) and must not reappear — the owner's
+ *   material lists a „Psihološko savetovanje" that has no catalog entry, no
+ *   backend service id and no booking route, so it is not offered here.
+ * - Prices are „okvirne" wherever shown. A null duration/price means there is
+ *   no confirmed figure — never invent one.
  */
 export const therapists: Therapist[] = [
   {
-    slug: "anja-stamenkovic",
-    name: "Anja Stamenković",
-    nameAccusative: "Anju",
-    firstName: "Anja",
-    firstNameGenitive: "Anje",
-    firstNameInstrumental: "Anjom",
-    initials: "AS",
+    slug: "maria-bullock",
+    name: "Maria Bullock",
+    nameAccusative: "Mariju",
+    firstName: "Maria",
+    firstNameGenitive: "Marije",
+    firstNameInstrumental: "Marijom",
+    initials: "MB",
     title:
       "Osnivačica Psihointegriteta · Socijalni radnik i sertifikovana geštalt psihoterapeutkinja",
     badge: "Osnivačica",
     quote:
-      "Vjerujem da svaka osoba nosi kapacitet za promjenu, ali da se ona događa tek kada se osjetimo dovoljno sigurno da budemo autentični.",
+      "Moj pristup se oslanja na geštalt psihoterapiju, koja podstiče razvoj svesnosti, autentičnosti i preuzimanje odgovornosti za sopstveni život.",
     formats: "Individualni rad · Rad sa parovima · Online i uživo",
     city: "Niš",
     cityLocative: "Nišu",
@@ -58,29 +69,29 @@ export const therapists: Therapist[] = [
       "bracno-savetovanje",
       "roditeljsko-savetovanje",
     ],
-    image: "/images/therapists/anja.jpeg",
+    image: "/images/therapists/maria_bullock.webp",
+    // Doubles as the page's SEO description (limit 170) — keep it short enough
+    // that Content Health stays green; the full sentence lives in `bio[0]`.
     cardExcerpt:
-      "Kao geštalt psihoterapeut posvećena sam stvaranju prostora u kojem ljudi mogu da zastanu, bolje razumiju sebe i pronađu način da žive u većem skladu sa sobom i drugima.",
+      "Kroz individualni rad i rad sa parovima pružam podršku ljudima koji žele bolje da razumeju sebe, unaprede kvalitet svojih odnosa i pronađu zdravije načine suočavanja.",
     bio: [
-      "Kao geštalt psihoterapeut posvećena sam stvaranju prostora u kojem ljudi mogu da zastanu, bolje razumiju sebe i pronađu način da žive u većem skladu sa sobom i drugima. Vjerujem da svaka osoba nosi kapacitet za promjenu, ali da se ona događa tek kada se osjetimo dovoljno sigurno da budemo autentični.",
-      "U svom radu njegujem topao, podržavajući i neposredan pristup, prateći klijenta u njegovom ritmu. Geštalt terapiju doživljavam kao proces razvijanja svjesnosti, o tome šta osjećamo, kako naše tijelo reaguje, šta nam je potrebno i na koji način gradimo odnose sa drugima. Kada postanemo svjesni svojih obrazaca, otvara se mogućnost da biramo drugačije i živimo slobodnije.",
-      "Posebno me zanimaju teme anksioznosti, stresa, sagorijevanja na poslu, životnih kriza, transgeneracijskih i razvojnih trauma, partnerskih odnosa i roditeljstva. Vjerujem da se dugoročna promjena ne postiže davanjem savjeta, već kroz iskustvo autentičnog kontakta i zajedničko istraživanje onoga što se dešava u sadašnjem trenutku.",
-      "Pored individualnog i partnerskog rada, posljednjih godina razvijam edukativne programe za roditelje i projekte usmjerene na očuvanje mentalnog zdravlja zaposlenih, sa posebnim fokusom na prevenciju burnout sindroma. Vjerujem da je briga o mentalnom zdravlju jednako važna u porodici kao i u radnom okruženju i da prevencija može imati jednaku vrijednost kao i sama terapija.",
-      "U terapijskom odnosu nastojim da budem prisutna, autentična i empatična, jer vjerujem da upravo kvalitetan kontakt predstavlja osnovu svake istinske promjene. Moj cilj je da zajedno sa klijentom stvorim prostor u kojem će moći da razvije veću unutrašnju stabilnost, slobodu izbora i povjerenje u sopstvene kapacitete.",
+      "Kroz individualni rad i rad sa parovima pružam podršku ljudima koji žele bolje da razumeju sebe, unaprede kvalitet svojih odnosa i pronađu zdravije načine da se nose sa životnim izazovima.",
+      "Posebno me zanimaju teme emocionalnog razvoja, partnerskih odnosa, roditeljstva, sagorevanja na poslu, transgeneracijskih obrazaca i ličnog rasta.",
+      "Moj pristup se oslanja na geštalt psihoterapiju, koja podstiče razvoj svesnosti, autentičnosti i preuzimanje odgovornosti za sopstveni život.",
     ],
   },
   {
-    slug: "marija-stamenkovic",
-    name: "Marija Stamenković",
-    nameAccusative: "Mariju",
-    firstName: "Marija",
-    firstNameGenitive: "Marije",
-    firstNameInstrumental: "Marijom",
-    initials: "MS",
+    slug: "elsa-browers",
+    name: "Elsa Browers",
+    nameAccusative: "Elsu",
+    firstName: "Elsa",
+    firstNameGenitive: "Else",
+    firstNameInstrumental: "Elsom",
+    initials: "EB",
     title: "Pedagog i sertifikovana geštalt psihoterapeutkinja",
     badge: "Adolescenti i odrasli",
     quote:
-      "Verujem da svaka osoba u sebi nosi kapacitet za promenu i rast, a da je uloga terapeuta da stvori siguran odnos u kojem taj potencijal može da se razvije.",
+      "Podržavam adolescente i odrasle u ličnom razvoju, emocionalnim teškoćama i unapređenju odnosa sa drugima.",
     formats: "Individualni rad · Adolescenti i odrasli · Online i uživo",
     city: "Leskovac",
     cityLocative: "Leskovcu",
@@ -99,28 +110,25 @@ export const therapists: Therapist[] = [
       "individualna-psihoterapija",
       "roditeljsko-savetovanje",
     ],
-    image: "/images/therapists/marija.jpeg",
+    image: "/images/therapists/elsa_browers.webp",
     cardExcerpt:
-      "Više od 26 godina radim kao stručni saradnik u obrazovanju, pružajući podršku deci, adolescentima, roditeljima i nastavnicima u različitim razvojnim i životnim izazovima.",
+      "Radim sa adolescentima i odraslima kroz individualni psihoterapijski rad, pružajući podršku u ličnom razvoju, emocionalnim teškoćama i unapređenju međuljudskih odnosa.",
     bio: [
-      "Više od 26 godina radim kao stručni saradnik u obrazovanju, pružajući podršku deci, adolescentima, roditeljima i nastavnicima u različitim razvojnim i životnim izazovima. Kao geštalt psihoterapeut, verujem da svaka osoba u sebi nosi kapacitet za promenu i rast, a da je uloga terapeuta da stvori siguran odnos u kojem taj potencijal može da se razvije.",
-      "U svom radu negujem topao, autentičan i podržavajući pristup, prateći klijenta u njegovom ritmu i pomažući mu da razvije veću svesnost o svojim osećanjima, potrebama i obrascima koji oblikuju njegov život. Posebno me zanimaju teme traume, anksioznosti, stida, gubitka, partnerskih i porodičnih odnosa, kao i ličnog razvoja. U terapijskom radu integrišem geštalt pristup sa savremenim saznanjima iz neuronauke i telesno orijentisanim perspektivama, verujući da se trajna promena događa kada povežemo ono što mislimo, osećamo i živimo.",
-      "Cilj terapijskog procesa nije samo prevazilaženje teškoća, već razvoj unutrašnje stabilnosti, autentičnosti i sposobnosti da osoba gradi kvalitetnije odnose sa sobom i drugima. Nastojim da stvorim prostor u kojem će se svako osećati viđeno, prihvaćeno i dovoljno bezbedno da istraži svoja iskustva i pronađe nove načine suočavanja sa životnim izazovima.",
-      "Kontinuirano se stručno usavršavam, jer verujem da kvalitetna psihoterapija podrazumeva stalno učenje i lični razvoj terapeuta. U terapijskom odnosu trudim se da budem prisutna, empatična i autentična, jer verujem da upravo kvalitetan kontakt predstavlja osnovu svake istinske promene.",
+      "Radim sa adolescentima i odraslima kroz individualni psihoterapijski rad, pružajući podršku u ličnom razvoju, emocionalnim teškoćama i unapređenju međuljudskih odnosa.",
     ],
   },
   {
-    slug: "marjan-jankovic",
-    name: "Marjan Janković",
-    nameAccusative: "Marjana",
-    firstName: "Marjan",
-    firstNameGenitive: "Marjana",
-    firstNameInstrumental: "Marjanom",
-    initials: "MJ",
+    slug: "john-francis",
+    name: "John Francis",
+    nameAccusative: "Johna",
+    firstName: "John",
+    firstNameGenitive: "Johna",
+    firstNameInstrumental: "Johnom",
+    initials: "JF",
     title: "Psiholog i sertifikovani geštalt psihoterapeut",
     badge: "Individualni rad i parovi",
     quote:
-      "Verujem da se najdublje promene dešavaju onda kada se osoba oseti viđenom, prihvaćenom i dovoljno sigurnom da istraži sebe bez straha od osude.",
+      "Posebno me zanimaju emocionalna regulacija, razvoj partnerskog odnosa, stres i lični razvoj.",
     formats: "Individualni rad · Rad sa parovima · Online i uživo",
     city: "Leskovac",
     cityLocative: "Leskovcu",
@@ -133,16 +141,11 @@ export const therapists: Therapist[] = [
     ],
     additionalServices: [],
     bookingServiceSlugs: ["individualna-psihoterapija", "bracno-savetovanje"],
-    image: "/images/therapists/marjan.jpeg",
+    image: "/images/therapists/john_francis.webp",
     cardExcerpt:
-      "Psiholog i geštalt psihoterapeut, posvećen razumevanju čoveka u celini – njegovih misli, emocija, telesnih iskustava i odnosa sa drugima.",
+      "Radim sa odraslima i parovima, sa posebnim interesovanjem za emocionalnu regulaciju, razvoj partnerskog odnosa, stres i lični razvoj.",
     bio: [
-      "Ja sam Marjan Janković, psiholog i geštalt psihoterapeut, posvećen razumevanju čoveka u celini – njegovih misli, emocija, telesnih iskustava i odnosa sa drugima. Verujem da se najdublje promene dešavaju onda kada se osoba oseti viđenom, prihvaćenom i dovoljno sigurnom da istraži sebe bez straha od osude.",
-      "U svom radu negujem topao, autentičan i human pristup, utemeljen na stručnom znanju i poverenju koje gradim sa svakim klijentom. Pratim osobu u njenom ritmu, pomažući joj da razvije veću svesnost o sopstvenim osećanjima, telesnim reakcijama, potrebama i načinima na koje ostvaruje kontakt sa drugima. Verujem da upravo kroz povećanu svesnost nastaje prostor za izbor, promenu i lični rast.",
-      "Cilj terapijskog procesa nije samo ublažavanje simptoma, već razvoj unutrašnje stabilnosti, autentičnosti i sposobnosti da osoba živi život u skladu sa sobom, umesto da njime upravljaju strah, napetost ili obrasci nastali kroz ranija životna iskustva.",
-      "Posebno sam posvećen radu sa osobama koje se suočavaju sa stresom, anksioznošću, životnim krizama, razvodom, roditeljskim izazovima i traumatskim iskustvima iz prošlosti. Takođe radim sa parovima koji žele da unaprede komunikaciju, prodube međusobno razumevanje i izgrade sigurniji, kvalitetniji i emocionalno povezan odnos.",
-      "Kao psiholog sa dugogodišnjim iskustvom u radu sa temama nasilja, roditeljstva, partnerskih odnosa i ličnog razvoja, verujem da svaki čovek u sebi nosi potencijal za promenu i oporavak. Moj zadatak je da obezbedim prostor u kojem će taj proces biti bezbedan, podržan i smislen.",
-      "U terapijskom odnosu nastojim da budem autentičan, prisutan i empatičan, jer verujem da je upravo kvalitetan kontakt temelj svake istinske promene i ono što ima najveći isceljujući potencijal.",
+      "Radim sa odraslima i parovima, sa posebnim interesovanjem za emocionalnu regulaciju, razvoj partnerskog odnosa, stres i lični razvoj.",
     ],
   },
 ];

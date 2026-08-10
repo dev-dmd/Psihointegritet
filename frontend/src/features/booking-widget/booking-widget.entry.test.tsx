@@ -11,12 +11,12 @@ describe("direct booking", () => {
     renderWidget(editable);
 
     expect(screen.getByText("Ostali terapeuti")).toBeInTheDocument();
-    expect(screen.getByText("Usluge kod Anje")).toBeInTheDocument();
+    expect(screen.getByText("Usluge kod Marije")).toBeInTheDocument();
     // The active therapist never reappears as a choice.
     expect(
       within(
         screen.getByRole("region", { name: "Ostali terapeuti" }),
-      ).queryByText("Anja Stamenković"),
+      ).queryByText("Maria Bullock"),
     ).not.toBeInTheDocument();
   });
 
@@ -32,15 +32,15 @@ describe("direct booking", () => {
 
 describe("therapist profile entry", () => {
   it("preselects the therapist yet keeps them changeable", () => {
-    renderWidget(editable, { initialTherapistId: "marjan" });
+    renderWidget(editable, { initialTherapistId: "john" });
 
-    expect(screen.getByText("Usluge kod Marjana")).toBeInTheDocument();
+    expect(screen.getByText("Usluge kod Johna")).toBeInTheDocument();
     expect(screen.getByText("Ostali terapeuti")).toBeInTheDocument();
   });
 
   it("honours an initial service", () => {
     renderWidget(editable, {
-      initialTherapistId: "anja",
+      initialTherapistId: "maria",
       initialServiceId: "bracno",
     });
     expect(
@@ -54,7 +54,7 @@ describe("therapist profile entry", () => {
 describe("intake matching entry", () => {
   it("locks both choices and hides every selector", () => {
     renderWidget(locked, {
-      initialTherapistId: "anja",
+      initialTherapistId: "maria",
       initialServiceId: "bracno",
     });
 
@@ -74,7 +74,7 @@ describe("intake matching entry", () => {
   it("offers a labelled back button beside Otkaži, not a bare arrow", async () => {
     const onBack = vi.fn();
     const user = userEvent.setup();
-    renderWidget(locked, { initialTherapistId: "anja", onBack });
+    renderWidget(locked, { initialTherapistId: "maria", onBack });
 
     const back = screen.getByRole("button", { name: "Nazad na preporuke" });
     // Visible word, because an icon on its own read as nothing to clients.
@@ -103,7 +103,7 @@ describe("intake matching entry", () => {
   });
 
   it("shows no back button when the host did not provide one", () => {
-    renderWidget(locked, { initialTherapistId: "anja" });
+    renderWidget(locked, { initialTherapistId: "maria" });
     expect(
       screen.queryByRole("button", { name: "Nazad na preporuke" }),
     ).not.toBeInTheDocument();
