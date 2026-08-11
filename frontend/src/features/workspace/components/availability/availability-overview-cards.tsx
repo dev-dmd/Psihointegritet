@@ -81,7 +81,7 @@ export function AvailabilityOverviewCards() {
           title="Radno vreme"
           editHref={localizedPath("workspace.schedule", {
             locale,
-            tab: "radno-vreme",
+            tab: "working-hours",
           })}
           editLabel={groups.length === 0 ? "Unesi radno vreme" : "Uredi"}
         >
@@ -138,7 +138,7 @@ export function AvailabilityOverviewCards() {
           title="Izuzeci"
           editHref={localizedPath("workspace.schedule", {
             locale,
-            tab: "izuzeci",
+            tab: "exceptions",
           })}
           editLabel={exceptions.length === 0 ? "Dodaj izuzetak" : "Uredi"}
         >

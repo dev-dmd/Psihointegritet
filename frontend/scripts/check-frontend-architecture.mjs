@@ -157,14 +157,17 @@ for (const file of tsxFiles) {
  * working for the Serbian tenant and silently 404s for an English one, which is
  * the failure mode this whole registry exists to remove.
  *
- * The baseline shrinks as ROUTE-I18N-2 migrates call sites; it may never grow.
- * Remove an entry when its file is migrated. Do not add one.
+ * **Emptied 2026-08-11 (ROUTE-I18N-2): 65 literals across 23 files → 0.**
+ * Keep it empty. A new entry here means a component reacquired a path it cannot
+ * localize, and the correct fix is `localizedPath(routeId, { locale })` — from
+ * `useUiLocale()` in a Client Component, or the organization resolvers in a
+ * Server Component.
+ *
+ * Two paths are intentionally still literals and live outside this rule's
+ * pattern: `SIGN_IN_URL` and `SIGN_UP_URL` in `lib/auth/routes.ts`. Auth and
+ * callback routes are not localized (D-077 Amendment §10).
  */
-const platformPathLiteralBaseline = new Map([
-  ["src/app/(superadmin)/superadmin/tenants/[tenantId]/page.tsx", 1],
-  ["src/features/workspace/components/screen-pregled.tsx", 2],
-  ["src/lib/auth/routes.ts", 4],
-]);
+const platformPathLiteralBaseline = new Map([]);
 
 const platformPathPattern =
   /["'`](?:\/radni-prostor|\/workspace|\/superadmin|\/nalog|\/account)(?:\/[^"'`$]*)?["'`]/g;

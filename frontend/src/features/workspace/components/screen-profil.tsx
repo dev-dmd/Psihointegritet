@@ -15,14 +15,15 @@ import { AvailabilityOverviewCards } from "./availability/availability-overview-
 import { LockIcon } from "./icons";
 import { PageHeader } from "./page-header";
 
+// Stable codes — query values are never translated (D-077 Amendment §2).
 const tabs = [
-  { id: "javni", label: "Javni profil" },
-  { id: "match", label: "Matching preferencije" },
-  { id: "dostupnost", label: "Dostupnost" },
+  { id: "public", label: "Javni profil" },
+  { id: "matching", label: "Matching preferencije" },
+  { id: "availability", label: "Dostupnost" },
 ];
 
 export function ScreenProfil() {
-  const [tab, setTab] = useState("javni");
+  const [tab, setTab] = useState("public");
   const therapist = findTherapist(myProfileSlug);
 
   if (!therapist) {

@@ -17,6 +17,7 @@ export default async function SuperadminTenantProfilePage({
 }: {
   params: Promise<{ tenantId: string }>;
 }) {
+  const locale = await resolveWorkspaceLocale();
   await requireSuperadmin();
   const { tenantId } = await params;
   // Only the hardcoded Psihointegritet tenant exists in this phase.
@@ -28,7 +29,7 @@ export default async function SuperadminTenantProfilePage({
   return (
     <section className="animate-fade-up">
       <Link
-        href="/superadmin/tenants"
+        href={localizedPath("superadmin.tenants.list", { locale })}
         className="text-ink-55 hover:text-coffee mb-3.5 inline-flex items-center gap-2 py-1 text-[13.5px] font-semibold no-underline transition-colors"
       >
         <ArrowLeftIcon />

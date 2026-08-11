@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { IdentityCard } from "@/lib/auth/clerk/identity-card";
 import { resolveLandingRoute } from "@/lib/auth/guards";
 import { getServerIdentity } from "@/lib/auth/identity-server";
-import { ACCOUNT_URL } from "@/lib/auth/routes";
+import { localizedPath } from "@/lib/routes/localized-path";
 import { resolveWorkspaceLocale } from "@/lib/tenant/workspace-locale";
 
 export const metadata: Metadata = {
@@ -22,11 +22,9 @@ export const metadata: Metadata = {
 export default async function ClientDashboardPage() {
   const identity = await getServerIdentity();
   if (identity) {
-    const landing = resolveLandingRoute(
-      identity,
-      await resolveWorkspaceLocale(),
-    );
-    if (landing !== ACCOUNT_URL) {
+    const locale = await resolveWorkspaceLocale();
+    const landing = resolveLandingRoute(identity, locale);
+    if (landing !== localizedPath("account.home", { locale })) {
       redirect(landing);
     }
   }

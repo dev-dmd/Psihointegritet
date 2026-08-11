@@ -16,6 +16,7 @@ import {
   PLANNED_ROUTES,
   PLATFORM_ROUTES,
   PUBLIC_ROUTES,
+  ROUTE_ALIASES,
   platformRootSegments,
   platformRouteIds,
   routeDefinition,
@@ -119,15 +120,77 @@ describe("registry integrity", () => {
     }
   });
 
-  it("changes no live Serbian URL — sr-Latn paths still equal the physical route", () => {
-    // The zero-behaviour-change guarantee of ROUTE-I18N-1. `workspace.schedule`
-    // is the one deliberate exception: `/raspored` becomes canonical when the
-    // directory is renamed in ROUTE-I18N-3, and `/dostupnost` becomes an alias.
+  it("makes the physical route reachable from at least one locale", () => {
+    // `internal` must equal some locale's external path, otherwise no visitor
+    // can ever produce it and the proxy has nothing to rewrite from.
+    //
+    // Which locale differs by surface, and that asymmetry is the current state
+    // rather than an oversight: the workspace moved to English segments in
+    // ROUTE-I18N-3, while the client panel still lives at `/nalog` on disk. The
+    // proxy rewrites on path difference, not on locale, precisely so both work.
     for (const routeId of platformRouteIds()) {
-      if (routeId === "workspace.schedule") continue;
       const definition = routeDefinition(routeId);
-      expect(definition.paths["sr-Latn"]).toBe(definition.internal);
+      expect(
+        Object.values(definition.paths),
+        `${routeId} has an unreachable physical route`,
+      ).toContain(definition.internal);
     }
+  });
+
+  it("serves every workspace route from an English physical path", () => {
+    for (const routeId of platformRouteIds()) {
+      if (!routeId.startsWith("workspace.")) continue;
+      const definition = routeDefinition(routeId);
+      expect(definition.paths.en).toBe(definition.internal);
+    }
+  });
+
+  it("does not change a single live Serbian URL", () => {
+    // The regression guard for the physical move: these are the URLs the only
+    // organization's users have in their address bars, bookmarks and email
+    // links. Written out rather than derived — a derived expectation would move
+    // with the bug it is supposed to catch.
+    const liveSerbianUrls: Record<string, string> = {
+      "workspace.home": "/radni-prostor",
+      "workspace.appointments.list": "/radni-prostor/termini",
+      "workspace.clients.list": "/radni-prostor/klijenti",
+      "workspace.companies.list": "/radni-prostor/kompanije",
+      "workspace.services.list": "/radni-prostor/usluge",
+      "workspace.research": "/radni-prostor/istrazivanja",
+      "workspace.documents": "/radni-prostor/dokumenti",
+      "workspace.content.list": "/radni-prostor/sadrzaj",
+      "workspace.content.review":
+        "/radni-prostor/sadrzaj/[entryId]/revizije/[revisionId]/pregled",
+      "workspace.compass.home": "/radni-prostor/kompas",
+      "workspace.compass.content.list": "/radni-prostor/kompas/sadrzaj",
+      "workspace.compass.content.new": "/radni-prostor/kompas/sadrzaj/novo",
+      "workspace.compass.content.detail":
+        "/radni-prostor/kompas/sadrzaj/[entryId]",
+      "workspace.therapists.list": "/radni-prostor/terapeuti",
+      "workspace.profile": "/radni-prostor/profil",
+      "workspace.settings.home": "/radni-prostor/podesavanja",
+      "account.home": "/nalog",
+      "account.appointments": "/nalog/termini",
+      "account.settings": "/nalog/podesavanja",
+    };
+
+    for (const [routeId, expected] of Object.entries(liveSerbianUrls)) {
+      expect(
+        routeDefinition(routeId as never).paths["sr-Latn"],
+        `${routeId} changed a live URL`,
+      ).toBe(expected);
+    }
+  });
+
+  it("retires /dostupnost through an alias rather than a broken link", () => {
+    // The one deliberate URL change. `/raspored` is canonical; the old path
+    // must still resolve, or every bookmark and email link to it 404s.
+    expect(routeDefinition("workspace.schedule").paths["sr-Latn"]).toBe(
+      "/radni-prostor/raspored",
+    );
+    expect(ROUTE_ALIASES["/radni-prostor/dostupnost"]).toBe(
+      "workspace.schedule",
+    );
   });
 
   it("records public routes without activating them", () => {
@@ -165,14 +228,14 @@ describe("localizedPath", () => {
     // address the same screen state in both languages.
     const en = localizedPath("workspace.profile", {
       locale: "en",
-      tab: "match",
+      tab: "matching",
     });
     const sr = localizedPath("workspace.profile", {
       locale: "sr-Latn",
-      tab: "match",
+      tab: "matching",
     });
-    expect(en).toBe("/workspace/profile?tab=match");
-    expect(sr).toBe("/radni-prostor/profil?tab=match");
+    expect(en).toBe("/workspace/profile?tab=matching");
+    expect(sr).toBe("/radni-prostor/profil?tab=matching");
   });
 
   it("throws instead of rendering a link with a missing parameter", () => {
@@ -185,9 +248,8 @@ describe("localizedPath", () => {
   });
 
   it("builds the physical path separately from the external one", () => {
-    expect(internalPath("workspace.schedule", {})).toBe(
-      "/radni-prostor/dostupnost",
-    );
+    // What the proxy rewrites *to* versus what the browser shows.
+    expect(internalPath("workspace.schedule", {})).toBe("/workspace/schedule");
     expect(localizedPath("workspace.schedule", { locale: "sr-Latn" })).toBe(
       "/radni-prostor/raspored",
     );

@@ -408,6 +408,40 @@ frontenda i može odmah posle D-077.
 
 ---
 
+## 5.1 Isporučeno (2026-08-11)
+
+**I18N-1** · **I18N-2** · **ROUTE-I18N-1** · **ROUTE-I18N-2** · **ROUTE-I18N-3+4**
+
+ROUTE-I18N-3 i -4 su **isporučeni zajedno, namerno**. Čim `internal` postane engleski,
+`/radni-prostor/...` nema stranicu iza sebe; izmena koja premešta fajlove bez proxy
+rewrite-a ostavlja workspace jedine žive organizacije u 404.
+
+Stanje posle:
+
+| | |
+|---|---|
+| Fizičke rute | `app/(staff)/workspace/**`, engleski segmenti |
+| Srpski URL-ovi | nepromenjeni, kroz proxy rewrite; test ih čuva eksplicitnom listom |
+| Jedina promena URL-a | `/dostupnost` → `/raspored`, staro ide na 308 |
+| Tab vrednosti | stabilni kodovi; stare srpske prihvaćene kao alijasi jedno izdanje |
+| Rezervisani CMS slugovi | 17 → 25, platformski root-ovi **izvedeni** iz registra |
+| Path literali | 65 → 0, baseline zaključan na praznu |
+
+**Klijentski panel još nije premešten** (`/nalog` je i spoljašnja i fizička putanja). Zato
+proxy radi rewrite kad se **putanje razlikuju**, a ne kad locale nije engleski — uslov po
+locale-u bi tiho 404-ovao jednu od te dve površine.
+
+### Petlja koju je property test uhvatio
+
+`/superadmin` je locale-neutralan, pa je `matchPlatformPath` vraćao `pathLocale: "en"` na
+srpskoj organizaciji, canonical provera je okidala, a cilj redirekta bio je **bajt-identičan
+zahtevu**. Svaka superadmin stranica bi se odbijala dok browser ne odustane.
+
+Popravka nije `localeNeutral` izuzetak nego opšte pravilo: **nikad ne redirektuj na putanju
+na kojoj si već**. Važi i za svaku buduću rutu čije se dve locale putanje slučajno poklope.
+
+---
+
 ## 6. Rizici i test koji svaki hvata
 
 | # | Rizik | Test |

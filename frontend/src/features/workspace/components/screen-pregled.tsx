@@ -142,7 +142,7 @@ export function ScreenPregled() {
               Današnji raspored
             </h2>
             <Link
-              href="/radni-prostor/termini"
+              href={localizedPath("workspace.appointments.list", { locale })}
               className="text-forest hover:text-sage border-coffee/25 border-b-[1.5px] text-[13px] font-semibold no-underline transition-colors"
             >
               Svi termini →
@@ -186,7 +186,7 @@ export function ScreenPregled() {
 
           {isAdmin ? (
             <Link
-              href="/radni-prostor/istrazivanja"
+              href={localizedPath("workspace.research", { locale })}
               className="bg-warm/16 border-warm/45 rounded-panel hover:bg-warm/28 block px-6 py-[22px] no-underline transition-colors"
             >
               <div className="text-ink-55 mb-2 text-[11px] font-semibold tracking-[0.14em] uppercase">

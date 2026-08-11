@@ -35,12 +35,19 @@ import type { UiLocale } from "@/i18n/locales";
  *
  * # Zero behaviour change
  *
- * At ROUTE-I18N-1 `internal` still points at today's Serbian paths, because the
- * files have not moved yet. `paths.en` is therefore recorded but not yet
- * served — the English external path only becomes reachable once the physical
- * move (ROUTE-I18N-3) and the proxy rewrite (ROUTE-I18N-4) land. The live
- * Serbian tenant resolves `paths["sr-Latn"]`, which equals `internal` today, so
- * every URL it produces is byte-identical to the current one.
+ * # Where the two path columns meet the filesystem
+ *
+ * `internal` is the physical Next.js route and always equals `paths.en` — the
+ * English segments are the canonical ones on disk. A Serbian organization never
+ * sees them: `proxy.ts` rewrites `/radni-prostor/podesavanja` onto
+ * `/workspace/settings` while the browser keeps the Serbian URL, and a request
+ * whose path locale disagrees with the organization's gets a 308 to the
+ * equivalent path.
+ *
+ * Live Serbian URLs are therefore unchanged by the move — they are still what
+ * `localizedPath(..., "sr-Latn")` produces and still what the address bar shows.
+ * The single deliberate exception is `workspace.schedule`, whose Serbian path
+ * becomes `/raspored`; the old `/dostupnost` is kept in `ROUTE_ALIASES`.
  */
 
 /** Query keys whose values are stable codes, never translated. */
@@ -71,18 +78,13 @@ export interface RouteDefinition {
 }
 
 /**
- * Serbian workspace tab values still carry translated strings from before this
- * registry existed. They stay exactly as they are here, because ROUTE-I18N-1
- * changes no behaviour; the rename to stable codes happens in ROUTE-I18N-3,
- * which can accept the old values as aliases for one release.
- *
- * TODO(ROUTE-I18N-3): `radno-vreme|slotovi|izuzeci` → `working-hours|slots|exceptions`
- * and `javni|match|dostupnost` → `public|matching|availability`. Until then
- * these are the only translated query values in the system, and the reason the
- * rule above exists.
+ * Tab values are stable, locale-neutral codes. The Serbian ones these replaced
+ * (`radno-vreme|slotovi|izuzeci`, `javni|match|dostupnost`) were the only
+ * translated query parameters in the system; the screens accept them as
+ * aliases for one release so existing links keep landing correctly.
  */
-const SCHEDULE_TABS = ["radno-vreme", "slotovi", "izuzeci"] as const;
-const PROFILE_TABS = ["javni", "match", "dostupnost"] as const;
+const SCHEDULE_TABS = ["working-hours", "slots", "exceptions"] as const;
+const PROFILE_TABS = ["public", "matching", "availability"] as const;
 const COMPASS_TABS = [
   "overview",
   "content",
@@ -96,13 +98,13 @@ const COMPASS_TABS = [
 export const PLATFORM_ROUTES = {
   // ── Staff workspace ─────────────────────────────────────────────────────
   "workspace.home": {
-    internal: "/radni-prostor",
+    internal: "/workspace",
     paths: { en: "/workspace", "sr-Latn": "/radni-prostor" },
     match: "exact",
     protected: true,
   },
   "workspace.appointments.list": {
-    internal: "/radni-prostor/termini",
+    internal: "/workspace/appointments",
     paths: {
       en: "/workspace/appointments",
       "sr-Latn": "/radni-prostor/termini",
@@ -110,20 +112,21 @@ export const PLATFORM_ROUTES = {
     protected: true,
   },
   "workspace.schedule": {
-    // Serbian canonical becomes `/raspored`; `/dostupnost` degrades to a 308
-    // alias in ROUTE-I18N-3, when the physical directory is renamed.
-    internal: "/radni-prostor/dostupnost",
+    // The physical directory is `schedule`; the Serbian canonical is
+    // `/raspored`. `/radni-prostor/dostupnost` survives as a 308 alias in
+    // `ROUTE_ALIASES` so existing bookmarks and links keep working.
+    internal: "/workspace/schedule",
     paths: { en: "/workspace/schedule", "sr-Latn": "/radni-prostor/raspored" },
     tabs: SCHEDULE_TABS,
     protected: true,
   },
   "workspace.clients.list": {
-    internal: "/radni-prostor/klijenti",
+    internal: "/workspace/clients",
     paths: { en: "/workspace/clients", "sr-Latn": "/radni-prostor/klijenti" },
     protected: true,
   },
   "workspace.companies.list": {
-    internal: "/radni-prostor/kompanije",
+    internal: "/workspace/companies",
     paths: {
       en: "/workspace/companies",
       "sr-Latn": "/radni-prostor/kompanije",
@@ -131,12 +134,12 @@ export const PLATFORM_ROUTES = {
     protected: true,
   },
   "workspace.services.list": {
-    internal: "/radni-prostor/usluge",
+    internal: "/workspace/services",
     paths: { en: "/workspace/services", "sr-Latn": "/radni-prostor/usluge" },
     protected: true,
   },
   "workspace.research": {
-    internal: "/radni-prostor/istrazivanja",
+    internal: "/workspace/research",
     paths: {
       en: "/workspace/research",
       "sr-Latn": "/radni-prostor/istrazivanja",
@@ -144,7 +147,7 @@ export const PLATFORM_ROUTES = {
     protected: true,
   },
   "workspace.documents": {
-    internal: "/radni-prostor/dokumenti",
+    internal: "/workspace/documents",
     paths: {
       en: "/workspace/documents",
       "sr-Latn": "/radni-prostor/dokumenti",
@@ -152,12 +155,12 @@ export const PLATFORM_ROUTES = {
     protected: true,
   },
   "workspace.content.list": {
-    internal: "/radni-prostor/sadrzaj",
+    internal: "/workspace/content",
     paths: { en: "/workspace/content", "sr-Latn": "/radni-prostor/sadrzaj" },
     protected: true,
   },
   "workspace.content.review": {
-    internal: "/radni-prostor/sadrzaj/[entryId]/revizije/[revisionId]/pregled",
+    internal: "/workspace/content/[entryId]/revisions/[revisionId]/review",
     paths: {
       en: "/workspace/content/[entryId]/revisions/[revisionId]/review",
       "sr-Latn":
@@ -167,13 +170,13 @@ export const PLATFORM_ROUTES = {
     protected: true,
   },
   "workspace.compass.home": {
-    internal: "/radni-prostor/kompas",
+    internal: "/workspace/compass",
     paths: { en: "/workspace/compass", "sr-Latn": "/radni-prostor/kompas" },
     tabs: COMPASS_TABS,
     protected: true,
   },
   "workspace.compass.content.list": {
-    internal: "/radni-prostor/kompas/sadrzaj",
+    internal: "/workspace/compass/content",
     paths: {
       en: "/workspace/compass/content",
       "sr-Latn": "/radni-prostor/kompas/sadrzaj",
@@ -181,7 +184,7 @@ export const PLATFORM_ROUTES = {
     protected: true,
   },
   "workspace.compass.content.new": {
-    internal: "/radni-prostor/kompas/sadrzaj/novo",
+    internal: "/workspace/compass/content/new",
     paths: {
       en: "/workspace/compass/content/new",
       "sr-Latn": "/radni-prostor/kompas/sadrzaj/novo",
@@ -189,7 +192,7 @@ export const PLATFORM_ROUTES = {
     protected: true,
   },
   "workspace.compass.content.detail": {
-    internal: "/radni-prostor/kompas/sadrzaj/[entryId]",
+    internal: "/workspace/compass/content/[entryId]",
     paths: {
       en: "/workspace/compass/content/[entryId]",
       "sr-Latn": "/radni-prostor/kompas/sadrzaj/[entryId]",
@@ -198,7 +201,7 @@ export const PLATFORM_ROUTES = {
     protected: true,
   },
   "workspace.therapists.list": {
-    internal: "/radni-prostor/terapeuti",
+    internal: "/workspace/therapists",
     paths: {
       en: "/workspace/therapists",
       "sr-Latn": "/radni-prostor/terapeuti",
@@ -206,13 +209,13 @@ export const PLATFORM_ROUTES = {
     protected: true,
   },
   "workspace.profile": {
-    internal: "/radni-prostor/profil",
+    internal: "/workspace/profile",
     paths: { en: "/workspace/profile", "sr-Latn": "/radni-prostor/profil" },
     tabs: PROFILE_TABS,
     protected: true,
   },
   "workspace.settings.home": {
-    internal: "/radni-prostor/podesavanja",
+    internal: "/workspace/settings",
     paths: {
       en: "/workspace/settings",
       "sr-Latn": "/radni-prostor/podesavanja",

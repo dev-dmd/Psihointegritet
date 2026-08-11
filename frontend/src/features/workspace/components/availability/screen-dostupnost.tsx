@@ -39,12 +39,31 @@ import { AvailabilitySlots } from "./availability-slots";
 import { AvailabilityWeekEditor } from "./availability-week-editor";
 
 const layerTabs = [
-  { id: "radno-vreme", label: "1 · Radno vreme" },
-  { id: "slotovi", label: "2 · Termini" },
-  { id: "izuzeci", label: "3 · Izuzeci" },
+  { id: "working-hours", label: "1 · Radno vreme" },
+  { id: "slots", label: "2 · Termini" },
+  { id: "exceptions", label: "3 · Izuzeci" },
 ] as const;
 
 type LayerTab = (typeof layerTabs)[number]["id"];
+
+/**
+ * Query values are stable codes, never translated (D-077 Amendment §2): the
+ * same `?tab=` must address the same screen in both languages, and these were
+ * the only translated ones left in the system.
+ *
+ * The old Serbian values are accepted for one release so links already sent by
+ * email, pasted into chat or bookmarked keep landing on the right layer. Delete
+ * this map once those have aged out.
+ */
+const LEGACY_TAB_ALIASES: Record<string, LayerTab> = {
+  "radno-vreme": "working-hours",
+  slotovi: "slots",
+  izuzeci: "exceptions",
+};
+
+function normalizeTab(value: string | null): string | null {
+  return value === null ? null : (LEGACY_TAB_ALIASES[value] ?? value);
+}
 
 function isLayerTab(value: string | null): value is LayerTab {
   return layerTabs.some((tab) => tab.id === value);
@@ -66,7 +85,9 @@ export function ScreenDostupnost({
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [layer, setLayer] = useState<LayerTab>(
-    isLayerTab(initialTab) ? initialTab : "radno-vreme",
+    isLayerTab(normalizeTab(initialTab))
+      ? (normalizeTab(initialTab) as LayerTab)
+      : "working-hours",
   );
 
   // Keep the tab in the URL, not just in state: §2 wants a link to open one
@@ -218,7 +239,7 @@ export function ScreenDostupnost({
             >
               Nazad na profil
             </Link>
-            {layer === "radno-vreme" ? saveButton : null}
+            {layer === "working-hours" ? saveButton : null}
           </>
         }
       />
@@ -255,12 +276,12 @@ export function ScreenDostupnost({
         </div>
       ) : null}
 
-      {layer === "slotovi" ? (
+      {layer === "slots" ? (
         <AvailabilitySlots
           profileId={profile?.id ?? null}
           manualMode={mode === "manual_slots"}
         />
-      ) : layer === "radno-vreme" ? (
+      ) : layer === "working-hours" ? (
         <div className="flex flex-col gap-3.5">
           <AvailabilitySettingsRow
             mode={mode}
@@ -274,7 +295,7 @@ export function ScreenDostupnost({
             onStepChange={setStep}
             onLeadChange={setLeadHours}
             onCancelChange={setCancelHours}
-            onOpenExceptions={() => openLayer("izuzeci")}
+            onOpenExceptions={() => openLayer("exceptions")}
           />
 
           {mode === "manual_slots" ? (
@@ -284,7 +305,7 @@ export function ScreenDostupnost({
                 birate ručno u tabu{" "}
                 <button
                   type="button"
-                  onClick={() => openLayer("slotovi")}
+                  onClick={() => openLayer("slots")}
                   className="text-forest cursor-pointer font-semibold underline"
                 >
                   Termini
