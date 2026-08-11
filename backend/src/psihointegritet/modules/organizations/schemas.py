@@ -22,6 +22,15 @@ class OrganizationSettingsOut(BaseModel):
     default_content_locale: UiLocale = Field(serialization_alias="defaultContentLocale")
 
 
+class OrganizationLocalesOut(BaseModel):
+    """Just the locales — what the public read exposes."""
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    ui_locale: UiLocale = Field(serialization_alias="uiLocale")
+    default_content_locale: UiLocale = Field(serialization_alias="defaultContentLocale")
+
+
 class OrganizationLocaleUpdate(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 

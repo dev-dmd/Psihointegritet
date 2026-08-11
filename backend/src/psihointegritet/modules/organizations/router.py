@@ -13,11 +13,31 @@ from fastapi import APIRouter
 from psihointegritet.api.dependencies import DatabaseSession, RequireStaff
 from psihointegritet.modules.organizations import service
 from psihointegritet.modules.organizations.schemas import (
+    OrganizationLocalesOut,
     OrganizationLocaleUpdate,
     OrganizationSettingsOut,
 )
 
 router = APIRouter(prefix="/organizations", tags=["organizations"])
+public_router = APIRouter(prefix="/public/organizations", tags=["organizations"])
+
+
+@public_router.get("/{slug}/locales", response_model=OrganizationLocalesOut)
+async def read_public_locales(slug: str, session: DatabaseSession) -> OrganizationLocalesOut:
+    """The languages an organization renders in, by slug.
+
+    Unauthenticated on purpose, and deliberately narrow — it returns two locale
+    codes and nothing else. Both are already evident to anyone who loads the
+    public site, so this discloses nothing the page does not.
+
+    It exists because the frontend must know the locale **at build time**, with
+    no user session, or every public page falls from static to per-request
+    rendering (ADR-026 §3). A 404 here is not an error the visitor sees: the
+    frontend falls back to its checked-in registry so a build never depends on
+    this service being reachable.
+    """
+    organization = await service.get_by_slug(session, slug)
+    return OrganizationLocalesOut.model_validate(organization, from_attributes=True)
 
 
 @router.get("/me", response_model=OrganizationSettingsOut, response_model_by_alias=True)

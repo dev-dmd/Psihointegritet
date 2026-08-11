@@ -1706,6 +1706,36 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/public/organizations/{slug}/locales": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Read Public Locales
+         * @description The languages an organization renders in, by slug.
+         *
+         *     Unauthenticated on purpose, and deliberately narrow — it returns two locale
+         *     codes and nothing else. Both are already evident to anyone who loads the
+         *     public site, so this discloses nothing the page does not.
+         *
+         *     It exists because the frontend must know the locale **at build time**, with
+         *     no user session, or every public page falls from static to per-request
+         *     rendering (ADR-026 §3). A 404 here is not an error the visitor sees: the
+         *     frontend falls back to its checked-in registry so a build never depends on
+         *     this service being reachable.
+         */
+        get: operations["read_public_locales_api_v1_public_organizations__slug__locales_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/public/privacy/custom-documents/{slug}": {
         parameters: {
             query?: never;
@@ -3575,6 +3605,22 @@ export interface components {
             defaultContentLocale: "en" | "sr-Latn";
             /** Reason */
             reason?: string | null;
+            /**
+             * Uilocale
+             * @enum {string}
+             */
+            uiLocale: "en" | "sr-Latn";
+        };
+        /**
+         * OrganizationLocalesOut
+         * @description Just the locales — what the public read exposes.
+         */
+        OrganizationLocalesOut: {
+            /**
+             * Defaultcontentlocale
+             * @enum {string}
+             */
+            defaultContentLocale: "en" | "sr-Latn";
             /**
              * Uilocale
              * @enum {string}
@@ -8704,6 +8750,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PublicIntakeMatchResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    read_public_locales_api_v1_public_organizations__slug__locales_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrganizationLocalesOut"];
                 };
             };
             /** @description Validation Error */

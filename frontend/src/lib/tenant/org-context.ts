@@ -1,5 +1,6 @@
 import "server-only";
 
+import { isUiLocale } from "@/i18n/locales";
 import {
   findOrganizationLocaleSettings,
   type OrganizationLocaleSettings,
@@ -73,7 +74,65 @@ export function resolveDeploymentOrganization(
   return { slug, ...settings };
 }
 
-/** The organization this deployment serves. */
+/** Cache tag the settings mutation revalidates. One per organization. */
+export function organizationLocaleTag(slug: string): string {
+  return `organization:locales:${slug}`;
+}
+
+/**
+ * The locales the backend holds, or `null` when it cannot be reached.
+ *
+ * A **tagged data-cache read**, not a request-time one. It is resolved during
+ * static generation and stored in the data cache, so public pages stay
+ * prerendered; changing the setting calls `revalidateTag` and the next render
+ * picks it up without a redeploy. Nothing here touches `headers()` or
+ * `cookies()`, which is what keeps `○` from turning into `ƒ`.
+ *
+ * Returning `null` rather than throwing is deliberate. The build prerenders
+ * ~100 pages and would otherwise fail whenever the API is down — which already
+ * happened once in this repo, on `/kompas/oblasti`. The checked-in registry
+ * then answers, so a build never depends on this service being up.
+ */
+async function fetchOrganizationLocales(
+  slug: string,
+): Promise<Pick<
+  OrganizationLocaleSettings,
+  "uiLocale" | "defaultContentLocale"
+> | null> {
+  try {
+    const response = await fetch(
+      `${serverEnv.NEXT_PUBLIC_API_URL}/api/v1/public/organizations/${encodeURIComponent(slug)}/locales`,
+      { next: { tags: [organizationLocaleTag(slug)], revalidate: 300 } },
+    );
+    if (!response.ok) return null;
+    const body = (await response.json()) as {
+      uiLocale?: unknown;
+      defaultContentLocale?: unknown;
+    };
+    if (!isUiLocale(body.uiLocale) || !isUiLocale(body.defaultContentLocale)) {
+      return null;
+    }
+    return {
+      uiLocale: body.uiLocale,
+      defaultContentLocale: body.defaultContentLocale,
+    };
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * The organization this deployment serves.
+ *
+ * The checked-in registry decides **which** organization and supplies its
+ * timezone; the backend decides **what languages it currently speaks**, so a
+ * change made in the settings screen takes effect without a code change. When
+ * the backend is unreachable the registry answers alone — the deployment still
+ * renders, in the language it was built with.
+ */
 export async function getDeploymentOrganization(): Promise<OrganizationContext> {
-  return resolveDeploymentOrganization(serverEnv.DEFAULT_ORGANIZATION_SLUG);
+  const slug = serverEnv.DEFAULT_ORGANIZATION_SLUG;
+  const registry = resolveDeploymentOrganization(slug);
+  const live = await fetchOrganizationLocales(slug);
+  return live === null ? registry : { ...registry, ...live };
 }

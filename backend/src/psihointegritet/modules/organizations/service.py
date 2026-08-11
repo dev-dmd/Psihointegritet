@@ -45,6 +45,17 @@ async def _load(session: AsyncSession, organization_id: UUID) -> Organization:
     return organization
 
 
+async def get_by_slug(session: AsyncSession, slug: str) -> Organization:
+    organization = await session.scalar(select(Organization).where(Organization.slug == slug))
+    if organization is None:
+        raise _problem(
+            status.HTTP_404_NOT_FOUND,
+            OrganizationErrorCode.NOT_FOUND,
+            "Organization not found.",
+        )
+    return organization
+
+
 async def get_settings(session: AsyncSession, organization_id: UUID) -> Organization:
     return await _load(session, organization_id)
 
