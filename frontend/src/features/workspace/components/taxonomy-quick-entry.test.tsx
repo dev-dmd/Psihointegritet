@@ -1,3 +1,4 @@
+import { contentCharacterLimits } from "@/lib/content-governance/limits";
 import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -23,6 +24,15 @@ import { QuickEntryReview } from "./taxonomy-term-form/quick-entry-review";
 afterEach(() => {
   vi.unstubAllGlobals();
 });
+
+/**
+ * Read from the source rather than hardcoded: the warning interpolates the
+ * limit, so a deliberate change to `seoDescription` used to fail three tests
+ * that had nothing to say about the new value.
+ */
+const seoWarningPattern = new RegExp(
+  `opis prelazi preporučenih ${contentCharacterLimits.seoDescription}`,
+);
 
 describe("TaxonomyQuickEntry", () => {
   it("derives the internal id from the name without ever asking for it", async () => {
@@ -241,7 +251,12 @@ describe("TaxonomyQuickEntry", () => {
   it("shows the same non-blocking SEO warnings in identity and review", async () => {
     const user = userEvent.setup();
     const publicLabel = "N".repeat(66);
-    const shortDescription = "O".repeat(171);
+    // One character past the limit, read from the source so the fixture
+    // follows a deliberate limit change instead of silently stopping to
+    // trigger the warning it exists to assert.
+    const shortDescription = "O".repeat(
+      contentCharacterLimits.seoDescription + 1,
+    );
     const identity = renderWithClient(
       <TaxonomyQuickEntry terms={[]} onSaved={vi.fn()} />,
     );
@@ -255,7 +270,7 @@ describe("TaxonomyQuickEntry", () => {
     // pretraživače" beside the public preview, not in the author's way.
     await user.click(screen.getByText("Napredna podešavanja za pretraživače"));
     expect(screen.getByText(/naziv prelazi preporučenih 65/)).toBeVisible();
-    expect(screen.getByText(/opis prelazi preporučenih 170/)).toBeVisible();
+    expect(screen.getByText(seoWarningPattern)).toBeVisible();
     expect(
       screen.getByRole("button", { name: "Sačuvaj i nastavi" }),
     ).toBeEnabled();
@@ -274,7 +289,7 @@ describe("TaxonomyQuickEntry", () => {
       />,
     );
     expect(screen.getByText(/naziv prelazi preporučenih 65/)).toBeVisible();
-    expect(screen.getByText(/opis prelazi preporučenih 170/)).toBeVisible();
+    expect(screen.getByText(seoWarningPattern)).toBeVisible();
   });
 });
 
@@ -282,7 +297,12 @@ describe("TaxonomyTermEditor shared form layer", () => {
   it("uses shared normalization and renders non-blocking SEO warnings", async () => {
     const user = userEvent.setup();
     const publicLabel = "N".repeat(66);
-    const shortDescription = "O".repeat(171);
+    // One character past the limit, read from the source so the fixture
+    // follows a deliberate limit change instead of silently stopping to
+    // trigger the warning it exists to assert.
+    const shortDescription = "O".repeat(
+      contentCharacterLimits.seoDescription + 1,
+    );
     const saved = makeTerm({ publicLabel, shortDescription });
     const fetchMock = vi.fn().mockResolvedValue(jsonResponse(saved));
     vi.stubGlobal("fetch", fetchMock);
@@ -310,7 +330,7 @@ describe("TaxonomyTermEditor shared form layer", () => {
     // Same treatment in the advanced editor: folded away beside the preview.
     await user.click(screen.getByText("Napredna podešavanja za pretraživače"));
     expect(screen.getByText(/naziv prelazi preporučenih 65/)).toBeVisible();
-    expect(screen.getByText(/opis prelazi preporučenih 170/)).toBeVisible();
+    expect(screen.getByText(seoWarningPattern)).toBeVisible();
     await user.click(
       screen.getByRole("button", { name: "Sačuvaj radnu verziju" }),
     );

@@ -29,7 +29,24 @@ export const contentCharacterLimits: Record<ContentCharacterLimitKey, number> =
     faqQuestion: 160,
     faqAnswer: 800,
     seoTitle: 65,
-    seoDescription: 170,
+    /**
+     * Raised 170 → 200 on 2026-08-11 (CTO) to give the English fallback room,
+     * **provisionally** — to be reviewed once more English copy exists.
+     *
+     * Two things a reviewer should know before deciding to keep it:
+     *
+     * 1. This is not a design constraint. Search engines truncate meta
+     *    descriptions around 155–160 characters on desktop and ~120 on mobile,
+     *    so characters past that are written but never read. 170 was already
+     *    generous; 200 means the tail is reliably cut mid-sentence.
+     * 2. It binds only because `seo.description` reuses `cardExcerpt`
+     *    (`static-provider.ts`), and those are different jobs: the card blurb
+     *    has 300 characters of design room, the meta description has ~160 of
+     *    useful room. Giving `seo.description` its own source would remove the
+     *    conflict instead of splitting the difference — that is the real fix,
+     *    and it is why this number is marked provisional rather than settled.
+     */
+    seoDescription: 200,
     imageAlt: 150,
     slug: 80,
     redirectPath: 180,

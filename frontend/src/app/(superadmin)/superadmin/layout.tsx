@@ -43,10 +43,10 @@ export default async function SuperadminLayout({
   // TODO(superadmin-locale): swap `getUiLocale()` for the personal preference
   // when it lands. Nothing else here changes.
   const locale = await getUiLocale();
-  const { workspace, common } = getPlatformMessages(locale);
+  const { workspace, superadmin, common } = getPlatformMessages(locale);
 
   return (
-    <NextIntlClientProvider messages={{ workspace, common }}>
+    <NextIntlClientProvider messages={{ workspace, superadmin, common }}>
       <QueryProvider>
         <GatesProvider>
           <div className="bg-panel-canvas flex min-h-screen">

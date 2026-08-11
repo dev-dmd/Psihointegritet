@@ -52,23 +52,30 @@ export default clerkMiddleware(async (auth, request) => {
     return response;
   }
 
-  const response =
-    decision.kind === "rewrite"
-      ? NextResponse.rewrite(new URL(decision.internal, request.url))
-      : NextResponse.next();
-
+  // **Auth before the response is constructed.** `auth.protect()` performs
+  // Clerk's session handshake and decorates the response the handler returns.
+  // Building the rewrite first and returning that object meant the handshake's
+  // headers were attached to something we then threw away: the first render
+  // after sign-in had no resolved session and the panel only appeared after a
+  // manual refresh, once the cookie had been set by some later response.
+  //
+  // Nothing is rewritten for an unauthenticated visitor anyway — `protect`
+  // redirects, so the lines below never run.
   if (isProtectedPath(externalPath)) {
     const signInUrl = new URL(SIGN_IN_URL, request.url);
     // Clerk's <SignIn/> reads `redirect_url` and returns the user there after
     // a successful sign-in, overriding signInFallbackRedirectUrl. Without it
     // every protected route bounced back to the account area regardless of
     // where the visitor was actually headed (found during superadmin smoke
-    // testing, 2026-07-20).
+    // testing, 2026-07-20). It must stay the **external** path, so the visitor
+    // lands back on their own URL rather than the rewrite target.
     signInUrl.searchParams.set("redirect_url", externalPath + search);
     await auth.protect({ unauthenticatedUrl: signInUrl.toString() });
   }
 
-  return response;
+  return decision.kind === "rewrite"
+    ? NextResponse.rewrite(new URL(decision.internal, request.url))
+    : NextResponse.next();
 });
 
 export const config = {

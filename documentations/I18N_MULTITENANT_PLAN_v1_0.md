@@ -1,7 +1,7 @@
 # I18N MULTI-TENANT PLAN v1.0
 
 **Datum:** 2026-08-11 · **Vlasnik:** Milan Dražić (CTO) · **Status:** plan, isporuka po slice-ovima
-**Uvodi:** D-077 (nova odluka) · ADR-026 (sledeći slobodan broj; ADR-020 ne postoji)
+**Uvodi:** D-077 (+ Amandmani 1 i 2) · **ADR-026** `adr/ADR-026-organization-locale-and-route-registry.md` · radna evidencija u **TODO §5H-i18n**
 **Menja:** D-067, O-27, T9 · **Ne dira:** D-055, ADR-023 granicu izolacije
 
 ---

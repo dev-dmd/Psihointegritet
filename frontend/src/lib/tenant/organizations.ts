@@ -55,6 +55,19 @@ export const ORGANIZATION_LOCALE_SETTINGS: Record<
     defaultContentLocale: "sr-Latn",
     timeZone: "Europe/Belgrade",
   },
+  /**
+   * Not a customer — the English reference deployment.
+   *
+   * It exists so `content:check` and the e2e suite can run the platform in its
+   * default locale without waiting for a real English tenant. Without it the
+   * English fallback would ship unverified: nothing would hold it to the
+   * character limits, and English is routinely longer than Serbian.
+   */
+  "psihointegritet-en": {
+    uiLocale: "en",
+    defaultContentLocale: "en",
+    timeZone: "America/Chicago",
+  },
 };
 
 /** Settings for `slug`, or `undefined` when the slug is not registered. */
