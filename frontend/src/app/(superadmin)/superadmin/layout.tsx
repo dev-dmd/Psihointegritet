@@ -1,6 +1,10 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 
+import { NextIntlClientProvider } from "next-intl";
+
+import { getUiLocale } from "@/i18n/locale-boundary";
+import { getPlatformMessages } from "@/messages";
 import { requireSuperadmin } from "@/lib/auth/guards";
 import { SuperadminBottomNav } from "@/features/superadmin/components/bottom-nav";
 import { SuperadminSidebar } from "@/features/superadmin/components/sidebar";
@@ -30,20 +34,33 @@ export default async function SuperadminLayout({
 }) {
   await requireSuperadmin();
 
+  // Superadmin sees the deployment's locale today. Per D-077 Amendment 2 the
+  // superadmin picks their **own** platform language — a per-user preference,
+  // the one documented exception to "no per-user override", because superadmin
+  // is not a tenant surface and has no organization to inherit from. That needs
+  // storage on the user and its own resolver; this is the seam it replaces.
+  //
+  // TODO(superadmin-locale): swap `getUiLocale()` for the personal preference
+  // when it lands. Nothing else here changes.
+  const locale = await getUiLocale();
+  const { workspace, common } = getPlatformMessages(locale);
+
   return (
-    <QueryProvider>
-      <GatesProvider>
-        <div className="bg-panel-canvas flex min-h-screen">
-          <SuperadminSidebar />
-          <div className="flex min-w-0 flex-1 flex-col lg:ml-[264px]">
-            <SuperadminTopbar />
-            <main className="w-full max-w-[1160px] self-center px-4 pt-[30px] pb-[104px] md:px-8 lg:pb-14">
-              {children}
-            </main>
+    <NextIntlClientProvider messages={{ workspace, common }}>
+      <QueryProvider>
+        <GatesProvider>
+          <div className="bg-panel-canvas flex min-h-screen">
+            <SuperadminSidebar />
+            <div className="flex min-w-0 flex-1 flex-col lg:ml-[264px]">
+              <SuperadminTopbar />
+              <main className="w-full max-w-[1160px] self-center px-4 pt-[30px] pb-[104px] md:px-8 lg:pb-14">
+                {children}
+              </main>
+            </div>
+            <SuperadminBottomNav />
           </div>
-          <SuperadminBottomNav />
-        </div>
-      </GatesProvider>
-    </QueryProvider>
+        </GatesProvider>
+      </QueryProvider>
+    </NextIntlClientProvider>
   );
 }

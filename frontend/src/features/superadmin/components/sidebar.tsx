@@ -3,6 +3,7 @@
 import { useClerk } from "@clerk/nextjs";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useTranslations } from "next-intl";
 import type { ComponentType, SVGProps } from "react";
 
 import { cn } from "@/helpers/cn";
@@ -11,6 +12,7 @@ import { localizedPath } from "@/lib/routes/localized-path";
 import { isRouteActive } from "@/lib/routes/match";
 import type { PlatformRouteId } from "@/lib/routes/platform-routes";
 import { useUiLocale } from "@/i18n/use-ui-locale";
+import type { EnWorkspace } from "@/messages/en/workspace";
 
 import {
   ActivityIcon,
@@ -26,41 +28,42 @@ import {
 
 interface NavItem {
   routeId: PlatformRouteId;
-  label: string;
+  labelKey: keyof EnWorkspace["superadmin"]["nav"];
   icon: ComponentType<SVGProps<SVGSVGElement> & { size?: number }>;
   /** Mono count badge (Tenanti). */
   badge?: string;
 }
 
 const mainNav: NavItem[] = [
-  { routeId: "superadmin.home", label: "Pregled", icon: GridIcon },
+  { routeId: "superadmin.home", labelKey: "home", icon: GridIcon },
   {
     routeId: "superadmin.tenants.list",
-    label: "Tenanti",
+    labelKey: "tenants",
     icon: BuildingIcon,
     badge: "1",
   },
-  { routeId: "superadmin.features", label: "Feature Gates", icon: GatesIcon },
+  { routeId: "superadmin.features", labelKey: "features", icon: GatesIcon },
   {
     routeId: "superadmin.diagnostics",
-    label: "Dijagnostika",
+    labelKey: "diagnostics",
     icon: ActivityIcon,
   },
 ];
 
 const soonNav: NavItem[] = [
-  { routeId: "superadmin.billing", label: "Pretplate", icon: CardIcon },
+  { routeId: "superadmin.billing", labelKey: "billing", icon: CardIcon },
 ];
 
 const systemNav: NavItem[] = [
-  { routeId: "superadmin.auditLog", label: "Audit Log", icon: FileIcon },
-  { routeId: "superadmin.settings", label: "Podešavanja", icon: SlidersIcon },
+  { routeId: "superadmin.auditLog", labelKey: "auditLog", icon: FileIcon },
+  { routeId: "superadmin.settings", labelKey: "settings", icon: SlidersIcon },
 ];
 
 /** Fixed coffee sidebar (desktop ≥1024px) — 1:1 with the prototype. */
 export function SuperadminSidebar() {
   const pathname = usePathname();
   const locale = useUiLocale();
+  const t = useTranslations("workspace");
   const { signOut } = useClerk();
 
   return (
@@ -95,7 +98,7 @@ export function SuperadminSidebar() {
               )}
             >
               <item.icon />
-              {item.label}
+              {t(`superadmin.nav.${item.labelKey}`)}
               {item.badge ? (
                 <span className="bg-panel-canvas/14 text-panel-canvas ml-auto rounded-full px-2 py-0.5 font-mono text-[11px] font-bold">
                   {item.badge}
@@ -142,15 +145,16 @@ export function SuperadminSidebar() {
 
 /** Muted nav link with the amber „Uskoro" tag (planned modules). */
 function SoonNavLink({ item, locale }: { item: NavItem; locale: UiLocale }) {
+  const t = useTranslations("workspace");
   return (
     <Link
       href={localizedPath(item.routeId, { locale })}
       className="text-panel-canvas/42 hover:bg-panel-canvas/6 flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium no-underline transition-colors duration-200"
     >
       <item.icon />
-      {item.label}
+      {t(`superadmin.nav.${item.labelKey}`)}
       <span className="text-warm ml-auto text-[9.5px] font-semibold tracking-[0.08em] uppercase">
-        Uskoro
+        {t("nav.soon")}
       </span>
     </Link>
   );

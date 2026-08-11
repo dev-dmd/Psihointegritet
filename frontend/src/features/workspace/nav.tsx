@@ -1,6 +1,13 @@
 import type { ComponentType, SVGProps } from "react";
 
 import type { PlatformRouteId } from "@/lib/routes/platform-routes";
+import type { EnWorkspace } from "@/messages/en/workspace";
+
+type NavLabelKey = Exclude<
+  keyof EnWorkspace["nav"],
+  "sections" | "more" | "soon" | "hasError"
+>;
+type NavSectionKey = keyof EnWorkspace["nav"]["sections"];
 
 import {
   BellIcon,
@@ -37,7 +44,13 @@ export interface NavItem {
    * languages and the item lights from either locale's URL.
    */
   routeId: PlatformRouteId;
-  label: string;
+  /**
+   * Key into the `workspace.nav` namespace, not a rendered string.
+   *
+   * Named after the screen rather than its current wording, so renaming
+   * „Usluge i cene" is a catalogue edit and touches nothing here.
+   */
+  labelKey: NavLabelKey;
   icon: IconComponent;
   requires: NavRequire;
   /** Mono/warm count badge key. */
@@ -47,7 +60,8 @@ export interface NavItem {
 }
 
 export interface NavSection {
-  caption?: string;
+  /** Key into `workspace.nav.sections`. Absent for the unnamed first block. */
+  captionKey?: NavSectionKey;
   items: NavItem[];
 }
 
@@ -56,103 +70,103 @@ const SECTIONS: NavSection[] = [
     items: [
       {
         routeId: "workspace.home",
-        label: "Pregled",
+        labelKey: "home",
         icon: GridIcon,
         requires: "any",
       },
       {
         routeId: "workspace.appointments.list",
-        label: "Termini",
+        labelKey: "appointments",
         icon: CalendarIcon,
         requires: "any",
         badge: "requests",
       },
       {
         routeId: "workspace.clients.list",
-        label: "Klijenti",
+        labelKey: "clients",
         icon: ClientsIcon,
         requires: "any",
       },
       {
         routeId: "workspace.companies.list",
-        label: "Kompanije",
+        labelKey: "companies",
         icon: BuildingIcon,
         requires: "admin",
       },
     ],
   },
   {
-    caption: "Poslovanje",
+    captionKey: "business",
     items: [
       {
         routeId: "workspace.services.list",
-        label: "Usluge i cene",
+        labelKey: "services",
         icon: TagIcon,
         requires: "admin",
       },
       {
         routeId: "workspace.research",
-        label: "Istraživanja",
+        labelKey: "research",
         icon: ChartIcon,
         requires: "admin",
       },
       {
         routeId: "workspace.documents",
-        label: "Dokumenti i saglasnosti",
+        labelKey: "documents",
         icon: DocumentIcon,
         requires: "admin",
       },
       {
         routeId: "workspace.content.list",
-        label: "Sadržaj",
+        labelKey: "content",
         icon: LayersIcon,
         requires: "admin",
       },
       {
         routeId: "workspace.compass.home",
-        label: "Kompas",
+        labelKey: "compass",
         icon: CompassIcon,
         requires: "admin",
       },
     ],
   },
   {
-    caption: "Tim",
+    captionKey: "team",
     items: [
       {
         routeId: "workspace.therapists.list",
-        label: "Terapeuti",
+        labelKey: "therapists",
         icon: TeamIcon,
         requires: "admin",
       },
       {
         routeId: "workspace.profile",
-        label: "Moj profil",
+        labelKey: "profile",
         icon: UserIcon,
         requires: "therapist",
       },
     ],
   },
   {
-    caption: "Podešavanja",
+    captionKey: "settings",
     items: [
       {
         routeId: "workspace.settings.home",
-        label: "Lokacije i način rada",
+        labelKey: "locations",
         icon: PinIcon,
         requires: "admin",
         soon: true,
       },
       {
         routeId: "workspace.settings.home",
-        label: "Obaveštenja",
+        labelKey: "notifications",
         icon: BellIcon,
         requires: "admin",
         soon: true,
       },
       {
         routeId: "workspace.settings.home",
-        label: "Podešavanja centra",
+        labelKey: "centreSettings",
         icon: SlidersIcon,
         requires: "admin",
         soon: true,

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 
 import { cn } from "@/helpers/cn";
@@ -21,6 +22,7 @@ import { MoreIcon, PlusIcon } from "./icons";
 export function WorkspaceBottomNav() {
   const pathname = usePathname();
   const locale = useUiLocale();
+  const t = useTranslations("workspace");
 
   return (
     <nav className="border-coffee/8 bg-surface fixed right-0 bottom-0 left-0 z-[70] grid grid-cols-5 items-end border-t px-1.5 pt-2 pb-[calc(10px+env(safe-area-inset-bottom))] lg:hidden">
@@ -28,7 +30,7 @@ export function WorkspaceBottomNav() {
         const active = isRouteActive(pathname, item.routeId);
         return (
           <Link
-            key={item.label}
+            key={t(`nav.${item.labelKey}`)}
             href={localizedPath(item.routeId, { locale })}
             // Pregled, Termini occupy cols 1–2; Klijenti jumps to col 4 (FAB
             // sits in col 3). gridRowStart is pinned on every item — without
@@ -55,7 +57,7 @@ export function WorkspaceBottomNav() {
                 active ? "text-forest" : "text-coffee/50",
               )}
             >
-              {item.label}
+              {t(`nav.${item.labelKey}`)}
             </span>
           </Link>
         );
@@ -63,7 +65,7 @@ export function WorkspaceBottomNav() {
       <button
         type="button"
         aria-label="Brza akcija"
-        onClick={() => toast("Brza akcija stiže sa Booking engine-om.")}
+        onClick={() => toast(t("shell.quickActionSoon"))}
         style={{ gridColumnStart: 3, gridRowStart: 1 }}
         className="bg-forest text-canvas shadow-help mx-auto flex h-12 w-12 -translate-y-1 cursor-pointer items-center justify-center rounded-full border-0"
       >
@@ -71,15 +73,17 @@ export function WorkspaceBottomNav() {
       </button>
       <button
         type="button"
-        aria-label="Više"
-        onClick={() => toast("Još opcija stiže uskoro.")}
+        aria-label={t("nav.more")}
+        onClick={() => toast(t("shell.moreSoon"))}
         style={{ gridColumnStart: 5, gridRowStart: 1 }}
         className="flex min-h-12 cursor-pointer flex-col items-center justify-end gap-[3px] border-0 bg-transparent py-1"
       >
         <span className="text-coffee/50 flex h-[26px] w-[42px] items-center justify-center rounded-full">
           <MoreIcon size={19} />
         </span>
-        <span className="text-coffee/50 text-[10.5px] font-semibold">Više</span>
+        <span className="text-coffee/50 text-[10.5px] font-semibold">
+          {t("nav.more")}
+        </span>
       </button>
     </nav>
   );

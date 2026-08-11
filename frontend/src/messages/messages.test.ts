@@ -63,17 +63,55 @@ describe("catalogue parity", () => {
     }
   });
 
+  /**
+   * Keys whose value is deliberately the same in every locale.
+   *
+   * Every entry is a **proper noun** — a product, brand or feature name that is
+   * not translated anywhere, including in Serbian prose. Adding to this list is
+   * a deliberate act and needs a reason next to it, because the check it
+   * suppresses is the one that catches a namespace copied across and never
+   * translated.
+   */
+  const PROPER_NOUNS = new Set([
+    "workspace.brand.name", // the centre's own name
+    "workspace.brand.panel", // "Control Center" — product name, used as-is in Serbian
+    "workspace.superadmin.panel", // ditto
+    "workspace.superadmin.nav.features", // "Feature Gates" — platform term, not translated
+    "workspace.superadmin.nav.featuresShort", // the same term, shortened for mobile
+    "workspace.superadmin.nav.auditLog", // "Audit Log" — ditto
+    "superadmin.comingSoon.auditLog.title", // the same feature name
+  ]);
+
   it("does not leave Serbian values identical to English", () => {
-    // The signature of a namespace copied across and never translated. Proper
-    // nouns would need an allowlist; there are none in the catalogue today, and
-    // adding one should be a deliberate act.
+    // The signature of a namespace copied across and never translated.
     const english = new Map(
       leaves(CATALOGUES.en).map((l) => [l.path, l.value]),
     );
     const untranslated = leaves(CATALOGUES["sr-Latn"]).filter(
-      (leaf) => english.get(leaf.path) === leaf.value,
+      (leaf) =>
+        english.get(leaf.path) === leaf.value && !PROPER_NOUNS.has(leaf.path),
     );
     expect(untranslated.map((leaf) => leaf.path)).toEqual([]);
+  });
+
+  it("keeps the proper-noun allowlist honest", () => {
+    // An entry that no longer matches is either a fixed translation or a stale
+    // exemption; both should be removed rather than left to hide a future one.
+    const english = new Map(
+      leaves(CATALOGUES.en).map((l) => [l.path, l.value]),
+    );
+    const serbian = new Map(
+      leaves(CATALOGUES["sr-Latn"]).map((l) => [l.path, l.value]),
+    );
+    for (const path of PROPER_NOUNS) {
+      expect(
+        english.get(path),
+        `${path} is not in the catalogue`,
+      ).toBeDefined();
+      expect(serbian.get(path), `${path} no longer needs an exemption`).toBe(
+        english.get(path),
+      );
+    }
   });
 
   it("uses semantic keys, never the English sentence", () => {

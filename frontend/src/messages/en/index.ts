@@ -2,6 +2,8 @@ import type { Widen } from "@/messages/types";
 
 import { common } from "./common";
 import { errors } from "./errors";
+import { superadmin } from "./superadmin";
+import { workspace } from "./workspace";
 
 /**
  * The canonical English catalogue. Every other locale is annotated against it.
@@ -14,6 +16,8 @@ import { errors } from "./errors";
 export const enMessages = {
   common,
   errors,
+  superadmin,
+  workspace,
 } as const;
 
 /** Literal leaf types — what `AppConfig["Messages"]` points at. */

@@ -71,9 +71,21 @@ describe("decideProxyRoute", () => {
     });
   });
 
-  it("does not rewrite when the external path is already the physical one", () => {
-    // The client panel has not moved: `/nalog` is both external and internal.
+  it("rewrites the client panel too, now that it is English on disk", () => {
     expect(decideProxyRoute("/nalog/termini", "", SR)).toEqual({
+      kind: "rewrite",
+      internal: "/account/appointments",
+    });
+  });
+
+  it("does not rewrite when the external path is already the physical one", () => {
+    // An English organization asks for the path that is on disk, so there is
+    // nothing to rewrite. The condition is path equality, not locale — which is
+    // what let the client panel move without touching the proxy.
+    expect(decideProxyRoute("/account/appointments", "", "en")).toEqual({
+      kind: "pass",
+    });
+    expect(decideProxyRoute("/workspace/settings", "", "en")).toEqual({
       kind: "pass",
     });
   });

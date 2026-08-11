@@ -1,6 +1,11 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 
+import { NextIntlClientProvider } from "next-intl";
+
+import { getUiLocale } from "@/i18n/locale-boundary";
+import { getPlatformMessages } from "@/messages";
+
 import { WorkspaceBottomNav } from "@/features/workspace/components/bottom-nav";
 import { WorkspaceSidebar } from "@/features/workspace/components/sidebar";
 import { WorkspaceTopbar } from "@/features/workspace/components/topbar";
@@ -36,22 +41,30 @@ export default async function WorkspaceLayout({
   const isAdmin = isWorkspaceAdmin(identity);
   const isTherapist = isWorkspaceTherapist(identity);
 
+  // Only the namespaces this subtree renders. The root provider carries the
+  // locale alone, so a public marketing page never ships the Control Center
+  // catalogue to the browser.
+  const locale = await getUiLocale();
+  const { workspace, common } = getPlatformMessages(locale);
+
   return (
-    <QueryProvider>
-      <WorkspaceProvider isAdmin={isAdmin} isTherapist={isTherapist}>
-        <PanelErrorsProvider>
-          <div className="bg-panel-canvas flex min-h-screen">
-            <WorkspaceSidebar />
-            <div className="flex min-w-0 flex-1 flex-col lg:ml-[264px]">
-              <WorkspaceTopbar />
-              <main className="w-full max-w-[1160px] self-center px-4 pt-[30px] pb-[104px] md:px-8 lg:pb-14">
-                {children}
-              </main>
+    <NextIntlClientProvider messages={{ workspace, common }}>
+      <QueryProvider>
+        <WorkspaceProvider isAdmin={isAdmin} isTherapist={isTherapist}>
+          <PanelErrorsProvider>
+            <div className="bg-panel-canvas flex min-h-screen">
+              <WorkspaceSidebar />
+              <div className="flex min-w-0 flex-1 flex-col lg:ml-[264px]">
+                <WorkspaceTopbar />
+                <main className="w-full max-w-[1160px] self-center px-4 pt-[30px] pb-[104px] md:px-8 lg:pb-14">
+                  {children}
+                </main>
+              </div>
+              <WorkspaceBottomNav />
             </div>
-            <WorkspaceBottomNav />
-          </div>
-        </PanelErrorsProvider>
-      </WorkspaceProvider>
-    </QueryProvider>
+          </PanelErrorsProvider>
+        </WorkspaceProvider>
+      </QueryProvider>
+    </NextIntlClientProvider>
   );
 }

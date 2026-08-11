@@ -3,6 +3,7 @@
 import { useClerk } from "@clerk/nextjs";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useTranslations } from "next-intl";
 
 import { cn } from "@/helpers/cn";
 import { localizedPath } from "@/lib/routes/localized-path";
@@ -21,8 +22,9 @@ const REQUEST_COUNT = 3;
 export function WorkspaceSidebar() {
   const pathname = usePathname();
   const locale = useUiLocale();
+  const t = useTranslations("workspace");
   const { signOut } = useClerk();
-  const { isAdmin, isTherapist, roleLabel } = useWorkspace();
+  const { isAdmin, isTherapist, roleLabelKey } = useWorkspace();
   const { hasErrorFor } = usePanelErrors();
   const sections = visibleNav({ isAdmin, isTherapist });
 
@@ -30,7 +32,7 @@ export function WorkspaceSidebar() {
     <aside className="bg-forest fixed top-0 bottom-0 left-0 z-50 hidden w-[264px] flex-col lg:flex">
       <div className="flex items-baseline px-6 pt-[26px] pb-[18px]">
         <span className="text-canvas font-serif text-[23px] font-medium tracking-[-0.01em]">
-          Psihointegritet
+          {t("brand.name")}
         </span>
         <span
           aria-hidden
@@ -38,31 +40,31 @@ export function WorkspaceSidebar() {
         />
       </div>
       <div className="text-meadow/75 px-6 pb-3.5 text-[10.5px] font-semibold tracking-[0.16em] uppercase">
-        Control Center
+        {t("brand.panel")}
       </div>
       <nav className="flex flex-1 flex-col gap-0.5 overflow-y-auto px-3.5 pt-1 pb-4">
         {sections.map((section, index) => (
-          <div key={section.caption ?? `section-${index}`}>
-            {section.caption ? (
+          <div key={section.captionKey ?? `section-${index}`}>
+            {section.captionKey ? (
               <div className="text-canvas/38 mx-3 mt-[18px] mb-2 text-[10px] font-semibold tracking-[0.16em] uppercase">
-                {section.caption}
+                {t(`nav.sections.${section.captionKey}`)}
               </div>
             ) : null}
             {section.items.map((item) =>
               item.soon ? (
                 <span
-                  key={item.label}
+                  key={t(`nav.${item.labelKey}`)}
                   className="text-canvas/45 flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium"
                 >
                   <item.icon />
-                  {item.label}
+                  {t(`nav.${item.labelKey}`)}
                   <span className="text-warm ml-auto text-[9.5px] font-semibold tracking-[0.08em] uppercase">
-                    Uskoro
+                    {t("nav.soon")}
                   </span>
                 </span>
               ) : (
                 <Link
-                  key={item.label}
+                  key={t(`nav.${item.labelKey}`)}
                   href={localizedPath(item.routeId, { locale })}
                   className={cn(
                     // Border is always present but transparent, so flagging an
@@ -78,9 +80,9 @@ export function WorkspaceSidebar() {
                   )}
                 >
                   <item.icon />
-                  {item.label}
+                  {t(`nav.${item.labelKey}`)}
                   {hasErrorFor(item.routeId) ? (
-                    <span className="sr-only">(ima grešku)</span>
+                    <span className="sr-only">{t("nav.hasError")}</span>
                   ) : null}
                   {item.badge === "requests" ? (
                     <span className="bg-warm text-forest ml-auto rounded-full px-2 py-0.5 text-[11px] font-bold">
@@ -99,9 +101,11 @@ export function WorkspaceSidebar() {
         </span>
         <div className="min-w-0 flex-1">
           <div className="text-canvas truncate text-[13.5px] font-semibold">
-            Član tima
+            {t("shell.memberName")}
           </div>
-          <div className="text-canvas/50 text-[11.5px]">{roleLabel}</div>
+          <div className="text-canvas/50 text-[11.5px]">
+            {t(`roles.${roleLabelKey}`)}
+          </div>
         </div>
         <button
           type="button"

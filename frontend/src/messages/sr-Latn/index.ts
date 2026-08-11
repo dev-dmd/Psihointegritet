@@ -2,6 +2,8 @@ import type { PlatformMessages } from "@/messages/en";
 
 import { common } from "./common";
 import { errors } from "./errors";
+import { superadmin } from "./superadmin";
+import { workspace } from "./workspace";
 
 /**
  * Serbian Latin catalogue.
@@ -13,4 +15,6 @@ import { errors } from "./errors";
 export const srLatnMessages: PlatformMessages = {
   common,
   errors,
+  superadmin,
+  workspace,
 };

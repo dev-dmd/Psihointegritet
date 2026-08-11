@@ -3,6 +3,7 @@ import {
   BackToSiteMenuItem,
 } from "@/components/shared/back-to-site-button";
 import { LogoutAvatarMenu } from "@/components/shared/logout-avatar-menu";
+import { useTranslations } from "next-intl";
 
 import { APP_VERSION } from "../data";
 
@@ -19,6 +20,7 @@ function formatToday(): string {
 
 /** Sticky blurred topbar: date (desktop), status pill, version chip. */
 export function SuperadminTopbar() {
+  const t = useTranslations("workspace");
   return (
     <header className="bg-panel-canvas/88 border-coffee/8 sticky top-0 z-40 flex items-center gap-3.5 border-b px-4 py-2.5 backdrop-blur-md md:px-8 md:py-3">
       <span className="flex items-center gap-2 lg:hidden">
@@ -49,7 +51,7 @@ export function SuperadminTopbar() {
       <div className="lg:hidden">
         <LogoutAvatarMenu
           initials="SA"
-          label="Korisnički meni"
+          label={t("topbar.userMenu")}
           triggerClassName="border-warm/55 bg-warm/20 text-coffee hover:border-warm focus-visible:ring-coffee/35 flex h-10 w-10 cursor-pointer items-center justify-center rounded-full border text-[12px] font-bold tracking-[0.05em] outline-none transition-colors focus-visible:ring-2"
         >
           <BackToSiteMenuItem />

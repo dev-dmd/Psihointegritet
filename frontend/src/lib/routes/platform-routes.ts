@@ -225,18 +225,18 @@ export const PLATFORM_ROUTES = {
 
   // ── Client account panel ────────────────────────────────────────────────
   "account.home": {
-    internal: "/nalog",
+    internal: "/account",
     paths: { en: "/account", "sr-Latn": "/nalog" },
     match: "exact",
     protected: true,
   },
   "account.appointments": {
-    internal: "/nalog/termini",
+    internal: "/account/appointments",
     paths: { en: "/account/appointments", "sr-Latn": "/nalog/termini" },
     protected: true,
   },
   "account.settings": {
-    internal: "/nalog/podesavanja",
+    internal: "/account/settings",
     paths: { en: "/account/settings", "sr-Latn": "/nalog/podesavanja" },
     protected: true,
   },
