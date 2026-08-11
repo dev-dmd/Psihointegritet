@@ -12,6 +12,7 @@ import {
 import type { ContentType } from "@/lib/content-governance/types";
 
 import type { ApiContentRevision } from "../content-api";
+import { useTranslations } from "next-intl";
 
 const STATUS_TONES: Record<string, StatusBadgeTone> = {
   draft: "neutral",
@@ -80,6 +81,7 @@ export function ContentEntryList({
   openingIdentity: string | null;
   openError: string | null;
 }) {
+  const t = useTranslations("content");
   const shown = catalogue.filter(
     (definition) => definition.contentType === activeType,
   );
@@ -106,9 +108,7 @@ export function ContentEntryList({
           {activeLabel} ({shown.length})
         </h2>
         <p className="text-ink-55 mt-1 text-[12.5px] leading-[1.5]">
-          Zaštićeni sistemski sadržaj. Stavka bez CMS revizije koristi postojeći
-          tekst iz koda; izmena počinje praznim poljima i čuva samo unete
-          vrednosti.
+          {t("systemNotice")}
         </p>
       </div>
 
@@ -155,7 +155,7 @@ export function ContentEntryList({
                 </div>
               </div>
               {templateMismatch ? (
-                <StatusBadge tone="danger">Pogrešan template</StatusBadge>
+                <StatusBadge tone="danger">{t("wrongTemplate")}</StatusBadge>
               ) : entry ? (
                 <StatusBadge tone={STATUS_TONES[entry.status] ?? "neutral"}>
                   {STATUS_LABELS[entry.status] ?? entry.status}

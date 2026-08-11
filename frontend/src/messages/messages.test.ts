@@ -80,6 +80,7 @@ describe("catalogue parity", () => {
     "workspace.superadmin.nav.featuresShort", // the same term, shortened for mobile
     "workspace.superadmin.nav.auditLog", // "Audit Log" — ditto
     "superadmin.comingSoon.auditLog.title", // the same feature name
+    "content.counted", // pure ICU interpolation, no words of its own
   ]);
 
   it("does not leave Serbian values identical to English", () => {

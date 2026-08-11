@@ -45,10 +45,10 @@ export default async function WorkspaceLayout({
   // locale alone, so a public marketing page never ships the Control Center
   // catalogue to the browser.
   const locale = await getUiLocale();
-  const { workspace, common } = getPlatformMessages(locale);
+  const { workspace, content, common } = getPlatformMessages(locale);
 
   return (
-    <NextIntlClientProvider messages={{ workspace, common }}>
+    <NextIntlClientProvider messages={{ workspace, content, common }}>
       <QueryProvider>
         <WorkspaceProvider isAdmin={isAdmin} isTherapist={isTherapist}>
           <PanelErrorsProvider>

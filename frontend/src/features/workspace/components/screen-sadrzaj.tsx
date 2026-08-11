@@ -22,9 +22,9 @@ import { usePanelErrors } from "../panel-errors";
 import { ContentEntryList } from "./content-entry-list";
 import { ContentRevisionEditor } from "./content-revision-editor";
 import { PageHeader } from "./page-header";
+import { useTranslations } from "next-intl";
 
 const ROUTE_ID = "workspace.content.list" satisfies PlatformRouteId;
-const TAB_LABEL = "Sadržaj";
 
 /**
  * CG-C1b — generic draft editor. Orchestrates the entry list, the active
@@ -34,6 +34,8 @@ const TAB_LABEL = "Sadržaj";
  * lifecycle belongs to `hooks/use-content-entries.ts`.
  */
 export function ScreenSadrzaj() {
+  const t = useTranslations("content");
+  const tc = useTranslations("common");
   const { reportError, errorsFor, clearError } = usePanelErrors();
 
   const entriesQuery = useContentEntriesQuery();
@@ -41,10 +43,7 @@ export function ScreenSadrzaj() {
 
   const entries = entriesQuery.data ?? [];
   const loadError = entriesQuery.isError
-    ? contentErrorMessage(
-        entriesQuery.error,
-        "Sadržaj se trenutno ne može učitati. Osvežite stranicu.",
-      )
+    ? contentErrorMessage(entriesQuery.error, t("reloadHint"))
     : null;
 
   const [activeType, setActiveType] = useState<ContentType>("static_page");
@@ -64,10 +63,7 @@ export function ScreenSadrzaj() {
       ? systemContentIdentity(openEntry.variables)
       : null;
   const openError = openEntry.isError
-    ? contentErrorMessage(
-        openEntry.error,
-        "Zahtev nije uspeo. Pokušajte ponovo.",
-      )
+    ? contentErrorMessage(openEntry.error, t("requestFailed"))
     : null;
 
   const handleOpen = (
@@ -83,13 +79,10 @@ export function ScreenSadrzaj() {
     openEntry.mutate(definition, {
       onSuccess: (entry) => setSelectedEntryId(entry.entryId),
       onError: (error) => {
-        const message = contentErrorMessage(
-          error,
-          "Zahtev nije uspeo. Pokušajte ponovo.",
-        );
+        const message = contentErrorMessage(error, t("requestFailed"));
         reportError({
           routeId: ROUTE_ID,
-          tabLabel: TAB_LABEL,
+          tabLabel: t("title"),
           title: "Sistemska stranica nije otvorena",
           description: message,
           details: [],
@@ -100,17 +93,14 @@ export function ScreenSadrzaj() {
 
   return (
     <section className="animate-fade-up">
-      <PageHeader
-        title="Sadržaj"
-        description="Sistemske stranice, usluge, terapeuti, programi, kompanije i paketi. Izaberite postojeću stavku i menjajte samo polja definisana njenom strukturom."
-      />
+      <PageHeader title={t("title")} description={t("description")} />
 
       <ErrorBanner errors={errors} onDismiss={clearError} />
 
       {loadError ? (
         <div className="border-danger/45 bg-danger/8 rounded-panel mb-6 border px-5 py-4">
           <p className="text-coffee text-[14.5px] font-semibold">
-            Sadržaj se ne može učitati
+            {t("loadFailed")}
           </p>
           <p className="text-ink-70 mt-1 text-[13px] leading-[1.5]">
             {loadError}
@@ -119,7 +109,7 @@ export function ScreenSadrzaj() {
       ) : null}
 
       {entriesQuery.isLoading ? (
-        <p className="text-ink-55 text-[13.5px]">Učitavanje…</p>
+        <p className="text-ink-55 text-[13.5px]">{tc("state.loading")}</p>
       ) : (
         <>
           <ContentEntryList

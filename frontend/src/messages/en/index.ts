@@ -1,6 +1,7 @@
 import type { Widen } from "@/messages/types";
 
 import { common } from "./common";
+import { content } from "./content";
 import { errors } from "./errors";
 import { superadmin } from "./superadmin";
 import { workspace } from "./workspace";
@@ -15,6 +16,7 @@ import { workspace } from "./workspace";
  */
 export const enMessages = {
   common,
+  content,
   errors,
   superadmin,
   workspace,
