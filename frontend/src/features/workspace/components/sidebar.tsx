@@ -5,6 +5,9 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 import { cn } from "@/helpers/cn";
+import { localizedPath } from "@/lib/routes/localized-path";
+import { isRouteActive } from "@/lib/routes/match";
+import { useUiLocale } from "@/i18n/use-ui-locale";
 
 import { useWorkspace } from "../workspace-context";
 import { usePanelErrors } from "../panel-errors";
@@ -14,16 +17,10 @@ import { PowerIcon } from "./icons";
 /** Number of open requests shown on the Termini badge (demo). */
 const REQUEST_COUNT = 3;
 
-function isActive(pathname: string, href: string): boolean {
-  if (href === "/radni-prostor") {
-    return pathname === "/radni-prostor";
-  }
-  return pathname === href || pathname.startsWith(`${href}/`);
-}
-
 /** Fixed forest sidebar (desktop ≥1024px), nav derived from the real roles. */
 export function WorkspaceSidebar() {
   const pathname = usePathname();
+  const locale = useUiLocale();
   const { signOut } = useClerk();
   const { isAdmin, isTherapist, roleLabel } = useWorkspace();
   const { hasErrorFor } = usePanelErrors();
@@ -66,23 +63,23 @@ export function WorkspaceSidebar() {
               ) : (
                 <Link
                   key={item.label}
-                  href={item.href}
+                  href={localizedPath(item.routeId, { locale })}
                   className={cn(
                     // Border is always present but transparent, so flagging an
                     // error never shifts the row by a pixel.
                     "flex items-center gap-3 rounded-xl border border-transparent px-3 py-[11px] text-sm font-semibold no-underline transition-colors duration-200",
-                    isActive(pathname, item.href)
+                    isRouteActive(pathname, item.routeId)
                       ? "bg-canvas/12 text-canvas"
                       : "text-canvas/62 hover:bg-canvas/8",
                     // A tab holding an error reads like the active tab, set
                     // apart only by a thin red outline.
-                    hasErrorFor(item.href) &&
+                    hasErrorFor(item.routeId) &&
                       "border-danger/80 bg-canvas/12 text-canvas",
                   )}
                 >
                   <item.icon />
                   {item.label}
-                  {hasErrorFor(item.href) ? (
+                  {hasErrorFor(item.routeId) ? (
                     <span className="sr-only">(ima grešku)</span>
                   ) : null}
                   {item.badge === "requests" ? (

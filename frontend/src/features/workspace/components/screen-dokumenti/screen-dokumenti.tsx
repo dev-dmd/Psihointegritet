@@ -28,7 +28,7 @@ import { PageHeader } from "../page-header";
 import {
   describeApiPublishBlock,
   describeDocxImportError,
-  HREF,
+  ROUTE_ID,
   resourceFor,
   resourceForNewDocument,
   TAB_LABEL,
@@ -61,7 +61,7 @@ export function ScreenDokumenti() {
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
   const [docxPreview, setDocxPreview] = useState<DocxPreviewState | null>(null);
 
-  const errors = errorsFor(HREF);
+  const errors = errorsFor(ROUTE_ID);
   const gateOpen = intakeGateOpen(documents);
 
   const reportApiError = (
@@ -70,7 +70,7 @@ export function ScreenDokumenti() {
     error: unknown,
   ) => {
     reportError({
-      href: HREF,
+      routeId: ROUTE_ID,
       tabLabel: TAB_LABEL,
       resource: resourceFor(document),
       title,
@@ -94,7 +94,7 @@ export function ScreenDokumenti() {
       if (outcome.kind === "blocked") {
         // A blocked publish is reported, never thrown: the panel stays usable.
         reportError({
-          href: HREF,
+          routeId: ROUTE_ID,
           tabLabel: TAB_LABEL,
           resource: resourceFor(document),
           ...describeApiPublishBlock(document, outcome.block),
@@ -150,7 +150,7 @@ export function ScreenDokumenti() {
     onPreview: setDocxPreview,
     onFailed: (document, file, error) =>
       reportError({
-        href: HREF,
+        routeId: ROUTE_ID,
         tabLabel: TAB_LABEL,
         resource: resourceFor(document),
         title: `DOCX „${file.name}” nije uvezen`,
@@ -184,7 +184,7 @@ export function ScreenDokumenti() {
     },
     onFailed: (slug, error) =>
       reportError({
-        href: HREF,
+        routeId: ROUTE_ID,
         tabLabel: TAB_LABEL,
         resource: resourceForNewDocument(slug),
         title: "Nova stranica nije sačuvana",
@@ -202,7 +202,7 @@ export function ScreenDokumenti() {
     if (!canDelete(document.status)) {
       setPendingDeleteId(null);
       reportError({
-        href: HREF,
+        routeId: ROUTE_ID,
         tabLabel: TAB_LABEL,
         resource: resourceFor(document),
         title: `Dokument „${document.title}“ nije obrisan`,

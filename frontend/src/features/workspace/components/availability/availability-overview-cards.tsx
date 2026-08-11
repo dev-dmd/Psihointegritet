@@ -2,6 +2,8 @@
 
 import { StatusBadge } from "@/components/panel/status-badge";
 import { formatDateSr } from "@/helpers/format-date";
+import { localizedPath } from "@/lib/routes/localized-path";
+import { useUiLocale } from "@/i18n/use-ui-locale";
 
 import { groupWorkingHours, reasonLabel } from "../../availability-model";
 import {
@@ -29,6 +31,7 @@ const MAX_EXCEPTION_ROWS = 3;
  * action of its own.
  */
 export function AvailabilityOverviewCards() {
+  const locale = useUiLocale();
   const me = useMyTherapistProfile();
   const weekStart = currentMonday();
   const summary = useAvailabilitySummary(me.data?.id ?? null, weekStart);
@@ -76,7 +79,10 @@ export function AvailabilityOverviewCards() {
         <AvailabilityCard
           index={1}
           title="Radno vreme"
-          editHref="/radni-prostor/dostupnost?tab=radno-vreme"
+          editHref={localizedPath("workspace.schedule", {
+            locale,
+            tab: "radno-vreme",
+          })}
           editLabel={groups.length === 0 ? "Unesi radno vreme" : "Uredi"}
         >
           {groups.length === 0 ? (
@@ -130,7 +136,10 @@ export function AvailabilityOverviewCards() {
         <AvailabilityCard
           index={3}
           title="Izuzeci"
-          editHref="/radni-prostor/dostupnost?tab=izuzeci"
+          editHref={localizedPath("workspace.schedule", {
+            locale,
+            tab: "izuzeci",
+          })}
           editLabel={exceptions.length === 0 ? "Dodaj izuzetak" : "Uredi"}
         >
           {exceptions.length === 0 ? (

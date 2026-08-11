@@ -3,6 +3,8 @@
 import Link from "next/link";
 
 import { ActorBadge } from "@/components/panel/actor-badge";
+import { localizedPath } from "@/lib/routes/localized-path";
+import { useUiLocale } from "@/i18n/use-ui-locale";
 import {
   StatusBadge,
   type StatusBadgeTone,
@@ -36,10 +38,14 @@ export function KompasEditorHeader({
   entry: ApiContentRevision;
   completion: ArticleCompletionState;
 }) {
+  const locale = useUiLocale();
   return (
     <header className="rounded-panel border-line bg-surface border px-6 py-5">
       <Link
-        href="/radni-prostor/kompas?tab=content"
+        href={localizedPath("workspace.compass.home", {
+          locale,
+          tab: "content",
+        })}
         className="text-forest inline-flex min-h-11 items-center text-[13px] font-semibold underline"
       >
         ← Nazad na Kompas sadržaj

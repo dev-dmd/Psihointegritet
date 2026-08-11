@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useState } from "react";
 
 import { cn } from "@/helpers/cn";
+import { localizedPath } from "@/lib/routes/localized-path";
+import { useUiLocale } from "@/i18n/use-ui-locale";
 
 import {
   KOMPAS_CONTENT_FILTERS,
@@ -26,6 +28,7 @@ import { KompasContentRow } from "./kompas-content-row";
  * no meaning for the author.
  */
 export function KompasContentList() {
+  const locale = useUiLocale();
   const entriesQuery = useContentEntriesQuery();
   const registryQuery = useTaxonomyRegistryQuery();
 
@@ -85,7 +88,7 @@ export function KompasContentList() {
             className="border-line-strong rounded-tile bg-panel-canvas text-coffee focus:border-sage min-h-11 flex-1 border px-3.5 text-sm outline-none"
           />
           <Link
-            href="/radni-prostor/kompas/sadrzaj/novo"
+            href={localizedPath("workspace.compass.content.new", { locale })}
             className="border-coffee bg-coffee text-panel-canvas inline-flex min-h-11 items-center rounded-full border px-5 text-[13px] font-semibold"
           >
             Novi sadržaj

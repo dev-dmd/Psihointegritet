@@ -33,7 +33,7 @@ export const priorityCards: PriorityCard[] = [
     title: "Zahteva čeka potvrdu",
     description: "Najstariji je poslat pre 4 sata.",
     cta: "Pregledaj zahteve",
-    href: "/radni-prostor/termini",
+    routeId: "workspace.appointments.list",
     dot: "warm",
   },
   {
@@ -41,7 +41,7 @@ export const priorityCards: PriorityCard[] = [
     title: "Nedodeljena klijenta",
     description: "Intake bez automatske preporuke.",
     cta: "Otvori listu",
-    href: "/radni-prostor/klijenti",
+    routeId: "workspace.clients.list",
     dot: "warm",
   },
   {
@@ -49,7 +49,7 @@ export const priorityCards: PriorityCard[] = [
     title: "Novi upit kompanije",
     description: "Hotel Ambasador — stigao juče.",
     cta: "Otvori kompanije",
-    href: "/radni-prostor/kompanije",
+    routeId: "workspace.companies.list",
     dot: "meadow",
     adminOnly: true,
   },
@@ -58,7 +58,7 @@ export const priorityCards: PriorityCard[] = [
     title: "Otkazan termin",
     description: "Jelena I. — sreda u 10:00.",
     cta: "Vidi termine",
-    href: "/radni-prostor/termini",
+    routeId: "workspace.appointments.list",
     dot: "danger",
   },
 ];

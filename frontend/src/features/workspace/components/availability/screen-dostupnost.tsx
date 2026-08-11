@@ -8,6 +8,8 @@ import { useCallback, useMemo, useState } from "react";
 import { StatusBadge } from "@/components/panel/status-badge";
 import { TabPills } from "@/components/panel/tab-pills";
 import { cn } from "@/helpers/cn";
+import { localizedPath } from "@/lib/routes/localized-path";
+import { useUiLocale } from "@/i18n/use-ui-locale";
 import {
   availabilityModes,
   type AvailabilityMode,
@@ -60,6 +62,7 @@ export function ScreenDostupnost({
   initialTab?: string | null;
 } = {}) {
   const router = useRouter();
+  const locale = useUiLocale();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [layer, setLayer] = useState<LayerTab>(
@@ -210,7 +213,7 @@ export function ScreenDostupnost({
               {profile?.enabled === false ? "Pauziran" : "Aktivan raspored"}
             </StatusBadge>
             <Link
-              href="/radni-prostor/profil"
+              href={localizedPath("workspace.profile", { locale })}
               className="text-forest hover:text-coffee text-[13px] font-semibold no-underline transition-colors"
             >
               Nazad na profil

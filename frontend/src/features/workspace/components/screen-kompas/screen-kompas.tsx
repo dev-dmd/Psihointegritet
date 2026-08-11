@@ -5,6 +5,8 @@ import { useState } from "react";
 
 import { StatCard } from "@/components/panel/stat-card";
 import { TabPills } from "@/components/panel/tab-pills";
+import { localizedPath } from "@/lib/routes/localized-path";
+import { useUiLocale } from "@/i18n/use-ui-locale";
 
 import { useCompassFlowAdmin } from "../../hooks/use-compass-flow-admin";
 import {
@@ -127,6 +129,7 @@ function CompassRegistryPanel() {
   // The launcher's third card is content, and content now has its own screen
   // (D-063) rather than a tab in this one.
   const router = useRouter();
+  const locale = useUiLocale();
   const [activeTab, setActiveTab] = useState<KompasTab>("areas");
   const [editorState, setEditorState] = useState<{
     axis: ManagedTaxonomyAxis;
@@ -231,7 +234,9 @@ function CompassRegistryPanel() {
             terms={terms}
             onSaved={upsertTerm}
             onOpenContentWorkspace={() =>
-              router.push("/radni-prostor/kompas/sadrzaj")
+              router.push(
+                localizedPath("workspace.compass.content.list", { locale }),
+              )
             }
           />
 

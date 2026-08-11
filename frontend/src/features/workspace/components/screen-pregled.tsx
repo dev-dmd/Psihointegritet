@@ -1,9 +1,10 @@
 "use client";
 
-import type { Route } from "next";
 import Link from "next/link";
 
 import { ProgressBar } from "@/components/panel/progress-bar";
+import { localizedPath } from "@/lib/routes/localized-path";
+import { useUiLocale } from "@/i18n/use-ui-locale";
 
 import { priorityCards, todayAgenda, weekBars } from "../data";
 import { usePanelErrors } from "../panel-errors";
@@ -19,6 +20,7 @@ function greeting(): string {
 }
 
 export function ScreenPregled() {
+  const locale = useUiLocale();
   const { isAdmin, selectedTherapistSlug } = useWorkspace();
   const { errors, clearError } = usePanelErrors();
 
@@ -77,7 +79,7 @@ export function ScreenPregled() {
                       </ul>
                     ) : null}
                     <Link
-                      href={error.href}
+                      href={localizedPath(error.routeId, { locale })}
                       className="text-forest hover:text-sage border-coffee/25 mt-2.5 inline-block border-b-[1.5px] text-[13px] font-semibold no-underline transition-colors"
                     >
                       Otvorite „{error.tabLabel}“ →
@@ -102,7 +104,7 @@ export function ScreenPregled() {
         {cards.map((card) => (
           <Link
             key={card.title}
-            href={card.href as Route}
+            href={localizedPath(card.routeId, { locale })}
             className="rounded-card border-line hover:shadow-panel-card bg-surface flex flex-col gap-1 border px-5 py-[18px] no-underline transition-all duration-[250ms] hover:-translate-y-[3px]"
           >
             <span className="flex items-baseline gap-2">

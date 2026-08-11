@@ -7,6 +7,8 @@ import {
   useContentEntriesQuery,
 } from "../../hooks/use-content-entries";
 import { KompasArticleEditor } from "./kompas-article-editor";
+import { localizedPath } from "@/lib/routes/localized-path";
+import { useUiLocale } from "@/i18n/use-ui-locale";
 
 /**
  * Resolves the article the route names, then hands it to the editor.
@@ -16,6 +18,7 @@ import { KompasArticleEditor } from "./kompas-article-editor";
  * lifecycle call patches it in place.
  */
 export function KompasArticleScreen({ entryId }: { entryId: string }) {
+  const locale = useUiLocale();
   const entriesQuery = useContentEntriesQuery();
   const entry = (entriesQuery.data ?? []).find(
     (item) => item.entryId === entryId,
@@ -51,7 +54,10 @@ export function KompasArticleScreen({ entryId }: { entryId: string }) {
           Možda je obrisan ili je otvoren pogrešan link.
         </p>
         <Link
-          href="/radni-prostor/kompas?tab=content"
+          href={localizedPath("workspace.compass.home", {
+            locale,
+            tab: "content",
+          })}
           className="text-forest mt-3 inline-flex min-h-11 items-center text-[13px] font-semibold underline"
         >
           ← Nazad na Kompas sadržaj

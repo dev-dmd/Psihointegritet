@@ -1,4 +1,4 @@
-import type { Route } from "next";
+import type { PlatformRouteId } from "@/lib/routes/platform-routes";
 import { describe, expect, it } from "vitest";
 
 import {
@@ -10,13 +10,13 @@ import {
   type PanelErrorResource,
 } from "./panel-errors";
 
-const DOCS = "/radni-prostor/dokumenti" as Route;
-const SERVICES = "/radni-prostor/usluge" as Route;
+const DOCS = "workspace.documents" satisfies PlatformRouteId;
+const SERVICES = "workspace.services.list" satisfies PlatformRouteId;
 
 function makeError(overrides: Partial<PanelError> = {}): PanelError {
   return {
     id: "e-1",
-    href: DOCS,
+    routeId: DOCS,
     tabLabel: "Dokumenti i saglasnosti",
     title: "Nedostaju odobrenja",
     description: "Objava je zaustavljena.",
@@ -49,7 +49,7 @@ function structuredError(
 
 describe("selectErrorsFor", () => {
   it("returns only the errors owned by that tab", () => {
-    const errors = [makeError(), makeError({ id: "e-2", href: SERVICES })];
+    const errors = [makeError(), makeError({ id: "e-2", routeId: SERVICES })];
     expect(selectErrorsFor(errors, DOCS)).toHaveLength(1);
     expect(selectErrorsFor(errors, SERVICES)[0]?.id).toBe("e-2");
   });
@@ -79,7 +79,7 @@ describe("upsertError", () => {
 
   it("keeps the same title on different tabs apart", () => {
     const onDocs = makeError();
-    const onServices = makeError({ href: SERVICES });
+    const onServices = makeError({ routeId: SERVICES });
 
     expect(upsertError(upsertError([], onDocs), onServices)).toHaveLength(2);
   });

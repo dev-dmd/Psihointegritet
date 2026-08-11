@@ -281,7 +281,13 @@ O-24 više nije otvorena arhitektonska blokada. Implementacija se prati u `KOMPA
 2. Šta se dešava sa **sistemskim katalogom** stranog tenanta: da li se D-052/D-053 sistemske ose i termini sejuju prevedeni po jeziku, ili strani tenant dobija svoj registar od nule.
 3. Da li brana ostaje kao **provera** (jezik tenanta mora biti tačno jedan i sav sistemski sadržaj mora biti na njemu) ili se uklanja.
 
-**Dok ne stigne:** konstanta se ne dira, `next-intl` se ne uključuje, nema `default_locale` kolone i nema koda. Važe samo tri pravila iz TODO §5G koja ništa ne koštaju: backend vraća kod a frontend bira reči · nov tekst ide u copy modul, ne inline u JSX · ijekavica je pun locale, nikad automatska zamena `e → je/ije`.
+**✅ ZATVORENO 2026-08-11 odlukom D-077.** Sva tri pitanja imaju odgovor:
+
+1. **Jezik pripada organizaciji.** `organizations.ui_locale` (sistemski UI, validacije, statusi, sistemski emailovi) i `organizations.default_content_locale` (locale koji se pečati na nov tenant-authored sadržaj) — dve odvojene kolone, jer prebacivanje panela na engleski ne sme da promeni jezik već napisanih članaka. Deployment ostaje način na koji se organizacija razrešava (`ORG_SLUG` → `settings.default_organization_slug`), ali **nosilac jezika je organizacija**, pa model ne blokira kasnije dve organizacije na istoj instalaciji.
+2. **Strani tenant dobija prazan sistemski katalog** i piše svoj sadržaj od nule. `SYSTEM_CONTENT_TEMPLATES` je ključan srpskim slugovima (`o-nama`, `usluge`, `pronadji-podrsku`…); locale kolona to ne rešava. Prevođenje ~30 sistemskih slugova i njihovih ruta je nedeljama posla bez vlasnika, a §5G ionako kaže da strani tenant piše svoje. Jednolinijski gate.
+3. **Brana ostaje, prevezana sa instalacije na organizaciju.** `SYSTEM_CONTENT_LOCALE` se preimenuje u `SYSTEM_CATALOG_LOCALE` („jezik na kom je isporučeni katalog napisan" — i dalje `sr-Latn`, i to ostaje tačno), a provera prima `organization_locale` i poredi sa njim. Polupreveden sistemski katalog i dalje nije moguć.
+
+Otključava: `next-intl` se uključuje, kolone se dodaju, kod se piše. Plan isporuke: `I18N_MULTITENANT_PLAN_v1_0.md`. Tri pravila iz TODO §5G ostaju na snazi i sada su **mehanizovana** u CI-ju umesto da počivaju na disciplini u review-u: backend vraća kod a frontend bira reči · nov tekst ide u copy modul, ne inline u JSX · ijekavica je pun locale unutar `sr-Latn`, nikad automatska zamena `e → je/ije`.
 
 ---
 

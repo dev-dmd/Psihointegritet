@@ -10,6 +10,8 @@ import {
 import type { RichDoc } from "@/lib/content-governance/rich-doc";
 import { staticContentProvider } from "@/lib/content-governance/static-provider";
 import type { ContentEntity } from "@/lib/content-governance/types";
+import { localizedPath } from "@/lib/routes/localized-path";
+import { useUiLocale } from "@/i18n/use-ui-locale";
 
 import type { ApiContentRevision } from "../content-api";
 
@@ -176,6 +178,7 @@ export function ContentRevisionPreview({
 }: {
   revision: ApiContentRevision;
 }) {
+  const locale = useUiLocale();
   const fallback =
     staticContentProvider
       .listAll()
@@ -197,7 +200,7 @@ export function ContentRevisionPreview({
           proizvoljna stranica.
         </p>
         <Link
-          href="/radni-prostor/sadrzaj"
+          href={localizedPath("workspace.content.list", { locale })}
           className="text-forest mt-5 inline-flex font-semibold underline underline-offset-4"
         >
           Nazad na sadržaj
@@ -283,7 +286,7 @@ export function ContentRevisionPreview({
 
         <div className="mt-8 flex flex-wrap gap-3">
           <Link
-            href="/radni-prostor/sadrzaj"
+            href={localizedPath("workspace.content.list", { locale })}
             className="border-line-strong text-forest rounded-full border px-5 py-2.5 text-sm font-semibold"
           >
             Nazad na editor

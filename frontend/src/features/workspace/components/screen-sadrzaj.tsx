@@ -10,6 +10,7 @@ import {
   type SystemContentDefinition,
 } from "@/lib/content-governance/system-content-catalog";
 import type { ContentType } from "@/lib/content-governance/types";
+import type { PlatformRouteId } from "@/lib/routes/platform-routes";
 
 import type { ApiContentRevision } from "../content-api";
 import {
@@ -22,7 +23,7 @@ import { ContentEntryList } from "./content-entry-list";
 import { ContentRevisionEditor } from "./content-revision-editor";
 import { PageHeader } from "./page-header";
 
-const HREF = "/radni-prostor/sadrzaj" as const;
+const ROUTE_ID = "workspace.content.list" satisfies PlatformRouteId;
 const TAB_LABEL = "Sadržaj";
 
 /**
@@ -49,7 +50,7 @@ export function ScreenSadrzaj() {
   const [activeType, setActiveType] = useState<ContentType>("static_page");
   const [selectedEntryId, setSelectedEntryId] = useState<string | null>(null);
 
-  const errors = errorsFor(HREF);
+  const errors = errorsFor(ROUTE_ID);
   const selectedEntry =
     entries.find((entry) => entry.entryId === selectedEntryId) ?? null;
   const selectedDefinition = selectedEntry
@@ -87,7 +88,7 @@ export function ScreenSadrzaj() {
           "Zahtev nije uspeo. Pokušajte ponovo.",
         );
         reportError({
-          href: HREF,
+          routeId: ROUTE_ID,
           tabLabel: TAB_LABEL,
           title: "Sistemska stranica nije otvorena",
           description: message,

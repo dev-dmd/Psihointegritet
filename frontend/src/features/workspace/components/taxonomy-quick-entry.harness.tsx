@@ -1,4 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { withIntl } from "@/test-support/intl";
 import { render, screen } from "@testing-library/react";
 import type userEvent from "@testing-library/user-event";
 import type { ReactNode } from "react";
@@ -64,7 +65,9 @@ export function renderWithClient(
   return {
     client,
     ...render(
-      <QueryClientProvider client={client}>{element}</QueryClientProvider>,
+      withIntl(
+        <QueryClientProvider client={client}>{element}</QueryClientProvider>,
+      ),
     ),
   };
 }

@@ -19,6 +19,20 @@ const serverEnvSchema = z.object({
     .string()
     .min(1, "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY is required"),
   CLERK_SECRET_KEY: z.string().min(1, "CLERK_SECRET_KEY is required"),
+  /**
+   * Which organization this deployment serves (D-077). Its `ui_locale` decides
+   * the platform UI language, so a wrong value here is a wrong-language site.
+   *
+   * Defaults to the founding tenant rather than being required, matching the
+   * two places that already default the same way — `DEFAULT_ORG` in
+   * `lib/auth/clerk/public-metadata.ts` and `settings.default_organization_slug`
+   * on the backend. Making it required would break every existing deployment
+   * on the next push for no safety gain: the dangerous case is not "absent"
+   * (which has one correct answer today) but "present and wrong", and that is
+   * caught by `resolveRequestOrganization`, which throws on an unregistered
+   * slug instead of quietly serving English.
+   */
+  DEFAULT_ORGANIZATION_SLUG: z.string().min(1).default("psihointegritet"),
 });
 
 export type ServerEnv = z.infer<typeof serverEnvSchema>;
@@ -31,6 +45,7 @@ function loadServerEnv(): ServerEnv {
     NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY:
       process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY,
     CLERK_SECRET_KEY: process.env.CLERK_SECRET_KEY,
+    DEFAULT_ORGANIZATION_SLUG: process.env.DEFAULT_ORGANIZATION_SLUG,
   });
 
   if (!parsed.success) {

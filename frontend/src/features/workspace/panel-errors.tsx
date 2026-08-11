@@ -1,6 +1,6 @@
 "use client";
 
-import type { Route } from "next";
+import type { PlatformRouteId } from "@/lib/routes/platform-routes";
 import {
   createContext,
   useCallback,
@@ -42,8 +42,16 @@ export interface PanelErrorResource {
 
 export interface PanelError {
   id: string;
-  /** Nav href of the tab responsible for this error. */
-  href: Route;
+  /**
+   * Route identity of the tab responsible for this error.
+   *
+   * Was `href: Route` before ROUTE-I18N-2. There is nothing to migrate: this
+   * store is in-memory and per-session (a refresh clears it), so "keep the key
+   * stable" only ever meant intra-session consistency — which a route id
+   * satisfies trivially, and which a path could not once the same screen has
+   * two of them.
+   */
+  routeId: PlatformRouteId;
   /** Label of that tab, shown in the Pregled list. */
   tabLabel: string;
   /** Short name of what went wrong. */
@@ -63,11 +71,11 @@ interface PanelErrorsContextValue {
   errors: PanelError[];
   reportError: (error: PanelErrorInput) => void;
   clearError: (id: string) => void;
-  clearErrorsFor: (href: Route) => void;
+  clearErrorsFor: (routeId: PlatformRouteId) => void;
   /** Clears only this resource/revision's errors, never the whole tab (A.6). */
   clearErrorsForResource: (resource: PanelErrorResource) => void;
-  errorsFor: (href: Route) => PanelError[];
-  hasErrorFor: (href: Route) => boolean;
+  errorsFor: (routeId: PlatformRouteId) => PanelError[];
+  hasErrorFor: (routeId: PlatformRouteId) => boolean;
 }
 
 const PanelErrorsContext = createContext<PanelErrorsContextValue | null>(null);
@@ -98,15 +106,15 @@ function sameResourceRevision(
 /** Pure helper so the filtering is testable without mounting a provider. */
 export function selectErrorsFor(
   errors: PanelError[],
-  href: Route,
+  routeId: PlatformRouteId,
 ): PanelError[] {
-  return errors.filter((error) => error.href === href);
+  return errors.filter((error) => error.routeId === routeId);
 }
 
 /**
  * Upsert identity (A.6): the structured tuple
  * `organizationId + resourceType + resourceId + revisionId + ruleId +
- * fieldPath` when a resource is present; `href + title` remains the fallback
+ * fieldPath` when a resource is present; `routeId + title` remains the fallback
  * only for errors without one. The newest error takes the top position.
  */
 export function upsertError(
@@ -118,7 +126,9 @@ export function upsertError(
       return resourceKey(existing.resource) !== resourceKey(error.resource);
     }
     if (!error.resource && !existing.resource) {
-      return !(existing.href === error.href && existing.title === error.title);
+      return !(
+        existing.routeId === error.routeId && existing.title === error.title
+      );
     }
     return true;
   });
@@ -146,7 +156,7 @@ export function PanelErrorsProvider({ children }: { children: ReactNode }) {
         ...input,
         id: input.resource
           ? resourceKey(input.resource)
-          : `${input.href}:${input.title}`,
+          : `${input.routeId}:${input.title}`,
         createdAt: new Date().toISOString(),
       }),
     );
@@ -156,8 +166,10 @@ export function PanelErrorsProvider({ children }: { children: ReactNode }) {
     setErrors((current) => current.filter((error) => error.id !== id));
   }, []);
 
-  const clearErrorsFor = useCallback((href: Route) => {
-    setErrors((current) => current.filter((error) => error.href !== href));
+  const clearErrorsFor = useCallback((routeId: PlatformRouteId) => {
+    setErrors((current) =>
+      current.filter((error) => error.routeId !== routeId),
+    );
   }, []);
 
   const clearErrorsForResource = useCallback((resource: PanelErrorResource) => {
@@ -171,8 +183,9 @@ export function PanelErrorsProvider({ children }: { children: ReactNode }) {
       clearError,
       clearErrorsFor,
       clearErrorsForResource,
-      errorsFor: (href: Route) => selectErrorsFor(errors, href),
-      hasErrorFor: (href: Route) => errors.some((error) => error.href === href),
+      errorsFor: (routeId: PlatformRouteId) => selectErrorsFor(errors, routeId),
+      hasErrorFor: (routeId: PlatformRouteId) =>
+        errors.some((error) => error.routeId === routeId),
     }),
     [errors, reportError, clearError, clearErrorsFor, clearErrorsForResource],
   );

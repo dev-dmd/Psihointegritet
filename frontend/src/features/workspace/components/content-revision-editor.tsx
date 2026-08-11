@@ -11,6 +11,7 @@ import {
 import { ActorBadge } from "@/components/panel/actor-badge";
 import { templateRegistry } from "@/lib/content-governance/limits";
 import { slotSpecRegistry } from "@/lib/content-governance/slot-schema";
+import type { PlatformRouteId } from "@/lib/routes/platform-routes";
 
 import type {
   ApiContentPublishBlock,
@@ -43,7 +44,7 @@ const STATUS_TONES: Record<string, StatusBadgeTone> = {
   archived: "soft",
 };
 
-const HREF = "/radni-prostor/sadrzaj" as const;
+const ROUTE_ID = "workspace.content.list" satisfies PlatformRouteId;
 const TAB_LABEL = "Sadržaj";
 /** Single-tenant seed org; the backend membership check owns the real value
  * (same pattern as `screen-dokumenti.tsx`'s `ORGANIZATION_ID`). */
@@ -121,7 +122,7 @@ export function ContentRevisionEditor({
 
   const reportApiError = (title: string, error: unknown) => {
     reportError({
-      href: HREF,
+      routeId: ROUTE_ID,
       tabLabel: TAB_LABEL,
       resource: resourceFor(entry),
       title,
@@ -145,7 +146,7 @@ export function ContentRevisionEditor({
     if (block.findings.length > 0) {
       for (const finding of block.findings) {
         reportError({
-          href: HREF,
+          routeId: ROUTE_ID,
           tabLabel: TAB_LABEL,
           resource: {
             ...resourceFor(entry),
@@ -164,7 +165,7 @@ export function ContentRevisionEditor({
       return;
     }
     reportError({
-      href: HREF,
+      routeId: ROUTE_ID,
       tabLabel: TAB_LABEL,
       resource: resourceFor(entry),
       title: "Stranica još nije spremna za objavu",

@@ -1,5 +1,6 @@
-import type { Route } from "next";
 import type { ComponentType, SVGProps } from "react";
+
+import type { PlatformRouteId } from "@/lib/routes/platform-routes";
 
 import {
   BellIcon,
@@ -30,7 +31,12 @@ export type NavRequire = "any" | "admin" | "therapist";
 type IconComponent = ComponentType<SVGProps<SVGSVGElement> & { size?: number }>;
 
 export interface NavItem {
-  href: Route;
+  /**
+   * Route identity, not a path. The sidebar builds the href through
+   * `localizedPath(routeId, { locale })`, so one nav definition serves both
+   * languages and the item lights from either locale's URL.
+   */
+  routeId: PlatformRouteId;
   label: string;
   icon: IconComponent;
   requires: NavRequire;
@@ -49,26 +55,26 @@ const SECTIONS: NavSection[] = [
   {
     items: [
       {
-        href: "/radni-prostor",
+        routeId: "workspace.home",
         label: "Pregled",
         icon: GridIcon,
         requires: "any",
       },
       {
-        href: "/radni-prostor/termini",
+        routeId: "workspace.appointments.list",
         label: "Termini",
         icon: CalendarIcon,
         requires: "any",
         badge: "requests",
       },
       {
-        href: "/radni-prostor/klijenti",
+        routeId: "workspace.clients.list",
         label: "Klijenti",
         icon: ClientsIcon,
         requires: "any",
       },
       {
-        href: "/radni-prostor/kompanije",
+        routeId: "workspace.companies.list",
         label: "Kompanije",
         icon: BuildingIcon,
         requires: "admin",
@@ -79,31 +85,31 @@ const SECTIONS: NavSection[] = [
     caption: "Poslovanje",
     items: [
       {
-        href: "/radni-prostor/usluge",
+        routeId: "workspace.services.list",
         label: "Usluge i cene",
         icon: TagIcon,
         requires: "admin",
       },
       {
-        href: "/radni-prostor/istrazivanja",
+        routeId: "workspace.research",
         label: "Istraživanja",
         icon: ChartIcon,
         requires: "admin",
       },
       {
-        href: "/radni-prostor/dokumenti",
+        routeId: "workspace.documents",
         label: "Dokumenti i saglasnosti",
         icon: DocumentIcon,
         requires: "admin",
       },
       {
-        href: "/radni-prostor/sadrzaj",
+        routeId: "workspace.content.list",
         label: "Sadržaj",
         icon: LayersIcon,
         requires: "admin",
       },
       {
-        href: "/radni-prostor/kompas",
+        routeId: "workspace.compass.home",
         label: "Kompas",
         icon: CompassIcon,
         requires: "admin",
@@ -114,13 +120,13 @@ const SECTIONS: NavSection[] = [
     caption: "Tim",
     items: [
       {
-        href: "/radni-prostor/terapeuti",
+        routeId: "workspace.therapists.list",
         label: "Terapeuti",
         icon: TeamIcon,
         requires: "admin",
       },
       {
-        href: "/radni-prostor/profil",
+        routeId: "workspace.profile",
         label: "Moj profil",
         icon: UserIcon,
         requires: "therapist",
@@ -131,21 +137,21 @@ const SECTIONS: NavSection[] = [
     caption: "Podešavanja",
     items: [
       {
-        href: "/radni-prostor/podesavanja",
+        routeId: "workspace.settings.home",
         label: "Lokacije i način rada",
         icon: PinIcon,
         requires: "admin",
         soon: true,
       },
       {
-        href: "/radni-prostor/podesavanja",
+        routeId: "workspace.settings.home",
         label: "Obaveštenja",
         icon: BellIcon,
         requires: "admin",
         soon: true,
       },
       {
-        href: "/radni-prostor/podesavanja",
+        routeId: "workspace.settings.home",
         label: "Podešavanja centra",
         icon: SlidersIcon,
         requires: "admin",

@@ -1,3 +1,5 @@
+import { protectedRoutePrefixes } from "@/lib/routes/match";
+
 /**
  * Auth route configuration, provider-neutral.
  *
@@ -22,14 +24,23 @@ export const ACCOUNT_URL = "/nalog";
 export const ACCOUNT_APPOINTMENTS_URL = "/nalog/termini";
 export const ACCOUNT_SETTINGS_URL = "/nalog/podesavanja";
 
-/** Staff workspace (therapist / org-admin) — future Control Center. */
-export const WORKSPACE_URL = "/radni-prostor";
-/** Platform superadmin area — guarded by `requireSuperadmin` per page. */
-export const SUPERADMIN_URL = "/superadmin";
+/**
+ * The client-area constants above stay literals on purpose: they are handed to
+ * Clerk as fallback redirect targets, which must be stable strings resolvable
+ * without a locale. Everything that renders a link inside the app goes through
+ * `localizedPath` instead. When the client panel is localized (ROUTE-I18N-3),
+ * these become the `sr-Latn` fallback and nothing else changes.
+ */
 
-/** URL prefixes that require an authenticated session. */
-export const PROTECTED_ROUTE_PREFIXES = [
-  "/nalog", // (client) — client account area
-  "/radni-prostor", // (staff) — therapist / org-admin workspace
-  "/superadmin", // (staff) — platform superadmin
-] as const;
+/**
+ * URL prefixes that require an authenticated session.
+ *
+ * **Derived from the route registry, never hand-listed** (D-077 Amendment).
+ * The proxy matches the *external* path, so once a route has one path per
+ * locale a hand-written list is how a locale gets added and its auth gate
+ * forgotten — which is an unauthenticated Control Center, not a cosmetic bug.
+ * `platform-routes.test.ts` asserts that every locale path of every
+ * `protected: true` route is covered by some prefix here.
+ */
+export const PROTECTED_ROUTE_PREFIXES: readonly string[] =
+  protectedRoutePrefixes();

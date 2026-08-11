@@ -1,16 +1,14 @@
+import type { Route } from "next";
 import "server-only";
 
-import type { Route } from "next";
 import { redirect } from "next/navigation";
 
 import { hasRole, type Identity } from "@/lib/auth/identity";
 import { getServerIdentity } from "@/lib/auth/identity-server";
-import {
-  ACCOUNT_URL,
-  SIGN_IN_URL,
-  SUPERADMIN_URL,
-  WORKSPACE_URL,
-} from "@/lib/auth/routes";
+import type { UiLocale } from "@/i18n/locales";
+import { localizedPath } from "@/lib/routes/localized-path";
+import { resolveWorkspaceLocale } from "@/lib/tenant/workspace-locale";
+import { SIGN_IN_URL } from "@/lib/auth/routes";
 
 /**
  * Server-side role guards. Every protected page calls its guard directly —
@@ -57,14 +55,25 @@ export function isWorkspaceTherapist(identity: Identity): boolean {
  * more than one tenant exists — today everything resolves within the single
  * hardcoded Psihointegritet tenant.
  */
-export function resolveLandingRoute(identity: Identity): Route {
+/**
+ * `locale` is required, deliberately without a default.
+ *
+ * A default would be `PLATFORM_DEFAULT_LOCALE` (`en`), and the only
+ * organization that exists today is Serbian — so a caller that forgot to pass
+ * one would silently redirect a live user to `/workspace`, which does not
+ * resolve. A missing argument must be a compile error, not a 404.
+ */
+export function resolveLandingRoute(
+  identity: Identity,
+  locale: UiLocale,
+): Route {
   if (identity.isSuperadmin) {
-    return SUPERADMIN_URL as Route;
+    return localizedPath("superadmin.home", { locale });
   }
   if (isStaff(identity)) {
-    return WORKSPACE_URL as Route;
+    return localizedPath("workspace.home", { locale });
   }
-  return ACCOUNT_URL as Route;
+  return localizedPath("account.home", { locale });
 }
 
 /**
@@ -77,7 +86,7 @@ export async function requireSuperadmin(): Promise<Identity> {
     redirect(SIGN_IN_URL as Route); // proxy already covers this; defense in depth
   }
   if (!identity.isSuperadmin) {
-    redirect((isStaff(identity) ? WORKSPACE_URL : ACCOUNT_URL) as Route);
+    redirect(resolveLandingRoute(identity, await resolveWorkspaceLocale()));
   }
   return identity;
 }
@@ -91,7 +100,9 @@ export async function requireStaff(): Promise<Identity> {
     redirect(SIGN_IN_URL as Route);
   }
   if (!identity.isSuperadmin && !isStaff(identity)) {
-    redirect(ACCOUNT_URL as Route);
+    redirect(
+      localizedPath("account.home", { locale: await resolveWorkspaceLocale() }),
+    );
   }
   return identity;
 }
@@ -107,7 +118,7 @@ export async function requireOrgAdmin(): Promise<Identity> {
     redirect(SIGN_IN_URL as Route);
   }
   if (!isWorkspaceAdmin(identity)) {
-    redirect((isStaff(identity) ? WORKSPACE_URL : ACCOUNT_URL) as Route);
+    redirect(resolveLandingRoute(identity, await resolveWorkspaceLocale()));
   }
   return identity;
 }
@@ -123,7 +134,7 @@ export async function requireTherapist(): Promise<Identity> {
     redirect(SIGN_IN_URL as Route);
   }
   if (!isWorkspaceTherapist(identity)) {
-    redirect((isStaff(identity) ? WORKSPACE_URL : ACCOUNT_URL) as Route);
+    redirect(resolveLandingRoute(identity, await resolveWorkspaceLocale()));
   }
   return identity;
 }

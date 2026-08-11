@@ -1,4 +1,5 @@
 import type { StatusBadgeTone } from "@/components/panel/status-badge";
+import type { PlatformRouteId } from "@/lib/routes/platform-routes";
 
 /**
  * Control Center demo models (design handoff §8.1, README §13). Mock-only —
@@ -87,7 +88,8 @@ export interface PriorityCard {
   title: string;
   description: string;
   cta: string;
-  href: string;
+  /** Route identity — the card's href is built per locale at render time. */
+  routeId: PlatformRouteId;
   dot: "meadow" | "warm" | "danger";
   adminOnly?: boolean;
 }

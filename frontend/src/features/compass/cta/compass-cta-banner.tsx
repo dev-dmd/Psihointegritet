@@ -232,8 +232,8 @@ function VariantB({ scheme, onStart }: VariantProps) {
         alt=""
         width={512}
         height={512}
-        sizes="88px"
-        className="h-auto w-[88px] drop-shadow-[0_14px_26px_rgba(0,0,0,0.3)]"
+        sizes="192px"
+        className="h-auto w-[192px] drop-shadow-[0_14px_26px_rgba(0,0,0,0.3)]"
       />
       <Title scheme={scheme} className="text-[24px] md:text-[36px]" />
       <p className={cn("text-[14px] leading-[1.65] text-pretty", scheme.body)}>

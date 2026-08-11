@@ -1,4 +1,5 @@
 import type { StatusBadgeTone } from "@/components/panel/status-badge";
+import type { PlatformRouteId } from "@/lib/routes/platform-routes";
 
 import {
   CAPABILITY_LABELS,
@@ -16,7 +17,7 @@ import {
 } from "../../legal-documents-api";
 import type { PanelErrorResource } from "../../panel-errors";
 
-export const HREF = "/radni-prostor/dokumenti" as const;
+export const ROUTE_ID = "workspace.documents" satisfies PlatformRouteId;
 export const TAB_LABEL = "Dokumenti i saglasnosti";
 /** Single-tenant seed org; the backend membership check owns the real value. */
 const ORGANIZATION_ID = "psihointegritet";

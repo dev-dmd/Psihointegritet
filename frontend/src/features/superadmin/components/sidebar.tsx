@@ -1,12 +1,16 @@
 "use client";
 
 import { useClerk } from "@clerk/nextjs";
-import type { Route } from "next";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ComponentType, SVGProps } from "react";
 
 import { cn } from "@/helpers/cn";
+import type { UiLocale } from "@/i18n/locales";
+import { localizedPath } from "@/lib/routes/localized-path";
+import { isRouteActive } from "@/lib/routes/match";
+import type { PlatformRouteId } from "@/lib/routes/platform-routes";
+import { useUiLocale } from "@/i18n/use-ui-locale";
 
 import {
   ActivityIcon,
@@ -21,7 +25,7 @@ import {
 } from "./icons";
 
 interface NavItem {
-  href: Route;
+  routeId: PlatformRouteId;
   label: string;
   icon: ComponentType<SVGProps<SVGSVGElement> & { size?: number }>;
   /** Mono count badge (Tenanti). */
@@ -29,41 +33,34 @@ interface NavItem {
 }
 
 const mainNav: NavItem[] = [
-  { href: "/superadmin", label: "Pregled", icon: GridIcon },
+  { routeId: "superadmin.home", label: "Pregled", icon: GridIcon },
   {
-    href: "/superadmin/tenants",
+    routeId: "superadmin.tenants.list",
     label: "Tenanti",
     icon: BuildingIcon,
     badge: "1",
   },
-  { href: "/superadmin/features", label: "Feature Gates", icon: GatesIcon },
+  { routeId: "superadmin.features", label: "Feature Gates", icon: GatesIcon },
   {
-    href: "/superadmin/diagnostics",
+    routeId: "superadmin.diagnostics",
     label: "Dijagnostika",
     icon: ActivityIcon,
   },
 ];
 
 const soonNav: NavItem[] = [
-  { href: "/superadmin/billing", label: "Pretplate", icon: CardIcon },
+  { routeId: "superadmin.billing", label: "Pretplate", icon: CardIcon },
 ];
 
 const systemNav: NavItem[] = [
-  { href: "/superadmin/audit-log", label: "Audit Log", icon: FileIcon },
-  { href: "/superadmin/settings", label: "Podešavanja", icon: SlidersIcon },
+  { routeId: "superadmin.auditLog", label: "Audit Log", icon: FileIcon },
+  { routeId: "superadmin.settings", label: "Podešavanja", icon: SlidersIcon },
 ];
-
-function isActive(pathname: string, href: string): boolean {
-  if (href === "/superadmin") {
-    return pathname === "/superadmin";
-  }
-  // Tenant profile highlights „Tenanti".
-  return pathname === href || pathname.startsWith(`${href}/`);
-}
 
 /** Fixed coffee sidebar (desktop ≥1024px) — 1:1 with the prototype. */
 export function SuperadminSidebar() {
   const pathname = usePathname();
+  const locale = useUiLocale();
   const { signOut } = useClerk();
 
   return (
@@ -85,11 +82,11 @@ export function SuperadminSidebar() {
       </div>
       <nav className="flex flex-1 flex-col gap-0.5 overflow-y-auto px-3.5 pt-1 pb-4">
         {mainNav.map((item) => {
-          const active = isActive(pathname, item.href);
+          const active = isRouteActive(pathname, item.routeId);
           return (
             <Link
-              key={item.href}
-              href={item.href}
+              key={item.routeId}
+              href={localizedPath(item.routeId, { locale })}
               className={cn(
                 "flex items-center gap-3 rounded-xl px-3 py-[11px] text-sm font-semibold no-underline transition-colors duration-200",
                 active
@@ -108,13 +105,13 @@ export function SuperadminSidebar() {
           );
         })}
         {soonNav.map((item) => (
-          <SoonNavLink key={item.href} item={item} />
+          <SoonNavLink key={item.routeId} item={item} locale={locale} />
         ))}
         <div className="text-panel-canvas/35 mx-3 mt-[18px] mb-2 text-[10px] font-semibold tracking-[0.16em] uppercase">
           Sistem
         </div>
         {systemNav.map((item) => (
-          <SoonNavLink key={item.href} item={item} />
+          <SoonNavLink key={item.routeId} item={item} locale={locale} />
         ))}
       </nav>
       <div className="border-panel-canvas/10 flex items-center gap-[11px] border-t px-[18px] pt-4 pb-5">
@@ -144,10 +141,10 @@ export function SuperadminSidebar() {
 }
 
 /** Muted nav link with the amber „Uskoro" tag (planned modules). */
-function SoonNavLink({ item }: { item: NavItem }) {
+function SoonNavLink({ item, locale }: { item: NavItem; locale: UiLocale }) {
   return (
     <Link
-      href={item.href}
+      href={localizedPath(item.routeId, { locale })}
       className="text-panel-canvas/42 hover:bg-panel-canvas/6 flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium no-underline transition-colors duration-200"
     >
       <item.icon />
