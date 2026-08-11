@@ -46,6 +46,26 @@ export const workspace = {
     quickActionSoon: "Quick actions arrive with the Booking engine.",
     moreSoon: "More options are coming soon.",
   },
+  settings: {
+    title: "Language and regional settings",
+    intro:
+      "Language belongs to the organization, not to a person — a change here applies to everyone who works in it.",
+    systemLanguage: "System language",
+    systemLanguageHelp:
+      "Navigation, system messages, statuses and system email. Takes effect on the next screen you open.",
+    contentLanguage: "Language of the public site and new content",
+    contentLanguageHelp:
+      "Moves the public site, its addresses and its sitemap. Existing texts are not translated.",
+    useSystemLanguage: "Use the system language for new content too",
+    notice:
+      "This changes platform navigation, system messages and future system emails. It does not translate or modify existing content.",
+    contentWarning:
+      "Changing the content language does not translate what is already published. Until someone writes it in the new language, the public site shows the placeholder texts.",
+    save: "Save languages",
+    saved: "Languages saved.",
+    onlyAdmin: "Only an organization administrator can change these settings.",
+    loadFailed: "Settings could not be loaded.",
+  },
   topbar: {
     allTherapists: "All therapists",
     notifications: "Notifications",

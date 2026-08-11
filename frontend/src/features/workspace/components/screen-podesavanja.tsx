@@ -1,4 +1,5 @@
 import { EmptyDashedCard } from "@/components/panel/empty-dashed-card";
+import { LanguageSettingsSection } from "./language-settings-section";
 
 import { PageHeader } from "./page-header";
 
@@ -25,6 +26,10 @@ export function ScreenPodesavanja() {
         title="Podešavanja"
         description="Postavke centra postoje kao rute i navigacija — konfiguracija stiže u kasnijim fazama."
       />
+
+      <div className="mb-6">
+        <LanguageSettingsSection />
+      </div>
       <div className="grid grid-cols-1 gap-3.5 lg:grid-cols-3">
         {items.map((item) => (
           <EmptyDashedCard key={item.title} title={item.title} soon>

@@ -48,6 +48,26 @@ export const workspace: Widen<EnWorkspace> = {
     quickActionSoon: "Brza akcija stiže sa Booking engine-om.",
     moreSoon: "Još opcija stiže uskoro.",
   },
+  settings: {
+    title: "Jezik i regionalna podešavanja",
+    intro:
+      "Jezik pripada organizaciji, ne osobi — izmena ovde važi za svakoga ko u njoj radi.",
+    systemLanguage: "Sistemski jezik",
+    systemLanguageHelp:
+      "Navigacija, sistemske poruke, statusi i sistemski email. Primenjuje se na sledećem ekranu koji otvorite.",
+    contentLanguage: "Jezik javnog sajta i novog sadržaja",
+    contentLanguageHelp:
+      "Pomera javni sajt, njegove adrese i sitemap. Postojeći tekstovi se ne prevode.",
+    useSystemLanguage: "Koristi sistemski jezik i za nov sadržaj",
+    notice:
+      "Ovo menja navigaciju platforme, sistemske poruke i buduće sistemske emailove. Postojeći sadržaj neće biti preveden niti izmenjen.",
+    contentWarning:
+      "Promena jezika sadržaja ne prevodi ono što je već objavljeno. Dok neko ne napiše tekst na novom jeziku, javni sajt prikazuje placeholder tekstove.",
+    save: "Sačuvaj jezike",
+    saved: "Jezici su sačuvani.",
+    onlyAdmin: "Samo administrator organizacije može da menja ova podešavanja.",
+    loadFailed: "Podešavanja nisu učitana.",
+  },
   topbar: {
     allTherapists: "Svi terapeuti",
     notifications: "Obaveštenja",
