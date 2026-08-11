@@ -165,11 +165,13 @@ const SECTIONS: NavSection[] = [
         soon: true,
       },
       {
+        // No longer `soon`: this destination now carries the language and
+        // regional settings. A screen with working content behind a label that
+        // cannot be clicked is worse than no label.
         routeId: "workspace.settings.home",
         labelKey: "centreSettings",
         icon: SlidersIcon,
         requires: "admin",
-        soon: true,
       },
     ],
   },
