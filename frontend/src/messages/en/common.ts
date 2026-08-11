@@ -21,6 +21,12 @@ export const common = {
     delete: "Delete",
     confirm: "Confirm",
   },
+  /** Chrome shared by all three panels and the public header. */
+  shell: {
+    backToSite: "Main site",
+    signOut: "Sign out",
+    soon: "Soon",
+  },
   state: {
     loading: "Loading…",
     empty: "Nothing here yet",

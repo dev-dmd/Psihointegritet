@@ -49,6 +49,23 @@ export const workspace: Widen<EnWorkspace> = {
     moreSoon: "Još opcija stiže uskoro.",
   },
   settings: {
+    page: {
+      title: "Podešavanja",
+      description:
+        "Postavke centra postoje kao rute i navigacija — konfiguracija stiže u kasnijim fazama.",
+      locations: {
+        title: "Lokacije i način rada",
+        body: "Adrese, prostorije i pravila za online/uživo rad centra.",
+      },
+      notifications: {
+        title: "Obaveštenja",
+        body: "Email podsetnici i pravila slanja — stižu sa notifikacijama.",
+      },
+      centre: {
+        title: "Podešavanja centra",
+        body: "Radno vreme centra, pravila otkazivanja i opšte postavke.",
+      },
+    },
     title: "Jezik i regionalna podešavanja",
     intro:
       "Jezik pripada organizaciji, ne osobi — izmena ovde važi za svakoga ko u njoj radi.",
@@ -71,10 +88,9 @@ export const workspace: Widen<EnWorkspace> = {
   topbar: {
     allTherapists: "Svi terapeuti",
     notifications: "Obaveštenja",
-    quickAction: "Novo",
+    quickAction: "Brza akcija",
     userMenu: "Korisnički meni",
     noNotifications: "Nema novih obaveštenja.",
-    backToSite: "Nazad na sajt",
   },
   roles: {
     adminAndTherapist: "Administrator i terapeut",

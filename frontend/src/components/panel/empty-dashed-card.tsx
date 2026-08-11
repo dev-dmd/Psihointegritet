@@ -1,6 +1,9 @@
+"use client";
+
 import type { ReactNode } from "react";
 
 import { cn } from "@/helpers/cn";
+import { useTranslations } from "next-intl";
 
 interface EmptyDashedCardProps {
   title: string;
@@ -17,6 +20,7 @@ export function EmptyDashedCard({
   soon,
   className,
 }: EmptyDashedCardProps) {
+  const t = useTranslations("common");
   return (
     <div
       className={cn(
@@ -28,7 +32,7 @@ export function EmptyDashedCard({
         <h3 className="text-coffee font-serif text-xl">{title}</h3>
         {soon ? (
           <span className="bg-badge-amber-bg text-badge-amber rounded-full px-2.5 py-1 text-[11px] font-semibold tracking-[0.08em] uppercase">
-            Uskoro
+            {t("shell.soon")}
           </span>
         ) : null}
       </div>

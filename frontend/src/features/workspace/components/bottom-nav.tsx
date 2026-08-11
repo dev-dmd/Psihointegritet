@@ -64,7 +64,7 @@ export function WorkspaceBottomNav() {
       })}
       <button
         type="button"
-        aria-label="Brza akcija"
+        aria-label={t("topbar.quickAction")}
         onClick={() => toast(t("shell.quickActionSoon"))}
         style={{ gridColumnStart: 3, gridRowStart: 1 }}
         className="bg-forest text-canvas shadow-help mx-auto flex h-12 w-12 -translate-y-1 cursor-pointer items-center justify-center rounded-full border-0"

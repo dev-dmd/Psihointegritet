@@ -7,6 +7,7 @@ import Image from "next/image";
 import type { ReactNode } from "react";
 
 import { cn } from "@/helpers/cn";
+import { useTranslations } from "next-intl";
 
 interface LogoutAvatarMenuProps {
   /** Initials shown on the trigger when no profile photo is available. */
@@ -37,6 +38,7 @@ export function LogoutAvatarMenu({
   triggerClassName,
   children,
 }: LogoutAvatarMenuProps) {
+  const t = useTranslations("common");
   const { signOut } = useClerk();
   const { user } = useUser();
   const avatarUrl = user?.hasImage ? user.imageUrl : null;
@@ -81,7 +83,7 @@ export function LogoutAvatarMenu({
             className="text-danger data-[focus]:bg-danger/10 flex w-full cursor-pointer items-center gap-2.5 rounded-xl px-3.5 py-2.5 text-[13.5px] font-bold transition-colors"
           >
             <PowerIcon className="size-4 shrink-0" />
-            Odjavi se
+            {t("shell.signOut")}
           </button>
         </MenuItem>
       </MenuItems>

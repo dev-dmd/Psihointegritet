@@ -24,6 +24,12 @@ export const common: Widen<EnCommon> = {
     delete: "Obriši",
     confirm: "Potvrdi",
   },
+  /** Chrome shared by all three panels and the public header. */
+  shell: {
+    backToSite: "Glavni sajt",
+    signOut: "Odjavi se",
+    soon: "Uskoro",
+  },
   state: {
     loading: "Učitavanje…",
     empty: "Ovde još nema ničega",

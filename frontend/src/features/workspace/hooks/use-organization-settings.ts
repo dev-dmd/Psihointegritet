@@ -1,6 +1,7 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useRouter } from "next/navigation";
 
 import type { UiLocale } from "@/i18n/locales";
 
@@ -36,6 +37,7 @@ export function useOrganizationLocalesMutation(callbacks: {
   onFailed: (error: unknown) => void;
 }) {
   const queryClient = useQueryClient();
+  const router = useRouter();
 
   return useMutation({
     mutationFn: (input: {
@@ -44,6 +46,11 @@ export function useOrganizationLocalesMutation(callbacks: {
     }) => updateOrganizationLocales(input),
     onSuccess: (settings) => {
       queryClient.setQueryData(ORGANIZATION_SETTINGS_QUERY_KEY, settings);
+      // The language lives in the *server* tree — nav labels, the html lang
+      // attribute and every href built by `localizedPath`. Updating the query
+      // cache alone leaves all of that rendered in the previous language until
+      // the user reloads by hand, which is exactly what it did.
+      router.refresh();
       callbacks.onSaved(settings);
     },
     onError: callbacks.onFailed,

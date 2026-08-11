@@ -30,14 +30,29 @@ interface Subtree {
   roots: string[];
 }
 
+/**
+ * Shared chrome lives outside every feature directory but renders inside all of
+ * them. Leaving it out was a blind spot: `LogoutAvatarMenu` asked for a
+ * namespace the client panel did not provide, and the test still passed.
+ */
+const SHARED_ROOTS = ["components/shared", "components/panel"];
+
 const SUBTREES: Subtree[] = [
   {
     layout: "app/(staff)/workspace/layout.tsx",
-    roots: ["app/(staff)/workspace", "features/workspace"],
+    roots: ["app/(staff)/workspace", "features/workspace", ...SHARED_ROOTS],
   },
   {
     layout: "app/(superadmin)/superadmin/layout.tsx",
-    roots: ["app/(superadmin)/superadmin", "features/superadmin"],
+    roots: [
+      "app/(superadmin)/superadmin",
+      "features/superadmin",
+      ...SHARED_ROOTS,
+    ],
+  },
+  {
+    layout: "app/(client)/layout.tsx",
+    roots: ["app/(client)", "features/account", ...SHARED_ROOTS],
   },
 ];
 

@@ -98,11 +98,11 @@ export function WorkspaceTopbar() {
       </div>
       <button
         type="button"
-        onClick={() => toast("Brza akcija stiže sa Booking engine-om.")}
+        onClick={() => toast(t("shell.quickActionSoon"))}
         className="bg-forest text-canvas hover:bg-forest-hover hidden items-center gap-2 rounded-full border-0 px-5 py-2.5 text-[13.5px] font-semibold transition-colors lg:inline-flex"
       >
         <PlusIcon />
-        Brza akcija
+        {t("topbar.quickAction")}
       </button>
     </header>
   );

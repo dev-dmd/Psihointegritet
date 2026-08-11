@@ -47,6 +47,23 @@ export const workspace = {
     moreSoon: "More options are coming soon.",
   },
   settings: {
+    page: {
+      title: "Settings",
+      description:
+        "Centre settings exist as routes and navigation — the configuration arrives in later phases.",
+      locations: {
+        title: "Locations and formats",
+        body: "Addresses, rooms and the rules for online and in-person work.",
+      },
+      notifications: {
+        title: "Notifications",
+        body: "Email reminders and sending rules — they arrive with notifications.",
+      },
+      centre: {
+        title: "Centre settings",
+        body: "Opening hours, cancellation rules and general configuration.",
+      },
+    },
     title: "Language and regional settings",
     intro:
       "Language belongs to the organization, not to a person — a change here applies to everyone who works in it.",
@@ -69,10 +86,9 @@ export const workspace = {
   topbar: {
     allTherapists: "All therapists",
     notifications: "Notifications",
-    quickAction: "New",
+    quickAction: "Quick action",
     userMenu: "User menu",
     noNotifications: "No new notifications.",
-    backToSite: "Back to site",
   },
   roles: {
     adminAndTherapist: "Administrator and therapist",
