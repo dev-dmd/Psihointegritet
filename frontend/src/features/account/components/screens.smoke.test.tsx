@@ -3,9 +3,11 @@ import { describe, expect, it, vi } from "vitest";
 
 import { withIntl } from "@/test-support/intl";
 
+import { AccountBottomNav } from "./bottom-nav";
 import { ScreenPocetna } from "./screen-pocetna";
 import { ScreenProfil } from "./screen-profil";
 import { ScreenProgrami } from "./screen-programi";
+import { AccountSidebar } from "./sidebar";
 
 /**
  * Every panel screen renders with the real catalogue.
@@ -25,6 +27,10 @@ vi.mock("../hooks/use-my-appointment-requests", () => ({
 vi.mock("@clerk/nextjs", () => ({
   useUser: () => ({ user: null }),
   useClerk: () => ({ signOut: vi.fn() }),
+}));
+
+vi.mock("next/navigation", () => ({
+  usePathname: () => "/nalog/termini",
 }));
 
 describe("client panel screens", () => {
@@ -88,5 +94,44 @@ describe("client panel screens", () => {
     expect(
       screen.getByRole("link", { name: "Politika privatnosti" }),
     ).toHaveAttribute("href", "/privatnost");
+  });
+
+  it("offers the same four tabs on the sidebar and the bottom bar", () => {
+    // Both read `accountNavItems`, and this is what keeps that true: a tab
+    // added to one surface and forgotten on the other is invisible in review.
+    const labels = ["Početna", "Termini", "Programi", "Profil"];
+
+    const { unmount } = render(
+      withIntl(
+        <AccountSidebar
+          displayName="Ana Marković"
+          email="ana@example.com"
+          initials="AM"
+        />,
+      ),
+    );
+    const sidebar = labels.map((label) =>
+      screen.getByRole("link", { name: label }).getAttribute("href"),
+    );
+    // Serbian organization → Serbian paths on both surfaces.
+    expect(sidebar).toEqual([
+      "/nalog",
+      "/nalog/termini",
+      "/nalog/programi",
+      "/nalog/profil",
+    ]);
+    // The mocked pathname is „Termini", so that row is the current page.
+    expect(screen.getByRole("link", { name: "Termini" })).toHaveAttribute(
+      "aria-current",
+      "page",
+    );
+    unmount();
+
+    render(withIntl(<AccountBottomNav />));
+    expect(
+      labels.map((label) =>
+        screen.getByRole("link", { name: label }).getAttribute("href"),
+      ),
+    ).toEqual(sidebar);
   });
 });

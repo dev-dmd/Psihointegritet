@@ -10,6 +10,9 @@ import type { Widen } from "@/messages/types";
  * Booking Engine does not send.
  */
 export const account: Widen<EnAccount> = {
+  brand: {
+    panel: "Klijentska zona",
+  },
   nav: {
     home: "Početna",
     appointments: "Termini",

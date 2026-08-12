@@ -13,11 +13,10 @@ import { accountNavItems } from "../nav";
 
 /**
  * The panel's primary navigation („KP navigacija"): four tabs pinned to the
- * bottom of the app column, on every viewport.
+ * bottom of the app column below `lg`, where the desktop sidebar takes over.
  *
- * Unlike the Control Center — which collapses a desktop sidebar into a bottom
- * bar below `lg` — the client panel is one narrow column at every width, so
- * there is no second navigation to keep in sync with this one.
+ * Both read the same `accountNavItems`, so a tab cannot exist on one surface
+ * and be missing from the other.
  */
 export function AccountBottomNav() {
   const pathname = usePathname();
@@ -25,7 +24,7 @@ export function AccountBottomNav() {
   const t = useTranslations("account.nav");
 
   return (
-    <nav className="border-coffee/8 bg-surface sticky bottom-0 z-50 grid grid-cols-4 border-t px-1.5 pt-2 pb-[calc(10px+env(safe-area-inset-bottom))]">
+    <nav className="border-coffee/8 bg-surface sticky bottom-0 z-50 grid grid-cols-4 border-t px-1.5 pt-2 pb-[calc(10px+env(safe-area-inset-bottom))] lg:hidden">
       {accountNavItems.map((item) => {
         const active = isRouteActive(pathname, item.routeId);
         return (

@@ -19,8 +19,10 @@ import { getInitials } from "@/lib/auth/clerk/initials";
  * before it can be shown.
  *
  * „Glavni sajt" moves inside the avatar dropdown rather than sitting beside
- * the bell — the panel column is 480px wide at every viewport, and three
- * controls crowd it.
+ * the bell — the phone column is 480px wide and three controls crowd it.
+ *
+ * The wordmark hides at `lg`, where the sidebar already carries it, exactly as
+ * the Control Center topbar does.
  */
 export function AccountTopbar() {
   const { user } = useUser();
@@ -30,8 +32,8 @@ export function AccountTopbar() {
   const initials = getInitials(user?.firstName, user?.lastName, email);
 
   return (
-    <header className="bg-panel-canvas/92 border-coffee/8 sticky top-0 z-40 flex items-center gap-3 border-b px-[22px] py-3.5 backdrop-blur-md">
-      <span className="flex items-baseline">
+    <header className="bg-panel-canvas/92 border-coffee/8 sticky top-0 z-40 flex items-center gap-3 border-b px-[22px] py-3.5 backdrop-blur-md lg:px-8">
+      <span className="flex items-baseline lg:hidden">
         <span className="text-forest font-serif text-xl font-medium">
           Psihointegritet
         </span>
