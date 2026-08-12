@@ -269,11 +269,14 @@ class IntakeContact(Base):
 
     __tablename__ = "intake_contacts"
 
+    # One contact row per case, declared as the named UNIQUE constraint migration
+    # 0001 actually created, plus its plain index. See D19.
+    __table_args__ = (UniqueConstraint("intake_case_id", name="uq_intake_contacts_intake_case_id"),)
+
     id: Mapped[UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid4)
     intake_case_id: Mapped[UUID] = mapped_column(
         Uuid(as_uuid=True),
         ForeignKey("intake_cases.id", ondelete="CASCADE"),
-        unique=True,
         index=True,
     )
     full_name: Mapped[str] = mapped_column(String(160))
@@ -307,11 +310,14 @@ class IntakeFreeText(Base):
 
     __tablename__ = "intake_free_texts"
 
+    __table_args__ = (
+        UniqueConstraint("intake_case_id", name="uq_intake_free_texts_intake_case_id"),
+    )
+
     id: Mapped[UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid4)
     intake_case_id: Mapped[UUID] = mapped_column(
         Uuid(as_uuid=True),
         ForeignKey("intake_cases.id", ondelete="CASCADE"),
-        unique=True,
         index=True,
     )
     text: Mapped[str] = mapped_column(Text)
@@ -350,11 +356,16 @@ class IntakeAssignment(Base):
 
     __tablename__ = "intake_assignments"
 
+    # The single-owner guarantee behind atomic queue claims. It is a named UNIQUE
+    # constraint in the database, so the model says so explicitly (D19).
+    __table_args__ = (
+        UniqueConstraint("intake_case_id", name="uq_intake_assignments_intake_case_id"),
+    )
+
     id: Mapped[UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid4)
     intake_case_id: Mapped[UUID] = mapped_column(
         Uuid(as_uuid=True),
         ForeignKey("intake_cases.id", ondelete="CASCADE"),
-        unique=True,
         index=True,
     )
     therapist_profile_id: Mapped[UUID] = mapped_column(

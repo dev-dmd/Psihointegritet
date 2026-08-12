@@ -1,0 +1,1478 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="_ds/psihointegritet-design-system-9b777129-4357-4736-b780-b3a5e908ed92/fonts/fonts.css">
+<link rel="stylesheet" href="_ds/psihointegritet-design-system-9b777129-4357-4736-b780-b3a5e908ed92/_ds_bundle.css">
+<link rel="stylesheet" href="_ds/psihointegritet-design-system-9b777129-4357-4736-b780-b3a5e908ed92/styles.css">
+<script src="_ds/psihointegritet-design-system-9b777129-4357-4736-b780-b3a5e908ed92/_ds_bundle.js"></script>
+<style>
+  body { margin: 0; background: #e6e5e1; font-family: var(--font-instrument-sans), system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+  a { color: var(--color-forest); text-decoration: none; }
+  a:hover { color: var(--color-forest-soft); }
+  button { font-family: inherit; }
+  input, textarea, select { font-family: inherit; }
+  @keyframes komFade { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+  @keyframes komSheet { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: none; } }
+</style>
+</helmet>
+
+<div style="min-height: 100vh; padding: 0 0 40px;">
+
+  <sc-if value="{{ showChrome }}" hint-placeholder-val="{{ true }}">
+  <div style="position: sticky; top: 0; z-index: 60; display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 10px 14px; background: #241c18; color: #f5efe6;">
+    <span style="font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; opacity: 0.55;">Mockup</span>
+    <code style="font-size: 12px; padding: 4px 10px; border-radius: 999px; background: rgba(245,239,230,0.1); color: #f5efe6;">{{ routeLabel }}</code>
+    <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-left: auto;">
+      <sc-for list="{{ navRoutes }}" as="r" hint-placeholder-count="7">
+        <button type="button" onClick="{{ r.go }}" style="{{ r.style }}">{{ r.label }}</button>
+      </sc-for>
+    </div>
+    <div style="display: flex; gap: 4px; padding: 3px; border-radius: 999px; background: rgba(245,239,230,0.1);">
+      <button type="button" onClick="{{ setMobile }}" style="{{ mobileBtnStyle }}">Mobilni</button>
+      <button type="button" onClick="{{ setDesktop }}" style="{{ desktopBtnStyle }}">Desktop</button>
+    </div>
+  </div>
+  </sc-if>
+
+  <div style="display: flex; justify-content: center; padding: 18px 12px 0;">
+    <div style="{{ frameStyle }}">
+
+      <header style="position: sticky; top: 52px; z-index: 40; display: flex; justify-content: center; padding: 12px 12px 0; pointer-events: none;">
+        <div style="display: flex; align-items: center; gap: 6px; max-width: 100%; padding: 6px 6px 6px 16px; border-radius: 999px; background: rgba(255,255,255,0.86); backdrop-filter: blur(14px); box-shadow: 0 10px 30px rgba(58,46,40,0.14); pointer-events: auto;">
+          <button type="button" onClick="{{ goHome }}" style="display: flex; align-items: baseline; gap: 3px; border: 0; background: none; padding: 0; cursor: pointer; font-family: var(--font-newsreader), Georgia, serif; font-size: 19px; color: var(--color-coffee);">P<span style="width: 5px; height: 5px; border-radius: 50%; background: var(--color-warm-shine);"></span></button>
+          <sc-if value="{{ showNav }}" hint-placeholder-val="{{ true }}">
+            <nav style="display: flex; align-items: center; gap: 2px;">
+              <sc-for list="{{ siteNav }}" as="n" hint-placeholder-count="6">
+                <button type="button" onClick="{{ n.go }}" style="{{ n.style }}">{{ n.label }}</button>
+              </sc-for>
+            </nav>
+          </sc-if>
+          <sc-if value="{{ showMenu }}" hint-placeholder-val="{{ true }}">
+            <button type="button" onClick="{{ goKompas }}" style="display: flex; align-items: center; gap: 8px; padding: 9px 14px; border: 0; border-radius: 999px; background: rgba(198,213,168,0.34); font-size: 13px; color: var(--color-forest); cursor: pointer;"><span style="display: flex; flex-direction: column; gap: 3px;"><span style="width: 14px; height: 1.5px; background: currentColor;"></span><span style="width: 14px; height: 1.5px; background: currentColor;"></span></span>Kompas</button>
+          </sc-if>
+          <div style="width: 32px; height: 32px; flex: none; display: grid; place-items: center; border-radius: 50%; background: rgba(209,164,140,0.35); font-size: 11px; letter-spacing: 0.04em; color: var(--color-coffee);">MD</div>
+          <button type="button" style="flex: none; display: flex; align-items: center; gap: 8px; padding: 9px 16px 9px 10px; border: 0; border-radius: 999px; background: var(--color-forest); color: #f2f5ec; font-size: 13px; cursor: pointer;"><span style="display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: rgba(198,213,168,0.22); font-size: 11px;">↗</span>Zakaži termin</button>
+        </div>
+      </header>
+
+      <sc-if value="{{ atHome }}" hint-placeholder-val="{{ true }}">
+        <main data-screen-label="Početna" style="padding: 0 0 8px;">
+          <section style="padding: 150px 20px 24px;">
+            <div style="margin: 0 0 14px;"><x-import component-from-global-scope="PsihointegritetUI.Eyebrow" tone="sage" hint-size="auto,16px">Razlozi dolaska</x-import></div>
+            <h2 style="margin: 0; max-width: 15ch; font-family: var(--font-newsreader), Georgia, serif; font-weight: 400; font-size: clamp(30px, 7cqi, 54px); line-height: 1.08; color: var(--color-forest);">Od čega želite da počnete?</h2>
+            <p style="margin: 16px 0 0; max-width: 46ch; font-size: 15px; line-height: 1.7; color: rgba(58,46,40,0.7); text-wrap: pretty;">Ne postoji „dovoljno velik“ razlog za dolazak. Izaberite temu koja vam je najbliža — to je dovoljno za početak razgovora.</p>
+          </section>
+
+          <section style="padding: 8px 20px 0;">
+            <div style="display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));">
+              <sc-for list="{{ homeReasons }}" as="c" hint-placeholder-count="6">
+                <button type="button" onClick="{{ c.go }}" style="display: flex; flex-direction: column; gap: 10px; padding: 22px; border: 0; border-radius: 18px; background: #ffffff; text-align: left; cursor: pointer;">
+                  <span style="display: flex; align-items: center; justify-content: space-between; font-family: var(--font-newsreader), Georgia, serif; font-size: 13px; font-style: italic; color: var(--color-sage);">{{ c.num }}<span style="display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; border: 1px solid rgba(58,46,40,0.14); font-style: normal; font-size: 12px; color: var(--color-forest);">→</span></span>
+                  <span style="font-family: var(--font-newsreader), Georgia, serif; font-size: 21px; line-height: 1.2; color: var(--color-forest);">{{ c.label }}</span>
+                  <span style="font-size: 13px; line-height: 1.55; color: rgba(58,46,40,0.62);">{{ c.desc }}</span>
+                </button>
+              </sc-for>
+            </div>
+          </section>
+
+          <section style="padding: 30px 20px 0;">
+            <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin: 0 0 12px; padding: 10px 12px; border-radius: 14px; border: 1px dashed rgba(58,46,40,0.2); background: rgba(255,255,255,0.5);">
+              <span style="font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: rgba(58,46,40,0.65);">Kontrola za pregled · nije deo stranice</span>
+              <div style="display: flex; gap: 4px; margin-left: auto;">
+                <sc-for list="{{ ctaVariants }}" as="v" hint-placeholder-count="3">
+                  <button type="button" onClick="{{ v.select }}" style="{{ v.style }}">{{ v.label }}</button>
+                </sc-for>
+              </div>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <button type="button" onClick="{{ prevScheme }}" aria-label="Prethodna šema" style="display: grid; place-items: center; width: 26px; height: 26px; border: 1px solid rgba(58,46,40,0.16); border-radius: 50%; background: #fff; cursor: pointer; font-size: 12px; color: var(--color-coffee);">‹</button>
+                <sc-for list="{{ ctaSchemes }}" as="s" hint-placeholder-count="5">
+                  <button type="button" onClick="{{ s.select }}" aria-label="{{ s.label }}" title="{{ s.label }}" style="{{ s.style }}"></button>
+                </sc-for>
+                <button type="button" onClick="{{ nextScheme }}" aria-label="Sledeća šema" style="display: grid; place-items: center; width: 26px; height: 26px; border: 1px solid rgba(58,46,40,0.16); border-radius: 50%; background: #fff; cursor: pointer; font-size: 12px; color: var(--color-coffee);">›</button>
+                <span style="font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: rgba(58,46,40,0.68);">{{ schemeLabel }}</span>
+              </div>
+            </div>
+
+            <sc-if value="{{ ctaIsA }}" hint-placeholder-val="{{ true }}">
+              <x-import component-from-global-scope="PsihointegritetUI.Reveal" hint-size="100%,300px">
+              <div data-cta="banner" style="{{ ctaBandStyle }}" style-hover="transform: translateY(-4px); box-shadow: 0 26px 60px rgba(58,46,40,0.24)">
+                <div style="{{ ctaAurora1 }}"></div>
+                <div style="{{ ctaAurora2 }}"></div>
+                <div style="{{ ctaAurora3 }}"></div>
+                <div style="{{ ctaRingStyle }}"></div>
+                <div style="{{ ctaRing2Style }}"></div>
+                <div style="{{ ctaRing3Style }}"></div>
+                <div style="{{ ctaCornerBR }}"></div>
+                <div style="{{ ctaGridStyle }}">
+                  <div style="display: flex; align-items: center; justify-content: center; padding: 6px;">
+                    <div style="{{ ctaLogoBoxStyle }}">
+                      <span style="{{ ctaGlassHalo1 }}"></span>
+                      <span style="{{ ctaGlassHalo2 }}"></span>
+                      <img src="assets/kompas-logo.png" alt="Kompas mentalnog zdravlja" style="{{ ctaLogoStyle }}">
+                    </div>
+                  </div>
+                  <div style="{{ ctaPanelStyle }}">
+                    <div style="display: grid; gap: 18px; align-items: stretch; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));">
+                      <div>
+                        <h3 style="{{ ctaTitleStyle }}"><em style="{{ ctaTitleAccentStyle }}">Kompas</em> mentalnog zdravlja</h3>
+                        <p style="{{ ctaBodyStyle }}">Odgovorite na nekoliko kratkih pitanja kako bismo vam predložili sadržaje koji bi vam trenutno mogli biti korisni. Kompas nije dijagnostički alat.</p>
+                      </div>
+                      <div style="{{ ctaAsideStyle }}">
+                        <p style="{{ ctaAsideTextStyle }}">Pomaže vam da razumete svoju situaciju i usmerava vas ka edukativnom sadržaju i alatima.</p>
+                        <button type="button" onClick="{{ goKompas }}" style="{{ ctaBtnAStyle }}">Pokreni Kompas<span style="font-size: 15px;">→</span></button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              </x-import>
+            </sc-if>
+
+            <sc-if value="{{ ctaIsB }}" hint-placeholder-val="{{ true }}">
+              <x-import component-from-global-scope="PsihointegritetUI.Reveal" hint-size="100%,300px">
+              <div data-cta="banner" style="{{ ctaBandStyle }}" style-hover="transform: translateY(-4px); box-shadow: 0 26px 60px rgba(58,46,40,0.24)">
+                <div style="{{ ctaAurora1 }}"></div>
+                <div style="{{ ctaAurora2 }}"></div>
+                <div style="{{ ctaRingStyle }}"></div>
+                <div style="{{ ctaRing3Style }}"></div>
+                <div style="{{ ctaCornerBR }}"></div>
+                <div style="position: relative; display: flex; flex-direction: column; align-items: center; gap: 16px; padding: 34px 22px 30px; max-width: 720px; margin: 0 auto; text-align: center;">
+                  <img src="assets/kompas-logo.png" alt="" style="width: 88px; height: auto; filter: drop-shadow(0 14px 26px rgba(0,0,0,0.3));">
+                  <h3 style="{{ ctaTitleStyle }}"><em style="{{ ctaTitleAccentStyle }}">Kompas</em> mentalnog zdravlja</h3>
+                  <p style="{{ ctaBodyStyle }}">Nekoliko kratkih pitanja, pa vam predlažemo sadržaje i alate koji bi vam sada mogli pomoći. Bez testa, bez dijagnoze.</p>
+                  <button type="button" onClick="{{ goKompas }}" style="{{ ctaBtnCenterStyle }}">Pokreni Kompas<span style="font-size: 15px;">→</span></button>
+                  <div style="{{ ctaMetaRowStyle }}">
+                    <span>≈ 2 minuta</span>
+                    <span>Pitanja možete preskočiti</span>
+                    <span>Anonimno</span>
+                  </div>
+                </div>
+              </div>
+              </x-import>
+            </sc-if>
+
+            <sc-if value="{{ ctaIsC }}" hint-placeholder-val="{{ true }}">
+              <x-import component-from-global-scope="PsihointegritetUI.Reveal" hint-size="100%,180px">
+              <div data-cta="banner" style="{{ ctaBandStyle }}" style-hover="transform: translateY(-4px); box-shadow: 0 26px 60px rgba(58,46,40,0.24)">
+                <div style="{{ ctaAurora1 }}"></div>
+                <div style="{{ ctaAurora2 }}"></div>
+                <div style="{{ ctaAurora3 }}"></div>
+                <div style="{{ ctaRingStyle }}"></div>
+                <div style="{{ ctaRing3Style }}"></div>
+                <div style="{{ ctaCornerBR }}"></div>
+                <div style="position: relative; display: flex; flex-wrap: wrap; align-items: center; gap: 16px 20px; padding: 18px 20px; max-width: 1536px; margin: 0 auto;">
+                  <div style="{{ ctaBadgeStyle }}">
+                    <img src="assets/kompas-logo.png" alt="" style="width: 100%; height: auto;">
+                  </div>
+                  <div style="flex: 1 1 240px; min-width: 200px;">
+                    <h3 style="{{ ctaStripTitleStyle }}"><em style="{{ ctaTitleAccentStyle }}">Kompas</em> mentalnog zdravlja</h3>
+                    <p style="{{ ctaStripBodyStyle }}">Kratka pitanja koja vas usmeravaju ka sadržaju i alatima. Bez dijagnoze.</p>
+                    <p style="{{ ctaStripMetaStyle }}">≈ 2 min · možete preskočiti</p>
+                  </div>
+                  <div style="{{ ctaStripAsideStyle }}">
+                    <button type="button" onClick="{{ goKompas }}" style="{{ ctaBtnCStyle }}">Pokreni Kompas<span style="font-size: 15px;">→</span></button>
+                  </div>
+                </div>
+              </div>
+              </x-import>
+            </sc-if>
+          </section>
+        </main>
+      </sc-if>
+
+      <sc-if value="{{ atKompas }}" hint-placeholder-val="{{ true }}">
+        <main data-screen-label="/kompas" style="padding: 0 12px;">
+
+          <section style="position: relative; overflow: hidden; margin-top: 12px; padding: 104px 20px 28px; border-radius: 24px; background: #ffffff;">
+            <img src="assets/kompas-logo.png" alt="" style="position: absolute; right: -54px; bottom: -40px; width: clamp(170px, 34cqi, 300px); opacity: 0.09;">
+            <div style="position: relative; max-width: 44ch;">
+              <div style="margin: 0 0 14px;"><x-import component-from-global-scope="PsihointegritetUI.Eyebrow" tone="sage" hint-size="auto,16px">Kompas mentalnog zdravlja</x-import></div>
+              <h1 style="margin: 0; font-family: var(--font-newsreader), Georgia, serif; font-weight: 400; font-size: clamp(32px, 7.4cqi, 58px); line-height: 1.06; color: var(--color-forest); text-wrap: pretty;">Vaš vodič do podrške koja ima smisla za vas</h1>
+              <p style="margin: 18px 0 0; font-size: 15.5px; line-height: 1.72; color: rgba(58,46,40,0.75); text-wrap: pretty;">Odgovorite na nekoliko kratkih pitanja i predložićemo vam sadržaje, vežbe i programe koji bi vam sada mogli biti korisni. Pitanja su opciona — možete ih preskočiti i odmah pogledati sve oblasti.</p>
+              <p style="margin: 14px 0 0; font-size: 13px; line-height: 1.6; color: rgba(58,46,40,0.68);">Kompas nije test i ne postavlja dijagnozu. Ne zamenjuje razgovor sa stručnom osobom.</p>
+              <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-top: 24px;">
+                <button type="button" onClick="{{ startQuiz }}" style="display: inline-flex; align-items: center; gap: 10px; padding: 15px 24px; min-height: 50px; border: 0; border-radius: 999px; background: var(--color-forest); color: #f2f5ec; font-size: 15px; cursor: pointer;">Pokreni Kompas<span>→</span></button>
+                <button type="button" onClick="{{ skipQuiz }}" style="display: inline-flex; align-items: center; padding: 15px 22px; min-height: 50px; border: 1px solid rgba(58,46,40,0.18); border-radius: 999px; background: transparent; color: var(--color-forest); font-size: 15px; cursor: pointer;">Preskoči pitanja</button>
+              </div>
+            </div>
+            <div style="position: relative; display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); margin-top: 30px; padding-top: 22px; border-top: 1px solid rgba(58,46,40,0.08);">
+              <p style="margin: 0; font-size: 13px; line-height: 1.55; color: rgba(58,46,40,0.7);"><strong style="font-weight: 500; color: var(--color-forest);">Pet kratkih pitanja.</strong> Nema tačnih i netačnih odgovora.</p>
+              <p style="margin: 0; font-size: 13px; line-height: 1.55; color: rgba(58,46,40,0.7);"><strong style="font-weight: 500; color: var(--color-forest);">Bez naloga.</strong> Odgovori ostaju na vašem uređaju.</p>
+              <p style="margin: 0; font-size: 13px; line-height: 1.55; color: rgba(58,46,40,0.7);"><strong style="font-weight: 500; color: var(--color-forest);">Možete stati.</strong> Preporuke dobijate i na osnovu dela odgovora.</p>
+            </div>
+          </section>
+
+          <section style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; margin-top: 12px; padding: 14px 18px; border-radius: 18px; background: rgba(255,255,255,0.6); border: 1px solid rgba(58,46,40,0.08);">
+            <span style="font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: rgba(58,46,40,0.68);">Uvek dostupno</span>
+            <button type="button" onClick="{{ skipQuiz }}" style="padding: 10px 12px; min-height: 44px; border: 0; background: none; font-size: 13.5px; color: var(--color-forest); text-decoration: underline; text-underline-offset: 3px; cursor: pointer;">Preskoči pitanja</button>
+            <button type="button" onClick="{{ showResultsNow }}" style="padding: 10px 12px; min-height: 44px; border: 0; background: none; font-size: 13.5px; color: var(--color-forest); text-decoration: underline; text-underline-offset: 3px; cursor: pointer;">Prikaži preporuke sada</button>
+            <button type="button" onClick="{{ goOblasti }}" style="padding: 10px 12px; min-height: 44px; border: 0; background: none; font-size: 13.5px; color: var(--color-forest); text-decoration: underline; text-underline-offset: 3px; cursor: pointer;">Vrati se na oblasti</button>
+            <button type="button" onClick="{{ openHandoff }}" style="margin-left: auto; padding: 11px 18px; min-height: 44px; border: 1px solid var(--color-forest); border-radius: 999px; background: transparent; font-size: 13.5px; color: var(--color-forest); cursor: pointer;">Želim stručnu pomoć</button>
+          </section>
+
+          <sc-if value="{{ modePolazni }}" hint-placeholder-val="{{ true }}">
+            <section style="margin-top: 12px; animation: komFade .35s ease both;">
+              <div style="padding: 22px 20px; border-radius: 22px; background: rgba(198,213,168,0.28);">
+                <h2 style="margin: 0; font-family: var(--font-newsreader), Georgia, serif; font-weight: 400; font-size: clamp(22px, 4.4cqi, 32px); color: var(--color-forest);">Polazni prikaz</h2>
+                <p style="margin: 10px 0 0; max-width: 60ch; font-size: 14.5px; line-height: 1.7; color: rgba(58,46,40,0.78); text-wrap: pretty;">Bez odgovora na pitanja, ovde su sve oblasti i teme koje trenutno postoje na platformi. Krenite od onoga što vam zvuči najbliže — pitanja možete pokrenuti kad god poželite.</p>
+                <button type="button" onClick="{{ startQuiz }}" style="margin-top: 16px; padding: 12px 20px; min-height: 46px; border: 0; border-radius: 999px; background: var(--color-forest); color: #f2f5ec; font-size: 14px; cursor: pointer;">Ipak odgovorite na pitanja</button>
+              </div>
+
+              <div style="margin-top: 12px; padding: 22px 20px; border-radius: 22px; background: #ffffff;">
+                <div style="display: flex; flex-wrap: wrap; align-items: baseline; gap: 10px;">
+                  <h3 style="margin: 0; font-family: var(--font-newsreader), Georgia, serif; font-weight: 400; font-size: 24px; color: var(--color-forest);">Oblasti</h3>
+                  <button type="button" onClick="{{ goOblasti }}" style="margin-left: auto; border: 0; background: none; font-size: 13.5px; color: var(--color-forest); text-decoration: underline; text-underline-offset: 3px; cursor: pointer;">Sve oblasti →</button>
+                </div>
+                <div style="display: grid; gap: 8px; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); margin-top: 16px;">
+                  <sc-for list="{{ polazniOblasti }}" as="o" hint-placeholder-count="10">
+                    <button type="button" onClick="{{ o.open }}" style="display: flex; flex-direction: column; gap: 4px; padding: 14px 16px; border: 1px solid rgba(58,46,40,0.1); border-radius: 14px; background: #fff; text-align: left; cursor: pointer;">
+                      <span style="font-size: 15px; color: var(--color-forest);">{{ o.label }}</span>
+                      <span style="font-size: 12.5px; line-height: 1.5; color: rgba(58,46,40,0.6);">{{ o.desc }}</span>
+                      <span style="font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--color-sage);">{{ o.count }}</span>
+                    </button>
+                  </sc-for>
+                </div>
+              </div>
+
+              <div style="margin-top: 12px; padding: 22px 20px; border-radius: 22px; background: #ffffff;">
+                <div style="display: flex; flex-wrap: wrap; align-items: baseline; gap: 10px;">
+                  <h3 style="margin: 0; font-family: var(--font-newsreader), Georgia, serif; font-weight: 400; font-size: 24px; color: var(--color-forest);">Aktuelne teme</h3>
+                  <button type="button" onClick="{{ goTeme }}" style="margin-left: auto; border: 0; background: none; font-size: 13.5px; color: var(--color-forest); text-decoration: underline; text-underline-offset: 3px; cursor: pointer;">Sve teme →</button>
+                </div>
+                <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px;">
+                  <sc-for list="{{ polazniTeme }}" as="t" hint-placeholder-count="6">
+                    <button type="button" onClick="{{ t.open }}" style="padding: 10px 16px; min-height: 44px; border: 1px solid rgba(58,46,40,0.12); border-radius: 999px; background: rgba(58,46,40,0.03); font-size: 13.5px; color: var(--color-forest); cursor: pointer;">{{ t.label }}</button>
+                  </sc-for>
+                </div>
+              </div>
+
+              <div style="margin-top: 12px; padding: 22px 20px; border-radius: 22px; background: #ffffff;">
+                <h3 style="margin: 0 0 4px; font-family: var(--font-newsreader), Georgia, serif; font-weight: 400; font-size: 24px; color: var(--color-forest);">Dostupno bez odgovora na pitanja</h3>
+                <p style="margin: 0 0 16px; font-size: 13.5px; color: rgba(58,46,40,0.6);">Javno objavljeni sadržaji, poređani redosledom iz registra.</p>
+                <div style="display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));">
+                  <sc-for list="{{ polazniSadrzaj }}" as="c" hint-placeholder-count="4">
+                    <div style="display: flex; flex-direction: column; gap: 10px; padding: 18px; border: 1px solid rgba(58,46,40,0.08); border-radius: 18px; background: #fff;">
+                      <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px;">
+                        <span style="padding: 4px 10px; border-radius: 999px; background: rgba(58,46,40,0.06); font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--color-coffee);">{{ c.tip }}</span>
+                        <span style="font-size: 12px; color: rgba(58,46,40,0.68);">{{ c.trajanje }}</span>
+                      </div>
+                      <h4 style="margin: 0; font-family: var(--font-newsreader), Georgia, serif; font-weight: 400; font-size: 19px; line-height: 1.25; color: var(--color-forest);">{{ c.naslov }}</h4>
+                      <p style="margin: 0; font-size: 13px; line-height: 1.6; color: rgba(58,46,40,0.65);">{{ c.opis }}</p>
+                      <button type="button" onClick="{{ c.open }}" style="align-self: flex-start; margin-top: auto; padding: 10px 0; border: 0; background: none; font-size: 13.5px; color: var(--color-forest); text-decoration: underline; text-underline-offset: 3px; cursor: pointer;">Otvori →</button>
+                    </div>
+                  </sc-for>
+                </div>
+              </div>
+            </section>
+          </sc-if>
+
+          <sc-if value="{{ modeRezultat }}" hint-placeholder-val="{{ true }}">
+            <section style="margin-top: 12px; animation: komFade .35s ease both;">
+              <div style="padding: 22px 20px; border-radius: 22px; background: rgba(198,213,168,0.28);">
+                <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 10px;">
+                  <img src="assets/kompas-logo.png" alt="" style="width: 34px; height: 34px;">
+                  <h2 style="margin: 0; font-family: var(--font-newsreader), Georgia, serif; font-weight: 400; font-size: clamp(24px, 4.6cqi, 34px); color: var(--color-forest);">Vaš prilagođeni prikaz</h2>
+                </div>
+                <p style="margin: 12px 0 0; max-width: 62ch; font-size: 14.5px; line-height: 1.7; color: rgba(58,46,40,0.78); text-wrap: pretty;">Na osnovu onoga što ste izabrali, ovo su sadržaji koji bi vam sada mogli koristiti. Ovo nije procena ni dijagnoza — vi birate odakle ćete početi.</p>
+                <div style="display: flex; flex-wrap: wrap; gap: 6px; margin-top: 16px;">
+                  <sc-for list="{{ summaryChips }}" as="a" hint-placeholder-count="3">
+                    <button type="button" onClick="{{ a.edit }}" style="display: inline-flex; align-items: center; gap: 6px; padding: 7px 13px; border: 1px solid rgba(46,59,46,0.16); border-radius: 999px; background: rgba(255,255,255,0.6); font-size: 12.5px; color: var(--color-forest); cursor: pointer;">{{ a.label }}<span style="opacity: 0.5;">izmeni</span></button>
+                  </sc-for>
+                </div>
+                <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-top: 18px;">
+                  <button type="button" onClick="{{ editAnswers }}" style="padding: 11px 18px; min-height: 44px; border: 1px solid var(--color-forest); border-radius: 999px; background: transparent; font-size: 13.5px; color: var(--color-forest); cursor: pointer;">Izmeni odgovore</button>
+                  <button type="button" onClick="{{ resetQuiz }}" style="padding: 11px 18px; min-height: 44px; border: 0; border-radius: 999px; background: rgba(255,255,255,0.55); font-size: 13.5px; color: var(--color-forest); cursor: pointer;">Poništi podešavanje</button>
+                </div>
+              </div>
+
+              <sc-for list="{{ rezSections }}" as="sec" hint-placeholder-count="3">
+                <div style="margin-top: 12px; padding: 22px 20px; border-radius: 22px; background: #ffffff;">
+                  <h3 style="margin: 0; font-family: var(--font-newsreader), Georgia, serif; font-weight: 400; font-size: 24px; color: var(--color-forest);">{{ sec.title }}</h3>
+                  <p style="margin: 6px 0 18px; font-size: 13.5px; line-height: 1.6; color: rgba(58,46,40,0.6);">{{ sec.desc }}</p>
+                  <div style="display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(270px, 1fr));">
+                    <sc-for list="{{ sec.items }}" as="c" hint-placeholder-count="3">
+                      <article style="display: flex; flex-direction: column; gap: 10px; padding: 18px; border: 1px solid rgba(58,46,40,0.08); border-radius: 18px; background: #fff;">
+                        <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px;">
+                          <span style="padding: 4px 10px; border-radius: 999px; background: rgba(58,46,40,0.06); font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--color-coffee);">{{ c.tip }}</span>
+                          <span style="font-size: 12px; color: rgba(58,46,40,0.68);">{{ c.trajanje }}</span>
+                          <span style="{{ c.pristupStyle }}">{{ c.pristupLabel }}</span>
+                        </div>
+                        <h4 style="margin: 0; font-family: var(--font-newsreader), Georgia, serif; font-weight: 400; font-size: 20px; line-height: 1.25; color: var(--color-forest);">{{ c.naslov }}</h4>
+                        <p style="margin: 0; font-size: 13px; line-height: 1.6; color: rgba(58,46,40,0.65);">{{ c.opis }}</p>
+                        <sc-if value="{{ c.hasRazlozi }}" hint-placeholder-val="{{ true }}">
+                          <div style="display: flex; flex-wrap: wrap; gap: 6px; padding-top: 4px;">
+                            <span style="font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: rgba(58,46,40,0.7); width: 100%;">Zašto ovo vidite</span>
+                            <sc-for list="{{ c.razlozi }}" as="r" hint-placeholder-count="2">
+                              <span style="padding: 4px 10px; border-radius: 999px; background: rgba(198,213,168,0.3); font-size: 11.5px; color: var(--color-forest);">{{ r.text }}</span>
+                            </sc-for>
+                          </div>
+                        </sc-if>
+                        <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: auto; padding-top: 12px; border-top: 1px solid rgba(58,46,40,0.07);">
+                          <button type="button" onClick="{{ c.open }}" style="padding: 8px 0; border: 0; background: none; font-size: 13.5px; color: var(--color-forest); text-decoration: underline; text-underline-offset: 3px; cursor: pointer;">Otvori →</button>
+                          <span style="margin-left: auto; font-size: 11px; color: rgba(58,46,40,0.7);">Korisno?</span>
+                          <button type="button" onClick="{{ c.up }}" style="{{ c.upStyle }}">Da</button>
+                          <button type="button" onClick="{{ c.down }}" style="{{ c.downStyle }}">Nije mi ovo trebalo</button>
+                        </div>
+                      </article>
+                    </sc-for>
+                  </div>
+                </div>
+              </sc-for>
+
+              <div style="margin-top: 12px; padding: 22px 20px; border-radius: 22px; background: var(--color-forest); color: #f2f5ec;">
+                <p style="margin: 0 0 6px; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: rgba(198,213,168,0.8);">Stručna podrška</p>
+                <h3 style="margin: 0; font-family: var(--font-newsreader), Georgia, serif; font-weight: 400; font-size: 24px;">Kada poželite razgovor</h3>
+                <p style="margin: 10px 0 18px; max-width: 60ch; font-size: 14px; line-height: 1.7; color: rgba(242,245,236,0.78);">Kompas ne bira terapeuta umesto vas. Ako želite, prenosimo samo ono što ste izabrali u obrazac za pronalaženje podrške — i pre toga vam pokažemo šta se tačno prenosi.</p>
+                <div style="display: grid; gap: 8px; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));">
+                  <sc-for list="{{ terapeutiList }}" as="t" hint-placeholder-count="3">
+                    <div style="display: flex; align-items: center; gap: 12px; padding: 14px; border: 1px solid rgba(198,213,168,0.22); border-radius: 16px;">
+                      <span style="display: grid; place-items: center; width: 42px; height: 42px; flex: none; border-radius: 50%; background: rgba(198,213,168,0.24); font-size: 13px; color: #f2f5ec;">{{ t.ini }}</span>
+                      <span style="display: flex; flex-direction: column; gap: 2px;"><span style="font-size: 14.5px;">{{ t.ime }}</span><span style="font-size: 12px; line-height: 1.45; color: rgba(242,245,236,0.68);">{{ t.uloga }}</span></span>
+                    </div>
+                  </sc-for>
+                </div>
+                <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-top: 18px;">
+                  <button type="button" onClick="{{ openHandoff }}" style="padding: 13px 20px; min-height: 48px; border: 0; border-radius: 999px; background: var(--color-meadow); color: #22301f; font-size: 14px; cursor: pointer;">Želim stručnu pomoć</button>
+                  <button type="button" onClick="{{ endExploring }}" style="padding: 13px 20px; min-height: 48px; border: 1px solid rgba(198,213,168,0.35); border-radius: 999px; background: transparent; color: #f2f5ec; font-size: 14px; cursor: pointer;">Završi istraživanje</button>
+                </div>
+                <sc-if value="{{ handoffDone }}" hint-placeholder-val="{{ true }}">
+                  <p style="margin: 16px 0 0; padding: 12px 14px; border-radius: 12px; background: rgba(198,213,168,0.16); font-size: 13px; color: #f2f5ec;">Kontekst je prenet u Pronađi podršku. Tamo možete da ga izmenite ili uklonite pre nego što nastavite.</p>
+                </sc-if>
+              </div>
+            </section>
+          </sc-if>
+
+        </main>
+      </sc-if>
+
+      <sc-if value="{{ atOblasti }}" hint-placeholder-val="{{ true }}">
+        <main data-screen-label="/kompas/oblasti" style="padding: 0 12px;">
+          <section style="margin-top: 12px; padding: 104px 20px 26px; border-radius: 24px; background: #ffffff;">
+            <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 14px; font-size: 12px; color: rgba(58,46,40,0.65);">
+              <button type="button" onClick="{{ goKompas }}" style="border: 0; background: none; padding: 0; font-size: 12px; color: rgba(58,46,40,0.65); cursor: pointer;">Kompas</button><span>/</span><span style="color: var(--color-forest);">Oblasti</span>
+            </div>
+            <h1 style="margin: 0; font-family: var(--font-newsreader), Georgia, serif; font-weight: 400; font-size: clamp(30px, 6.6cqi, 50px); line-height: 1.08; color: var(--color-forest);">Oblasti</h1>
+            <p style="margin: 14px 0 0; max-width: 58ch; font-size: 15px; line-height: 1.7; color: rgba(58,46,40,0.72); text-wrap: pretty;">Sve oblasti koje su trenutno objavljene. Redosled dolazi iz registra — nije rangiranje po važnosti. Izaberite ono što vam je najbliže, ili pogledajte pojedinačne teme.</p>
+            <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-top: 20px;">
+              <button type="button" onClick="{{ goTeme }}" style="padding: 12px 20px; min-height: 46px; border: 1px solid rgba(58,46,40,0.18); border-radius: 999px; background: transparent; font-size: 14px; color: var(--color-forest); cursor: pointer;">Pogledaj sve teme</button>
+              <button type="button" onClick="{{ startQuiz }}" style="padding: 12px 20px; min-height: 46px; border: 0; border-radius: 999px; background: var(--color-forest); color: #f2f5ec; font-size: 14px; cursor: pointer;">Pokreni Kompas</button>
+            </div>
+          </section>
+          <section style="display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); margin-top: 12px;">
+            <sc-for list="{{ oblastiCards }}" as="o" hint-placeholder-count="10">
+              <article style="display: flex; flex-direction: column; gap: 12px; padding: 20px; border-radius: 20px; background: #ffffff;">
+                <div style="display: flex; align-items: center; justify-content: space-between;">
+                  <span style="font-family: var(--font-newsreader), Georgia, serif; font-style: italic; font-size: 13px; color: var(--color-sage);">{{ o.num }}</span>
+                  <button type="button" onClick="{{ o.open }}" aria-label="Otvori oblast" style="display: grid; place-items: center; width: 34px; height: 34px; border: 1px solid rgba(58,46,40,0.14); border-radius: 50%; background: transparent; font-size: 13px; color: var(--color-forest); cursor: pointer;">→</button>
+                </div>
+                <h2 style="margin: 0; font-family: var(--font-newsreader), Georgia, serif; font-weight: 400; font-size: 23px; line-height: 1.2; color: var(--color-forest);">{{ o.label }}</h2>
+                <p style="margin: 0; font-size: 13.5px; line-height: 1.6; color: rgba(58,46,40,0.65);">{{ o.desc }}</p>
+                <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+                  <sc-for list="{{ o.teme }}" as="t" hint-placeholder-count="3">
+                    <button type="button" onClick="{{ t.open }}" style="padding: 6px 12px; border: 1px solid rgba(58,46,40,0.12); border-radius: 999px; background: transparent; font-size: 12px; color: rgba(58,46,40,0.75); cursor: pointer;">{{ t.label }}</button>
+                  </sc-for>
+                </div>
+                <span style="margin-top: auto; padding-top: 10px; border-top: 1px solid rgba(58,46,40,0.07); font-size: 11.5px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--color-sage);">{{ o.meta }}</span>
+              </article>
+            </sc-for>
+          </section>
+        </main>
+      </sc-if>
+
+      <sc-if value="{{ atTeme }}" hint-placeholder-val="{{ true }}">
+        <main data-screen-label="/kompas/teme" style="padding: 0 12px;">
+          <section style="margin-top: 12px; padding: 104px 20px 26px; border-radius: 24px; background: #ffffff;">
+            <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 14px; font-size: 12px; color: rgba(58,46,40,0.65);">
+              <button type="button" onClick="{{ goKompas }}" style="border: 0; background: none; padding: 0; font-size: 12px; color: rgba(58,46,40,0.65); cursor: pointer;">Kompas</button><span>/</span><span style="color: var(--color-forest);">Teme</span>
+            </div>
+            <h1 style="margin: 0; font-family: var(--font-newsreader), Georgia, serif; font-weight: 400; font-size: clamp(30px, 6.6cqi, 50px); line-height: 1.08; color: var(--color-forest);">Teme</h1>
+            <p style="margin: 14px 0 0; max-width: 58ch; font-size: 15px; line-height: 1.7; color: rgba(58,46,40,0.72); text-wrap: pretty;">Pretražite objavljene teme po nazivu ili oblasti. Pretraga radi lokalno, nad već učitanim javnim skupom.</p>
+            <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 20px;">
+              <input type="search" value="{{ temeQuery }}" onInput="{{ onTemeQuery }}" placeholder="Npr. granice, panika, roditeljstvo…" aria-label="Pretraga tema" style="flex: 1 1 240px; min-width: 200px; min-height: 48px; padding: 13px 18px; border: 1px solid rgba(58,46,40,0.16); border-radius: 999px; background: #fff; font-size: 14.5px; color: var(--color-coffee); outline: none;">
+              <button type="button" onClick="{{ clearQuery }}" style="padding: 13px 18px; min-height: 48px; border: 1px solid rgba(58,46,40,0.14); border-radius: 999px; background: transparent; font-size: 13.5px; color: var(--color-forest); cursor: pointer;">Poništi</button>
+              <span style="font-size: 12.5px; color: rgba(58,46,40,0.68);">{{ temeCount }}</span>
+            </div>
+          </section>
+          <section style="display: grid; gap: 8px; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); margin-top: 12px;">
+            <sc-for list="{{ temeResults }}" as="t" hint-placeholder-count="8">
+              <div style="display: flex; flex-direction: column; gap: 8px; padding: 18px; border-radius: 18px; background: #ffffff;">
+                <button type="button" onClick="{{ t.openOblast }}" style="align-self: flex-start; padding: 4px 10px; border: 0; border-radius: 999px; background: rgba(198,213,168,0.3); font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--color-forest); cursor: pointer;">{{ t.oblast }}</button>
+                <button type="button" onClick="{{ t.open }}" style="align-self: flex-start; padding: 0; border: 0; background: none; font-family: var(--font-newsreader), Georgia, serif; font-size: 20px; line-height: 1.25; text-align: left; color: var(--color-forest); cursor: pointer;">{{ t.label }}</button>
+                <span style="font-size: 12px; color: rgba(58,46,40,0.65);">{{ t.count }}</span>
+              </div>
+            </sc-for>
+            <sc-if value="{{ temeEmpty }}" hint-placeholder-val="{{ true }}">
+              <div style="grid-column: 1 / -1; padding: 26px 20px; border: 1px dashed rgba(58,46,40,0.2); border-radius: 18px; background: rgba(255,255,255,0.6); text-align: center;">
+                <p style="margin: 0 0 12px; font-size: 14.5px; color: var(--color-forest);">Nema tema koje odgovaraju pretrazi.</p>
+                <button type="button" onClick="{{ clearQuery }}" style="padding: 11px 18px; min-height: 44px; border: 1px solid rgba(58,46,40,0.16); border-radius: 999px; background: transparent; font-size: 13.5px; color: var(--color-forest); cursor: pointer;">Prikaži sve teme</button>
+              </div>
+            </sc-if>
+          </section>
+        </main>
+      </sc-if>
+
+      <sc-if value="{{ atOblast }}" hint-placeholder-val="{{ true }}">
+        <main data-screen-label="/kompas/oblast/[slug]" style="padding: 0 12px;">
+          <section style="position: relative; overflow: hidden; margin-top: 12px; padding: 104px 20px 26px; border-radius: 24px; background: rgba(198,213,168,0.3);">
+            <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 14px; font-size: 12px; color: rgba(46,59,46,0.7);">
+              <button type="button" onClick="{{ goKompas }}" style="border: 0; background: none; padding: 0; font-size: 12px; color: rgba(46,59,46,0.7); cursor: pointer;">Kompas</button><span>/</span>
+              <button type="button" onClick="{{ goOblasti }}" style="border: 0; background: none; padding: 0; font-size: 12px; color: rgba(46,59,46,0.7); cursor: pointer;">Oblasti</button><span>/</span>
+              <span style="color: var(--color-forest);">{{ oblastPage.label }}</span>
+            </div>
+            <p style="margin: 0 0 10px; font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--color-forest-soft);">Oblast</p>
+            <h1 style="margin: 0; font-family: var(--font-newsreader), Georgia, serif; font-weight: 400; font-size: clamp(30px, 6.6cqi, 50px); line-height: 1.08; color: var(--color-forest);">{{ oblastPage.label }}</h1>
+            <p style="margin: 14px 0 0; max-width: 56ch; font-size: 15px; line-height: 1.7; color: rgba(36,49,31,0.78); text-wrap: pretty;">{{ oblastPage.desc }}</p>
+            <p style="margin: 16px 0 0; font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; color: rgba(46,59,46,0.72);">{{ oblastPage.meta }}</p>
+          </section>
+
+          <section style="margin-top: 12px; padding: 22px 20px; border-radius: 22px; background: #ffffff;">
+            <h2 style="margin: 0 0 16px; font-family: var(--font-newsreader), Georgia, serif; font-weight: 400; font-size: 24px; color: var(--color-forest);">Teme u ovoj oblasti</h2>
+            <div style="display: grid; gap: 8px; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));">
+              <sc-for list="{{ oblastTeme }}" as="t" hint-placeholder-count="3">
+                <button type="button" onClick="{{ t.open }}" style="display: flex; flex-direction: column; gap: 6px; padding: 16px; border: 1px solid rgba(58,46,40,0.1); border-radius: 16px; background: #fff; text-align: left; cursor: pointer;">
+                  <span style="font-family: var(--font-newsreader), Georgia, serif; font-size: 19px; color: var(--color-forest);">{{ t.label }}</span>
+                  <span style="font-size: 13px; line-height: 1.55; color: rgba(58,46,40,0.62);">{{ t.desc }}</span>
+                </button>
+              </sc-for>
+            </div>
+          </section>
+
+          <section style="margin-top: 12px; padding: 22px 20px; border-radius: 22px; background: #ffffff;">
+            <h2 style="margin: 0 0 16px; font-family: var(--font-newsreader), Georgia, serif; font-weight: 400; font-size: 24px; color: var(--color-forest);">Objavljeni sadržaji</h2>
+            <sc-if value="{{ oblastHasSadrzaj }}" hint-placeholder-val="{{ true }}">
+              <div style="display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));">
+                <sc-for list="{{ oblastSadrzaj }}" as="c" hint-placeholder-count="4">
+                  <article style="display: flex; flex-direction: column; gap: 10px; padding: 18px; border: 1px solid rgba(58,46,40,0.08); border-radius: 18px; background: #fff;">
+                    <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px;">
+                      <span style="padding: 4px 10px; border-radius: 999px; background: rgba(58,46,40,0.06); font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--color-coffee);">{{ c.tip }}</span>
+                      <span style="font-size: 12px; color: rgba(58,46,40,0.68);">{{ c.trajanje }}</span>
+                      <span style="{{ c.pristupStyle }}">{{ c.pristupLabel }}</span>
+                    </div>
+                    <h3 style="margin: 0; font-family: var(--font-newsreader), Georgia, serif; font-weight: 400; font-size: 19px; line-height: 1.25; color: var(--color-forest);">{{ c.naslov }}</h3>
+                    <p style="margin: 0; font-size: 13px; line-height: 1.6; color: rgba(58,46,40,0.65);">{{ c.opis }}</p>
+                    <button type="button" onClick="{{ c.open }}" style="align-self: flex-start; margin-top: auto; padding: 8px 0; border: 0; background: none; font-size: 13.5px; color: var(--color-forest); text-decoration: underline; text-underline-offset: 3px; cursor: pointer;">Otvori →</button>
+                  </article>
+                </sc-for>
+              </div>
+            </sc-if>
+            <sc-if value="{{ oblastNoSadrzaj }}" hint-placeholder-val="{{ false }}">
+              <div style="padding: 22px; border: 1px dashed rgba(58,46,40,0.2); border-radius: 18px; background: rgba(58,46,40,0.03);">
+                <p style="margin: 0 0 8px; font-size: 14.5px; color: var(--color-forest);">Za ovu oblast još nema objavljenih sadržaja.</p>
+                <p style="margin: 0; font-size: 13px; line-height: 1.6; color: rgba(58,46,40,0.6);">Prikazuju se čim budu objavljeni u registru. U međuvremenu pogledajte srodne oblasti ili zakažite razgovor.</p>
+              </div>
+            </sc-if>
+          </section>
+
+          <section style="display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 12px; padding: 20px; border-radius: 22px; background: rgba(255,255,255,0.6);">
+            <span style="font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: rgba(58,46,40,0.68); width: 100%;">Srodne oblasti</span>
+            <sc-for list="{{ oblastSusedne }}" as="o" hint-placeholder-count="4">
+              <button type="button" onClick="{{ o.open }}" style="padding: 10px 16px; min-height: 44px; border: 1px solid rgba(58,46,40,0.12); border-radius: 999px; background: #fff; font-size: 13.5px; color: var(--color-forest); cursor: pointer;">{{ o.label }}</button>
+            </sc-for>
+            <button type="button" onClick="{{ openHandoff }}" style="margin-left: auto; padding: 12px 18px; min-height: 46px; border: 1px solid var(--color-forest); border-radius: 999px; background: transparent; font-size: 13.5px; color: var(--color-forest); cursor: pointer;">Želim stručnu pomoć</button>
+          </section>
+        </main>
+      </sc-if>
+
+      <sc-if value="{{ atTema }}" hint-placeholder-val="{{ true }}">
+        <main data-screen-label="/kompas/tema/[slug]" style="padding: 0 12px;">
+          <section style="margin-top: 12px; padding: 104px 20px 26px; border-radius: 24px; background: #ffffff;">
+            <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 14px; font-size: 12px; color: rgba(58,46,40,0.65);">
+              <button type="button" onClick="{{ goKompas }}" style="border: 0; background: none; padding: 0; font-size: 12px; color: rgba(58,46,40,0.65); cursor: pointer;">Kompas</button><span>/</span>
+              <button type="button" onClick="{{ goOblasti }}" style="border: 0; background: none; padding: 0; font-size: 12px; color: rgba(58,46,40,0.65); cursor: pointer;">Oblasti</button><span>/</span>
+              <button type="button" onClick="{{ openTemaOblast }}" style="border: 0; background: none; padding: 0; font-size: 12px; color: rgba(58,46,40,0.65); cursor: pointer;">{{ temaPage.oblastLabel }}</button><span>/</span>
+              <span style="color: var(--color-forest);">{{ temaPage.label }}</span>
+            </div>
+            <p style="margin: 0 0 10px; font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--color-sage);">Tema</p>
+            <h1 style="margin: 0; font-family: var(--font-newsreader), Georgia, serif; font-weight: 400; font-size: clamp(30px, 6.6cqi, 50px); line-height: 1.08; color: var(--color-forest);">{{ temaPage.label }}</h1>
+            <p style="margin: 14px 0 0; max-width: 56ch; font-size: 15px; line-height: 1.7; color: rgba(58,46,40,0.72); text-wrap: pretty;">{{ temaPage.desc }}</p>
+            <p style="margin: 16px 0 0; font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; color: rgba(58,46,40,0.65);">{{ temaPage.meta }}</p>
+          </section>
+
+          <section style="margin-top: 12px; padding: 22px 20px; border-radius: 22px; background: #ffffff;">
+            <h2 style="margin: 0 0 16px; font-family: var(--font-newsreader), Georgia, serif; font-weight: 400; font-size: 24px; color: var(--color-forest);">Sadržaji uz ovu temu</h2>
+            <sc-if value="{{ temaHasSadrzaj }}" hint-placeholder-val="{{ true }}">
+              <div style="display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));">
+                <sc-for list="{{ temaSadrzaj }}" as="c" hint-placeholder-count="3">
+                  <article style="display: flex; flex-direction: column; gap: 10px; padding: 18px; border: 1px solid rgba(58,46,40,0.08); border-radius: 18px; background: #fff;">
+                    <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px;">
+                      <span style="padding: 4px 10px; border-radius: 999px; background: rgba(58,46,40,0.06); font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--color-coffee);">{{ c.tip }}</span>
+                      <span style="font-size: 12px; color: rgba(58,46,40,0.68);">{{ c.trajanje }}</span>
+                      <span style="{{ c.pristupStyle }}">{{ c.pristupLabel }}</span>
+                    </div>
+                    <h3 style="margin: 0; font-family: var(--font-newsreader), Georgia, serif; font-weight: 400; font-size: 19px; line-height: 1.25; color: var(--color-forest);">{{ c.naslov }}</h3>
+                    <p style="margin: 0; font-size: 13px; line-height: 1.6; color: rgba(58,46,40,0.65);">{{ c.opis }}</p>
+                    <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: auto; padding-top: 12px; border-top: 1px solid rgba(58,46,40,0.07);">
+                      <span style="font-size: 11px; color: rgba(58,46,40,0.7);">Korisno?</span>
+                      <button type="button" onClick="{{ c.up }}" style="{{ c.upStyle }}">Da</button>
+                      <button type="button" onClick="{{ c.down }}" style="{{ c.downStyle }}">Nije mi ovo trebalo</button>
+                    </div>
+                  </article>
+                </sc-for>
+              </div>
+            </sc-if>
+            <sc-if value="{{ temaNoSadrzaj }}" hint-placeholder-val="{{ false }}">
+              <div style="padding: 22px; border: 1px dashed rgba(58,46,40,0.2); border-radius: 18px; background: rgba(58,46,40,0.03);">
+                <p style="margin: 0 0 8px; font-size: 14.5px; color: var(--color-forest);">Za ovu temu još nema objavljenih sadržaja.</p>
+                <p style="margin: 0; font-size: 13px; line-height: 1.6; color: rgba(58,46,40,0.6);">Pogledajte druge teme u oblasti ili zatražite stručnu podršku.</p>
+              </div>
+            </sc-if>
+          </section>
+
+          <section style="display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 12px; padding: 20px; border-radius: 22px; background: rgba(255,255,255,0.6);">
+            <span style="font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: rgba(58,46,40,0.68); width: 100%;">Druge teme u oblasti</span>
+            <sc-for list="{{ temaRelated }}" as="t" hint-placeholder-count="3">
+              <button type="button" onClick="{{ t.open }}" style="padding: 10px 16px; min-height: 44px; border: 1px solid rgba(58,46,40,0.12); border-radius: 999px; background: #fff; font-size: 13.5px; color: var(--color-forest); cursor: pointer;">{{ t.label }}</button>
+            </sc-for>
+            <button type="button" onClick="{{ openHandoff }}" style="margin-left: auto; padding: 12px 18px; min-height: 46px; border: 1px solid var(--color-forest); border-radius: 999px; background: transparent; font-size: 13.5px; color: var(--color-forest); cursor: pointer;">Želim stručnu pomoć</button>
+          </section>
+        </main>
+      </sc-if>
+
+      <sc-if value="{{ atAdmin }}" hint-placeholder-val="{{ true }}">
+        <main data-screen-label="Brzi unos" style="padding: 92px 12px 0;">
+          <section style="padding: 22px 20px; border-radius: 22px; background: var(--color-panel-canvas);">
+            <div style="display: flex; flex-wrap: wrap; align-items: flex-start; gap: 12px;">
+              <div style="flex: 1 1 260px;">
+                <div style="margin: 0 0 8px;"><x-import component-from-global-scope="PsihointegritetUI.Eyebrow" tone="sage" hint-size="auto,16px">Radni prostor · Kompas registar</x-import></div>
+                <h1 style="margin: 0; font-family: var(--font-newsreader), Georgia, serif; font-weight: 400; font-size: clamp(26px, 5cqi, 40px); line-height: 1.1; color: var(--color-forest);">Brzi unos</h1>
+                <p style="margin: 10px 0 0; max-width: 56ch; font-size: 14px; line-height: 1.65; color: rgba(58,46,40,0.7);">Šest koraka do nove vrednosti u registru. Isti registar, validacija i lifecycle kao u naprednom editoru — samo bez skrolovanja kroz sva polja.</p>
+              </div>
+              <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 8px;">
+                <sc-if value="{{ admSaved }}" hint-placeholder-val="{{ true }}">
+                  <x-import component-from-global-scope="PsihointegritetUI.StatusBadge" tone="ok" hint-size="auto,26px">Radna verzija</x-import>
+                </sc-if>
+                <sc-if value="{{ admNotSaved }}" hint-placeholder-val="{{ false }}">
+                  <x-import component-from-global-scope="PsihointegritetUI.StatusBadge" tone="neutral" hint-size="auto,26px">Nije sačuvano</x-import>
+                </sc-if>
+                <button type="button" style="padding: 10px 16px; min-height: 44px; border: 1px solid rgba(58,46,40,0.16); border-radius: 999px; background: transparent; font-size: 13px; color: var(--color-forest); cursor: pointer;">Napredno uređivanje</button>
+              </div>
+            </div>
+
+            <div style="display: flex; flex-wrap: wrap; gap: 6px; margin-top: 20px;">
+              <sc-for list="{{ adminSteps }}" as="st" hint-placeholder-count="6">
+                <button type="button" onClick="{{ st.go }}" style="{{ st.style }}"><span style="opacity: 0.6;">{{ st.num }}</span>{{ st.label }}</button>
+              </sc-for>
+            </div>
+          </section>
+
+          <section style="margin-top: 12px; padding: 22px 20px; border-radius: 22px; background: #ffffff;">
+            <div style="display: flex; align-items: baseline; gap: 10px; margin-bottom: 18px;">
+              <h2 style="margin: 0; font-family: var(--font-newsreader), Georgia, serif; font-weight: 400; font-size: 25px; color: var(--color-forest);">{{ adminStepTitle }}</h2>
+              <span style="margin-left: auto; font-size: 12px; letter-spacing: 0.08em; color: rgba(58,46,40,0.68);">{{ adminStepNum }}</span>
+            </div>
+
+            <sc-if value="{{ admStep0 }}" hint-placeholder-val="{{ true }}">
+              <div style="display: grid; gap: 8px; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));">
+                <sc-for list="{{ admKinds }}" as="k" hint-placeholder-count="4">
+                  <button type="button" onClick="{{ k.select }}" style="{{ k.style }}"><span style="font-size: 16px;">{{ k.label }}</span><span style="font-size: 12.5px; line-height: 1.5; color: rgba(58,46,40,0.6);">{{ k.note }}</span></button>
+                </sc-for>
+              </div>
+              <p style="margin: 16px 0 0; font-size: 12.5px; line-height: 1.6; color: rgba(58,46,40,0.68);">Nove vrednosti ulaze kao radna verzija. Objavljuje ih tek ovlašćeni tim kroz postojeći lifecycle.</p>
+            </sc-if>
+
+            <sc-if value="{{ admStep1 }}" hint-placeholder-val="{{ false }}">
+              <div style="display: grid; gap: 16px;">
+                <label style="display: flex; flex-direction: column; gap: 7px; font-size: 12.5px; color: rgba(58,46,40,0.65);">Javni naziv
+                  <input type="text" value="{{ adm.naziv }}" onInput="{{ onAdmNaziv }}" placeholder="npr. Strah od javnog nastupa" style="min-height: 48px; padding: 13px 16px; border: 1px solid rgba(58,46,40,0.16); border-radius: 14px; background: #fff; font-size: 15px; color: var(--color-coffee); outline: none;">
+                </label>
+                <label style="display: flex; flex-direction: column; gap: 7px; font-size: 12.5px; color: rgba(58,46,40,0.65);">Stable ID
+                  <input type="text" value="{{ adm.stableId }}" onInput="{{ onAdmId }}" disabled="{{ admIdDisabled }}" placeholder="strah-od-javnog-nastupa" style="min-height: 48px; padding: 13px 16px; border: 1px solid rgba(58,46,40,0.16); border-radius: 14px; background: rgba(58,46,40,0.03); font-size: 15px; font-family: ui-monospace, monospace; color: var(--color-coffee); outline: none;">
+                  <span style="font-size: 12px; color: rgba(58,46,40,0.65);">{{ admIdLockNote }}</span>
+                </label>
+                <sc-if value="{{ admHasError }}" hint-placeholder-val="{{ false }}">
+                  <p style="margin: 0; padding: 12px 14px; border: 1px solid rgba(179,64,46,0.3); border-radius: 12px; background: rgba(179,64,46,0.07); font-size: 13px; color: #8e3325;">{{ adm.error }}</p>
+                </sc-if>
+                <label style="display: flex; flex-direction: column; gap: 7px; font-size: 12.5px; color: rgba(58,46,40,0.65);">Kratak javni opis
+                  <textarea onInput="{{ onAdmOpis }}" value="{{ adm.opis }}" rows="3" placeholder="Jedna do dve rečenice koje korisnik vidi na javnoj stranici." style="padding: 13px 16px; border: 1px solid rgba(58,46,40,0.16); border-radius: 14px; background: #fff; font-size: 14.5px; line-height: 1.6; color: var(--color-coffee); outline: none; resize: vertical;"></textarea>
+                  <span style="font-size: 12px; color: rgba(58,46,40,0.65);">{{ admOpisCount }} — duži opis dobija upozorenje u Content Health-u, ne skraćuje se sam.</span>
+                </label>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ admStep2 }}" hint-placeholder-val="{{ false }}">
+              <div style="display: grid; gap: 18px;">
+                <div>
+                  <p style="margin: 0 0 8px; font-size: 12.5px; color: rgba(58,46,40,0.65);">Nadređena oblast</p>
+                  <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+                    <sc-for list="{{ admParents }}" as="p" hint-placeholder-count="10">
+                      <button type="button" onClick="{{ p.select }}" style="{{ p.style }}">{{ p.label }}</button>
+                    </sc-for>
+                  </div>
+                </div>
+                <label style="display: flex; flex-direction: column; gap: 7px; font-size: 12.5px; color: rgba(58,46,40,0.65);">Sinonimi (za pretragu i aliase)
+                  <input type="text" value="{{ adm.sinonimi }}" onInput="{{ onAdmSinonimi }}" placeholder="trema, strah od nastupa" style="min-height: 48px; padding: 13px 16px; border: 1px solid rgba(58,46,40,0.16); border-radius: 14px; background: #fff; font-size: 15px; color: var(--color-coffee); outline: none;">
+                </label>
+                <label style="display: flex; flex-direction: column; gap: 7px; max-width: 220px; font-size: 12.5px; color: rgba(58,46,40,0.65);">Redosled u registru
+                  <input type="number" value="{{ adm.red }}" onInput="{{ onAdmRed }}" style="min-height: 48px; padding: 13px 16px; border: 1px solid rgba(58,46,40,0.16); border-radius: 14px; background: #fff; font-size: 15px; color: var(--color-coffee); outline: none;">
+                </label>
+                <div>
+                  <p style="margin: 0 0 8px; font-size: 12.5px; color: rgba(58,46,40,0.65);">Srodne teme</p>
+                  <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+                    <sc-for list="{{ admRelated }}" as="r" hint-placeholder-count="3">
+                      <button type="button" onClick="{{ r.toggle }}" style="{{ r.style }}">{{ r.label }}</button>
+                    </sc-for>
+                  </div>
+                </div>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ admStep3 }}" hint-placeholder-val="{{ false }}">
+              <div style="display: grid; gap: 16px;">
+                <p style="margin: 0; font-size: 13.5px; line-height: 1.65; color: rgba(58,46,40,0.7);">Povežite postojeći objavljeni sadržaj preko discovery metapodataka. Novi edukativni sadržaj se i dalje kreira u CMS-u — ovde se ne otvara paralelni editor.</p>
+                <div style="display: grid; gap: 6px;">
+                  <sc-for list="{{ admVeze }}" as="v" hint-placeholder-count="6">
+                    <button type="button" onClick="{{ v.toggle }}" style="{{ v.style }}">
+                      <span style="flex: none; display: grid; place-items: center; width: 20px; height: 20px; border: 1px solid rgba(58,46,40,0.25); border-radius: 6px; font-size: 11px; color: var(--color-forest);">{{ v.mark }}</span>
+                      <span style="display: flex; flex-direction: column; gap: 2px;">{{ v.label }}<span style="font-size: 11.5px; letter-spacing: 0.06em; text-transform: uppercase; color: rgba(58,46,40,0.68);">{{ v.tip }}</span></span>
+                    </button>
+                  </sc-for>
+                </div>
+                <p style="margin: 0; padding: 12px 14px; border-radius: 12px; background: rgba(209,164,140,0.18); font-size: 12.5px; line-height: 1.6; color: var(--color-coffee);">Za potpuno nov edukativni unos otvara se CMS sa unapred izabranom oblašću i temom.</p>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ admStep4 }}" hint-placeholder-val="{{ false }}">
+              <div style="display: grid; gap: 16px;">
+                <sc-if value="{{ admSlugBlocked }}" hint-placeholder-val="{{ false }}">
+                  <p style="margin: 0; padding: 14px; border: 1px dashed rgba(58,46,40,0.22); border-radius: 14px; font-size: 13.5px; line-height: 1.6; color: rgba(58,46,40,0.7);">Ruta se predlaže tek kada postoji term ID. Sačuvajte radnu verziju u koraku „Identitet”.</p>
+                </sc-if>
+                <sc-if value="{{ admSlugReady }}" hint-placeholder-val="{{ false }}">
+                  <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 10px;">
+                    <button type="button" onClick="{{ adminSuggestSlug }}" style="padding: 12px 18px; min-height: 46px; border: 1px solid var(--color-forest); border-radius: 999px; background: transparent; font-size: 13.5px; color: var(--color-forest); cursor: pointer;">Predloži rutu</button>
+                    <code style="padding: 10px 14px; border-radius: 12px; background: rgba(58,46,40,0.05); font-size: 13.5px; color: var(--color-coffee);">{{ admSlugPath }}</code>
+                  </div>
+                  <sc-if value="{{ admSlugSuggested }}" hint-placeholder-val="{{ false }}">
+                    <button type="button" onClick="{{ adminConfirmSlug }}" style="justify-self: start; padding: 12px 20px; min-height: 46px; border: 0; border-radius: 999px; background: var(--color-forest); color: #f2f5ec; font-size: 13.5px; cursor: pointer;">Potvrdi rutu</button>
+                  </sc-if>
+                  <sc-if value="{{ admSlugConfirmed }}" hint-placeholder-val="{{ false }}">
+                    <p style="margin: 0; padding: 12px 14px; border-radius: 12px; background: rgba(198,213,168,0.32); font-size: 13px; color: var(--color-forest);">Ruta je potvrđena i upisana kao canonicalPath. Stariji slug ostaje alias sa 308 redirekcijom.</p>
+                  </sc-if>
+                </sc-if>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ admStep5 }}" hint-placeholder-val="{{ false }}">
+              <div style="display: grid; gap: 14px;">
+                <div style="display: grid; gap: 1px; border-radius: 16px; overflow: hidden; background: rgba(58,46,40,0.08);">
+                  <sc-for list="{{ admSummary }}" as="row" hint-placeholder-count="8">
+                    <div style="display: flex; flex-wrap: wrap; gap: 8px; padding: 13px 16px; background: #fff;">
+                      <span style="flex: 1 1 160px; font-size: 12.5px; color: rgba(58,46,40,0.68);">{{ row.k }}</span>
+                      <span style="flex: 2 1 200px; font-size: 13.5px; color: var(--color-forest);">{{ row.v }}</span>
+                    </div>
+                  </sc-for>
+                </div>
+                <sc-if value="{{ admSent }}" hint-placeholder-val="{{ false }}">
+                  <p style="margin: 0; padding: 14px; border-radius: 14px; background: rgba(198,213,168,0.32); font-size: 13.5px; color: var(--color-forest);">Poslato na pregled. Vrednost ostaje nevidljiva na javnim stranicama dok je tim ne odobri i objavi.</p>
+                </sc-if>
+                <div style="display: flex; flex-wrap: wrap; gap: 10px;">
+                  <button type="button" onClick="{{ adminSend }}" style="padding: 13px 20px; min-height: 48px; border: 0; border-radius: 999px; background: var(--color-forest); color: #f2f5ec; font-size: 14px; cursor: pointer;">Pošalji na pregled</button>
+                  <button type="button" style="padding: 13px 20px; min-height: 48px; border: 1px solid rgba(58,46,40,0.16); border-radius: 999px; background: transparent; font-size: 14px; color: var(--color-forest); cursor: pointer;">Otvori u CMS-u</button>
+                  <button type="button" onClick="{{ adminReset }}" style="padding: 13px 20px; min-height: 48px; border: 0; background: none; font-size: 13.5px; color: rgba(58,46,40,0.6); text-decoration: underline; text-underline-offset: 3px; cursor: pointer;">Novi unos</button>
+                </div>
+              </div>
+            </sc-if>
+
+            <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 24px; padding-top: 18px; border-top: 1px solid rgba(58,46,40,0.08);">
+              <button type="button" onClick="{{ adminPrev }}" style="padding: 12px 18px; min-height: 46px; border: 1px solid rgba(58,46,40,0.16); border-radius: 999px; background: transparent; font-size: 13.5px; color: var(--color-forest); cursor: pointer;">Nazad</button>
+              <button type="button" onClick="{{ adminSaveDraft }}" style="padding: 12px 18px; min-height: 46px; border: 1px solid var(--color-forest); border-radius: 999px; background: transparent; font-size: 13.5px; color: var(--color-forest); cursor: pointer;">Sačuvaj i izađi</button>
+              <button type="button" onClick="{{ adminSaveDraft }}" style="padding: 12px 20px; min-height: 46px; border: 0; border-radius: 999px; background: var(--color-forest); color: #f2f5ec; font-size: 13.5px; cursor: pointer;">Sačuvaj i nastavi</button>
+              <button type="button" onClick="{{ adminNext }}" style="margin-left: auto; padding: 12px 18px; min-height: 46px; border: 0; background: none; font-size: 13.5px; color: rgba(58,46,40,0.6); text-decoration: underline; text-underline-offset: 3px; cursor: pointer;">Sledeći korak →</button>
+            </div>
+          </section>
+        </main>
+      </sc-if>
+
+      <!--SCREENS-->
+
+      <footer style="margin: 28px 12px 12px; padding: 18px 20px; border-radius: 18px; background: rgba(58,46,40,0.05);">
+        <p style="margin: 0; font-size: 12.5px; line-height: 1.6; color: rgba(58,46,40,0.65);">Kompas je tu da vas usmeri, ne da postavi dijagnozu. Ako osećate da vam je potrebna hitna pomoć, pogledajte <a href="#resursi" style="text-decoration: underline;">resurse i kontakte</a>.</p>
+      </footer>
+
+    </div>
+  </div>
+
+  <sc-if value="{{ modeQuestions }}" hint-placeholder-val="{{ false }}">
+    <div style="position: fixed; left: 0; right: 0; bottom: 0; z-index: 85;">
+      <div role="dialog" aria-label="Kompas pitanja" style="{{ qSheetStyle }}">
+        <div style="display: flex; flex-direction: column; align-items: center; flex: none; padding-top: 6px;">
+          <button type="button" onPointerDown="{{ qDragStart }}" onKeyDown="{{ qDragKey }}" aria-label="Prevucite da promenite visinu" title="Prevucite da promenite visinu" style="{{ qGrabStyle }}"><span style="{{ qGrabBarStyle }}"></span></button>
+        </div>
+        <div style="display: flex; align-items: center; gap: 10px; flex: none; padding: 0 20px 12px;">
+          <img src="assets/kompas-logo.png" alt="" style="width: 26px; height: 26px;">
+          <span style="font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: rgba(58,46,40,0.65);">Kompas</span>
+          <span style="font-size: 12px; color: rgba(58,46,40,0.55);">Pitanja su opciona</span>
+          <span style="margin-left: auto; font-size: 11px; letter-spacing: 0.06em; color: rgba(58,46,40,0.4);">{{ qHeightLabel }}</span>
+          <button type="button" onClick="{{ closeQuiz }}" aria-label="Zatvori pitanja" style="display: grid; place-items: center; width: 38px; height: 38px; flex: none; border: 1px solid rgba(58,46,40,0.14); border-radius: 50%; background: #fff; font-size: 15px; color: var(--color-coffee); cursor: pointer;">✕</button>
+        </div>
+        <div style="display: flex; gap: 5px; flex: none; padding: 0 20px 16px;">
+          <sc-for list="{{ qProgress }}" as="p" hint-placeholder-count="5">
+            <span style="{{ p.style }}"></span>
+          </sc-for>
+        </div>
+
+        <div style="flex: 1 1 auto; overflow: auto; padding: 0 20px 18px;">
+          <div style="max-width: 720px; margin: 0 auto;">
+            <sc-if value="{{ hasAnswered }}" hint-placeholder-val="{{ true }}">
+              <div style="display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 18px;">
+                <sc-for list="{{ answered }}" as="a" hint-placeholder-count="2">
+                  <button type="button" onClick="{{ a.edit }}" style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border: 1px solid rgba(58,46,40,0.12); border-radius: 999px; background: rgba(58,46,40,0.04); font-size: 12px; color: var(--color-forest); cursor: pointer;">{{ a.label }}<span style="opacity: 0.5;">izmeni</span></button>
+                </sc-for>
+              </div>
+            </sc-if>
+
+            <h2 style="margin: 0; font-family: var(--font-newsreader), Georgia, serif; font-weight: 400; font-size: clamp(21px, 2.6vw, 28px); line-height: 1.22; color: var(--color-forest); text-wrap: pretty;">{{ q.title }}</h2>
+            <sc-if value="{{ qHasHint }}" hint-placeholder-val="{{ true }}">
+              <p style="margin: 8px 0 0; font-size: 13.5px; color: rgba(58,46,40,0.6);">{{ q.hint }}</p>
+            </sc-if>
+
+            <div style="display: grid; gap: 8px; margin-top: 18px;">
+              <sc-for list="{{ qOptions }}" as="o" hint-placeholder-count="5">
+                <button type="button" onClick="{{ o.pick }}" style="{{ o.style }}">
+                  <span style="{{ o.markStyle }}">{{ o.mark }}</span>
+                  <span style="display: flex; flex-direction: column; gap: 3px;">{{ o.label }}<span style="font-size: 12.5px; line-height: 1.45; color: rgba(58,46,40,0.68);">{{ o.note }}</span></span>
+                </button>
+              </sc-for>
+            </div>
+
+            <sc-if value="{{ qHasNote }}" hint-placeholder-val="{{ true }}">
+              <p style="margin: 12px 0 0; padding: 10px 14px; border-radius: 12px; background: rgba(209,164,140,0.18); font-size: 12.5px; color: var(--color-coffee);">{{ q.note }}</p>
+            </sc-if>
+          </div>
+        </div>
+
+        <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 10px; flex: none; padding: 14px 20px 18px; border-top: 1px solid rgba(58,46,40,0.1); background: rgba(255,255,255,0.6);">
+          <button type="button" onClick="{{ qPrev }}" style="padding: 13px 18px; min-height: 48px; border: 1px solid rgba(58,46,40,0.16); border-radius: 999px; background: transparent; font-size: 14px; color: var(--color-forest); cursor: pointer;">Nazad</button>
+          <button type="button" onClick="{{ qSkipOne }}" style="padding: 13px 14px; min-height: 48px; border: 0; background: none; font-size: 13.5px; color: rgba(58,46,40,0.6); text-decoration: underline; text-underline-offset: 3px; cursor: pointer;">Preskoči ovo pitanje</button>
+          <button type="button" onClick="{{ qNext }}" style="{{ qNextStyle }}">{{ qNextLabel }}<span>→</span></button>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ feedbackBanner }}" hint-placeholder-val="{{ false }}">
+    <div style="position: fixed; left: 12px; right: 12px; bottom: 14px; z-index: 70; display: flex; justify-content: center; pointer-events: none;">
+      <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; max-width: 640px; padding: 16px 18px; border-radius: 20px; background: #ffffff; box-shadow: 0 24px 64px rgba(58,46,40,0.22); pointer-events: auto; animation: komSheet .3s ease both;">
+        <p style="margin: 0; flex: 1 1 260px; font-size: 13.5px; line-height: 1.6; color: var(--color-forest);">Da li vam je Kompas pomogao da vidite sledeći korak? Anketa traje oko minut i ne utiče na vaše preporuke.</p>
+        <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-left: auto;">
+          <button type="button" onClick="{{ dismissBanner }}" style="padding: 11px 16px; min-height: 44px; border: 0; background: none; font-size: 13.5px; color: rgba(58,46,40,0.6); cursor: pointer;">Ne sada</button>
+          <button type="button" onClick="{{ openFeedback }}" style="padding: 11px 18px; min-height: 44px; border: 0; border-radius: 999px; background: var(--color-forest); color: #f2f5ec; font-size: 13.5px; cursor: pointer;">Da, odvojiću minut</button>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ drawerFeedback }}" hint-placeholder-val="{{ false }}">
+    <div style="position: fixed; inset: 0; z-index: 90; display: flex; align-items: flex-end; justify-content: flex-end;">
+      <div onClick="{{ closeDrawer }}" style="position: absolute; inset: 0; background: rgba(36,28,24,0.42);"></div>
+      <div role="dialog" aria-label="Anketa o Kompasu" style="position: relative; width: 100%; max-width: 470px; max-height: 92vh; overflow: auto; margin: 0 auto; padding: 22px 20px 26px; border-radius: 24px 24px 0 0; background: var(--color-panel-canvas); animation: komSheet .3s ease both;">
+        <div style="display: flex; align-items: flex-start; gap: 12px;">
+          <div>
+            <p style="margin: 0 0 6px; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--color-sage);">Anonimna anketa</p>
+            <h2 style="margin: 0; font-family: var(--font-newsreader), Georgia, serif; font-weight: 400; font-size: 25px; line-height: 1.2; color: var(--color-forest);">Kako vam je bilo sa Kompasom?</h2>
+          </div>
+          <button type="button" onClick="{{ closeDrawer }}" aria-label="Zatvori" style="margin-left: auto; display: grid; place-items: center; width: 38px; height: 38px; flex: none; border: 1px solid rgba(58,46,40,0.14); border-radius: 50%; background: #fff; font-size: 15px; color: var(--color-coffee); cursor: pointer;">✕</button>
+        </div>
+
+        <sc-if value="{{ fbNotSent }}" hint-placeholder-val="{{ true }}">
+          <div style="display: grid; gap: 20px; margin-top: 20px;">
+            <sc-for list="{{ fbGroups }}" as="g" hint-placeholder-count="4">
+              <div>
+                <p style="margin: 0 0 10px; font-size: 14px; line-height: 1.5; color: var(--color-forest);">{{ g.title }}</p>
+                <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+                  <sc-for list="{{ g.opts }}" as="o" hint-placeholder-count="3">
+                    <button type="button" onClick="{{ o.select }}" style="{{ o.style }}">{{ o.label }}</button>
+                  </sc-for>
+                </div>
+              </div>
+            </sc-for>
+            <p style="margin: 0; padding: 12px 14px; border-radius: 12px; background: rgba(209,164,140,0.18); font-size: 12.5px; line-height: 1.6; color: var(--color-coffee);">Molimo vas da ne unosite lične ni zdravstvene podatke. Anketa meri samo iskustvo korišćenja i ne menja vaše preporuke.</p>
+            <button type="button" onClick="{{ sendFb }}" style="padding: 14px 22px; min-height: 50px; border: 0; border-radius: 999px; background: var(--color-forest); color: #f2f5ec; font-size: 14.5px; cursor: pointer;">Pošalji odgovore</button>
+          </div>
+        </sc-if>
+        <sc-if value="{{ fbSent }}" hint-placeholder-val="{{ false }}">
+          <div style="margin-top: 22px; padding: 20px; border-radius: 18px; background: rgba(198,213,168,0.32);">
+            <p style="margin: 0 0 8px; font-family: var(--font-newsreader), Georgia, serif; font-size: 20px; color: var(--color-forest);">Hvala vam.</p>
+            <p style="margin: 0 0 16px; font-size: 13.5px; line-height: 1.6; color: rgba(58,46,40,0.72);">Odgovori su zabeleženi anonimno, pod oznakom compass-experience-v1.</p>
+            <button type="button" onClick="{{ closeDrawer }}" style="padding: 12px 20px; min-height: 46px; border: 0; border-radius: 999px; background: var(--color-forest); color: #f2f5ec; font-size: 13.5px; cursor: pointer;">Zatvori</button>
+          </div>
+        </sc-if>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ drawerHandoff }}" hint-placeholder-val="{{ false }}">
+    <div style="position: fixed; inset: 0; z-index: 90; display: flex; align-items: flex-end; justify-content: flex-end;">
+      <div onClick="{{ closeDrawer }}" style="position: absolute; inset: 0; background: rgba(36,28,24,0.42);"></div>
+      <div role="dialog" aria-label="Prenos konteksta u Pronađi podršku" style="position: relative; width: 100%; max-width: 470px; max-height: 92vh; overflow: auto; margin: 0 auto; padding: 22px 20px 26px; border-radius: 24px 24px 0 0; background: var(--color-panel-canvas); animation: komSheet .3s ease both;">
+        <div style="display: flex; align-items: flex-start; gap: 12px;">
+          <div>
+            <p style="margin: 0 0 6px; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--color-sage);">Stručna podrška</p>
+            <h2 style="margin: 0; font-family: var(--font-newsreader), Georgia, serif; font-weight: 400; font-size: 25px; line-height: 1.2; color: var(--color-forest);">Ovo prenosimo dalje</h2>
+          </div>
+          <button type="button" onClick="{{ closeDrawer }}" aria-label="Zatvori" style="margin-left: auto; display: grid; place-items: center; width: 38px; height: 38px; flex: none; border: 1px solid rgba(58,46,40,0.14); border-radius: 50%; background: #fff; font-size: 15px; color: var(--color-coffee); cursor: pointer;">✕</button>
+        </div>
+        <p style="margin: 16px 0 0; font-size: 13.5px; line-height: 1.65; color: rgba(58,46,40,0.72);">Isključite sve što ne želite da prenesete. Kompas ne bira i ne rangira terapeute — izbor usluge i osobe ostaje u obrascu Pronađi podršku.</p>
+        <div style="display: grid; gap: 6px; margin-top: 16px;">
+          <sc-for list="{{ handoffItems }}" as="h" hint-placeholder-count="4">
+            <button type="button" onClick="{{ h.toggle }}" style="{{ h.style }}"><span style="{{ h.markStyle }}">{{ h.mark }}</span>{{ h.label }}</button>
+          </sc-for>
+        </div>
+        <p style="margin: 16px 0 0; padding: 12px 14px; border-radius: 12px; background: rgba(58,46,40,0.05); font-size: 12.5px; line-height: 1.6; color: rgba(58,46,40,0.65);">Ne prenose se zdravstveni podaci, slobodan tekst ni istorija čitanja.</p>
+        <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-top: 18px;">
+          <button type="button" onClick="{{ confirmHandoff }}" style="padding: 14px 22px; min-height: 50px; border: 0; border-radius: 999px; background: var(--color-forest); color: #f2f5ec; font-size: 14.5px; cursor: pointer;">Potvrdi i nastavi</button>
+          <button type="button" onClick="{{ closeDrawer }}" style="padding: 14px 20px; min-height: 50px; border: 1px solid rgba(58,46,40,0.16); border-radius: 999px; background: transparent; font-size: 14px; color: var(--color-forest); cursor: pointer;">Odustani</button>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1320,&quot;height&quot;:900},&quot;ctaVariant&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;A&quot;,&quot;B&quot;,&quot;C&quot;],&quot;default&quot;:&quot;A&quot;,&quot;tsType&quot;:&quot;'A' | 'B' | 'C'&quot;,&quot;section&quot;:&quot;CTA banner&quot;},&quot;ctaScheme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;coffee&quot;,&quot;forest&quot;,&quot;sage&quot;,&quot;warm&quot;,&quot;cream&quot;],&quot;default&quot;:&quot;coffee&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;CTA banner&quot;},&quot;startViewport&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;mobile&quot;,&quot;desktop&quot;],&quot;default&quot;:&quot;mobile&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Prikaz&quot;},&quot;showChrome&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Prikaz&quot;}}">
+const OBLASTI = [
+  { slug: 'anksioznost', label: 'Anksioznost', desc: 'Napetost, briga i strah koji se vraćaju.', teme: [
+    { slug: 'napadi-panike', label: 'Napadi panike' },
+    { slug: 'socijalna-anksioznost', label: 'Socijalna anksioznost' },
+    { slug: 'stalna-zabrinutost', label: 'Stalna zabrinutost' } ] },
+  { slug: 'stres-i-burnout', label: 'Stres i burnout', desc: 'Kada iscrpljenost postane svakodnevica.', teme: [
+    { slug: 'hronicni-stres', label: 'Hronični stres' },
+    { slug: 'burnout-na-radu', label: 'Burnout na radu' },
+    { slug: 'napetost-u-telu', label: 'Napetost u telu' } ] },
+  { slug: 'depresivnost-i-energija', label: 'Depresivnost i gubitak energije', desc: 'Kada volja i energija dugo ne vraćaju.', teme: [
+    { slug: 'bez-energije', label: 'Bez energije' },
+    { slug: 'izgubljena-motivacija', label: 'Izgubljena motivacija' } ] },
+  { slug: 'emocionalna-regulacija', label: 'Emocionalna regulacija', desc: 'Intenzivne emocije i način na koji ih nosimo.', teme: [
+    { slug: 'intenzivne-emocije', label: 'Intenzivne emocije' },
+    { slug: 'ljutnja', label: 'Ljutnja' },
+    { slug: 'samosaosecanje', label: 'Samosaosećanje' } ] },
+  { slug: 'samopouzdanje-i-granice', label: 'Samopouzdanje i granice', desc: 'Jasnije zauzimanje za sebe, bez osećaja krivice.', teme: [
+    { slug: 'postavljanje-granica', label: 'Postavljanje granica' },
+    { slug: 'osecaj-krivice', label: 'Osećaj krivice' },
+    { slug: 'samopostovanje', label: 'Samopoštovanje' } ] },
+  { slug: 'partnerski-odnosi', label: 'Partnerski odnosi', desc: 'Komunikacija, bliskost i faze kroz koje odnos prolazi.', teme: [
+    { slug: 'komunikacija-u-vezi', label: 'Komunikacija u vezi' },
+    { slug: 'konflikti', label: 'Ponavljajući konflikti' },
+    { slug: 'bliskost-i-poverenje', label: 'Bliskost i poverenje' } ] },
+  { slug: 'roditeljstvo', label: 'Roditeljstvo', desc: 'Podrška u izazovima roditeljske uloge.', teme: [
+    { slug: 'roditeljski-stres', label: 'Roditeljski stres' },
+    { slug: 'granice-sa-decom', label: 'Granice sa decom' },
+    { slug: 'podrska-adolescentu', label: 'Podrška adolescentu' } ] },
+  { slug: 'tugovanje-i-gubitak', label: 'Tugovanje i gubitak', desc: 'Gubitak, rastanak i teški životni periodi.', teme: [
+    { slug: 'gubitak-bliznjeg', label: 'Gubitak bližnjeg' },
+    { slug: 'razvod-i-rastanak', label: 'Razvod i rastanak' } ] },
+  { slug: 'trauma', label: 'Trauma', desc: 'Kako teška iskustva ostaju u telu i odnosima.', teme: [
+    { slug: 'reakcije-posle-dogadjaja', label: 'Reakcije posle događaja' },
+    { slug: 'trauma-i-telo', label: 'Trauma i telo' } ] },
+  { slug: 'poslovno-mentalno-zdravlje', label: 'Poslovno mentalno zdravlje', desc: 'Mentalno zdravlje zaposlenih i odnosi na radu.', teme: [
+    { slug: 'odnosi-na-radu', label: 'Odnosi na radu' },
+    { slug: 'ravnoteza-rada-i-zivota', label: 'Ravnoteža rada i života' } ] }
+];
+
+const CILJEVI = [
+  { id: 'razumevanje', label: 'Bolje razumevanje sebe i situacije' },
+  { id: 'alati', label: 'Praktični alati i tehnike' },
+  { id: 'iskustva', label: 'Iskustva drugih ljudi' },
+  { id: 'program', label: 'Radionica ili program' },
+  { id: 'strucna', label: 'Razgovor sa stručnom osobom' }
+];
+
+const PUBLIKA = [
+  { id: 'odrasli', label: 'Za sebe' },
+  { id: 'roditelji', label: 'Kao roditelj, za odnos sa detetom' },
+  { id: 'adolescenti', label: 'Za dete ili adolescenta' },
+  { id: 'partneri', label: 'Za partnerski odnos' },
+  { id: 'zaposleni', label: 'Za tim ili zaposlene' }
+];
+
+const PUTEVI = [
+  { id: 'explore', label: 'Želim sam da istražujem', note: 'Sadržaji, vežbe i vodiči — bez kontakta.' },
+  { id: 'professional_support', label: 'Želim stručnu podršku', note: 'Vodimo vas na Pronađi podršku, uz vašu potvrdu.' },
+  { id: 'both', label: 'I jedno i drugo', note: 'Prvo sadržaji, pa stručna podrška kada budete želeli.' }
+];
+
+const C = (id, tip, naslov, opis, trajanje, oblast, teme, ciljevi, pristup, red) =>
+  ({ id, tip, naslov, opis, trajanje, oblast, teme, ciljevi, pristup, red });
+
+const SADRZAJ = [
+  C('a1', 'Vodič', 'Šta se dešava u telu kada smo pod stresom', 'Jednostavno objašnjenje zašto telo reaguje i kada ta reakcija postane hronična.', '7 min čitanja', 'stres-i-burnout', ['hronicni-stres', 'napetost-u-telu'], ['razumevanje'], 'public', 1),
+  C('a2', 'Audio vežba', 'Vođena vežba za smirivanje napetosti', 'Kratka vežba disanja koju možete uraditi bilo gde, uz slušalice.', '12 min', 'anksioznost', ['stalna-zabrinutost', 'napadi-panike'], ['alati'], 'public', 2),
+  C('a3', 'Radni list', 'Dnevnik napetosti — sedam dana', 'Beležite šta se dešava pre i posle napetosti, da uočite obrazac.', 'PDF · 4 strane', 'anksioznost', ['stalna-zabrinutost'], ['alati', 'razumevanje'], 'public', 3),
+  C('a4', 'Vodič', 'Kada strah dođe iznenada', 'Šta se dešava tokom napada panike i šta pomaže u prvim minutima.', '9 min čitanja', 'anksioznost', ['napadi-panike'], ['razumevanje', 'alati'], 'public', 4),
+  C('a5', 'Video', 'Zašto izbegavanje pojačava strah', 'Kratko objašnjenje kruga izbegavanja i kako se iz njega izlazi.', '11 min', 'anksioznost', ['socijalna-anksioznost', 'napadi-panike'], ['razumevanje'], 'registered', 5),
+  C('a6', 'Radionica', 'Kako izaći iz kruga brige', 'Interaktivna radionica uživo ili online — prepoznavanje okidača i rad na njima.', '15. 06. u 18:00 · 3 sata', 'anksioznost', ['stalna-zabrinutost', 'socijalna-anksioznost'], ['program', 'alati'], 'public', 6),
+  C('b1', 'Vodič', 'Burnout nije lenjost', 'Kako prepoznati iscrpljenost na radu pre nego što postane kriza.', '8 min čitanja', 'stres-i-burnout', ['burnout-na-radu'], ['razumevanje'], 'public', 7),
+  C('b2', 'Radni list', 'Plan obnove energije za četiri nedelje', 'Male, održive izmene raspoređene po nedeljama.', 'PDF · 6 strana', 'stres-i-burnout', ['burnout-na-radu', 'hronicni-stres'], ['alati'], 'registered', 8),
+  C('b3', 'Program', 'Vraćanje energije', 'Program u četiri nedelje, online, uz vođenje terapeuta.', '4 nedelje · online', 'stres-i-burnout', ['burnout-na-radu'], ['program'], 'public', 9),
+  C('c1', 'Vodič', 'Granice bez osećaja krivice', 'Šta granica jeste, a šta nije — i kako je izgovoriti naglas.', '6 min čitanja', 'samopouzdanje-i-granice', ['postavljanje-granica', 'osecaj-krivice'], ['razumevanje', 'alati'], 'public', 10),
+  C('c2', 'Audio vežba', 'Vežba za trenutke samokritike', 'Kratka vežba samosaosećanja za dan kada je glas u glavi strog.', '9 min', 'samopouzdanje-i-granice', ['samopostovanje'], ['alati'], 'public', 11),
+  C('c3', 'Knjiga', 'Preporučena literatura o granicama', 'Izbor knjiga koje naši terapeuti najčešće preporučuju.', '3 naslova', 'samopouzdanje-i-granice', ['postavljanje-granica'], ['razumevanje'], 'public', 12),
+  C('d1', 'Vodič', 'Isti konflikt, po deseti put', 'Kako prepoznati obrazac koji se ponavlja u odnosu.', '7 min čitanja', 'partnerski-odnosi', ['konflikti', 'komunikacija-u-vezi'], ['razumevanje'], 'public', 13),
+  C('d2', 'Radni list', 'Razgovor koji odlažete', 'Struktura za jedan težak razgovor, u pet koraka.', 'PDF · 3 strane', 'partnerski-odnosi', ['komunikacija-u-vezi'], ['alati'], 'public', 14),
+  C('d3', 'Radionica', 'Bliskost i poverenje u paru', 'Radionica za parove, uživo, mali broj mesta.', '22. 06. u 17:00', 'partnerski-odnosi', ['bliskost-i-poverenje'], ['program'], 'registered', 15),
+  C('e1', 'Vodič', 'Kada roditelj ostane bez strpljenja', 'O roditeljskom stresu bez saveta koji krive roditelja.', '8 min čitanja', 'roditeljstvo', ['roditeljski-stres'], ['razumevanje'], 'public', 16),
+  C('e2', 'Video', 'Granice sa decom, bez podizanja glasa', 'Primeri iz svakodnevnih situacija.', '14 min', 'roditeljstvo', ['granice-sa-decom'], ['alati', 'razumevanje'], 'public', 17),
+  C('e3', 'Radionica', 'Razumeti adolescenta', 'Radionica za roditelje tinejdžera, online.', '30. 06. u 19:00', 'roditeljstvo', ['podrska-adolescentu'], ['program'], 'public', 18),
+  C('f1', 'Vodič', 'Tugovanje nema raspored', 'Šta je uobičajeno u tugovanju i kada podrška pomaže.', '9 min čitanja', 'tugovanje-i-gubitak', ['gubitak-bliznjeg'], ['razumevanje'], 'public', 19),
+  C('f2', 'Audio vežba', 'Vežba za teške večeri', 'Umirujuća vežba za trenutke kada je najteže.', '10 min', 'tugovanje-i-gubitak', ['gubitak-bliznjeg', 'razvod-i-rastanak'], ['alati'], 'public', 20),
+  C('g1', 'Vodič', 'Šta emocije pokušavaju da kažu', 'Osnove emocionalne regulacije, bez tehničkog jezika.', '7 min čitanja', 'emocionalna-regulacija', ['intenzivne-emocije'], ['razumevanje'], 'public', 21),
+  C('g2', 'Radni list', 'Skala napetosti od 0 do 10', 'Alat za prepoznavanje trenutka kada je regulacija još moguća.', 'PDF · 2 strane', 'emocionalna-regulacija', ['intenzivne-emocije', 'ljutnja'], ['alati'], 'public', 22)
+];
+
+const TERAPEUTI = [
+  { ini: 'AS', ime: 'Anja Stamenković', uloga: 'Socijalni radnik i geštalt psihoterapeutkinja', oblasti: ['anksioznost', 'stres-i-burnout', 'samopouzdanje-i-granice', 'roditeljstvo'] },
+  { ini: 'MS', ime: 'Marija Stamenković', uloga: 'Pedagog i geštalt psihoterapeutkinja', oblasti: ['roditeljstvo', 'samopouzdanje-i-granice', 'emocionalna-regulacija'] },
+  { ini: 'MJ', ime: 'Marjan Janković', uloga: 'Psiholog i geštalt psihoterapeut', oblasti: ['partnerski-odnosi', 'emocionalna-regulacija', 'stres-i-burnout'] }
+];
+
+const TEMA_DESC = {
+  'napadi-panike': 'Iznenadni talasi straha sa jakim telesnim reakcijama, često bez jasnog povoda.',
+  'socijalna-anksioznost': 'Napetost pred drugima, strah od procene i izbegavanje situacija.',
+  'stalna-zabrinutost': 'Misli koje se vrte u krug i telo koje se retko potpuno opusti.',
+  'hronicni-stres': 'Pritisak koji traje dovoljno dugo da postane svakodnevica.',
+  'burnout-na-radu': 'Iscrpljenost, distanca prema poslu i osećaj da ništa nije dovoljno.',
+  'postavljanje-granica': 'Kako reći ne, a ostati u dobrom odnosu sa sobom i drugima.',
+  'osecaj-krivice': 'Krivica koja se javlja čim stavite sebe na listu.',
+  'komunikacija-u-vezi': 'Razgovori koji se ponavljaju, a ne pomeraju sa mesta.',
+  'roditeljski-stres': 'Kada roditeljska uloga traži više nego što trenutno imate.',
+  'gubitak-bliznjeg': 'Tugovanje koje nema raspored ni pravila.'
+};
+
+const SCHEMES = {
+  coffee: { label: 'Coffee', dot: '#3a2e28', bg: '#3a2e28', panel: 'rgba(255,255,255,0.05)', panelBorder: 'rgba(245,239,230,0.16)', title: '#f5efe6', accent: '#ffa676', body: 'rgba(245,239,230,0.74)', btnBg: '#1f1917', btnFg: '#f5efe6', rule: 'rgba(245,239,230,0.18)', glow: 'rgba(255,166,118,0.16)',
+    aurora: 'rgba(209,164,140,0.26)', aurora2: 'rgba(198,213,168,0.16)', glass: 'rgba(245,239,230,0.07)', glass2: 'rgba(255,166,118,0.09)', glassRule: 'rgba(245,239,230,0.2)' },
+  forest: { label: 'Forest', dot: '#2e3b2e', bg: '#2e3b2e', panel: 'rgba(255,255,255,0.06)', panelBorder: 'rgba(198,213,168,0.22)', title: '#f2f5ec', accent: '#c6d5a8', body: 'rgba(242,245,236,0.76)', btnBg: '#c6d5a8', btnFg: '#22301f', rule: 'rgba(198,213,168,0.24)', glow: 'rgba(198,213,168,0.14)',
+    aurora: 'rgba(198,213,168,0.24)', aurora2: 'rgba(209,164,140,0.16)', glass: 'rgba(242,245,236,0.08)', glass2: 'rgba(198,213,168,0.12)', glassRule: 'rgba(198,213,168,0.26)' },
+  sage: { label: 'Sage', dot: '#c6d5a8', bg: '#c6d5a8', panel: 'rgba(255,255,255,0.34)', panelBorder: 'rgba(46,59,46,0.16)', title: '#24311f', accent: '#4e5f4c', body: 'rgba(36,49,31,0.78)', btnBg: '#2e3b2e', btnFg: '#f2f5ec', rule: 'rgba(46,59,46,0.18)', glow: 'rgba(255,255,255,0.4)',
+    aurora: 'rgba(255,255,255,0.5)', aurora2: 'rgba(209,164,140,0.3)', glass: 'rgba(255,255,255,0.32)', glass2: 'rgba(46,59,46,0.08)', glassRule: 'rgba(255,255,255,0.5)' },
+  warm: { label: 'Warm', dot: '#d1a48c', bg: '#d1a48c', panel: 'rgba(255,255,255,0.26)', panelBorder: 'rgba(58,46,40,0.16)', title: '#3a2e28', accent: '#8a4a2b', body: 'rgba(58,46,40,0.78)', btnBg: '#3a2e28', btnFg: '#f5efe6', rule: 'rgba(58,46,40,0.18)', glow: 'rgba(255,255,255,0.34)',
+    aurora: 'rgba(255,255,255,0.44)', aurora2: 'rgba(198,213,168,0.28)', glass: 'rgba(255,255,255,0.28)', glass2: 'rgba(58,46,40,0.07)', glassRule: 'rgba(255,255,255,0.46)' },
+  cream: { label: 'Cream', dot: '#f0e9df', bg: '#f0e9df', panel: 'rgba(255,255,255,0.7)', panelBorder: 'rgba(58,46,40,0.1)', title: '#2e3b2e', accent: '#b06a3f', body: 'rgba(58,46,40,0.74)', btnBg: '#2e3b2e', btnFg: '#f2f5ec', rule: 'rgba(58,46,40,0.12)', glow: 'rgba(209,164,140,0.28)',
+    aurora: 'rgba(209,164,140,0.34)', aurora2: 'rgba(198,213,168,0.32)', glass: 'rgba(255,255,255,0.6)', glass2: 'rgba(209,164,140,0.18)', glassRule: 'rgba(255,255,255,0.8)' }
+};
+const SCHEME_KEYS = ['coffee', 'forest', 'sage', 'warm', 'cream'];
+
+const ROUTES = [
+  { id: 'home', label: 'Početna', path: '/' },
+  { id: 'kompas', label: 'Kompas', path: '/kompas' },
+  { id: 'oblasti', label: 'Oblasti', path: '/kompas/oblasti' },
+  { id: 'teme', label: 'Teme', path: '/kompas/teme' },
+  { id: 'oblast', label: 'Oblast', path: '/kompas/oblast/[slug]' },
+  { id: 'tema', label: 'Tema', path: '/kompas/tema/[slug]' },
+  { id: 'admin', label: 'Brzi unos', path: '/radni-prostor/kompas/brzi-unos' }
+];
+
+const SITE_NAV = ['Pronađi podršku', 'Terapeuti', 'Kompas', 'Radionice', 'Znanje i resursi', 'O nama'];
+
+const ADMIN_STEPS = ['Nova vrednost registra', 'Identitet', 'Organizacija', 'Početni sadržaj i povezivanje', 'Javna ruta', 'Pregled'];
+
+class Component extends DCLogic {
+  state = {
+    route: 'home', oblastSlug: 'anksioznost', temaSlug: 'napadi-panike',
+    viewport: 'mobile', ctaVariant: 'A', schemeIdx: 0,
+    mode: 'intro', qIndex: 0,
+    oblast: null, teme: [], publika: null, ciljevi: [], put: null,
+    temeQuery: '', drawer: null, feedbackBanner: false, feedbackSeen: false,
+    fb: { relevantnost: null, sledeci: null, nedostajalo: [], strucna: null, poslato: false },
+    handoffOpts: { oblast: true, teme: true, publika: true, put: true },
+    handoffDone: false, cardSignal: {}, adminStep: 0, admin: null,
+    qh: 60, qDragging: false
+  };
+
+  syncProps() {
+    const p = this.props || {};
+    const patch = {};
+    if (p.ctaVariant && p.ctaVariant !== this.state.ctaVariant) patch.ctaVariant = p.ctaVariant;
+    const idx = SCHEME_KEYS.indexOf(p.ctaScheme);
+    if (idx > -1 && idx !== this.state.schemeIdx) patch.schemeIdx = idx;
+    if (p.startViewport && p.startViewport !== this.state.viewport) patch.viewport = p.startViewport;
+    if (Object.keys(patch).length) this.setState(patch);
+  }
+  componentDidMount() { this.syncProps(); }
+  componentDidUpdate(prev) {
+    const p = this.props || {}, q = prev || {};
+    if (p.ctaVariant !== q.ctaVariant || p.ctaScheme !== q.ctaScheme || p.startViewport !== q.startViewport) this.syncProps();
+  }
+
+  // ——— navigation
+  go = (route, extra) => { this.setState(Object.assign({ route: route }, extra || {})); if (typeof window !== 'undefined') window.scrollTo(0, 0); };
+  goHome = () => this.go('home');
+  goKompas = () => this.go('kompas');
+  goOblasti = () => this.go('oblasti');
+  goTeme = () => this.go('teme');
+  goAdmin = () => this.go('admin');
+  openOblast = (slug) => this.go('oblast', { oblastSlug: slug });
+  openTema = (slug) => { const o = OBLASTI.find(x => x.teme.some(t => t.slug === slug)); this.go('tema', { temaSlug: slug, oblastSlug: o ? o.slug : this.state.oblastSlug }); };
+
+  setMobile = () => this.setState({ viewport: 'mobile' });
+  setDesktop = () => this.setState({ viewport: 'desktop' });
+
+  // ——— cta controls
+  scheme() { return SCHEMES[SCHEME_KEYS[this.state.schemeIdx]]; }
+  stepScheme = (d) => this.setState(s => ({ schemeIdx: (s.schemeIdx + d + SCHEME_KEYS.length) % SCHEME_KEYS.length }));
+
+  // ——— questions drawer sizing
+  qDragStart = (e) => {
+    if (e.preventDefault) e.preventDefault();
+    const startY = e.clientY, startH = this.state.qh || 60;
+    const vh = (typeof window !== 'undefined' ? window.innerHeight : 800);
+    const move = (ev) => {
+      const delta = (startY - ev.clientY) / vh * 100;
+      this.setState({ qh: Math.min(94, Math.max(28, startH + delta)) });
+    };
+    const up = () => {
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', up);
+      this.setState({ qDragging: false });
+    };
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', up);
+    this.setState({ qDragging: true });
+  };
+  qDragKey = (e) => {
+    if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+      e.preventDefault();
+      const d = e.key === 'ArrowUp' ? 6 : -6;
+      this.setState(s => ({ qh: Math.min(94, Math.max(28, (s.qh || 60) + d)) }));
+    }
+  };
+
+  // ——— questions
+  startQuiz = () => this.setState({ mode: 'questions', qIndex: 0 });
+  closeQuiz = () => this.setState(s => ({ mode: (s.oblast || s.teme.length || s.publika || s.ciljevi.length || s.put) ? 'rezultat' : 'intro' }));
+  skipQuiz = () => this.setState({ mode: 'polazni' });
+  showResults = () => this.setState({ mode: 'rezultat' });
+  editAnswers = () => this.setState({ mode: 'questions', qIndex: 0 });
+  resetQuiz = () => this.setState({ mode: 'intro', qIndex: 0, oblast: null, teme: [], publika: null, ciljevi: [], put: null, handoffDone: false });
+  nextQ = () => this.setState(s => (s.qIndex >= 4 ? { mode: 'rezultat' } : { qIndex: s.qIndex + 1 }));
+  prevQ = () => this.setState(s => (s.qIndex <= 0 ? { mode: 'intro' } : { qIndex: s.qIndex - 1 }));
+  skipQ = () => this.setState(s => (s.qIndex >= 4 ? { mode: 'rezultat' } : { qIndex: s.qIndex + 1 }));
+
+  pickOblast = (slug) => { if (slug === '__unsure') { this.setState({ mode: 'polazni', oblast: null, teme: [] }); return; } this.setState(s => ({ oblast: slug, teme: s.oblast === slug ? s.teme : [], qIndex: 1 })); };
+  toggleTema = (slug) => this.setState(s => {
+    if (s.teme.indexOf(slug) > -1) return { teme: s.teme.filter(t => t !== slug) };
+    if (s.teme.length >= 2) return {};
+    return { teme: s.teme.concat([slug]) };
+  });
+  pickPublika = (id) => this.setState({ publika: id, qIndex: 3 });
+  toggleCilj = (id) => this.setState(s => ({ ciljevi: s.ciljevi.indexOf(id) > -1 ? s.ciljevi.filter(c => c !== id) : (s.ciljevi.length >= 3 ? s.ciljevi : s.ciljevi.concat([id])) }));
+  pickPut = (id) => this.setState({ put: id, mode: 'rezultat' });
+
+  // ——— engine (deterministic, no score exposed)
+  recommend() {
+    const s = this.state;
+    const scored = SADRZAJ.filter(c => c.pristup === 'public' || c.pristup === 'registered').map(c => {
+      let score = 0; const razlozi = [];
+      const hitTema = s.teme.filter(t => c.teme.indexOf(t) > -1);
+      if (hitTema.length) { score += 100 * hitTema.length; razlozi.push('Tema: ' + this.temaLabel(hitTema[0])); }
+      if (s.oblast && c.oblast === s.oblast) { score += 40; if (!hitTema.length) razlozi.push('Oblast: ' + this.oblastLabel(s.oblast)); }
+      const hitCilj = s.ciljevi.filter(g => c.ciljevi.indexOf(g) > -1);
+      if (hitCilj.length) { score += 18; razlozi.push('Cilj: ' + (CILJEVI.find(x => x.id === hitCilj[0]) || {}).label); }
+      if (s.put === 'explore' && (c.tip === 'Vodič' || c.tip === 'Audio vežba' || c.tip === 'Radni list' || c.tip === 'Video')) score += 8;
+      if (s.put === 'professional_support' && (c.tip === 'Radionica' || c.tip === 'Program')) score += 8;
+      if (s.publika === 'roditelji' && c.oblast === 'roditeljstvo') score += 10;
+      if (s.publika === 'zaposleni' && c.oblast === 'poslovno-mentalno-zdravlje') score += 10;
+      return { c: c, score: score, razlozi: razlozi.slice(0, 3) };
+    }).filter(x => x.score > 0);
+    scored.sort((a, b) => (b.score - a.score) || (a.c.red - b.c.red));
+    if (!scored.length) return SADRZAJ.slice(0, 4).map(c => ({ c: c, score: 0, razlozi: ['Najčešće korišćeno na platformi'] }));
+    return scored;
+  }
+  temaLabel(slug) { for (const o of OBLASTI) { const t = o.teme.find(x => x.slug === slug); if (t) return t.label; } return slug; }
+  oblastLabel(slug) { const o = OBLASTI.find(x => x.slug === slug); return o ? o.label : slug; }
+  oblastOf(slug) { return OBLASTI.find(o => o.teme.some(t => t.slug === slug)); }
+
+  // ——— feedback / handoff
+  signalCard = (id, v) => this.setState(s => {
+    const cs = Object.assign({}, s.cardSignal); cs[id] = v;
+    return { cardSignal: cs, feedbackBanner: s.feedbackSeen ? s.feedbackBanner : true, feedbackSeen: true };
+  });
+  endExploring = () => this.setState(s => ({ feedbackBanner: !s.feedbackSeen ? true : s.feedbackBanner, feedbackSeen: true }));
+  dismissBanner = () => this.setState({ feedbackBanner: false });
+  openFeedback = () => this.setState({ drawer: 'feedback', feedbackBanner: false });
+  openHandoff = () => this.setState({ drawer: 'handoff' });
+  closeDrawer = () => this.setState({ drawer: null });
+  setFb = (k, v) => this.setState(s => ({ fb: Object.assign({}, s.fb, { [k]: v }) }));
+  toggleFbMissing = (v) => this.setState(s => { const arr = s.fb.nedostajalo; return { fb: Object.assign({}, s.fb, { nedostajalo: arr.indexOf(v) > -1 ? arr.filter(x => x !== v) : arr.concat([v]) }) }; });
+  sendFb = () => this.setState(s => ({ fb: Object.assign({}, s.fb, { poslato: true }) }));
+  toggleHandoffOpt = (k) => this.setState(s => ({ handoffOpts: Object.assign({}, s.handoffOpts, { [k]: !s.handoffOpts[k] }) }));
+  confirmHandoff = () => this.setState({ handoffDone: true, drawer: null });
+
+  // ——— style helpers
+  chromeBtn(active) {
+    return { padding: '5px 11px', borderRadius: '999px', border: 0, cursor: 'pointer', fontSize: '11.5px', letterSpacing: '0.02em',
+      background: active ? '#f5efe6' : 'rgba(245,239,230,0.1)', color: active ? '#241c18' : 'rgba(245,239,230,0.72)' };
+  }
+  navBtn(active) {
+    return { padding: '8px 12px', border: 0, borderRadius: '999px', background: active ? 'rgba(198,213,168,0.34)' : 'transparent', cursor: 'pointer',
+      fontSize: '13px', whiteSpace: 'nowrap', color: active ? 'var(--color-forest)' : 'rgba(58,46,40,0.78)' };
+  }
+
+  countFor(oblastSlug) { return SADRZAJ.filter(c => c.oblast === oblastSlug).length; }
+
+  slugify(v) {
+    const map = { 'č': 'c', 'ć': 'c', 'ž': 'z', 'š': 's', 'đ': 'dj' };
+    return (v || '').toLowerCase().replace(/[čćžšđ]/g, m => map[m]).replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  }
+  adminState() {
+    return this.state.admin || { kind: 'tema', naziv: '', stableId: '', opis: '', parent: 'anksioznost', sinonimi: '',
+      red: 10, related: [], veze: [], slug: '', slugConfirmed: false, termId: null, error: '', saved: false, sent: false, compassEnabled: true };
+  }
+  setAdmin = (patch) => this.setState(s => ({ admin: Object.assign({}, this.adminState(), patch) }));
+  adminGo = (i) => this.setState({ adminStep: i });
+  adminNext = () => this.setState(s => ({ adminStep: Math.min(5, s.adminStep + 1) }));
+  adminPrev = () => this.setState(s => ({ adminStep: Math.max(0, s.adminStep - 1) }));
+  adminSaveDraft = () => {
+    const a = this.adminState();
+    const taken = OBLASTI.map(o => o.slug).concat(OBLASTI.reduce((acc, o) => acc.concat(o.teme.map(t => t.slug)), []));
+    const id = a.stableId || this.slugify(a.naziv);
+    if (!a.naziv.trim()) { this.setAdmin({ error: 'Naziv je obavezan pre prvog čuvanja.' }); return; }
+    if (taken.indexOf(id) > -1) { this.setAdmin({ stableId: id, error: 'Stable ID „' + id + '” već postoji u registru (409). Unos je sačuvan — izmenite ID.' }); return; }
+    this.setAdmin({ stableId: id, termId: 'trm_' + id.slice(0, 12), saved: true, error: '' });
+    this.setState(s => ({ adminStep: Math.max(s.adminStep, 2) }));
+  };
+  adminSuggestSlug = () => { const a = this.adminState(); this.setAdmin({ slug: (a.kind === 'oblast' ? 'oblast/' : 'tema/') + this.slugify(a.naziv), slugConfirmed: false }); };
+  adminConfirmSlug = () => this.setAdmin({ slugConfirmed: true });
+  adminToggleRelated = (slug) => { const a = this.adminState(); this.setAdmin({ related: a.related.indexOf(slug) > -1 ? a.related.filter(x => x !== slug) : a.related.concat([slug]) }); };
+  adminToggleVeza = (id) => { const a = this.adminState(); this.setAdmin({ veze: a.veze.indexOf(id) > -1 ? a.veze.filter(x => x !== id) : a.veze.concat([id]) }); };
+  adminSend = () => this.setAdmin({ sent: true });
+  adminReset = () => this.setState({ admin: null, adminStep: 0 });
+
+  card(r) {
+    const c = r.c, sig = this.state.cardSignal[c.id];
+    const sigBtn = (on) => ({ padding: '6px 12px', minHeight: '32px', border: on ? '1px solid var(--color-forest)' : '1px solid rgba(58,46,40,0.14)',
+      borderRadius: '999px', background: on ? 'rgba(198,213,168,0.35)' : 'transparent', cursor: 'pointer', fontSize: '12px', color: 'var(--color-forest)' });
+    return {
+      id: c.id, tip: c.tip, naslov: c.naslov, opis: c.opis, trajanje: c.trajanje,
+      pristupLabel: c.pristup === 'public' ? 'Javno dostupno' : 'Za registrovane',
+      pristupStyle: { padding: '4px 10px', borderRadius: '999px', fontSize: '11px', letterSpacing: '0.02em',
+        background: c.pristup === 'public' ? 'rgba(198,213,168,0.32)' : 'rgba(209,164,140,0.28)', color: c.pristup === 'public' ? 'var(--color-forest)' : 'var(--color-coffee)' },
+      razlozi: (r.razlozi || []).filter(Boolean).map(t => ({ text: t })),
+      hasRazlozi: !!(r.razlozi || []).filter(Boolean).length,
+      open: () => this.openTema(c.teme[0]),
+      up: () => this.signalCard(c.id, 'up'), down: () => this.signalCard(c.id, 'down'),
+      upStyle: sigBtn(sig === 'up'), downStyle: sigBtn(sig === 'down')
+    };
+  }
+
+  renderVals() {
+    const s = this.state, sc = this.scheme();
+    const isMobile = s.viewport === 'mobile';
+    const route = ROUTES.find(r => r.id === s.route) || ROUTES[0];
+    const oblast = OBLASTI.find(o => o.slug === s.oblastSlug) || OBLASTI[0];
+    const tema = (this.oblastOf(s.temaSlug) || OBLASTI[0]).teme.find(t => t.slug === s.temaSlug) || OBLASTI[0].teme[0];
+
+    // ——— question surface
+    const optRow = (sel) => ({ display: 'flex', alignItems: 'center', gap: '12px', width: '100%', padding: '14px 16px', minHeight: '52px',
+      textAlign: 'left', cursor: 'pointer', borderRadius: '14px', fontSize: '14.5px', lineHeight: 1.4,
+      border: sel ? '1px solid var(--color-forest)' : '1px solid rgba(58,46,40,0.12)',
+      background: sel ? 'rgba(198,213,168,0.28)' : '#ffffff', color: 'var(--color-forest)' });
+    const optMark = (sel, round) => ({ flex: 'none', display: 'grid', placeItems: 'center', width: '20px', height: '20px',
+      borderRadius: round ? '50%' : '6px', fontSize: '11px', color: '#f2f5ec',
+      border: sel ? '1px solid var(--color-forest)' : '1px solid rgba(58,46,40,0.25)', background: sel ? 'var(--color-forest)' : 'transparent' });
+
+    let q = { title: '', hint: '', note: '' }, qOptions = [], qCanNext = true;
+    if (s.qIndex === 0) {
+      q = { title: 'Koja životna oblast vam je trenutno najbliža?', hint: 'Jedan izbor. Uvek ga možete promeniti.', note: '' };
+      qOptions = OBLASTI.map(o => ({ label: o.label, note: o.desc, mark: s.oblast === o.slug ? '✓' : '',
+        style: optRow(s.oblast === o.slug), markStyle: optMark(s.oblast === o.slug, true), pick: () => this.pickOblast(o.slug) }))
+        .concat([{ label: 'Nisam siguran/na šta mi se događa', note: 'Vodimo vas na polazni prikaz — bez izbora teme.', mark: '',
+          style: Object.assign(optRow(false), { background: 'rgba(58,46,40,0.04)', borderStyle: 'dashed' }), markStyle: optMark(false, true), pick: () => this.pickOblast('__unsure') }]);
+      qCanNext = !!s.oblast;
+    } else if (s.qIndex === 1) {
+      const list = (OBLASTI.find(o => o.slug === s.oblast) || OBLASTI[0]).teme;
+      q = { title: 'Šta vam je od toga sada najbliže?', hint: 'Možete izabrati najviše dve teme.', note: s.teme.length >= 2 ? 'Izabrane su dve teme — uklonite jednu da biste izabrali drugu.' : '' };
+      qOptions = list.map(t => { const sel = s.teme.indexOf(t.slug) > -1; return { label: t.label, note: '', mark: sel ? '✓' : '',
+        style: optRow(sel), markStyle: optMark(sel, false), pick: () => this.toggleTema(t.slug) }; });
+      qCanNext = true;
+    } else if (s.qIndex === 2) {
+      q = { title: 'Za koga tražite podršku?', hint: 'Pomaže nam da izaberemo pravi ton i primere.', note: '' };
+      qOptions = PUBLIKA.map(p => ({ label: p.label, note: '', mark: s.publika === p.id ? '✓' : '',
+        style: optRow(s.publika === p.id), markStyle: optMark(s.publika === p.id, true), pick: () => this.pickPublika(p.id) }));
+    } else if (s.qIndex === 3) {
+      q = { title: 'Šta bi vam sada najviše koristilo?', hint: 'Izaberite do tri stvari.', note: '' };
+      qOptions = CILJEVI.map(c => { const sel = s.ciljevi.indexOf(c.id) > -1; return { label: c.label, note: '', mark: sel ? '✓' : '',
+        style: optRow(sel), markStyle: optMark(sel, false), pick: () => this.toggleCilj(c.id) }; });
+    } else {
+      q = { title: 'Kako želite da nastavite?', hint: 'Odluku menjate u svakom trenutku.', note: '' };
+      qOptions = PUTEVI.map(p => ({ label: p.label, note: p.note, mark: s.put === p.id ? '✓' : '',
+        style: optRow(s.put === p.id), markStyle: optMark(s.put === p.id, true), pick: () => this.pickPut(p.id) }));
+    }
+
+    const answered = [];
+    if (s.oblast) answered.push({ label: this.oblastLabel(s.oblast), edit: () => this.setState({ qIndex: 0 }) });
+    s.teme.forEach(t => answered.push({ label: this.temaLabel(t), edit: () => this.setState({ qIndex: 1 }) }));
+    if (s.publika) answered.push({ label: (PUBLIKA.find(p => p.id === s.publika) || {}).label, edit: () => this.setState({ qIndex: 2 }) });
+    s.ciljevi.forEach(c => answered.push({ label: (CILJEVI.find(x => x.id === c) || {}).label, edit: () => this.setState({ qIndex: 3 }) }));
+    if (s.put) answered.push({ label: (PUTEVI.find(p => p.id === s.put) || {}).label, edit: () => this.setState({ qIndex: 4 }) });
+
+    const summaryChips = answered.map(a => ({ label: a.label, edit: a.edit }));
+
+    // ——— results
+    const recs = s.mode === 'rezultat' ? this.recommend() : [];
+    const pick = (tipovi, n) => recs.filter(r => tipovi.indexOf(r.c.tip) > -1).slice(0, n).map(r => this.card(r));
+    const rezSections = [];
+    if (s.mode === 'rezultat') {
+      const g1 = pick(['Vodič', 'Video', 'Knjiga'], 3);
+      const g2 = pick(['Audio vežba', 'Radni list'], 3);
+      const g3 = pick(['Radionica', 'Program'], 2);
+      if (g1.length) rezSections.push({ id: 'razumevanje', title: 'Za bolje razumevanje', desc: 'Kratki tekstovi i video sadržaji koji objašnjavaju šta se dešava.', items: g1 });
+      if (g2.length) rezSections.push({ id: 'alati', title: 'Praktični alati', desc: 'Vežbe i radni listovi koje možete koristiti odmah.', items: g2 });
+      if (g3.length) rezSections.push({ id: 'programi', title: 'Radionice i programi', desc: 'Rad u grupi ili vođeni program, kada za to bude vreme.', items: g3 });
+    }
+
+    // ——— list + canonical page data
+    const allTeme = [];
+    OBLASTI.forEach(o => o.teme.forEach(t => allTeme.push({ t: t, o: o })));
+    const qtext = s.temeQuery.trim().toLowerCase();
+    const temeResults = allTeme.filter(x => !qtext || x.t.label.toLowerCase().indexOf(qtext) > -1 || x.o.label.toLowerCase().indexOf(qtext) > -1)
+      .map(x => ({ label: x.t.label, oblast: x.o.label, count: SADRZAJ.filter(c => c.teme.indexOf(x.t.slug) > -1).length + ' sadržaja',
+        open: () => this.openTema(x.t.slug), openOblast: () => this.openOblast(x.o.slug) }));
+    const oblastSadrzaj = SADRZAJ.filter(c => c.oblast === oblast.slug).map(c => this.card({ c: c, razlozi: [] }));
+    const temaSadrzaj = SADRZAJ.filter(c => c.teme.indexOf(tema.slug) > -1).map(c => this.card({ c: c, razlozi: [] }));
+
+    // ——— feedback survey (compass-experience-v1, UX only)
+    const fbOpt = (key, val, label) => ({ label: label, select: () => this.setFb(key, val),
+      style: { padding: '10px 14px', minHeight: '44px', borderRadius: '999px', cursor: 'pointer', fontSize: '13px',
+        border: s.fb[key] === val ? '1px solid var(--color-forest)' : '1px solid rgba(58,46,40,0.14)',
+        background: s.fb[key] === val ? 'rgba(198,213,168,0.32)' : '#fff', color: 'var(--color-forest)' } });
+    const fbMissing = ['Video sadržaj', 'Audio vežbe', 'Radni listovi', 'Radionice', 'Ništa nije nedostajalo'];
+    const fbGroups = [
+      { id: 'relevantnost', title: 'Koliko su predlozi bili u vezi sa onim što ste tražili?', opts: [
+        fbOpt('relevantnost', 'da', 'U velikoj meri'), fbOpt('relevantnost', 'delimicno', 'Delimično'), fbOpt('relevantnost', 'ne', 'Nisu') ] },
+      { id: 'sledeci', title: 'Da li vam je posle ovoga jasno šta je sledeći korak?', opts: [
+        fbOpt('sledeci', 'da', 'Jasno je'), fbOpt('sledeci', 'delimicno', 'Delimično'), fbOpt('sledeci', 'ne', 'Nije jasno') ] },
+      { id: 'nedostajalo', title: 'Da li je nešto nedostajalo?', opts: fbMissing.map(m => ({ label: m, select: () => this.toggleFbMissing(m),
+        style: { padding: '10px 14px', minHeight: '44px', borderRadius: '999px', cursor: 'pointer', fontSize: '13px',
+          border: s.fb.nedostajalo.indexOf(m) > -1 ? '1px solid var(--color-forest)' : '1px solid rgba(58,46,40,0.14)',
+          background: s.fb.nedostajalo.indexOf(m) > -1 ? 'rgba(198,213,168,0.32)' : '#fff', color: 'var(--color-forest)' } })) },
+      { id: 'strucna', title: 'Koliko je bilo lako naći put do stručne pomoći?', opts: [
+        fbOpt('strucna', 'lako', 'Lako'), fbOpt('strucna', 'srednje', 'Moglo je jasnije'), fbOpt('strucna', 'tesko', 'Teško') ] }
+    ];
+
+    const hoLabels = { oblast: 'Oblast: ' + (s.oblast ? this.oblastLabel(s.oblast) : 'nije izabrana'),
+      teme: 'Teme: ' + (s.teme.length ? s.teme.map(t => this.temaLabel(t)).join(', ') : 'nisu izabrane'),
+      publika: 'Za koga: ' + ((PUBLIKA.find(p => p.id === s.publika) || {}).label || 'nije izabrano'),
+      put: 'Način nastavka: ' + ((PUTEVI.find(p => p.id === s.put) || {}).label || 'nije izabran') };
+    const handoffItems = ['oblast', 'teme', 'publika', 'put'].map(k => ({ label: hoLabels[k], toggle: () => this.toggleHandoffOpt(k),
+      mark: s.handoffOpts[k] ? '✓' : '',
+      style: { display: 'flex', alignItems: 'center', gap: '12px', width: '100%', padding: '13px 14px', minHeight: '48px', textAlign: 'left', cursor: 'pointer',
+        border: s.handoffOpts[k] ? '1px solid var(--color-forest)' : '1px solid rgba(58,46,40,0.12)', borderRadius: '14px',
+        background: s.handoffOpts[k] ? 'rgba(198,213,168,0.24)' : '#fff', fontSize: '13.5px', color: 'var(--color-forest)' },
+      markStyle: { flex: 'none', display: 'grid', placeItems: 'center', width: '20px', height: '20px', borderRadius: '6px', fontSize: '11px', color: '#f2f5ec',
+        border: s.handoffOpts[k] ? '1px solid var(--color-forest)' : '1px solid rgba(58,46,40,0.25)', background: s.handoffOpts[k] ? 'var(--color-forest)' : 'transparent' } }));
+
+    const ctaBtn = { display: 'inline-flex', alignItems: 'center', gap: '12px', alignSelf: 'flex-start', padding: '14px 22px', minHeight: '48px',
+      border: 0, borderRadius: '999px', background: sc.btnBg, color: sc.btnFg, fontSize: '14.5px', letterSpacing: '0.01em', cursor: 'pointer' };
+
+    const adm = this.adminState();
+    const admKinds = [
+      { id: 'oblast', label: 'Oblast', note: 'Najviši nivo — grupiše teme.' },
+      { id: 'tema', label: 'Tema', note: 'Pripada jednoj oblasti.' },
+      { id: 'publika', label: 'Publika', note: 'Kome je sadržaj namenjen.' },
+      { id: 'cilj', label: 'Cilj', note: 'Šta korisnik želi da postigne.' }
+    ].map(k => ({ id: k.id, label: k.label, note: k.note, select: () => this.setAdmin({ kind: k.id }),
+      style: { display: 'flex', flexDirection: 'column', gap: '4px', padding: '16px', minHeight: '76px', textAlign: 'left', cursor: 'pointer',
+        border: adm.kind === k.id ? '1px solid var(--color-forest)' : '1px solid rgba(58,46,40,0.12)', borderRadius: '16px',
+        background: adm.kind === k.id ? 'rgba(198,213,168,0.24)' : '#fff', color: 'var(--color-forest)' } }));
+
+    return {
+      // chrome + frame
+      routeLabel: route.path.replace('[slug]', s.route === 'oblast' ? s.oblastSlug : s.temaSlug),
+      navRoutes: ROUTES.map(r => ({ label: r.label, style: this.chromeBtn(r.id === s.route), go: () => this.go(r.id) })),
+      setMobile: this.setMobile, setDesktop: this.setDesktop,
+      mobileBtnStyle: this.chromeBtn(isMobile), desktopBtnStyle: this.chromeBtn(!isMobile),
+      frameStyle: { width: '100%', maxWidth: isMobile ? '412px' : '1536px', minHeight: '80vh', paddingBottom: '10px',
+        containerType: 'inline-size', background: 'var(--color-canvas)', borderRadius: isMobile ? '30px' : '22px',
+        boxShadow: '0 24px 64px rgba(58,46,40,0.16)', overflow: 'clip' },
+
+      // header / routes
+      siteNav: SITE_NAV.map(l => ({ label: l, style: this.navBtn(l === 'Kompas' && s.route !== 'home' && s.route !== 'admin'), go: l === 'Kompas' ? this.goKompas : this.goHome })),
+      goHome: this.goHome, goKompas: this.goKompas, goOblasti: this.goOblasti, goTeme: this.goTeme,
+      atHome: s.route === 'home',
+
+      // home reasons grid
+      homeReasons: OBLASTI.slice(0, 6).map((o, i) => ({ num: '0' + (i + 1), label: o.label, desc: o.desc, go: () => this.openOblast(o.slug) })),
+
+      // cta controls
+      ctaVariants: ['A', 'B', 'C'].map(v => ({ label: 'Verzija ' + v, select: () => this.setState({ ctaVariant: v }),
+        style: { padding: '6px 12px', borderRadius: '999px', border: 0, cursor: 'pointer', fontSize: '11.5px',
+          background: s.ctaVariant === v ? 'var(--color-forest)' : 'rgba(58,46,40,0.07)', color: s.ctaVariant === v ? '#f2f5ec' : 'rgba(58,46,40,0.7)' } })),
+      ctaSchemes: SCHEME_KEYS.map((k, i) => ({ label: SCHEMES[k].label, select: () => this.setState({ schemeIdx: i }),
+        style: { width: '22px', height: '22px', borderRadius: '50%', cursor: 'pointer', background: SCHEMES[k].dot,
+          border: i === s.schemeIdx ? '2px solid var(--color-forest)' : '1px solid rgba(58,46,40,0.18)', outline: i === s.schemeIdx ? '2px solid rgba(198,213,168,0.6)' : 'none', outlineOffset: '1px' } })),
+      prevScheme: () => this.stepScheme(-1), nextScheme: () => this.stepScheme(1), schemeLabel: sc.label,
+      ctaIsA: s.ctaVariant === 'A', ctaIsB: s.ctaVariant === 'B', ctaIsC: s.ctaVariant === 'C',
+      ctaBandStyle: { position: 'relative', overflow: 'hidden', background: sc.bg, marginTop: '4px', borderRadius: '24px',
+        boxShadow: '0 14px 34px rgba(58,46,40,0.14)', transition: 'transform .45s cubic-bezier(.22,1,.36,1), box-shadow .45s ease' },
+      ctaGlowStyle: { position: 'absolute', left: '-8%', top: '-40%', width: '52%', paddingBottom: '52%', borderRadius: '50%', background: 'radial-gradient(circle, ' + sc.glow + ' 0%, transparent 68%)' },
+      ctaRingStyle: { position: 'absolute', right: '-12%', bottom: '-70%', width: '58%', paddingBottom: '58%', borderRadius: '50%', border: '1px solid ' + sc.rule, opacity: 0.4 },
+      ctaAurora1: { position: 'absolute', left: isMobile ? '-32%' : '-14%', top: isMobile ? '-16%' : '-46%', width: isMobile ? '88%' : '62%', paddingBottom: isMobile ? '88%' : '62%', borderRadius: '48% 52% 60% 40% / 55% 45% 55% 45%', background: 'radial-gradient(circle at 40% 40%, ' + sc.glow + ' 0%, transparent 70%)', filter: 'blur(26px)' },
+      ctaAurora2: { position: 'absolute', right: isMobile ? '-22%' : '4%', top: isMobile ? '-12%' : '-30%', width: isMobile ? '74%' : '46%', paddingBottom: isMobile ? '74%' : '46%', borderRadius: '58% 42% 40% 60% / 42% 58% 42% 58%', background: 'radial-gradient(circle at 60% 50%, ' + sc.aurora + ' 0%, transparent 72%)', filter: 'blur(34px)', opacity: 0.9 },
+      ctaAurora3: { position: 'absolute', left: isMobile ? '6%' : '32%', bottom: isMobile ? '-26%' : '-52%', width: isMobile ? '84%' : '52%', paddingBottom: isMobile ? '84%' : '52%', borderRadius: '45% 55% 52% 48% / 60% 40% 60% 40%', background: 'radial-gradient(circle at 50% 40%, ' + sc.aurora2 + ' 0%, transparent 74%)', filter: 'blur(40px)', opacity: 0.85 },
+      ctaLogoBoxStyle: { position: 'relative', display: 'grid', placeItems: 'center', width: isMobile ? '200px' : 'min(288px, 100%)', maxWidth: '100%', aspectRatio: '1' },
+      ctaGlassHalo1: { position: 'absolute', inset: 0, aspectRatio: '1', borderRadius: '50%', background: sc.glass, border: '1px solid ' + sc.glassRule, backdropFilter: 'blur(14px)', WebkitBackdropFilter: 'blur(14px)' },
+      ctaGlassHalo2: { position: 'absolute', inset: '11%', aspectRatio: '1', borderRadius: '50%', background: sc.glass2, border: '1px solid ' + sc.glassRule, backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)' },
+      ctaGlass1: { position: 'absolute', left: '4%', top: '14%', width: 'clamp(90px, 15cqi, 168px)', aspectRatio: '1', borderRadius: '50%', background: sc.glass, border: '1px solid ' + sc.glassRule, backdropFilter: 'blur(14px)', WebkitBackdropFilter: 'blur(14px)' },
+      ctaGlass2: { position: 'absolute', left: '17%', bottom: '8%', width: 'clamp(56px, 9cqi, 104px)', aspectRatio: '1', borderRadius: '50%', background: sc.glass2, border: '1px solid ' + sc.glassRule, backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)' },
+      ctaRing2Style: { position: 'absolute', left: '-6%', bottom: '-46%', width: '40%', paddingBottom: '40%', borderRadius: '50%', border: '1px solid ' + sc.rule, opacity: 0.32 },
+      ctaRing3Style: { position: 'absolute', right: '6%', top: '-18%', width: '26%', paddingBottom: '26%', borderRadius: '50%', border: '1px dashed ' + sc.rule, opacity: 0.28 },
+      ctaCornerTL: { position: 'absolute', left: '18px', top: '16px', width: '76px', height: '48px', borderTop: '1px solid ' + sc.rule, borderLeft: '1px solid ' + sc.rule, borderTopLeftRadius: '26px 44px', transform: 'skewX(-9deg)', opacity: 0.75 },
+      ctaCornerBR: { position: 'absolute', right: '18px', bottom: '16px', width: '96px', height: '54px', borderBottom: '1px solid ' + sc.rule, borderRight: '1px solid ' + sc.rule, borderBottomRightRadius: '40px 22px', transform: 'skewY(-6deg)', opacity: 0.4 },
+      ctaGridStyle: { position: 'relative', display: 'grid', gap: isMobile ? '10px' : '26px', alignItems: isMobile ? 'center' : 'stretch', padding: isMobile ? '26px 18px' : '38px 30px',
+        gridTemplateColumns: isMobile ? '1fr' : 'minmax(180px, 1fr) 2fr', maxWidth: '1536px', margin: '0 auto' },
+      ctaLogoStyle: { position: 'relative', width: '66%', height: 'auto',
+        filter: 'drop-shadow(0 22px 42px rgba(0,0,0,0.32))' },
+      ctaPanelStyle: { position: 'relative', display: 'flex', flexDirection: 'column', justifyContent: 'center', height: '100%', padding: isMobile ? '20px' : '26px', borderRadius: '20px', background: sc.panel, border: '1px solid ' + sc.panelBorder },
+      ctaTitleStyle: { margin: 0, fontFamily: 'var(--font-newsreader), Georgia, serif', fontWeight: 400, fontSize: 'clamp(24px, 4.4cqi, 36px)', lineHeight: 1.12, color: sc.title },
+      ctaTitleAccentStyle: { fontStyle: 'normal', fontWeight: 500, color: sc.accent },
+      ctaBodyStyle: { margin: '12px 0 0', fontSize: '14px', lineHeight: 1.65, color: sc.body, textWrap: 'pretty' },
+      ctaAsideStyle: { display: 'flex', flexDirection: 'column', gap: '16px', height: '100%', justifyContent: 'space-between', alignItems: isMobile ? 'center' : 'stretch', textAlign: isMobile ? 'center' : 'left', paddingLeft: isMobile ? 0 : '18px', paddingTop: isMobile ? '16px' : 0, borderLeft: isMobile ? 'none' : '1px solid ' + sc.rule, borderTop: isMobile ? '1px solid ' + sc.rule : 'none' },
+      ctaAsideTextStyle: { margin: 0, fontSize: '14px', lineHeight: 1.6, color: sc.body },
+      ctaBtnStyle: ctaBtn,
+      ctaBtnCenterStyle: Object.assign({}, ctaBtn, { alignSelf: 'center' }),
+      ctaBtnAStyle: Object.assign({}, ctaBtn, { alignSelf: 'center', marginTop: isMobile ? '2px' : '10px' }),
+      ctaBtnCStyle: Object.assign({}, ctaBtn, isMobile ? { width: '100%', justifyContent: 'center', alignSelf: 'stretch' } : {}),
+      ctaMetaRowStyle: { display: 'flex', width: '100%', flexWrap: 'wrap', justifyContent: 'center', gap: '8px 18px', marginTop: '4px', paddingTop: '14px', borderTop: '1px solid ' + sc.rule, fontSize: '12px', letterSpacing: '0.03em', color: sc.body },
+      ctaStripTitleStyle: { margin: 0, fontFamily: 'var(--font-newsreader), Georgia, serif', fontWeight: 400, fontSize: 'clamp(20px, 2.6cqi, 26px)', lineHeight: 1.18, color: sc.title },
+      ctaStripBodyStyle: { margin: '6px 0 0', fontSize: '13.5px', lineHeight: 1.55, color: sc.body },
+      ctaBadgeStyle: { flex: 'none', width: '76px', height: '76px', display: 'grid', placeItems: 'center', padding: '8px', borderRadius: '50%', background: sc.panel, border: '1px solid ' + sc.panelBorder },
+      ctaStripAsideStyle: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '12px 16px', marginLeft: isMobile ? 0 : 'auto', width: isMobile ? '100%' : 'auto' },
+      ctaStripMetaStyle: { margin: '8px 0 0', fontSize: '12.5px', letterSpacing: '0.02em', color: sc.body, opacity: 0.85 },
+
+      showNav: !isMobile, showMenu: isMobile, showChrome: (this.props || {}).showChrome !== false,
+
+      // ——— /kompas
+      atKompas: s.route === 'kompas',
+      modeIntro: s.mode === 'intro', modeQuestions: s.mode === 'questions',
+      modePolazni: s.mode === 'polazni', modeRezultat: s.mode === 'rezultat',
+      startQuiz: this.startQuiz, skipQuiz: this.skipQuiz, showResultsNow: this.showResults,
+      resetQuiz: this.resetQuiz, editAnswers: this.editAnswers, openHandoff: this.openHandoff, endExploring: this.endExploring,
+      handoffDone: s.handoffDone,
+
+      closeQuiz: this.closeQuiz, qDragStart: this.qDragStart, qDragKey: this.qDragKey,
+      qSheetStyle: { position: 'relative', display: 'flex', flexDirection: 'column', width: '100%', height: (s.qh || 60) + 'dvh',
+        minHeight: '240px', borderRadius: '26px 26px 0 0', background: 'var(--color-panel-canvas)',
+        boxShadow: '0 -18px 54px rgba(36,28,24,0.26)', overflow: 'hidden',
+        animation: 'komSheet .32s cubic-bezier(.22,1,.36,1) both', touchAction: 'none' },
+      qGrabStyle: { display: 'flex', justifyContent: 'center', alignItems: 'center', width: '100%', height: '30px', flex: 'none',
+        border: 0, background: 'transparent', cursor: s.qDragging ? 'grabbing' : 'grab', touchAction: 'none' },
+      qGrabBarStyle: { width: '56px', height: '5px', borderRadius: '999px', background: s.qDragging ? 'var(--color-forest)' : 'rgba(58,46,40,0.24)' },
+      qHeightLabel: Math.round(s.qh || 60) + ' dvh',
+
+      q: q, qOptions: qOptions, qHasHint: !!q.hint, qHasNote: !!q.note, hasAnswered: answered.length > 0,
+      qProgress: [0, 1, 2, 3, 4].map(i => ({ style: { flex: 1, height: '3px', borderRadius: '999px',
+        background: i < s.qIndex ? 'var(--color-forest)' : (i === s.qIndex ? 'var(--color-sage)' : 'rgba(58,46,40,0.12)') } })),
+      qNext: this.nextQ, qPrev: this.prevQ, qSkipOne: this.skipQ,
+      qNextLabel: s.qIndex >= 4 ? 'Pokaži mi preporuke' : 'Dalje',
+      qCanNext: qCanNext, qNextStyle: { display: 'inline-flex', alignItems: 'center', gap: '10px', padding: '13px 20px', minHeight: '48px',
+        border: 0, borderRadius: '999px', cursor: qCanNext ? 'pointer' : 'not-allowed',
+        background: qCanNext ? 'var(--color-forest)' : 'rgba(58,46,40,0.12)', color: qCanNext ? '#f2f5ec' : 'rgba(58,46,40,0.68)', fontSize: '14px' },
+      answered: answered,
+
+      polazniOblasti: OBLASTI.map(o => ({ label: o.label, desc: o.desc, count: o.teme.length + ' tema', open: () => this.openOblast(o.slug) })),
+      polazniTeme: OBLASTI.slice(0, 6).map(o => o.teme[0]).map(t => ({ label: t.label, open: () => this.openTema(t.slug) })),
+      polazniSadrzaj: SADRZAJ.filter(c => c.pristup === 'public').slice(0, 4).map(c => this.card({ c: c, razlozi: [] })),
+
+      rezSections: rezSections, rezEmpty: !rezSections.length,
+      summaryChips: summaryChips,
+      terapeutiList: TERAPEUTI.filter(t => !s.oblast || t.oblasti.indexOf(s.oblast) > -1).slice(0, 3)
+        .map(t => ({ ini: t.ini, ime: t.ime, uloga: t.uloga })),
+
+      // ——— list pages
+      atOblasti: s.route === 'oblasti', atTeme: s.route === 'teme',
+      oblastiCards: OBLASTI.map((o, i) => ({
+        num: (i + 1) < 10 ? '0' + (i + 1) : '' + (i + 1), label: o.label, desc: o.desc,
+        meta: o.teme.length + ' tema · ' + this.countFor(o.slug) + ' sadržaja',
+        teme: o.teme.slice(0, 3).map(t => ({ label: t.label, open: () => this.openTema(t.slug) })),
+        open: () => this.openOblast(o.slug)
+      })),
+      temeQuery: s.temeQuery, onTemeQuery: (e) => this.setState({ temeQuery: e.target.value }),
+      temeResults: temeResults, temeCount: temeResults.length + ' od ' + allTeme.length + ' tema',
+      temeEmpty: !temeResults.length, clearQuery: () => this.setState({ temeQuery: '' }),
+
+      // ——— canonical pages
+      atOblast: s.route === 'oblast', atTema: s.route === 'tema',
+      oblastPage: {
+        label: oblast.label, desc: oblast.desc, meta: oblast.teme.length + ' tema · ' + this.countFor(oblast.slug) + ' objavljenih sadržaja',
+        path: '/kompas/oblast/' + oblast.slug
+      },
+      oblastTeme: oblast.teme.map(t => ({ label: t.label, desc: TEMA_DESC[t.slug] || ('Deo oblasti ' + oblast.label + '.'), open: () => this.openTema(t.slug) })),
+      oblastSadrzaj: oblastSadrzaj, oblastHasSadrzaj: !!oblastSadrzaj.length, oblastNoSadrzaj: !oblastSadrzaj.length,
+      oblastSusedne: OBLASTI.filter(o => o.slug !== oblast.slug).slice(0, 4).map(o => ({ label: o.label, open: () => this.openOblast(o.slug) })),
+
+      temaPage: {
+        label: tema.label, desc: TEMA_DESC[tema.slug] || ('Tema u okviru oblasti ' + (this.oblastOf(tema.slug) || oblast).label + '.'),
+        oblastLabel: (this.oblastOf(tema.slug) || oblast).label, path: '/kompas/tema/' + tema.slug,
+        meta: temaSadrzaj.length + ' objavljenih sadržaja'
+      },
+      openTemaOblast: () => this.openOblast((this.oblastOf(tema.slug) || oblast).slug),
+      temaSadrzaj: temaSadrzaj, temaHasSadrzaj: !!temaSadrzaj.length, temaNoSadrzaj: !temaSadrzaj.length,
+      temaRelated: ((this.oblastOf(tema.slug) || oblast).teme.filter(t => t.slug !== tema.slug))
+        .map(t => ({ label: t.label, open: () => this.openTema(t.slug) })),
+
+      // ——— feedback + handoff
+      feedbackBanner: s.feedbackBanner, dismissBanner: this.dismissBanner, openFeedback: this.openFeedback,
+      drawerFeedback: s.drawer === 'feedback', drawerHandoff: s.drawer === 'handoff', closeDrawer: this.closeDrawer,
+      fbGroups: fbGroups, fbSent: s.fb.poslato, fbNotSent: !s.fb.poslato, sendFb: this.sendFb,
+      handoffItems: handoffItems, confirmHandoff: this.confirmHandoff,
+
+      // ——— admin brzi unos
+      atAdmin: s.route === 'admin',
+      adminSteps: ADMIN_STEPS.map((t, i) => ({ label: t, num: '' + (i + 1), go: () => this.adminGo(i),
+        style: { display: 'flex', alignItems: 'center', gap: '8px', padding: '9px 14px', minHeight: '42px', border: 0, borderRadius: '999px', cursor: 'pointer', fontSize: '12.5px', whiteSpace: 'nowrap',
+          background: i === s.adminStep ? 'var(--color-forest)' : (i < s.adminStep ? 'rgba(198,213,168,0.34)' : 'rgba(58,46,40,0.05)'),
+          color: i === s.adminStep ? '#f2f5ec' : 'var(--color-forest)' } })),
+      adminStepTitle: ADMIN_STEPS[s.adminStep], adminStepNum: (s.adminStep + 1) + ' / 6',
+      admStep0: s.adminStep === 0, admStep1: s.adminStep === 1, admStep2: s.adminStep === 2,
+      admStep3: s.adminStep === 3, admStep4: s.adminStep === 4, admStep5: s.adminStep === 5,
+      adm: adm, admKinds: admKinds, admSaved: adm.saved, admNotSaved: !adm.saved, admHasError: !!adm.error,
+      admIdLockNote: adm.saved ? 'Stable ID je zaključan nakon prvog čuvanja.' : 'Stable ID možete menjati do prvog čuvanja.',
+      admOpisCount: adm.opis.length + ' / 160', admOpisWarn: adm.opis.length > 160,
+      admParents: OBLASTI.map(o => ({ label: o.label, select: () => this.setAdmin({ parent: o.slug }),
+        style: { padding: '9px 14px', minHeight: '42px', border: adm.parent === o.slug ? '1px solid var(--color-forest)' : '1px solid rgba(58,46,40,0.14)',
+          borderRadius: '999px', background: adm.parent === o.slug ? 'rgba(198,213,168,0.3)' : '#fff', fontSize: '12.5px', color: 'var(--color-forest)', cursor: 'pointer' } })),
+      admRelated: (OBLASTI.find(o => o.slug === adm.parent) || OBLASTI[0]).teme.map(t => ({ label: t.label, toggle: () => this.adminToggleRelated(t.slug),
+        style: { padding: '9px 14px', minHeight: '42px', border: adm.related.indexOf(t.slug) > -1 ? '1px solid var(--color-forest)' : '1px solid rgba(58,46,40,0.14)',
+          borderRadius: '999px', background: adm.related.indexOf(t.slug) > -1 ? 'rgba(198,213,168,0.3)' : '#fff', fontSize: '12.5px', color: 'var(--color-forest)', cursor: 'pointer' } })),
+      admVeze: SADRZAJ.slice(0, 6).map(c => ({ label: c.naslov, tip: c.tip, toggle: () => this.adminToggleVeza(c.id),
+        style: { display: 'flex', alignItems: 'center', gap: '10px', width: '100%', padding: '12px 14px', minHeight: '48px', textAlign: 'left', cursor: 'pointer',
+          border: adm.veze.indexOf(c.id) > -1 ? '1px solid var(--color-forest)' : '1px solid rgba(58,46,40,0.12)', borderRadius: '14px',
+          background: adm.veze.indexOf(c.id) > -1 ? 'rgba(198,213,168,0.24)' : '#fff', fontSize: '13.5px', color: 'var(--color-forest)' },
+        mark: adm.veze.indexOf(c.id) > -1 ? '✓' : '' })),
+      admSlugPath: adm.slug ? '/kompas/' + adm.slug : '—',
+      admSlugReady: !!adm.termId, admSlugBlocked: !adm.termId, admSlugSuggested: !!adm.slug && !adm.slugConfirmed, admSlugConfirmed: adm.slugConfirmed,
+      admSummary: [
+        { k: 'Tip vrednosti', v: (admKinds.find(x => x.id === adm.kind) || {}).label || '—' },
+        { k: 'Naziv', v: adm.naziv || '—' },
+        { k: 'Stable ID', v: adm.stableId || '—' },
+        { k: 'Term ID', v: adm.termId || 'nije kreiran' },
+        { k: 'Nadređena oblast', v: this.oblastLabel(adm.parent) },
+        { k: 'Kanonska ruta', v: adm.slugConfirmed ? '/kompas/' + adm.slug : 'nije potvrđena' },
+        { k: 'Povezanih sadržaja', v: '' + adm.veze.length },
+        { k: 'Status', v: adm.sent ? 'Poslato na pregled' : (adm.saved ? 'Radna verzija' : 'Nije sačuvano') }
+      ],
+      admSent: adm.sent, admNotSent: !adm.sent,
+      onAdmNaziv: (e) => this.setAdmin({ naziv: e.target.value, stableId: adm.saved ? adm.stableId : this.slugify(e.target.value) }),
+      onAdmId: (e) => this.setAdmin({ stableId: e.target.value }),
+      onAdmOpis: (e) => this.setAdmin({ opis: e.target.value }),
+      onAdmSinonimi: (e) => this.setAdmin({ sinonimi: e.target.value }),
+      onAdmRed: (e) => this.setAdmin({ red: e.target.value }),
+      adminSaveDraft: this.adminSaveDraft, adminNext: this.adminNext, adminPrev: this.adminPrev,
+      adminSuggestSlug: this.adminSuggestSlug, adminConfirmSlug: this.adminConfirmSlug, adminSend: this.adminSend, adminReset: this.adminReset,
+      admIdDisabled: adm.saved,
+
+      oblastCtx: oblast, temaCtx: tema
+    };
+  }
+}
+
+</script>
+</body>
+</html>

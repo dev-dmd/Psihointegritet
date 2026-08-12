@@ -33,6 +33,44 @@ function entity(id: string): ContentEntity {
 }
 
 describe("content governance contract", () => {
+  it.each(["/kompas/oblast/stres-i-preopterecenost", "/kompas/tema/burnout"])(
+    "recognizes the canonical Kompas taxonomy route %s",
+    (path) => {
+      expect(isKnownPublicRoute(path)).toBe(true);
+    },
+  );
+
+  it.each([
+    "/kompas/oblast",
+    "/kompas/oblast/",
+    "/kompas/tema",
+    "/kompas/tema/",
+    "/kompas/oblast/stres/dodatno",
+    "/kompas/tema/burnout/dodatno",
+    "/kompas-oblast/stres",
+    "/kompas/oblasti/stres",
+    "/kompas-tema/burnout",
+    "/kompas/teme/burnout",
+  ])("rejects a malformed or lookalike Kompas taxonomy route %s", (path) => {
+    expect(isKnownPublicRoute(path)).toBe(false);
+  });
+
+  it("registers the Kompas landing page now that its renderer exists", () => {
+    // Flipped deliberately: this guard held while `/kompas` had no page file.
+    // `app/(public)/kompas/page.tsx` now renders the hero and the starting
+    // view, so registering the route no longer points at a 404.
+    expect(isKnownPublicRoute("/kompas")).toBe(true);
+  });
+
+  it("keeps the canonical taxonomy patterns registered", () => {
+    // ⚠️ These two are registered but have no page file yet — they land with
+    // K3B. Until then `isKnownPublicRoute` is true for a URL that 404s, which
+    // is exactly what the `/kompas` guard above used to prevent. This test
+    // documents the gap rather than hiding it.
+    expect(isKnownPublicRoute("/kompas/oblast/anksioznost")).toBe(true);
+    expect(isKnownPublicRoute("/kompas/tema/napadi-panike")).toBe(true);
+  });
+
   it("allows only the locked publication lifecycle transitions", () => {
     expect(isValidPublicationTransition("draft", "in_review")).toBe(true);
     expect(isValidPublicationTransition("in_review", "approved")).toBe(true);
@@ -59,7 +97,7 @@ describe("content governance contract", () => {
         {
           label: "Neispravno",
           action: "BOOK_SERVICE",
-          targetId: "therapist:anja-stamenkovic",
+          targetId: "therapist:maria-bullock",
         },
         staticContentProvider,
       ),

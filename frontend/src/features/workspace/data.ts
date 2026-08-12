@@ -1,19 +1,22 @@
 import { therapists } from "@/content/therapists";
+import type { UiLocale } from "@/i18n/locales";
+
+import * as en from "@/content/en/workspace-demo";
+import * as srLatn from "@/content/sr-Latn/workspace-demo";
+
+import { ELSA, JOHN, MARIA } from "./demo-slugs";
 import { emptyRichDoc } from "@/lib/content-governance/rich-doc";
 
 import type { LegalDocument } from "./legal-documents";
 import type {
-  AgendaEntry,
   AppointmentRequest,
   AvailabilityLayer,
   Client,
   Company,
-  PriorityCard,
   ServiceRow,
   TherapistCard,
   UnassignedRequest,
   WaitlistEntry,
-  WeekBar,
 } from "./types";
 
 /**
@@ -23,106 +26,6 @@ import type {
  * not the prototype's outdated copy. Everything is mock — no persistence.
  */
 
-const ANJA = "anja-stamenkovic";
-const MARIJA = "marija-stamenkovic";
-const MARJAN = "marjan-jankovic";
-
-export const priorityCards: PriorityCard[] = [
-  {
-    count: "3",
-    title: "Zahteva čeka potvrdu",
-    description: "Najstariji je poslat pre 4 sata.",
-    cta: "Pregledaj zahteve",
-    href: "/radni-prostor/termini",
-    dot: "warm",
-  },
-  {
-    count: "2",
-    title: "Nedodeljena klijenta",
-    description: "Intake bez automatske preporuke.",
-    cta: "Otvori listu",
-    href: "/radni-prostor/klijenti",
-    dot: "warm",
-  },
-  {
-    count: "1",
-    title: "Novi upit kompanije",
-    description: "Hotel Ambasador — stigao juče.",
-    cta: "Otvori kompanije",
-    href: "/radni-prostor/kompanije",
-    dot: "meadow",
-    adminOnly: true,
-  },
-  {
-    count: "1",
-    title: "Otkazan termin",
-    description: "Jelena I. — sreda u 10:00.",
-    cta: "Vidi termine",
-    href: "/radni-prostor/termini",
-    dot: "danger",
-  },
-];
-
-export const todayAgenda: AgendaEntry[] = [
-  {
-    time: "09:00",
-    end: "10:00",
-    client: "Ana Marković",
-    initials: "AM",
-    service: "Individualna psihoterapija",
-    format: "Online",
-    therapist: "Anja S.",
-    therapistSlug: ANJA,
-    source: "Javni booking",
-    status: "potvrdjen",
-  },
-  { time: "11:00", free: true },
-  {
-    time: "13:30",
-    end: "14:30",
-    client: "Marko Petrović",
-    initials: "MP",
-    service: "Individualna psihoterapija",
-    format: "Uživo · Niš",
-    therapist: "Anja S.",
-    therapistSlug: ANJA,
-    source: "Javni booking",
-    status: "ceka",
-  },
-  {
-    time: "16:00",
-    end: "17:00",
-    client: "Rezervisan kapacitet",
-    initials: "TN",
-    service: "Kompanijski program — TechNiš",
-    format: "Online",
-    therapist: "Marjan J.",
-    therapistSlug: MARJAN,
-    source: "Kompanijski program",
-    status: "rezervisano",
-  },
-  {
-    time: "17:30",
-    end: "18:30",
-    client: "Jelena Ilić",
-    initials: "JI",
-    service: "Bračno savetovanje",
-    format: "Online",
-    therapist: "Marjan J.",
-    therapistSlug: MARJAN,
-    source: "Vođeni izbor",
-    status: "potvrdjen",
-  },
-];
-
-export const weekBars: WeekBar[] = [
-  { day: "Pon", booked: 3, total: 6 },
-  { day: "Uto", booked: 4, total: 6 },
-  { day: "Sre", booked: 2, total: 6 },
-  { day: "Čet", booked: 5, total: 6 },
-  { day: "Pet", booked: 2, total: 6 },
-];
-
 export const appointmentRequests: AppointmentRequest[] = [
   {
     id: 1,
@@ -131,7 +34,7 @@ export const appointmentRequests: AppointmentRequest[] = [
     service: "Individualna psihoterapija",
     preferred: "Uto, 21. jul · 10:00",
     format: "Online",
-    therapist: "Anja S.",
+    therapist: "Maria B.",
     ago: "pre 4 sata",
     source: "Javni booking",
     status: "ceka",
@@ -142,8 +45,8 @@ export const appointmentRequests: AppointmentRequest[] = [
     initials: "TK",
     service: "Roditeljsko savetovanje",
     preferred: "Sre, 22. jul · 17:00",
-    format: "Uživo · Niš",
-    therapist: "Marija S.",
+    format: "Uživo · Chicago",
+    therapist: "Elsa B.",
     ago: "pre 2 sata",
     source: "Vođeni izbor",
     status: "ceka",
@@ -155,7 +58,7 @@ export const appointmentRequests: AppointmentRequest[] = [
     service: "Bračno savetovanje",
     preferred: "Pet, 24. jul · 19:00",
     format: "Online",
-    therapist: "Marjan J.",
+    therapist: "John F.",
     ago: "pre 45 minuta",
     source: "Preporuka",
     status: "ceka",
@@ -168,13 +71,13 @@ export const waitlist: WaitlistEntry[] = [
     initials: "IR",
     period: "Radnim danima posle 17h",
     format: "Online",
-    therapist: "Anja S.",
+    therapist: "Maria B.",
   },
   {
     client: "Miloš Antić",
     initials: "MA",
     period: "Vikendom prepodne",
-    format: "Uživo · Niš",
+    format: "Uživo · Chicago",
     therapist: "Bilo koji terapeut",
   },
 ];
@@ -184,8 +87,8 @@ export const clients: Client[] = [
     id: "c1",
     name: "Ana Marković",
     initials: "AM",
-    therapist: "Anja Stamenković",
-    therapistSlug: ANJA,
+    therapist: "Maria Bullock",
+    therapistSlug: MARIA,
     next: "Čet, 24. jul · 17:00",
     service: "Individualna psihoterapija",
     format: "Online",
@@ -195,8 +98,8 @@ export const clients: Client[] = [
     id: "c2",
     name: "Marko Petrović",
     initials: "MP",
-    therapist: "Anja Stamenković",
-    therapistSlug: ANJA,
+    therapist: "Maria Bullock",
+    therapistSlug: MARIA,
     next: "Danas · 13:30",
     service: "Individualna psihoterapija",
     format: "Uživo",
@@ -206,8 +109,8 @@ export const clients: Client[] = [
     id: "c3",
     name: "Jelena Ilić",
     initials: "JI",
-    therapist: "Marjan Janković",
-    therapistSlug: MARJAN,
+    therapist: "John Francis",
+    therapistSlug: JOHN,
     next: "Danas · 17:30",
     service: "Bračno savetovanje",
     format: "Online",
@@ -217,8 +120,8 @@ export const clients: Client[] = [
     id: "c4",
     name: "Tamara Kostić",
     initials: "TK",
-    therapist: "Marija Stamenković",
-    therapistSlug: MARIJA,
+    therapist: "Elsa Browers",
+    therapistSlug: ELSA,
     next: "Nema budući termin",
     service: "Roditeljsko savetovanje",
     format: "Uživo",
@@ -228,8 +131,8 @@ export const clients: Client[] = [
     id: "c5",
     name: "Petar Stanković",
     initials: "PS",
-    therapist: "Marjan Janković",
-    therapistSlug: MARJAN,
+    therapist: "John Francis",
+    therapistSlug: JOHN,
     next: "Nema budući termin",
     service: "Individualna psihoterapija",
     format: "Online",
@@ -239,10 +142,10 @@ export const clients: Client[] = [
     id: "c6",
     name: "Milica Pavlović",
     initials: "MP",
-    therapist: "Anja Stamenković",
-    therapistSlug: ANJA,
+    therapist: "Maria Bullock",
+    therapistSlug: MARIA,
     next: "Pon, 28. jul · 09:00",
-    service: "Individualna psihoterapija · TechNiš",
+    service: "Individualna psihoterapija · TechCore",
     format: "Online",
     status: "aktivan",
   },
@@ -257,7 +160,7 @@ export const unassignedRequests: UnassignedRequest[] = [
     format: "Online",
     ageGroup: "25–34",
     areas: ["Anksioznost", "Burnout"],
-    recommended: "Anja S. ili Marjan J.",
+    recommended: "Maria B. ili John F.",
     reason: "Dva terapeuta imaju podjednako poklapanje oblasti.",
   },
   {
@@ -265,10 +168,10 @@ export const unassignedRequests: UnassignedRequest[] = [
     initials: "D. M.",
     date: "19. jul",
     ago: "pre 3 sata",
-    format: "Uživo · Niš",
+    format: "Uživo · Chicago",
     ageGroup: "35–44",
     areas: ["Partnerski odnosi"],
-    recommended: "Marjan J.",
+    recommended: "John F.",
     reason: "Traženi termin je van radnog vremena terapeuta.",
   },
 ];
@@ -283,7 +186,7 @@ export const companyPipeline = [
 export const companies: Company[] = [
   {
     id: "k1",
-    name: "TechNiš d.o.o.",
+    name: "TechCore Inc.",
     status: "koAktivna",
     contact: "Milena Stojanović · HR menadžerka",
     model: "Fleksibilni fond individualnih termina",
@@ -291,7 +194,7 @@ export const companies: Company[] = [
     used: 12,
     employees: 85,
     format: "Online + uživo",
-    location: "Niš",
+    location: "Chicago",
     goal: "Prevencija burnouta i podrška timovima u pikovima projekata.",
     expires: "31. dec 2026.",
   },
@@ -305,7 +208,7 @@ export const companies: Company[] = [
     used: 3,
     employees: 32,
     format: "Uživo",
-    location: "Leskovac",
+    location: "Milwaukee",
     goal: "Pilot: individualna podrška za smenske timove.",
     expires: "30. sep 2026.",
   },
@@ -319,7 +222,7 @@ export const companies: Company[] = [
     used: 0,
     employees: 54,
     format: "Online",
-    location: "Niš",
+    location: "Chicago",
     goal: "Radionice + fond termina za zaposlene.",
     expires: "—",
   },
@@ -333,7 +236,7 @@ export const companies: Company[] = [
     used: 0,
     employees: 40,
     format: "—",
-    location: "Niš",
+    location: "Chicago",
     goal: "Upit: podrška za uslužni tim tokom sezone.",
     expires: "—",
   },
@@ -347,7 +250,7 @@ export const serviceCatalog: ServiceRow[] = [
     duration: "60 min",
     price: "4.000 RSD",
     format: "Online i uživo",
-    therapists: "Anja · Marija · Marjan",
+    therapists: "Maria · Elsa · John",
     variants: [
       "Standardna · 4.000",
       "Kompanijska · 4.800",
@@ -364,7 +267,7 @@ export const serviceCatalog: ServiceRow[] = [
     duration: "90 min",
     price: "5.500 RSD",
     format: "Online i uživo",
-    therapists: "Anja · Marjan",
+    therapists: "Maria · John",
     variants: ["Standardna · 5.500"],
     manual: "Ne",
     buffer: "12h",
@@ -377,7 +280,7 @@ export const serviceCatalog: ServiceRow[] = [
     duration: "60 min",
     price: "5.000 RSD",
     format: "Online i uživo",
-    therapists: "Anja · Marija",
+    therapists: "Maria · Elsa",
     variants: ["Standardna · 5.000"],
     manual: "Ne",
     buffer: "12h",
@@ -390,7 +293,7 @@ export const serviceCatalog: ServiceRow[] = [
     duration: "120 min",
     price: "Cena po ponudi",
     format: "Uživo · kompanije",
-    therapists: "Anja",
+    therapists: "Maria",
     variants: ["Kompanijska · po ponudi"],
     manual: "Da",
     buffer: "72h",
@@ -398,50 +301,14 @@ export const serviceCatalog: ServiceRow[] = [
   },
 ];
 
-export const researchStats: { label: string; value: string }[] = [
-  { label: "Otvoreni draweri", value: "412" },
-  { label: "Započeti odgovori", value: "168" },
-  { label: "Završeni odgovori", value: "121" },
-  { label: "Completion rate", value: "72%" },
-];
-
-export const researchSurvey = {
-  name: "Šta vas sprečava da zakažete prvi razgovor?",
-  period: "1 — 19. jul 2026.",
-  responses: 121,
-  questions: [
-    {
-      q: "1 · Najveća prepreka za dolazak",
-      bars: [
-        { label: "Nesigurnost šta da očekujem", pct: 34 },
-        { label: "Cena", pct: 28 },
-        { label: "Nedostatak vremena", pct: 22 },
-        { label: "Neprijatnost / stigma", pct: 16 },
-      ],
-    },
-    {
-      q: "2 · Preferirani format rada",
-      bars: [
-        { label: "Online", pct: 58 },
-        { label: "Uživo", pct: 30 },
-        { label: "Svejedno mi je", pct: 12 },
-      ],
-    },
-  ],
-  open: [
-    'Nisam sigurna da li je moj problem „dovoljno ozbiljan" za terapiju.',
-    "Voleo bih kratak besplatan poziv pre prve seanse.",
-  ],
-};
-
 /** Therapist cards — real people from content/therapists.ts + demo load figures. */
 const LOAD: Record<
   string,
   { clients: number; occupancy: number; accepting: boolean }
 > = {
-  [ANJA]: { clients: 14, occupancy: 82, accepting: true },
-  [MARIJA]: { clients: 11, occupancy: 64, accepting: true },
-  [MARJAN]: { clients: 12, occupancy: 71, accepting: false },
+  [MARIA]: { clients: 14, occupancy: 82, accepting: true },
+  [ELSA]: { clients: 11, occupancy: 64, accepting: true },
+  [JOHN]: { clients: 12, occupancy: 71, accepting: false },
 };
 
 export const therapistCards: TherapistCard[] = therapists.map((t) => ({
@@ -456,17 +323,17 @@ export const therapistCards: TherapistCard[] = therapists.map((t) => ({
 }));
 
 /**
- * „Moj profil" demo — shows the first therapist (Anja) as the signed-in
+ * „Moj profil" demo — shows the first therapist (Maria) as the signed-in
  * therapist. Once the backend maps the Clerk user to a therapist record, this
  * resolves to the actual logged-in person.
  */
-export const myProfileSlug = ANJA;
+export const myProfileSlug = MARIA;
 
 export const matchingPreferences = {
   ageGroups: "Odrasli 18–65",
   maxNewMonthly: "3",
   priority: "Visok",
-  cities: "Niš · online",
+  cities: "Chicago · online",
   notAccepting: ["Zavisnosti", "Deca do 16 godina"],
   toggles: [
     { label: "Prima nove klijente", on: true },
@@ -495,7 +362,7 @@ export const availabilityLayers: AvailabilityLayer[] = [
   {
     index: 4,
     title: "Rezervisani kapacitet",
-    body: "TechNiš d.o.o. · Četvrtak · 16:00 — 18:00. Nedostupno javnom bookingu — koristi se samo kroz kompanijski program.",
+    body: "TechCore Inc. · Četvrtak · 16:00 — 18:00. Nedostupno javnom bookingu — koristi se samo kroz kompanijski program.",
   },
 ];
 
@@ -503,7 +370,7 @@ export const availabilityLayers: AvailabilityLayer[] = [
  * Seed documents for the registry preview (LD-3). Deliberately unfinished:
  * the two Intake consent texts exist as empty drafts so the panel shows the
  * gate closed and names exactly what is missing. We do not write legal text
- * (master plan §0, point 8) — Anja and the lawyer fill these in.
+ * (master plan §0, point 8) — the centre owner and the lawyer fill these in.
  */
 export const seedLegalDocuments: LegalDocument[] = [
   {
@@ -533,3 +400,39 @@ export const seedLegalDocuments: LegalDocument[] = [
     updatedAt: "2026-07-26T09:00:00.000Z",
   },
 ];
+
+/**
+ * The copy-bearing demo rows, chosen at render time.
+ *
+ * Everything above this line is structure — slugs, ids and figures derived from
+ * `content/therapists.ts`. Everything below is text someone reads.
+ *
+ * # Why this is a function and not a module constant
+ *
+ * The other content fallbacks resolve once, at module scope, through
+ * `pickContent`. That reads the **static registry**, which is baked into the
+ * build — and the panel writes the organization's locale to the **database**.
+ * The two agree until an administrator uses the language switch, and then the
+ * Control Center rendered English chrome around Serbian cards: "Good morning"
+ * above "Zahteva čeka potvrdu".
+ *
+ * The workspace is request-time rendered, so it does not need the build-time
+ * answer. Taking the locale as an argument lets each screen pass the live one
+ * it already holds — `useUiLocale()` — and the demo data follows the switch
+ * immediately, without a redeploy.
+ *
+ * The public site cannot do this yet: its content is read by 51 module-scope
+ * constants and it is statically rendered, so its fallback locale is still
+ * whatever the registry said at build time. That is recorded as an open item,
+ * not fixed here.
+ */
+export function workspaceDemo(locale: UiLocale) {
+  const demo = locale === "en" ? en : srLatn;
+  return {
+    priorityCards: demo.priorityCards,
+    todayAgenda: demo.todayAgenda,
+    weekBars: demo.weekBars,
+    researchStats: demo.researchStats,
+    researchSurvey: demo.researchSurvey,
+  };
+}

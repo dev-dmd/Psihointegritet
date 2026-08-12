@@ -27,7 +27,7 @@ if (typeof window !== "undefined" && window.matchMedia) {
 export function TrustStrip() {
   const trustItems = [
     { label: "Online i uživo" },
-    { label: "Niš, Leskovac i druge lokacije" },
+    { label: "Chicago, Milwaukee, Madison i online" },
     { label: "Individualni i partnerski rad" },
     { label: "Poverljivost i stručnost" },
   ];

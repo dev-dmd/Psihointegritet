@@ -3,30 +3,28 @@ import { cn } from "@/helpers/cn";
 import { BookingWidgetMobileBrand } from "./BookingWidgetBrandPanel";
 import { useBookingWidget } from "../hooks/use-booking-widget";
 import type {
-  BookingService,
   BookingWidgetBrand,
   BookingWidgetCopy,
   BookingWidgetTheme,
+  BookingFormat,
 } from "../booking-widget.types";
 
 interface BookingWidgetHeaderProps {
   brand: BookingWidgetBrand;
-  service: BookingService;
   copy: BookingWidgetCopy;
   theme: BookingWidgetTheme;
 }
 
 export function BookingWidgetHeader({
   brand,
-  service,
   copy,
   theme,
 }: BookingWidgetHeaderProps) {
   const { selectedFormat, setSelectedFormat } = useBookingWidget();
-  const formatOptions = service.formats.map((format) => ({
-    value: format,
-    label: format === "online" ? copy.onlineLabel : copy.inPersonLabel,
-  }));
+  const formats: Array<{ value: BookingFormat; label: string }> = [
+    { value: "online", label: copy.onlineLabel },
+    { value: "uzivo", label: copy.inPersonLabel },
+  ];
 
   return (
     <header className={cn("border-b pb-5", theme.border)}>
@@ -63,7 +61,7 @@ export function BookingWidgetHeader({
             theme.switchTrack,
           )}
         >
-          {formatOptions.map((option) => {
+          {formats.map((option) => {
             const isSelected = option.value === selectedFormat;
             return (
               <button

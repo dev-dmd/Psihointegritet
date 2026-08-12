@@ -178,7 +178,13 @@ export function jsonLdForEntity(
       name: entity.source.name,
       description: entity.source.description,
       url: absolutePublicUrl(entity.route, origin),
-      areaServed: [...siteSettings.locations, "online"],
+      areaServed: [
+        ...siteSettings.locations.map(
+          (location) =>
+            `${location.city}, ${location.region}, ${siteSettings.country}`,
+        ),
+        "online",
+      ],
     });
   }
 

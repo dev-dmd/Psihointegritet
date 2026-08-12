@@ -1,7 +1,7 @@
 import Link from "next/link";
 
 import { PageHero } from "@/components/shared/page-hero";
-import { siteSettings } from "@/content/site-settings";
+import { locationsShortLabel, siteSettings } from "@/content/site-settings";
 import { metadataForRoute } from "@/lib/content-governance/discoverability";
 import { getContentProvider } from "@/lib/content-governance/provider-resolver";
 
@@ -78,7 +78,7 @@ export default function ContactPage() {
             termin koristite posebnu formu za zakazivanje.
           </p>
           <p className="text-coffee/72 mt-5 text-[15px] leading-[1.65]">
-            Niš i Leskovac
+            {locationsShortLabel}
             <br />
             online i uživo
           </p>

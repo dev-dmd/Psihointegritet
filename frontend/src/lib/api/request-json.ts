@@ -4,6 +4,14 @@ const errorEnvelopeSchema = z.object({
   error: z.string().optional(),
 });
 
+const apiProblemEnvelopeSchema = z.object({
+  title: z.string().min(1),
+  detail: z.string().min(1).optional(),
+  code: z.string().optional(),
+  fieldPath: z.string().optional(),
+  fieldErrors: z.record(z.string(), z.array(z.string())).optional(),
+});
+
 /**
  * Error raised by same-origin frontend adapters. The body is parsed only to a
  * narrow public envelope; raw provider/backend payloads never leak into UI.
@@ -12,6 +20,9 @@ export class JsonRequestError extends Error {
   constructor(
     readonly status: number,
     message = "Request failed",
+    readonly code?: string,
+    readonly fieldPath?: string,
+    readonly fieldErrors?: Record<string, string[]>,
   ) {
     super(message);
     this.name = "JsonRequestError";
@@ -19,8 +30,15 @@ export class JsonRequestError extends Error {
 }
 
 async function readJson(response: Response): Promise<unknown> {
-  const contentType = response.headers.get("content-type") ?? "";
-  if (!contentType.includes("application/json")) {
+  const mediaType = (response.headers.get("content-type") ?? "")
+    .split(";", 1)[0]
+    ?.trim()
+    .toLowerCase();
+  const isJson =
+    mediaType === "application/json" ||
+    (mediaType?.startsWith("application/") === true &&
+      mediaType.endsWith("+json"));
+  if (!isJson) {
     return null;
   }
 
@@ -40,6 +58,18 @@ export async function requestJson<TResult>(
   const payload = await readJson(response);
 
   if (!response.ok) {
+    const parsedProblem = apiProblemEnvelopeSchema.safeParse(payload);
+    if (parsedProblem.success) {
+      const problem = parsedProblem.data;
+      throw new JsonRequestError(
+        response.status,
+        problem.detail ? `${problem.title} ${problem.detail}` : problem.title,
+        problem.code,
+        problem.fieldPath,
+        problem.fieldErrors,
+      );
+    }
+
     const parsedError = errorEnvelopeSchema.safeParse(payload);
     throw new JsonRequestError(
       response.status,

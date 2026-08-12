@@ -387,7 +387,7 @@
 
 - [x] **O-24a — Intake & Matching taksonomija (D-052):** pet stabilnih `areas` ID-jeva + display labele, zajednički `contracts/fixtures/taxonomy.v1.json`, frontend/backend parity čitači i migracija postojećih DB profila `20260730_0010`. „Zavisnost" je Anjina potvrđena capability oznaka i opcija upitnika, uz timski handoff.
 - [x] **O-24b — CMS/Kompas ugovor (D-053/ADR-022):** managed grupe/teme/publike/ciljevi, zaključane system journey/format/access vrednosti, revision-bound CMS reference i eksplicitni most ka D-052 Intake oblastima. Arhitektura je zatvorena; implementacija je `KOMPAS_TODO.md` K1–K3, a Anjina tabela je registry unos.
-- [ ] `ADR-019` (tip `article`) pre bilo kog koda za članke — `ContentType` ih danas namerno izostavlja (`models.py:64`).
+- [x] `ADR-019` (tip `article`) — **usvojen 2026-08-03**, zajedno sa `ADR-021` (minimalni Layout Engine recept), pošto je stigao prvi stvarni tekst od Anje. Kod za članke sme da počne, ali tek posle D19 zbog nove migracije.
 
 ### AI sloj nad sadržajem — **posle CMS-a, ADR-017 §12 + A1.1**
 

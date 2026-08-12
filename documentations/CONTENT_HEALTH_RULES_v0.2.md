@@ -126,6 +126,20 @@ Nema imena klijenta, forme, intake odgovora, booking note-a ili drugog osetljivo
 | `IMPORT-003`   | warning       | tabela izbačena (RichDoc v1 ih ne podržava)                                                      | uneti podatke ručno kroz dozvoljene blokove                                         |
 | `IMPORT-004`   | warning       | slika iz dokumenta nije preneta (nema alt tekst)                                                 | dodati sliku kroz galeriju sa alt tekstom                                           |
 | `IMPORT-005`   | warning       | nepoznato formatiranje odbačeno pri uvozu                                                        | proveriti rezultat uvoza pre objave                                                 |
+| `IMPORT-006`   | info          | prvi podebljani pasus preuzet kao naslov članka (dokument nema nijedan heading)                   | potvrditi ili izmeniti naslov u koraku Identitet                                    |
+| `IMPORT-007`   | info          | prepoznata lista predložena kao sekcija „pitanja"                                                | potvrditi granicu sekcije u koraku Telo                                             |
+| `EDIT-001`     | warning → 🩺  | apsolutna formulacija (`uvek`, `nikad`, `svi`, `niko`…)                                          | preformulisati ili potvrditi kroz stručno odobrenje                                 |
+| `EDIT-002`     | warning → 🩺  | tvrdnja o telu, nervnom sistemu ili fiziologiji                                                  | stručna provera tvrdnje pre objave                                                  |
+| `EDIT-003`     | warning → 🩺  | praktično uputstvo čitaocu (imperativ)                                                           | stručna provera bezbednosti uputstva                                                |
+| `EDIT-004`     | warning → 🩺  | citat u tekstu, a `sources` je prazan                                                            | dodati izvor u kontrolisano polje ili ukloniti navodnike                            |
+| `EDIT-005`     | warning → 🩺  | atribucija (`rekao je`, `osnivač`, `nobelovac`) bez izvora                                       | dodati izvor u kontrolisano polje                                                   |
+| `EDIT-006`     | warning → 🩺  | članak bez publike ili bez teme                                                                  | dopuniti kategorizaciju pre slanja na pregled                                       |
+
+**`EDIT-0xx` porodica (ADR-019 §8) postoji samo za `ContentType.article` i ponaša se drugačije od svega ostalog u ovoj tabeli:** nalazi su `warning`, dakle **ne blokiraju**, ali nose `requiresApproval = clinical` i time dodaju obavezno stručno odobrenje na tu reviziju (`dynamic_approvals`, `modules/content/publication.py:228-245`). Oznaka 🩺 u koloni severity znači tačno to.
+
+Nijedno `EDIT-0xx` pravilo ne sudi o istinitosti stručne tvrdnje. Ono označava mesto koje mora da pročita čovek sa stručnom kapabilnošću. Lažno pozitivan nalaz košta jedan pogled recenzenta; lažno negativan objavljuje nepregledano uputstvo, pa su obrasci namerno široki.
+
+Dve implementacione zamke, obe izmerene na stvarnom članku: `EDIT-004` ne sme da traži `QuoteBlock` (u predatom dokumentu ih ima nula, citati su inline tekst), i mora koristiti non-greedy parove navodnika, jer dokument meša `„…"` i `“…”` u istom pasusu pa pohlepan obrazac spoji dva odvojena citata u jedan nalaz.
 
 ## 5. Pravila severity-ja
 

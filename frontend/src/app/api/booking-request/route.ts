@@ -1,120 +1,72 @@
 import "server-only";
 
-import { Resend } from "resend";
 import { z } from "zod";
 
-import { formatRsd, findService, PRICE_NOTE } from "@/content/services";
-import { findTherapist } from "@/content/therapists";
-import { therapistProvidesService } from "@/features/booking/booking-context";
+import { serverEnv } from "@/lib/validation/env";
 
 /**
- * Demo booking request - Next Route Handler, no database and no Booking
- * Engine. The FastAPI inquiries/booking modules take ownership in a later
- * iteration. This endpoint intentionally sends a request, never confirms a
- * time slot.
+ * Public booking request — BFF proxy to FastAPI Booking Engine.
+ *
+ * R2.5 replaces the demo Resend email-only handler. The form still speaks in
+ * therapist slugs / service slugs / format strings — this handler resolves
+ * them to UUIDs server-side and forwards to the FastAPI endpoint.
+ *
+ * In R2 request-first mode the FastAPI creates an ``AppointmentRequest``
+ * with status ``submitted``. No slot is reserved, no real-time availability
+ * is checked — the therapist reviews and confirms later.
  */
 
-const THERAPIST_EMAILS: Record<string, string> = {
-  "anja-stamenkovic":
-    process.env.THERAPIST_EMAIL_ANJA ?? "anja.stamenkovic@psihointegritet.com",
-  "marija-stamenkovic":
-    process.env.THERAPIST_EMAIL_MARIJA ??
-    "marija.stamenkovic@psihointegritet.com",
-  "marjan-jankovic":
-    process.env.THERAPIST_EMAIL_MARJAN ?? "marjan.jankovic@psihointegritet.com",
+// ── Slug → UUID mapping (hardcoded — tech debt tracked for CMS migration) ───
+//
+// Therapist UUIDs from therapist_matching_profiles (provision_team.py).
+// Service UUIDs from content_entries (seed_booking_services.py).
+// Populated from development DB 2026-08-08; therapists re-read 2026-08-10
+// after the D-074 team replacement created the incoming profiles.
+//
+// These ids are per-database. `provision_team.py` lets Postgres generate them,
+// so staging and production hold *different* UUIDs for the same three slugs —
+// re-read this table from each environment after running the swap there, or a
+// request arrives with `therapist_profile_id: null` and no error to explain it.
+
+const THERAPIST_SLUG_TO_ID: Record<string, string> = {
+  "maria-bullock": "1d163c01-1bea-4098-913c-087f1d81137f",
+  "elsa-browers": "f0990ab2-76fb-42a6-97a3-1aa201805212",
+  "john-francis": "9fd95a7f-0f1b-4b12-ba60-4fb4d1fcbecb",
 };
 
+const SERVICE_SLUG_TO_ID: Record<string, string> = {
+  "individualna-psihoterapija": "94bc327b-14e3-49d4-af7f-166c78a5d1a5",
+  "bracno-savetovanje": "1b457aca-0bda-4c40-b97b-7513cfc28f0c",
+  "roditeljsko-savetovanje": "d4195f62-6a15-4c71-89d3-41999d87114b",
+};
+
+// ── Payload validation (same schema as before) ──────────────────────────────
+
 const therapistSlugs = [
-  "anja-stamenkovic",
-  "marija-stamenkovic",
-  "marjan-jankovic",
-] as const;
-const bookingSources = [
-  "header",
-  "homepage",
-  "service",
-  "therapist",
-  "matching",
-  "workshop",
+  "maria-bullock",
+  "elsa-browers",
+  "john-francis",
 ] as const;
 
-const summarySchema = z.object({
-  answers: z
-    .array(
-      z.object({
-        question: z.string().max(300),
-        answer: z.string().max(600),
-      }),
-    )
-    .max(12),
-  extraText: z.string().max(2000).optional(),
-  recommendedService: z.string().max(120).optional(),
-  recommendedTherapist: z.string().max(120).optional(),
-  alternativeTherapist: z.string().max(120).optional(),
-  reasons: z.array(z.string().max(300)).max(3).optional(),
-  format: z.string().max(120).optional(),
-  location: z.string().max(120).optional(),
-  priorTherapy: z.string().max(120).optional(),
-  needsManualReview: z.boolean().optional(),
+const payloadSchema = z.object({
+  therapistSlug: z.enum(therapistSlugs).nullable(),
+  serviceSlug: z.string().min(1).max(120),
+  format: z.enum(["online", "uzivo"]),
+  location: z.enum(["Chicago", "Milwaukee", "Madison"]).nullable(),
+  preferredDate: z.string().min(1).max(40),
+  preferredTime: z.string().min(1).max(80).optional(),
+  alternativeDate: z.string().max(40).optional(),
+  name: z.string().min(1).max(160),
+  email: z.email().max(200),
+  phone: z.string().max(80).optional(),
+  replyPreference: z.enum(["email", "phone"]),
+  message: z.string().max(2000).optional(),
+  bookingRulesAccepted: z.literal(true),
+  source: z.string().max(120).optional(),
+  website: z.string().max(200).optional(),
 });
 
-const payloadSchema = z
-  .object({
-    therapistSlug: z.enum(therapistSlugs).nullable(),
-    serviceSlug: z.string().min(1).max(120),
-    format: z.enum(["online", "uzivo"]),
-    location: z.enum(["Niš", "Leskovac"]).nullable(),
-    preferredDate: z.string().min(1).max(40),
-    preferredTime: z.string().min(1).max(80),
-    alternativeDate: z.string().max(40).optional(),
-    name: z.string().min(1).max(160),
-    email: z.email().max(200),
-    phone: z.string().max(80).optional(),
-    replyPreference: z.enum(["email", "phone"]),
-    message: z.string().max(2000).optional(),
-    bookingRulesAccepted: z.literal(true),
-    source: z.enum(bookingSources).optional(),
-    website: z.string().max(200).optional(),
-    summary: summarySchema.optional(),
-  })
-  .superRefine((value, context) => {
-    if (value.format === "uzivo" && !value.location) {
-      context.addIssue({
-        code: "custom",
-        path: ["location"],
-        message: "Lokacija je obavezna za rad uživo.",
-      });
-    }
-    if (value.format === "online" && value.location !== null) {
-      context.addIssue({
-        code: "custom",
-        path: ["location"],
-        message: "Lokacija se ne šalje za online rad.",
-      });
-    }
-    if (value.replyPreference === "phone" && !value.phone?.trim()) {
-      context.addIssue({
-        code: "custom",
-        path: ["phone"],
-        message: "Telefon je obavezan kada je izabran odgovor telefonom.",
-      });
-    }
-  });
-
-const FROM =
-  process.env.RESEND_FROM_EMAIL ??
-  "Psihointegritet <noreply@psihointegritet.com>";
-
-function esc(value: string): string {
-  return value
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;");
-}
-
-function row(label: string, value: string): string {
-  return `<tr><td style="padding:4px 12px 4px 0;color:#4E5F4C;vertical-align:top;">${esc(label)}</td><td style="padding:4px 0;">${esc(value)}</td></tr>`;
-}
+// ── POST handler ────────────────────────────────────────────────────────────
 
 export async function POST(request: Request): Promise<Response> {
   let json: unknown;
@@ -126,151 +78,101 @@ export async function POST(request: Request): Promise<Response> {
 
   const parsed = payloadSchema.safeParse(json);
   if (!parsed.success) {
-    return Response.json({ error: "Neispravni podaci." }, { status: 422 });
+    return Response.json(
+      { error: "Neispravni podaci.", details: parsed.error.flatten() },
+      { status: 422 },
+    );
   }
   const payload = parsed.data;
 
-  // Quietly accept a filled honeypot without sending a message.
+  // Honeypot: silently accept
   if (payload.website?.trim()) {
     return Response.json({ ok: true });
   }
 
-  const service = findService(payload.serviceSlug);
-  if (!service) {
-    return Response.json(
-      { error: "Izabrana usluga nije dostupna." },
-      { status: 422 },
-    );
-  }
-  const therapist = payload.therapistSlug
-    ? findTherapist(payload.therapistSlug)
+  // Resolve slugs
+  const therapistProfileId = payload.therapistSlug
+    ? (THERAPIST_SLUG_TO_ID[payload.therapistSlug] ?? null)
     : null;
-  if (payload.therapistSlug && !therapist) {
+  const serviceId = SERVICE_SLUG_TO_ID[payload.serviceSlug];
+
+  if (!serviceId) {
     return Response.json(
-      { error: "Izabrani terapeut nije dostupan." },
-      { status: 422 },
-    );
-  }
-  if (therapist && !therapistProvidesService(therapist.slug, service.slug)) {
-    return Response.json(
-      { error: "Izabrana kombinacija usluge i terapeuta nije dostupna." },
-      { status: 422 },
-    );
-  }
-  if (
-    therapist &&
-    payload.format === "uzivo" &&
-    payload.location !== therapist.city
-  ) {
-    return Response.json(
-      { error: "Izabrani terapeut ne radi na toj lokaciji." },
+      {
+        error: `Usluga "${payload.serviceSlug}" nema UUID. Pokrenite scripts/seed_booking_services.py.`,
+      },
       { status: 422 },
     );
   }
 
-  const apiKey = process.env.RESEND_API_KEY;
-  if (!apiKey) {
+  // Build client_note from preferred date/time + message
+  const noteParts: string[] = [];
+  if (payload.preferredDate)
+    noteParts.push(`Željeni datum: ${payload.preferredDate}`);
+  if (payload.preferredTime)
+    noteParts.push(`Željeno vreme: ${payload.preferredTime}`);
+  if (payload.alternativeDate)
+    noteParts.push(`Alternativni datum: ${payload.alternativeDate}`);
+  if (payload.phone) noteParts.push(`Telefon: ${payload.phone}`);
+  if (payload.replyPreference)
+    noteParts.push(
+      `Odgovor: ${payload.replyPreference === "email" ? "emailom" : "telefonom"}`,
+    );
+  if (payload.message) noteParts.push(`Poruka: ${payload.message}`);
+  if (payload.source) noteParts.push(`Izvor: ${payload.source}`);
+
+  // Forward to FastAPI
+  const fastApiPayload = {
+    therapist_profile_id: therapistProfileId ?? null,
+    service_id: serviceId,
+    request_type: "initial",
+    preferred_start: null,
+    preferred_end: null,
+    format: payload.format === "online" ? "online" : "in_person",
+    location_id: null,
+    client_name: payload.name,
+    client_email: payload.email,
+    client_phone: payload.phone ?? null,
+    client_timezone: "Europe/Belgrade",
+    client_note: noteParts.join(" | ") || null,
+    idempotency_key: `${payload.email}-${Date.now()}`,
+    consent_booking_rules: payload.bookingRulesAccepted === true,
+  };
+
+  try {
+    const backendResponse = await fetch(
+      `${serverEnv.NEXT_PUBLIC_API_URL}/api/v1/booking/appointment-requests`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(fastApiPayload),
+        cache: "no-store",
+      },
+    );
+
+    const body =
+      backendResponse.status === 204
+        ? null
+        : await backendResponse.json().catch(() => null);
+
+    if (!backendResponse.ok) {
+      return Response.json(
+        body ?? { error: "Backend nije prihvatio zahtev." },
+        {
+          status: backendResponse.status,
+          headers: { "Content-Type": "application/json" },
+        },
+      );
+    }
+
     return Response.json(
-      { error: "Slanje trenutno nije konfigurisano." },
-      { status: 503 },
+      { ok: true, id: body?.id, status: body?.status },
+      { status: 201 },
+    );
+  } catch {
+    return Response.json(
+      { error: "Booking servis trenutno nije dostupan." },
+      { status: 503, headers: { "Cache-Control": "no-store" } },
     );
   }
-
-  const recipients = therapist
-    ? [THERAPIST_EMAILS[therapist.slug]!]
-    : Object.values(THERAPIST_EMAILS);
-  const forWhom = therapist?.name ?? "Psihointegritet tim (nedodeljen zahtev)";
-  const summary = payload.summary;
-
-  let summaryHtml = "";
-  if (summary) {
-    const rows = summary.answers
-      .map((item) => row(item.question, item.answer))
-      .join("");
-    const meta = [
-      summary.recommendedService
-        ? `<p><strong>Preporučena usluga:</strong> ${esc(summary.recommendedService)}</p>`
-        : "",
-      summary.recommendedTherapist
-        ? `<p><strong>Preporučeni terapeut:</strong> ${esc(summary.recommendedTherapist)}${
-            summary.alternativeTherapist
-              ? ` (alternativa: ${esc(summary.alternativeTherapist)})`
-              : ""
-          }</p>`
-        : "",
-      summary.reasons?.length
-        ? `<p><strong>Razlozi preporuke:</strong> ${summary.reasons.map(esc).join(" ")}</p>`
-        : "",
-      summary.extraText
-        ? `<p><strong>Dodatno, svojim rečima:</strong><br>${esc(summary.extraText).replace(/\n/g, "<br>")}</p>`
-        : "",
-      summary.needsManualReview
-        ? `<p style="color:#B4552D;"><strong>Potreban ručni pregled:</strong> klijent je izabrao „Drugo" kao razlog javljanja.</p>`
-        : "",
-    ].join("");
-    summaryHtml = `<h3 style="color:#2E3B2E;margin-top:18px;">Sažetak upitnika</h3><table style="border-collapse:collapse;">${rows}</table>${meta}`;
-  }
-
-  const teamRows = [
-    row("Za", forWhom),
-    row("Usluga", service.name),
-    row("Format", payload.format === "online" ? "Online" : "Uživo"),
-    ...(payload.location ? [row("Lokacija", payload.location)] : []),
-    row("Željeni datum", payload.preferredDate),
-    row("Period dana", payload.preferredTime),
-    ...(payload.alternativeDate
-      ? [row("Alternativni datum", payload.alternativeDate)]
-      : []),
-    row("Ime", payload.name),
-    row("Email", payload.email),
-    ...(payload.phone ? [row("Telefon", payload.phone)] : []),
-    row(
-      "Odgovor putem",
-      payload.replyPreference === "phone" ? "telefona" : "emaila",
-    ),
-    ...(payload.message ? [row("Poruka", payload.message)] : []),
-  ].join("");
-  const priceLine = `${service.name} (${service.duration}): okvirno ${formatRsd(service.priceAmount)}.`;
-  const teamHtml = `<div style="font-family:sans-serif;color:#3A2E28;">
-    <h2 style="color:#2E3B2E;">Novi zahtev za termin</h2>
-    <table style="border-collapse:collapse;">${teamRows}</table>
-    ${summaryHtml}
-    <p style="margin-top:16px;">${priceLine}</p>
-    <p style="margin-top:16px;color:#8A9D82;font-size:12px;">Demo zahtev. Nije potvrđen termin - javite se klijentu radi dogovora.</p>
-  </div>`;
-
-  const resend = new Resend(apiKey);
-  const teamSend = await resend.emails.send({
-    from: FROM,
-    to: recipients,
-    replyTo: payload.email,
-    subject: therapist
-      ? `[Termin] Novi zahtev za ${therapist.name} - ${payload.name}`
-      : `[Termin] Nedodeljen zahtev - ${payload.name}`,
-    html: teamHtml,
-  });
-  if (teamSend.error) {
-    return Response.json({ error: "Slanje nije uspelo." }, { status: 502 });
-  }
-
-  const requesterHtml = `<div style="font-family:sans-serif;color:#3A2E28;">
-    <p>Poštovani/a ${esc(payload.name)},</p>
-    <p>Poslali ste zahtev za ${esc(service.name)}${
-      therapist ? ` kod: <strong>${esc(therapist.name)}</strong>` : ""
-    }.</p>
-    <p><strong>Napomena:</strong> ovo nije potvrda termina. ${
-      therapist ? "Terapeut" : "Član tima"
-    } će proveriti dostupnost i javiti vam se radi dogovora o tačnom datumu i vremenu.</p>
-    <p>${esc(PRICE_NOTE)}</p>
-    <p style="color:#8A9D82;">Psihointegritet - digitalni centar za mentalno zdravlje</p>
-  </div>`;
-
-  await resend.emails.send({
-    from: FROM,
-    to: payload.email,
-    subject: "Vaš zahtev za termin - Psihointegritet",
-    html: requesterHtml,
-  });
-
-  return Response.json({ ok: true });
 }

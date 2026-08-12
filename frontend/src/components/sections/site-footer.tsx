@@ -2,7 +2,7 @@ import type { Route } from "next";
 import Link from "next/link";
 
 import { footerNavigationGroups } from "@/content/site-navigation";
-import { siteSettings } from "@/content/site-settings";
+import { locationsShortLabel, siteSettings } from "@/content/site-settings";
 
 export function SiteFooter() {
   return (
@@ -24,7 +24,7 @@ export function SiteFooter() {
               radionice i edukativni sadržaji — na jednom mestu.
             </p>
             <div className="text-canvas/55 text-sm leading-[1.9]">
-              Niš · Leskovac · online i uživo
+              {locationsShortLabel} · online i uživo
               <br />
               <a
                 href={`mailto:${siteSettings.contactEmail}`}

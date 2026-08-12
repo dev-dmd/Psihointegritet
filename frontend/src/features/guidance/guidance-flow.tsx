@@ -32,6 +32,7 @@ import {
   type TherapistMatch,
   emptyIntakeAnswers,
 } from "./matching";
+import { GuidanceIntroActions } from "./guidance-intro-actions";
 import { IntakeRequestForm } from "./intake-request-form";
 import { intakeFeatureFlags } from "./intake-feature-flags";
 import {
@@ -71,11 +72,7 @@ export function GuidanceFlow(props: GuidanceFlowProps) {
   );
 }
 
-function GuidanceFlowContent({
-  entry,
-  surface,
-  onClose,
-}: GuidanceFlowProps) {
+function GuidanceFlowContent({ entry, surface, onClose }: GuidanceFlowProps) {
   const [screen, setScreen] = useState<Screen>(
     entry === "page" ? "intro" : entry === "chooser" ? "chooser" : "questions",
   );
@@ -117,7 +114,7 @@ function GuidanceFlowContent({
     matchAttempt,
   );
   const result = productionIntakeEnabled
-    ? authoritativeMatchQuery.data ?? null
+    ? (authoritativeMatchQuery.data ?? null)
     : localResult;
   const matchingError = authoritativeMatchQuery.isError;
 
@@ -394,21 +391,7 @@ function GuidanceIntro({
       <p className="bg-warm/20 text-coffee/80 mt-6 max-w-[680px] rounded-[18px] px-5 py-4 text-[14px] leading-[1.6]">
         {INTAKE_INTRO.note}
       </p>
-      <div className="mt-8 flex flex-wrap gap-3">
-        <button
-          type="button"
-          onClick={onStart}
-          className="bg-forest text-canvas hover:bg-forest-hover min-h-11 cursor-pointer rounded-full border-0 px-7 text-[15px] font-semibold transition-colors"
-        >
-          {INTAKE_INTRO.cta}
-        </button>
-        <Link
-          href="/tim"
-          className="border-coffee/25 text-coffee hover:border-sage inline-flex min-h-11 items-center rounded-full border px-6 text-[15px] font-semibold no-underline transition-colors"
-        >
-          Samostalno upoznajte terapeute
-        </Link>
-      </div>
+      <GuidanceIntroActions onStart={onStart} />
     </div>
   );
 }

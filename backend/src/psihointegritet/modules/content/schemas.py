@@ -72,6 +72,19 @@ class ContentRevisionOut(ApiSchema):
     created_by: ActorSummaryOut | None = None
     updated_by: ActorSummaryOut | None = None
     updated_at: datetime
+    # RW-4: populated when this draft was auto-created from a rejected review.
+    # Contains who requested changes, the capability, the note and source rev.
+    change_request: ContentRevisionChangeRequestOut | None = None
+
+
+class ContentRevisionChangeRequestOut(ApiSchema):
+    """Reason this draft was created by a rejected review (RW-4)."""
+
+    requested_by: ActorSummaryOut | None = None
+    requested_at: datetime
+    capability: ApprovalCapability
+    note: str
+    source_revision_id: UUID
 
 
 class PublicContentRevisionOut(ApiSchema):
@@ -108,10 +121,74 @@ class TransitionRequest(ApiSchema):
     target: RevisionStatus
 
 
+class SubmitArticleForReviewRequest(ApiSchema):
+    """Atomic: save + transition `draft → in_review` in one transaction.
+
+    `lock_version` protects against concurrent writes.  `idempotency_key`
+    makes the second identical call return the already-in-review revision
+    instead of a 409 (D-068 rule 2).
+    """
+
+    lock_version: int
+    idempotency_key: UUID
+    slot_data: dict[str, object] | None = None
+    seo: SeoFields | None = None
+    discovery: ContentDiscoveryMetadata | None = None
+
+
+class NewContentDraftRequest(ApiSchema):
+    """Create a new draft revision from the current one (RW-3 / D-068 rule 3).
+
+    Copies slot_data, SEO and discovery metadata from the source revision.
+    """
+
+    reason: str = Field(
+        default="author_withdrawal",
+        pattern=r"^(author_withdrawal|changes_requested|edit_after_approval|edit_published_content|edit_archived_content)$",
+    )
+
+
 class RecordReviewDecisionRequest(ApiSchema):
     capability: ApprovalCapability
     outcome: ReviewOutcome
     note: str | None = None
+
+
+class ContentReviewAssignmentOut(ApiSchema):
+    assignment_id: UUID
+    user_id: UUID
+    display_name: str
+    capability: ApprovalCapability
+    active: bool
+
+
+class CreateContentReviewAssignmentRequest(ApiSchema):
+    user_id: UUID
+    capability: ApprovalCapability
+    active: bool = True
+
+
+class ContentReviewQueueItemOut(ApiSchema):
+    """One entry in the reviewer's queue (RW-6)."""
+
+    entry_id: UUID
+    revision_id: UUID
+    content_type: ContentType
+    slug: str
+    version_label: str
+    submitted_at: datetime
+    submitted_by_display_name: str | None
+    capability: ApprovalCapability
+    already_decided: bool  # True if a decision exists for this capability
+    decided_outcome: ReviewOutcome | None
+
+
+class StaffUserOut(ApiSchema):
+    """Minimal user info for reviewer assignment dropdown."""
+
+    user_id: UUID
+    display_name: str
+    email: str
 
 
 class ContentFindingOut(ApiSchema):

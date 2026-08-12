@@ -1,0 +1,31 @@
+{
+  "fixtureSchemaVersion": "1",
+  "description": "Shared parity fixture for paths that custom legal documents may not shadow. Frontend and backend tests must compare their runtime sets with this exact list. Covers public marketing pages, the auth pages, the legacy booking redirect, and every platform root segment in every supported locale (D-077). The frontend derives the platform roots from the route registry, so adding a route or a locale fails this parity test until the fixture and the backend follow — which is the point: a shadowed document publishes cleanly and then 404s forever with no error.",
+  "slugs": [
+    "account",
+    "booking-widget",
+    "cene",
+    "kolacici",
+    "kompas",
+    "kontakt",
+    "nalog",
+    "o-nama",
+    "podrska-roditeljima",
+    "pravila-zakazivanja",
+    "prijava",
+    "privatnost",
+    "pronadji-podrsku",
+    "rad-sa-kompanijama",
+    "radionice",
+    "radni-prostor",
+    "registracija",
+    "superadmin",
+    "tim",
+    "uslovi",
+    "usluge",
+    "workspace",
+    "zakazi",
+    "zakazivanje",
+    "znanje"
+  ]
+}

@@ -1,0 +1,5 @@
+{
+  "fixtureSchemaVersion": "1",
+  "description": "Shared parity fixture for /znanje slugs an article may not take. These are the sibling paths a future knowledge surface would claim (listing, search, category or author index); an article holding one would win the route and hide that page later. Frontend and backend tests must compare their runtime sets with this exact list.",
+  "slugs": ["arhiva", "autori", "index", "kategorije", "pretraga"]
+}

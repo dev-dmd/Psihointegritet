@@ -1,5 +1,13 @@
-import type { Route } from "next";
 import type { ComponentType, SVGProps } from "react";
+
+import type { PlatformRouteId } from "@/lib/routes/platform-routes";
+import type { EnWorkspace } from "@/messages/en/workspace";
+
+type NavLabelKey = Exclude<
+  keyof EnWorkspace["nav"],
+  "sections" | "more" | "soon" | "hasError"
+>;
+type NavSectionKey = keyof EnWorkspace["nav"]["sections"];
 
 import {
   BellIcon,
@@ -30,8 +38,19 @@ export type NavRequire = "any" | "admin" | "therapist";
 type IconComponent = ComponentType<SVGProps<SVGSVGElement> & { size?: number }>;
 
 export interface NavItem {
-  href: Route;
-  label: string;
+  /**
+   * Route identity, not a path. The sidebar builds the href through
+   * `localizedPath(routeId, { locale })`, so one nav definition serves both
+   * languages and the item lights from either locale's URL.
+   */
+  routeId: PlatformRouteId;
+  /**
+   * Key into the `workspace.nav` namespace, not a rendered string.
+   *
+   * Named after the screen rather than its current wording, so renaming
+   * „Usluge i cene" is a catalogue edit and touches nothing here.
+   */
+  labelKey: NavLabelKey;
   icon: IconComponent;
   requires: NavRequire;
   /** Mono/warm count badge key. */
@@ -41,7 +60,8 @@ export interface NavItem {
 }
 
 export interface NavSection {
-  caption?: string;
+  /** Key into `workspace.nav.sections`. Absent for the unnamed first block. */
+  captionKey?: NavSectionKey;
   items: NavItem[];
 }
 
@@ -49,107 +69,109 @@ const SECTIONS: NavSection[] = [
   {
     items: [
       {
-        href: "/radni-prostor",
-        label: "Pregled",
+        routeId: "workspace.home",
+        labelKey: "home",
         icon: GridIcon,
         requires: "any",
       },
       {
-        href: "/radni-prostor/termini",
-        label: "Termini",
+        routeId: "workspace.appointments.list",
+        labelKey: "appointments",
         icon: CalendarIcon,
         requires: "any",
         badge: "requests",
       },
       {
-        href: "/radni-prostor/klijenti",
-        label: "Klijenti",
+        routeId: "workspace.clients.list",
+        labelKey: "clients",
         icon: ClientsIcon,
         requires: "any",
       },
       {
-        href: "/radni-prostor/kompanije",
-        label: "Kompanije",
+        routeId: "workspace.companies.list",
+        labelKey: "companies",
         icon: BuildingIcon,
         requires: "admin",
       },
     ],
   },
   {
-    caption: "Poslovanje",
+    captionKey: "business",
     items: [
       {
-        href: "/radni-prostor/usluge",
-        label: "Usluge i cene",
+        routeId: "workspace.services.list",
+        labelKey: "services",
         icon: TagIcon,
         requires: "admin",
       },
       {
-        href: "/radni-prostor/istrazivanja",
-        label: "Istraživanja",
+        routeId: "workspace.research",
+        labelKey: "research",
         icon: ChartIcon,
         requires: "admin",
       },
       {
-        href: "/radni-prostor/dokumenti",
-        label: "Dokumenti i saglasnosti",
+        routeId: "workspace.documents",
+        labelKey: "documents",
         icon: DocumentIcon,
         requires: "admin",
       },
       {
-        href: "/radni-prostor/sadrzaj",
-        label: "Sadržaj",
+        routeId: "workspace.content.list",
+        labelKey: "content",
         icon: LayersIcon,
         requires: "admin",
       },
       {
-        href: "/radni-prostor/kompas",
-        label: "Kompas",
+        routeId: "workspace.compass.home",
+        labelKey: "compass",
         icon: CompassIcon,
         requires: "admin",
       },
     ],
   },
   {
-    caption: "Tim",
+    captionKey: "team",
     items: [
       {
-        href: "/radni-prostor/terapeuti",
-        label: "Terapeuti",
+        routeId: "workspace.therapists.list",
+        labelKey: "therapists",
         icon: TeamIcon,
         requires: "admin",
       },
       {
-        href: "/radni-prostor/profil",
-        label: "Moj profil",
+        routeId: "workspace.profile",
+        labelKey: "profile",
         icon: UserIcon,
         requires: "therapist",
       },
     ],
   },
   {
-    caption: "Podešavanja",
+    captionKey: "settings",
     items: [
       {
-        href: "/radni-prostor/podesavanja",
-        label: "Lokacije i način rada",
+        routeId: "workspace.settings.home",
+        labelKey: "locations",
         icon: PinIcon,
         requires: "admin",
         soon: true,
       },
       {
-        href: "/radni-prostor/podesavanja",
-        label: "Obaveštenja",
+        routeId: "workspace.settings.home",
+        labelKey: "notifications",
         icon: BellIcon,
         requires: "admin",
         soon: true,
       },
       {
-        href: "/radni-prostor/podesavanja",
-        label: "Podešavanja centra",
+        // No longer `soon`: this destination now carries the language and
+        // regional settings. A screen with working content behind a label that
+        // cannot be clicked is worse than no label.
+        routeId: "workspace.settings.home",
+        labelKey: "centreSettings",
         icon: SlidersIcon,
         requires: "admin",
-        soon: true,
       },
     ],
   },

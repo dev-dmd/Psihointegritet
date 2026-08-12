@@ -13,22 +13,32 @@ import {
 
 import { cn } from "@/helpers/cn";
 import { getInitials } from "@/lib/auth/clerk/initials";
-import {
-  ACCOUNT_APPOINTMENTS_URL,
-  ACCOUNT_SETTINGS_URL,
-  ACCOUNT_URL,
-} from "@/lib/auth/routes";
+import { useUiLocale } from "@/i18n/use-ui-locale";
+import { localizedPath } from "@/lib/routes/localized-path";
+import type { PlatformRouteId } from "@/lib/routes/platform-routes";
 
+/**
+ * Route identities, not paths: the href is built per locale inside the
+ * component. The array stays module-level so it is not rebuilt each render, but
+ * it can no longer carry a path — a module-level constant cannot know the
+ * organization's language.
+ */
 const ACCOUNT_LINKS = [
-  { href: ACCOUNT_URL, label: "Moj panel", Icon: Squares2X2Icon },
   {
-    href: ACCOUNT_APPOINTMENTS_URL,
+    routeId: "account.home" satisfies PlatformRouteId,
+    label: "Moj panel",
+    Icon: Squares2X2Icon,
+  },
+  {
+    routeId: "account.appointments" satisfies PlatformRouteId,
     label: "Moji termini",
     Icon: CalendarDaysIcon,
   },
   {
-    href: ACCOUNT_SETTINGS_URL,
-    label: "Podešavanja",
+    // „KP 04 Profil" absorbed what /nalog/podesavanja was going to be, so the
+    // menu points at the screen that exists rather than at its redirect.
+    routeId: "account.profile" satisfies PlatformRouteId,
+    label: "Profil",
     Icon: AdjustmentsHorizontalIcon,
   },
 ] as const;
@@ -47,6 +57,7 @@ const ACCOUNT_LINKS = [
 export function AuthAvatarMenu({ size = "md" }: { size?: "md" | "sm" }) {
   const { user } = useUser();
   const { signOut } = useClerk();
+  const locale = useUiLocale();
 
   const email = user?.primaryEmailAddress?.emailAddress;
   const initials = getInitials(user?.firstName, user?.lastName, email);
@@ -92,10 +103,10 @@ export function AuthAvatarMenu({ size = "md" }: { size?: "md" | "sm" }) {
           </p>
         </div>
 
-        {ACCOUNT_LINKS.map(({ href, label, Icon }) => (
-          <MenuItem key={href}>
+        {ACCOUNT_LINKS.map(({ routeId, label, Icon }) => (
+          <MenuItem key={routeId}>
             <Link
-              href={href}
+              href={localizedPath(routeId, { locale })}
               className="text-forest data-[focus]:bg-canvas/45 flex w-full items-center gap-3 rounded-xl px-3.5 py-2.5 text-[14.5px] font-semibold no-underline transition-colors"
             >
               <Icon className="size-4 shrink-0" />

@@ -1,4 +1,6 @@
 import type { ReasonCard as ReasonCardContent } from "@/content/homepage";
+import type { Route } from "next";
+import Link from "next/link";
 
 interface ReasonCardProps {
   reason: ReasonCardContent;
@@ -6,10 +8,12 @@ interface ReasonCardProps {
 
 /** Numbered "razlog dolaska" card linking to the therapists section. */
 export function ReasonCard({ reason }: ReasonCardProps) {
+  const href = (reason.href || "/") as Route;
+
   return (
-    <a
-      href={reason.href}
-      className="bg-surface border-coffee/6 hover:shadow-card-hover flex flex-col gap-10 rounded-[22px] border p-[30px] pb-7 no-underline transition-all duration-[250ms] hover:-translate-y-1"
+    <Link
+      href={href}
+      className="group bg-surface border-coffee/6 hover:shadow-card-hover flex flex-col gap-10 rounded-[22px] border p-[30px] pb-7 no-underline transition-all duration-[250ms] hover:-translate-y-1"
     >
       <div className="flex items-center justify-between">
         <span className="text-sage font-serif text-[15px] italic">
@@ -17,7 +21,7 @@ export function ReasonCard({ reason }: ReasonCardProps) {
         </span>
         <span
           aria-hidden
-          className="border-coffee/14 text-forest flex h-[34px] w-[34px] items-center justify-center rounded-full border text-[15px]"
+          className="border-coffee/14 text-forest group-hover:text-forest group-hover:bg-meadow flex h-[34px] w-[34px] items-center justify-center rounded-full border text-[15px] transition-colors duration-[250ms]"
         >
           →
         </span>
@@ -30,6 +34,6 @@ export function ReasonCard({ reason }: ReasonCardProps) {
           {reason.description}
         </div>
       </div>
-    </a>
+    </Link>
   );
 }

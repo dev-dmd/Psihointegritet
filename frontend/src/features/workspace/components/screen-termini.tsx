@@ -6,21 +6,46 @@ import { ProgressBar } from "@/components/panel/progress-bar";
 import { StatusBadge } from "@/components/panel/status-badge";
 import { TabPills } from "@/components/panel/tab-pills";
 
-import { appointmentRequests, todayAgenda, waitlist, weekBars } from "../data";
+import { useTranslations } from "next-intl";
+
+import { useUiLocale } from "@/i18n/use-ui-locale";
+
+import { appointmentRequests, waitlist, workspaceDemo } from "../data";
 import { STATUS_META, isFreeSlot } from "../types";
+import { useStatusLabel } from "../use-status-label";
 import { useWorkspace } from "../workspace-context";
 import { AgendaRow } from "./agenda-row";
 import { PageHeader } from "./page-header";
 
-const tabs = [
-  { id: "danas", label: "Danas" },
-  { id: "nedelja", label: "Nedelja" },
-  { id: "predstojeci", label: "Predstojeći" },
-  { id: "zahtevi", label: `Zahtevi · ${appointmentRequests.length}` },
-  { id: "cekanje", label: "Lista čekanja" },
-];
+/**
+ * Tab ids are stable and Serbian; only the labels are translated. The id is
+ * component state and appears in no URL, so renaming it would buy nothing.
+ */
+const TAB_IDS = [
+  "danas",
+  "nedelja",
+  "predstojeci",
+  "zahtevi",
+  "cekanje",
+] as const;
+
+const TAB_KEYS = {
+  danas: "today",
+  nedelja: "week",
+  predstojeci: "upcoming",
+  zahtevi: "requests",
+  cekanje: "waitlist",
+} as const;
 
 export function ScreenTermini() {
+  const statusLabel = useStatusLabel();
+  const locale = useUiLocale();
+  const t = useTranslations("screens.appointments");
+  const tabs = TAB_IDS.map((id) => ({
+    id,
+    label: t(`tabs.${TAB_KEYS[id]}`, { count: appointmentRequests.length }),
+  }));
+  const { todayAgenda, weekBars } = workspaceDemo(locale);
   const [tab, setTab] = useState("danas");
   const { selectedTherapistSlug } = useWorkspace();
 
@@ -80,7 +105,7 @@ export function ScreenTermini() {
               <AgendaRow key={`upc-${index}`} entry={entry} />
             ))}
           <p className="text-ink-45 px-2 pt-3 pb-1 text-[12.5px] italic">
-            Pun predstojeći kalendar stiže sa Booking engine-om.
+            {t("upcomingNote")}
           </p>
         </div>
       ) : null}
@@ -103,10 +128,14 @@ export function ScreenTermini() {
                       {request.service} · {request.format} · {request.therapist}
                     </div>
                   </div>
-                  <StatusBadge tone={meta.tone}>{meta.label}</StatusBadge>
+                  <StatusBadge tone={meta.tone}>
+                    {statusLabel(request.status)}
+                  </StatusBadge>
                 </div>
                 <div className="text-ink-55 mt-3 flex flex-wrap gap-x-4 gap-y-1 text-[12.5px]">
-                  <span>Traženo: {request.preferred}</span>
+                  <span>
+                    {t("requested", { preferred: request.preferred })}
+                  </span>
                   <span>Izvor: {request.source}</span>
                   <span>Poslato {request.ago}</span>
                 </div>
@@ -114,8 +143,7 @@ export function ScreenTermini() {
             );
           })}
           <p className="text-ink-45 px-1 text-[12.5px] italic">
-            Zahtev ističe posle 24h ako se ne potvrdi. Potvrda i predlog izmene
-            stižu sa Booking engine-om.
+            {t("requestNote")}
           </p>
         </div>
       ) : null}

@@ -4,8 +4,7 @@ import type { RichDoc } from "@/lib/content-governance/rich-doc";
 import { requestJson } from "@/lib/api/request-json";
 
 export type PublicLegalDocumentKind =
-  | "intake_data_processing_notice"
-  | "intake_request_acknowledgement";
+  "intake_data_processing_notice" | "intake_request_acknowledgement";
 
 const simpleMarkSchema = z.enum(["bold", "italic", "underline"]);
 const linkMarkSchema = z.object({

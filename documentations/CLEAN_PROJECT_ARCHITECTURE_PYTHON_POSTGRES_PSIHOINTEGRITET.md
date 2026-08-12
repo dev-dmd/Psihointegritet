@@ -869,20 +869,15 @@ Kompas koristi:
 * terapeutske oblasti rada;
 * programske preporuke.
 
-Primer tabela:
+V1 perzistentni model namerno je mali:
 
 ```text
 compass_flows
 compass_flow_versions
-compass_questions
-compass_answer_options
-compass_rules
-compass_sessions
-compass_session_answers
-compass_result_sets
-compass_result_sections
-compass_result_items
+compass_flow_review_decisions
 ```
+
+Pitanja, opcije, kontrolisani prelazi i konfiguracija result sekcija čine jednu atomski verzionisanu i strogo validiranu JSONB `definition` strukturu. V1 nema `compass_sessions`, `compass_session_answers`, `result_sets`, `result_items` niti druge tabele korisničkih odgovora/rezultata. Trenutni `CompassSelection` ostaje u React memoriji i kratkotrajnom verzionisanom `sessionStorage`; rezultat je deterministički read-model koji se ne čuva.
 
 Rezultat Kompasa mora biti sastavljen od više sekcija.
 
@@ -906,7 +901,7 @@ Rezultat
 │
 ├── Predlog narednih koraka
 │
-└── Terapeuti koji rade sa ovim oblastima
+└── Stručna podrška (bez rangiranja terapeuta)
 ```
 
 Kompas rezultat ne sme biti jedan generički AI tekst.
@@ -4354,4 +4349,3 @@ Platforma se razvija kao dugoročni modularni SaaS sistem u kome su:
 * poslovni domeni spremni za postepeni rast.
 
 Ova arhitektura omogućava da trenutni javni Psihointegritet sajt preraste u platformu sa CMS-om, Kompasom, booking sistemom, kompanijskim programima, klijentskim nalozima i dodatnim tenant organizacijama bez rušenja ili ponovnog pisanja osnovnih tehničkih slojeva.
-

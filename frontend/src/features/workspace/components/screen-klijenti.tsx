@@ -1,6 +1,5 @@
 "use client";
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -13,40 +12,22 @@ import { intakeFeatureFlags } from "@/features/guidance/intake-feature-flags";
 
 import { clients, unassignedRequests } from "../data";
 import {
-  claimIntakeCase,
-  fetchIntakeTeamQueue,
-  type IntakeTeamQueueItem,
-} from "../intake-team-queue-api";
+  useClaimIntakeCaseMutation,
+  useIntakeTeamQueueQuery,
+} from "../hooks/use-intake-team-queue";
+import type { IntakeTeamQueueItem } from "../intake-team-queue-api";
 import { STATUS_META } from "../types";
+import { useStatusLabel } from "../use-status-label";
 import { useWorkspace } from "../workspace-context";
 import { PageHeader } from "./page-header";
 
 export function ScreenKlijenti() {
+  const statusLabel = useStatusLabel();
   const [tab, setTab] = useState("svi");
   const { isTherapist, selectedTherapistSlug } = useWorkspace();
   const teamQueueEnabled = intakeFeatureFlags.teamQueueEnabled;
-  const queryClient = useQueryClient();
-  const teamQueueQuery = useQuery({
-    queryKey: ["intake-team-queue"],
-    queryFn: fetchIntakeTeamQueue,
-    enabled: teamQueueEnabled,
-  });
-  const claimMutation = useMutation({
-    mutationFn: claimIntakeCase,
-    onSuccess: (_, caseId) => {
-      queryClient.setQueryData<IntakeTeamQueueItem[]>(
-        ["intake-team-queue"],
-        (current) => current?.filter((item) => item.caseId !== caseId) ?? [],
-      );
-      toast.success("Zahtev je preuzet.");
-    },
-    onError: () => {
-      toast.error(
-        "Zahtev je u međuvremenu preuzet ili trenutno nije dostupan.",
-      );
-      void queryClient.invalidateQueries({ queryKey: ["intake-team-queue"] });
-    },
-  });
+  const teamQueueQuery = useIntakeTeamQueueQuery(teamQueueEnabled);
+  const claimMutation = useClaimIntakeCaseMutation();
   const teamQueue = teamQueueQuery.data ?? [];
   const queueState = teamQueueQuery.isLoading
     ? "loading"
@@ -100,7 +81,9 @@ export function ScreenKlijenti() {
                       </div>
                     </div>
                   </div>
-                  <StatusBadge tone={meta.tone}>{meta.label}</StatusBadge>
+                  <StatusBadge tone={meta.tone}>
+                    {statusLabel(client.status)}
+                  </StatusBadge>
                 </div>
                 <div className="border-line text-ink-55 mt-3.5 flex flex-wrap gap-x-4 gap-y-1 border-t pt-3 text-[12.5px]">
                   <span>Sledeći: {client.next}</span>

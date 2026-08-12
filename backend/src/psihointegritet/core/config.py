@@ -52,10 +52,26 @@ class Settings(BaseSettings):
     intake_review_target_business_hours: int = Field(default=12, ge=1, le=168)
     intake_review_public_max_business_days: int = Field(default=1, ge=1, le=30)
     intake_business_timezone: str = "Europe/Belgrade"
+    slot_hold_ttl_seconds: int = Field(default=600, ge=30, le=3600)
 
     @property
     def is_production(self) -> bool:
         return self.environment is Environment.PRODUCTION
+
+    @property
+    def superadmin_may_act_as_therapist(self) -> bool:
+        """Whether a superadmin may edit a therapist's availability without being one.
+
+        Deliberately an **allowlist**, not ``not is_production``: a new or
+        misspelled environment must lose the privilege rather than silently
+        inherit it. Adding a QA environment means adding it to this set and to
+        ``Environment`` — one visible edit, not an accident.
+
+        This is a convenience for building and testing schedules before the team
+        has real accounts. It never applies in production, where a superadmin
+        must go through the therapist registry like everyone else.
+        """
+        return self.environment in {Environment.DEVELOPMENT, Environment.STAGING}
 
     @property
     def intake_submission_ready(self) -> bool:

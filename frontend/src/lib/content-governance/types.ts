@@ -55,7 +55,10 @@ export type ContentType =
   | "therapist"
   | "program"
   | "company_plan"
-  | "package_offer";
+  | "package_offer"
+  // ADR-019. Unlike the six above, an article's identity is not an entry in the
+  // system allowlist: it is one record per published text.
+  | "article";
 
 /**
  * Explicit ownership of a public content identity. Templates describe shape;
@@ -72,7 +75,10 @@ export type ContentTemplate =
   | "company_page"
   | "pricing_page"
   | "static_information"
-  | "legal_page";
+  | "legal_page"
+  // Recipe `article-v1` (ADR-021): the author picks which sections exist, the
+  // recipe fixes the order they render in.
+  | "article_detail";
 
 export type ContentCharacterLimitKey =
   | "navigationLabel"
@@ -97,6 +103,7 @@ export type ContentCharacterLimitKey =
   | "seoTitle"
   | "seoDescription"
   | "imageAlt"
+  | "articleBody"
   | "slug"
   | "redirectPath";
 
@@ -221,13 +228,25 @@ export type ContentEntity =
   | CompanyPlanContentEntity
   | PackageOfferContentEntity;
 
-export type ContentEntityOfType<T extends ContentType> = Extract<
+/**
+ * The content types that have a checked-in `ContentEntity` variant.
+ *
+ * Deliberately narrower than `ContentType`: `article` is governed content but
+ * not a `ContentEntity` (ADR-019 §12). Entities carry a static fallback, a
+ * fixed route and a `source` object, all of which exist because those pages
+ * ship with the repository. Articles are authored per record and read through
+ * their own public endpoint, so widening this alias would force a fake
+ * fallback for every published text.
+ */
+export type ContentEntityType = ContentEntity["type"];
+
+export type ContentEntityOfType<T extends ContentEntityType> = Extract<
   ContentEntity,
   { type: T }
 >;
 
 export interface PublishedListQuery {
-  type?: ContentType;
+  type?: ContentEntityType;
 }
 
 export interface RedirectRecord {
@@ -239,7 +258,7 @@ export interface RedirectRecord {
 
 export interface ContentProvider {
   getPageByRoute(route: string): ContentEntity | null;
-  getEntity<T extends ContentType>(
+  getEntity<T extends ContentEntityType>(
     type: T,
     id: string,
   ): ContentEntityOfType<T> | null;

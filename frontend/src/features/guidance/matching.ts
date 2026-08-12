@@ -8,8 +8,12 @@ import type { Therapist } from "@/types/therapist";
 
 /**
  * Intake & Matching Engine v3 — deterministic, explainable, non-diagnostic.
- * Questions, weights and assignment rules come from Anja's answers
- * (documentations/odgovor-za-matching-anketa.pdf, 2026-07-18).
+ * Questions, weights and assignment rules come from Anja Stamenković's answers
+ * (documentations/odgovor-za-matching-anketa.pdf, 2026-07-18). That provenance
+ * is historical and stays as written: the 2026-08-10 team replacement (D-074)
+ * hands each incoming therapist the *slot* of the person they replace —
+ * Maria ← Anja, Elsa ← Marija, John ← Marjan — precisely so the routing keeps
+ * working until the new team reviews these weights themselves.
  *
  * Principles (unchanged from v1):
  * - before submission, answers live only in client memory; a production
@@ -87,10 +91,20 @@ export const WORK_FORMATS = {
 } as const;
 
 export const LOCATIONS = {
-  nis: "Niš",
-  leskovac: "Leskovac",
+  chicago: "Chicago",
+  milwaukee: "Milwaukee",
+  madison: "Madison",
   other: "Druga lokacija",
 } as const;
+
+/** Every answer except „Druga lokacija" — the cities a profile can be filtered by. */
+export const IN_PERSON_CITIES = [
+  LOCATIONS.chicago,
+  LOCATIONS.milwaukee,
+  LOCATIONS.madison,
+] as const;
+
+export type InPersonCity = (typeof IN_PERSON_CITIES)[number];
 
 // --- Intake copy ----------------------------------------------------------
 
@@ -219,13 +233,13 @@ export function activeIntakeSteps(answers: IntakeAnswers): IntakeStep[] {
 
 // --- Therapist matching configuration ------------------------------------
 
-const ANJA = "anja-stamenkovic";
-const MARIJA = "marija-stamenkovic";
-const MARJAN = "marjan-jankovic";
+const MARIA = "maria-bullock";
+const ELSA = "elsa-browers";
+const JOHN = "john-francis";
 
-type Slug = typeof ANJA | typeof MARIJA | typeof MARJAN;
+type Slug = typeof MARIA | typeof ELSA | typeof JOHN;
 
-const ALL_SLUGS: readonly Slug[] = [ANJA, MARIJA, MARJAN];
+const ALL_SLUGS: readonly Slug[] = [MARIA, ELSA, JOHN];
 
 export interface TherapistMatchingProfile {
   slug: Slug;
@@ -234,7 +248,7 @@ export interface TherapistMatchingProfile {
   serviceCapabilities: readonly string[];
   acceptedAgeBands: readonly string[];
   supportedFormats: readonly string[];
-  locations: readonly ("Niš" | "Leskovac")[];
+  locations: readonly InPersonCity[];
   acceptanceStatus: "accepting" | "limited" | "paused";
   presenceStatus: "active" | "temporarily_absent";
   /** Grammatically correct reason sentences (gender-aware). */
@@ -247,8 +261,8 @@ export interface TherapistMatchingProfile {
  * Narrow expertise remains in serviceCapabilities and scoring rules.
  */
 export const therapistMatchingConfig: Record<Slug, TherapistMatchingProfile> = {
-  [ANJA]: {
-    slug: ANJA,
+  [MARIA]: {
+    slug: MARIA,
     areas: SUPPORT_AREA_IDS,
     serviceCapabilities: [
       "individual_therapy",
@@ -259,14 +273,14 @@ export const therapistMatchingConfig: Record<Slug, TherapistMatchingProfile> = {
     ],
     acceptedAgeBands: ["16–17 godina", "18 i više"],
     supportedFormats: ["online", "in_person"],
-    locations: ["Niš"],
+    locations: ["Chicago"],
     acceptanceStatus: "accepting",
     presenceStatus: "active",
     onlineReason: "Dostupna je za online rad.",
-    inPersonReason: "Radi uživo u Nišu.",
+    inPersonReason: "Radi uživo u Chicagu (Illinois).",
   },
-  [MARIJA]: {
-    slug: MARIJA,
+  [ELSA]: {
+    slug: ELSA,
     areas: SUPPORT_AREA_IDS,
     serviceCapabilities: [
       "individual_therapy",
@@ -275,14 +289,14 @@ export const therapistMatchingConfig: Record<Slug, TherapistMatchingProfile> = {
     ],
     acceptedAgeBands: SUBJECT_AGE_BANDS,
     supportedFormats: ["online", "in_person"],
-    locations: ["Leskovac"],
+    locations: ["Milwaukee"],
     acceptanceStatus: "accepting",
     presenceStatus: "active",
     onlineReason: "Dostupna je za online rad.",
-    inPersonReason: "Radi uživo u Leskovcu.",
+    inPersonReason: "Radi uživo u Milwaukeeju (Wisconsin).",
   },
-  [MARJAN]: {
-    slug: MARJAN,
+  [JOHN]: {
+    slug: JOHN,
     areas: SUPPORT_AREA_IDS,
     serviceCapabilities: [
       "individual_therapy",
@@ -292,61 +306,61 @@ export const therapistMatchingConfig: Record<Slug, TherapistMatchingProfile> = {
     ],
     acceptedAgeBands: ["16–17 godina", "18 i više"],
     supportedFormats: ["online", "in_person"],
-    locations: ["Leskovac"],
+    locations: ["Madison"],
     acceptanceStatus: "accepting",
     presenceStatus: "active",
     onlineReason: "Dostupan je za online rad.",
-    inPersonReason: "Radi uživo u Leskovcu.",
+    inPersonReason: "Radi uživo u Madisonu (Wisconsin).",
   },
 };
 
-// --- Weights (Anja's demo starting weights) -------------------------------
+// --- Weights (inherited demo starting weights, D-074) ---------------------
 
 type WeightMap = Partial<Record<Slug, number>>;
 
 /**
  * Question 1 — main reason.
  *
- * TODO(team): „Burnout: Marijan +2 ako je povezano sa zaposlenjem ili
+ * TODO(team): „Burnout: +2 nosiocu Johnovog slota ako je povezano sa zaposlenjem ili
  * kompanijskim programom" — upitnik trenutno nema pitanje/signal o zaposlenju,
  * pa se taj uslovni bonus ne primenjuje dok tim ne potvrdi kako se prepoznaje.
  */
 const reasonWeights: Record<string, WeightMap> = {
-  [REASONS.anxiety]: { [ANJA]: 3, [MARIJA]: 3, [MARJAN]: 3 },
-  [REASONS.depression]: { [MARIJA]: 4, [MARJAN]: 4 },
-  [REASONS.partnerRelationship]: { [ANJA]: 5, [MARJAN]: 5 },
-  [REASONS.maritalProblems]: { [ANJA]: 5, [MARJAN]: 5 },
-  [REASONS.parenting]: { [ANJA]: 4, [MARIJA]: 4 },
-  [REASONS.adolescent]: { [MARIJA]: 6 },
-  [REASONS.burnout]: { [ANJA]: 6 },
-  [REASONS.grief]: { [ANJA]: 5, [MARJAN]: 5 },
-  [REASONS.selfEsteem]: { [ANJA]: 5, [MARIJA]: 2, [MARJAN]: 2 },
-  [REASONS.personalGrowth]: { [ANJA]: 3, [MARIJA]: 3, [MARJAN]: 3 },
-  [REASONS.trauma]: { [ANJA]: 5, [MARJAN]: 5 },
-  [REASONS.addiction]: { [ANJA]: 6 },
-  [REASONS.unsure]: { [ANJA]: 1, [MARIJA]: 1, [MARJAN]: 1 },
-  [REASONS.other]: { [ANJA]: 1, [MARIJA]: 1, [MARJAN]: 1 },
+  [REASONS.anxiety]: { [MARIA]: 3, [ELSA]: 3, [JOHN]: 3 },
+  [REASONS.depression]: { [ELSA]: 4, [JOHN]: 4 },
+  [REASONS.partnerRelationship]: { [MARIA]: 5, [JOHN]: 5 },
+  [REASONS.maritalProblems]: { [MARIA]: 5, [JOHN]: 5 },
+  [REASONS.parenting]: { [MARIA]: 4, [ELSA]: 4 },
+  [REASONS.adolescent]: { [ELSA]: 6 },
+  [REASONS.burnout]: { [MARIA]: 6 },
+  [REASONS.grief]: { [MARIA]: 5, [JOHN]: 5 },
+  [REASONS.selfEsteem]: { [MARIA]: 5, [ELSA]: 2, [JOHN]: 2 },
+  [REASONS.personalGrowth]: { [MARIA]: 3, [ELSA]: 3, [JOHN]: 3 },
+  [REASONS.trauma]: { [MARIA]: 5, [JOHN]: 5 },
+  [REASONS.addiction]: { [MARIA]: 6 },
+  [REASONS.unsure]: { [MARIA]: 1, [ELSA]: 1, [JOHN]: 1 },
+  [REASONS.other]: { [MARIA]: 1, [ELSA]: 1, [JOHN]: 1 },
 };
 
 /** Question 2 — participants. (Prior-therapy question never affects scores.) */
 const participantWeights: Record<string, WeightMap> = {
-  [PARTICIPANTS.alone]: { [ANJA]: 1, [MARIJA]: 1, [MARJAN]: 1 },
-  [PARTICIPANTS.partner]: { [ANJA]: 6, [MARJAN]: 6 },
-  // Anja +2 is for roditeljsko savetovanje only — never automatic direct work
+  [PARTICIPANTS.alone]: { [MARIA]: 1, [ELSA]: 1, [JOHN]: 1 },
+  [PARTICIPANTS.partner]: { [MARIA]: 6, [JOHN]: 6 },
+  // The +2 on Maria's slot is for roditeljsko savetovanje only — never automatic direct work
   // with the child.
-  [PARTICIPANTS.parentChild]: { [MARIJA]: 6, [ANJA]: 2 },
-  [PARTICIPANTS.unsure]: { [ANJA]: 1, [MARIJA]: 1, [MARJAN]: 1 },
+  [PARTICIPANTS.parentChild]: { [ELSA]: 6, [MARIA]: 2 },
+  [PARTICIPANTS.unsure]: { [MARIA]: 1, [ELSA]: 1, [JOHN]: 1 },
 };
 
 /** Question 4 — what matters most right now. */
 const goalWeights: Record<string, WeightMap> = {
-  [GOALS.understandSelf]: { [ANJA]: 3, [MARIJA]: 2, [MARJAN]: 2 },
-  [GOALS.emotions]: { [ANJA]: 4, [MARIJA]: 4, [MARJAN]: 2 },
-  [GOALS.improvePartner]: { [ANJA]: 6, [MARJAN]: 6 },
-  [GOALS.improveChild]: { [MARIJA]: 6, [ANJA]: 3 },
-  [GOALS.stress]: { [ANJA]: 4, [MARJAN]: 4, [MARIJA]: 2 },
-  [GOALS.concreteSituation]: { [MARJAN]: 5, [ANJA]: 2, [MARIJA]: 2 },
-  [GOALS.unsure]: { [ANJA]: 1, [MARIJA]: 1, [MARJAN]: 1 },
+  [GOALS.understandSelf]: { [MARIA]: 3, [ELSA]: 2, [JOHN]: 2 },
+  [GOALS.emotions]: { [MARIA]: 4, [ELSA]: 4, [JOHN]: 2 },
+  [GOALS.improvePartner]: { [MARIA]: 6, [JOHN]: 6 },
+  [GOALS.improveChild]: { [ELSA]: 6, [MARIA]: 3 },
+  [GOALS.stress]: { [MARIA]: 4, [JOHN]: 4, [ELSA]: 2 },
+  [GOALS.concreteSituation]: { [JOHN]: 5, [MARIA]: 2, [ELSA]: 2 },
+  [GOALS.unsure]: { [MARIA]: 1, [ELSA]: 1, [JOHN]: 1 },
 };
 
 export const matchingWeights = {
@@ -363,11 +377,11 @@ export const RECOMMENDED_SERVICES = {
   parenting: "Roditeljsko savetovanje",
 } as const;
 
-/** Which therapists provide which recommended service (per Anja's lists). */
+/** Which therapists provide which recommended service (per the inherited lists). */
 const serviceProviders: Record<string, readonly Slug[]> = {
   [RECOMMENDED_SERVICES.individual]: ALL_SLUGS,
-  [RECOMMENDED_SERVICES.couples]: [ANJA, MARJAN],
-  [RECOMMENDED_SERVICES.parenting]: [ANJA, MARIJA, MARJAN],
+  [RECOMMENDED_SERVICES.couples]: [MARIA, JOHN],
+  [RECOMMENDED_SERVICES.parenting]: [MARIA, ELSA, JOHN],
 };
 
 const serviceCapabilityByRecommendation: Record<string, string> = {
@@ -466,11 +480,7 @@ function buildReasons(
   }
 
   const selectedLocation =
-    answers.location === LOCATIONS.nis
-      ? "Niš"
-      : answers.location === LOCATIONS.leskovac
-        ? "Leskovac"
-        : null;
+    IN_PERSON_CITIES.find((city) => city === answers.location) ?? null;
   if (
     answers.format === WORK_FORMATS.inPerson &&
     (selectedLocation !== null || answers.location === LOCATIONS.other)
@@ -527,7 +537,7 @@ function therapistBySlug(slug: Slug): Therapist {
  *    otherwise show the top two together.
  */
 export function evaluateIntake(answers: IntakeAnswers): IntakeMatchResult {
-  const scores: Record<Slug, number> = { [ANJA]: 0, [MARIJA]: 0, [MARJAN]: 0 };
+  const scores: Record<Slug, number> = { [MARIA]: 0, [ELSA]: 0, [JOHN]: 0 };
 
   const apply = (weights: WeightMap | undefined) => {
     if (!weights) return;
@@ -542,12 +552,12 @@ export function evaluateIntake(answers: IntakeAnswers): IntakeMatchResult {
   );
   apply(answers.goal ? goalWeights[answers.goal] : undefined);
 
-  // „Odnos sa adolescentom" + „Roditelj i dete" → Marija dobija dodatnih +3.
+  // „Odnos sa adolescentom" + „Roditelj i dete" → Elsa dobija dodatnih +3.
   if (
     answers.reason === REASONS.adolescent &&
     answers.participants === PARTICIPANTS.parentChild
   ) {
-    scores[MARIJA] += 3;
+    scores[ELSA] += 3;
   }
 
   const service = recommendService(answers);
@@ -571,26 +581,17 @@ export function evaluateIntake(answers: IntakeAnswers): IntakeMatchResult {
       therapistMatchingConfig[slug].supportedFormats.includes("online"),
     );
   } else if (answers.format === WORK_FORMATS.inPerson) {
-    if (answers.location === LOCATIONS.nis) {
+    // One branch per city was fine with two of them; with three it is how a
+    // new location gets added to the question and silently never filters.
+    const selectedCity = IN_PERSON_CITIES.find(
+      (city) => city === answers.location,
+    );
+    if (selectedCity !== undefined) {
       const inCity = eligible.filter(
         (slug) =>
           therapistMatchingConfig[slug].supportedFormats.includes(
             "in_person",
-          ) && therapistMatchingConfig[slug].locations.includes("Niš"),
-      );
-      eligible =
-        inCity.length > 0
-          ? inCity
-          : eligible.filter((slug) =>
-              therapistMatchingConfig[slug].supportedFormats.includes("online"),
-            );
-      onlineFallback = inCity.length === 0;
-    } else if (answers.location === LOCATIONS.leskovac) {
-      const inCity = eligible.filter(
-        (slug) =>
-          therapistMatchingConfig[slug].supportedFormats.includes(
-            "in_person",
-          ) && therapistMatchingConfig[slug].locations.includes("Leskovac"),
+          ) && therapistMatchingConfig[slug].locations.includes(selectedCity),
       );
       eligible =
         inCity.length > 0

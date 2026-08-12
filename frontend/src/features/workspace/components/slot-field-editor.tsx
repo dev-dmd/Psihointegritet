@@ -214,6 +214,28 @@ export function SlotFieldEditor({
     );
   }
 
+  if (spec.kind === "boolean") {
+    // Three states on purpose: an unanswered question is not a "no". The
+    // backend validator treats absence the same way (ADR-019 §4).
+    const answered = typeof value === "boolean";
+    return (
+      <Field label={label} required={spec.required ?? false}>
+        <label className="text-ink-70 flex items-center gap-2 text-[13.5px]">
+          <input
+            type="checkbox"
+            checked={value === true}
+            ref={(node) => {
+              if (node) node.indeterminate = !answered;
+            }}
+            onChange={(event) => onChange(event.target.checked)}
+            className="size-4"
+          />
+          {answered ? "Da" : "Nije odgovoreno"}
+        </label>
+      </Field>
+    );
+  }
+
   if (spec.kind === "imageList") {
     return (
       <SingleValueListEditor

@@ -14,6 +14,12 @@ vi.mock("@/lib/auth/identity-server", () => ({
   getServerIdentity: getServerIdentityMock,
 }));
 vi.mock("next/navigation", () => ({ redirect: redirectMock }));
+// The workspace resolver reaches `serverEnv`, which throws without a real
+// environment. These guards are about *who* is redirected where, not about
+// which language the target is in, so the locale is pinned to the live tenant.
+vi.mock("@/lib/tenant/workspace-locale", () => ({
+  resolveWorkspaceLocale: () => Promise.resolve("sr-Latn"),
+}));
 
 import {
   isWorkspaceAdmin,
@@ -30,6 +36,7 @@ function identity(partial: Partial<Identity>): Identity {
   return {
     userId: "user_1",
     email: "test@test.rs",
+    displayName: null,
     isSuperadmin: false,
     memberships: [],
     ...partial,
@@ -135,18 +142,20 @@ describe("resolveLandingRoute", () => {
         { organizationId: "psihointegritet", roles: ["org_admin"] },
       ],
     });
-    expect(resolveLandingRoute(superadminAndStaff)).toBe("/superadmin");
+    expect(resolveLandingRoute(superadminAndStaff, "sr-Latn")).toBe(
+      "/superadmin",
+    );
   });
 
   it("sends every staff role combination to /radni-prostor", () => {
     for (const who of [adminOnly, therapistOnly, staff]) {
-      expect(resolveLandingRoute(who)).toBe("/radni-prostor");
+      expect(resolveLandingRoute(who, "sr-Latn")).toBe("/radni-prostor");
     }
   });
 
   it("sends clients and role-less users to /nalog", () => {
     for (const who of [client, noRoles]) {
-      expect(resolveLandingRoute(who)).toBe("/nalog");
+      expect(resolveLandingRoute(who, "sr-Latn")).toBe("/nalog");
     }
   });
 });

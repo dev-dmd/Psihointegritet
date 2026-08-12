@@ -105,8 +105,9 @@ test("footer exposes the confirmed email, locations and only live routes", async
 
   const footer = page.locator("footer");
   await expect(footer).toContainText("info@psihointegritet.com");
-  await expect(footer).toContainText("Niš");
-  await expect(footer).toContainText("Leskovac");
+  await expect(footer).toContainText("Chicago, IL");
+  await expect(footer).toContainText("Milwaukee, WI");
+  await expect(footer).toContainText("Madison, WI");
   await expect(footer).toContainText("online i uživo");
   await expect(footer.getByRole("link", { name: "Kontakt" })).toHaveAttribute(
     "href",

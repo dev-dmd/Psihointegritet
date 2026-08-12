@@ -18,17 +18,20 @@ Usage. Prefer `--person`: the roster keeps the Clerk id, email, roles and
 therapist profile together, so they cannot be paired wrongly.
 
     uv run python scripts/provision_staff.py --list
-    uv run python scripts/provision_staff.py --person marija --dry-run
-    uv run python scripts/provision_staff.py --person marija
+    uv run python scripts/provision_staff.py --person elsa --dry-run
+    uv run python scripts/provision_staff.py --person elsa
 
-Someone without a recorded id (a new Clerk instance, or Marjan who has no
-account yet) still needs the explicit form:
+Someone without a recorded id for the instance being provisioned still needs
+the explicit form:
 
     uv run python scripts/provision_staff.py \\
         --external-id user_2ab... \\
-        --email marjan.jankovic@psihointegritet.com \\
-        --roles org_admin,therapist \\
-        --therapist-slug marjan-jankovic
+        --email elsa.browers@psihointegritet.com \\
+        --roles therapist \\
+        --therapist-slug elsa-browers
+
+To swap the whole therapist team at once, use `provision_team.py` instead —
+this command provisions one person.
 
 Inside a deployed container there is no `uv` — the runtime stage only carries
 the built virtualenv, which is already on PATH. Drop the `uv run` prefix:
@@ -63,6 +66,8 @@ pass is reported but left active. Pass --replace-roles to disable those too.
 import argparse
 import asyncio
 import sys
+
+from sqlalchemy.engine import make_url
 
 from psihointegritet.core.config import Settings, get_settings
 from psihointegritet.db.session import create_engine, create_session_factory
@@ -178,6 +183,11 @@ def resolve_request(args: argparse.Namespace, settings: Settings) -> StaffProvis
                 f"on the {instance} instance. Refusing to guess which one is right."
             )
         print(f"{person.display_name} <{person.email}> [{external_id}]")
+        # An explicit flag always wins, including `--revoke-superadmin`, so the
+        # roster can record the intent without taking the decision away.
+        superadmin = args.superadmin if args.superadmin is not None else person.superadmin or None
+        if superadmin and args.superadmin is None:
+            print("  ★ platform superadmin (recorded in the roster)")
         return StaffProvisioningRequest(
             organization_slug=args.organization,
             external_auth_id=external_id,
@@ -186,7 +196,7 @@ def resolve_request(args: argparse.Namespace, settings: Settings) -> StaffProvis
             display_name=person.display_name,
             therapist_slug=person.therapist_slug,
             replace_roles=args.replace_roles,
-            superadmin=args.superadmin,
+            superadmin=superadmin,
         )
 
     # `--superadmin` alone is a legitimate invocation: a platform operator
@@ -210,8 +220,24 @@ def resolve_request(args: argparse.Namespace, settings: Settings) -> StaffProvis
     )
 
 
+def _database_label(settings: Settings) -> str:
+    """`host:port/database` for the URL this run will actually use, no credentials.
+
+    Printed on every run because the failure mode it prevents is silent: with no
+    `.env` file present, `Settings` falls back to the local development default,
+    so a command typed on a laptop reports on `localhost` while the operator
+    believes they are looking at the deployed environment. Two people spent a
+    day on that in the QA rollout (2026-08-04).
+    """
+    url = make_url(settings.database_url)
+    return f"{url.host or 'local socket'}:{url.port or 5432}/{url.database or '?'}"
+
+
 async def run(args: argparse.Namespace) -> int:
     settings = get_settings()
+    print(f"database    : {_database_label(settings)}")
+    print(f"environment : {settings.environment.value}")
+    print(f"clerk ids   : {clerk_instance_for(settings.environment)} instance\n")
     engine = create_engine(settings)
     session_factory = create_session_factory(engine)
 

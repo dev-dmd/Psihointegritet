@@ -20,6 +20,7 @@ import {
   jsonLdForEntity,
   metadataForEntity,
 } from "@/lib/content-governance/discoverability";
+import { joinSerbianList } from "@/lib/format/serbian-list";
 import { getContentProvider } from "@/lib/content-governance/provider-resolver";
 
 interface ServicePageProps {
@@ -52,7 +53,13 @@ export default async function ServiceDetailPage({ params }: ServicePageProps) {
   const providers = therapists.filter((therapist) =>
     therapist.bookingServiceSlugs.includes(service.slug),
   );
-  const locations = [...new Set(providers.map((therapist) => therapist.city))];
+  const locations = [
+    ...new Set(
+      providers.map(
+        (therapist) => `${therapist.city}, ${therapist.cityRegionCode}`,
+      ),
+    ),
+  ];
   const bookingHref = buildBookingHref({
     service: service.slug,
     source: "service",
@@ -193,7 +200,7 @@ export default async function ServiceDetailPage({ params }: ServicePageProps) {
               </h2>
               <p className="text-coffee/72 mt-3 text-[14.5px] leading-[1.6]">
                 Rad je moguć {service.format}. Za rad uživo dostupne su
-                lokacije: {locations.join(" i ")}.
+                lokacije: {joinSerbianList(locations)}.
               </p>
             </section>
           </aside>

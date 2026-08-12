@@ -4,6 +4,725 @@
  */
 
 export interface paths {
+    "/api/v1/booking/appointment-requests": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Appointment Requests
+         * @description Staff: list appointment requests for review.
+         */
+        get: operations["list_appointment_requests_api_v1_booking_appointment_requests_get"];
+        put?: never;
+        /**
+         * Create Appointment Request
+         * @description Public: submit a booking or reschedule request.
+         */
+        post: operations["create_appointment_request_api_v1_booking_appointment_requests_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/booking/appointment-requests/client/{email}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Client Requests
+         * @description Public: list requests for a client by email.
+         */
+        get: operations["list_client_requests_api_v1_booking_appointment_requests_client__email__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/booking/appointment-requests/{request_id}/accept-alternative": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Accept Alternative
+         * @description Public: client accepts one of the proposed alternatives.
+         */
+        post: operations["accept_alternative_api_v1_booking_appointment_requests__request_id__accept_alternative_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/booking/appointment-requests/{request_id}/review": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Review Appointment Request
+         * @description Staff: review a pending appointment request (confirm/decline/propose).
+         */
+        post: operations["review_appointment_request_api_v1_booking_appointment_requests__request_id__review_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/booking/appointments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Appointments
+         * @description Staff: list confirmed appointments.
+         */
+        get: operations["list_appointments_api_v1_booking_appointments_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/booking/appointments/{appointment_id}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Cancel Appointment
+         * @description Staff: cancel a confirmed appointment.
+         */
+        post: operations["cancel_appointment_api_v1_booking_appointments__appointment_id__cancel_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/booking/appointments/{appointment_id}/complete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Complete Appointment
+         * @description Staff: mark an appointment as completed.
+         */
+        post: operations["complete_appointment_api_v1_booking_appointments__appointment_id__complete_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/booking/appointments/{appointment_id}/no-show": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Mark No Show
+         * @description Staff: mark an appointment as no-show.
+         */
+        post: operations["mark_no_show_api_v1_booking_appointments__appointment_id__no_show_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/booking/availability/exceptions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Availability Exception
+         * @description Staff: create a one-off availability exception.
+         */
+        post: operations["create_availability_exception_api_v1_booking_availability_exceptions_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/booking/availability/exceptions/{exception_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Delete Availability Exception
+         * @description Staff: delete a one-off availability exception.
+         */
+        delete: operations["delete_availability_exception_api_v1_booking_availability_exceptions__exception_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/booking/availability/exceptions/{therapist_profile_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Availability Exceptions
+         * @description Staff: list exceptions for a therapist in a date range.
+         */
+        get: operations["list_availability_exceptions_api_v1_booking_availability_exceptions__therapist_profile_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/booking/availability/manual-slots": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Manual Availability Slot
+         * @description Staff: add an explicit manual slot (manual_slots mode).
+         */
+        post: operations["create_manual_availability_slot_api_v1_booking_availability_manual_slots_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/booking/availability/manual-slots/{availability_profile_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Manual Availability Slots
+         * @description Staff: list manual slots for a profile in a date range.
+         */
+        get: operations["list_manual_availability_slots_api_v1_booking_availability_manual_slots__availability_profile_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/booking/availability/manual-slots/{slot_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Delete Manual Availability Slot
+         * @description Staff: remove a manual availability slot.
+         */
+        delete: operations["delete_manual_availability_slot_api_v1_booking_availability_manual_slots__slot_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/booking/availability/me": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get My Therapist Profile
+         * @description Staff: which therapist the signed-in account is, for the availability screens.
+         */
+        get: operations["get_my_therapist_profile_api_v1_booking_availability_me_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/booking/availability/profiles": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Availability Profile
+         * @description Staff: create an availability profile for a therapist (KAKO).
+         */
+        post: operations["create_availability_profile_api_v1_booking_availability_profiles_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/booking/availability/profiles/{availability_profile_id}/copy-week": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Copy Week
+         * @description Staff: copy a week of manual slots into another week.
+         */
+        post: operations["copy_week_api_v1_booking_availability_profiles__availability_profile_id__copy_week_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/booking/availability/profiles/{availability_profile_id}/generate-week": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Generate Week
+         * @description Staff: materialize one week of recurring rules into manual slots.
+         */
+        post: operations["generate_week_api_v1_booking_availability_profiles__availability_profile_id__generate_week_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/booking/availability/profiles/{profile_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Update Availability Profile
+         * @description Staff: update an availability profile.
+         */
+        put: operations["update_availability_profile_api_v1_booking_availability_profiles__profile_id__put"];
+        post?: never;
+        /**
+         * Delete Availability Profile
+         * @description Staff: delete an availability profile.
+         */
+        delete: operations["delete_availability_profile_api_v1_booking_availability_profiles__profile_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/booking/availability/profiles/{therapist_profile_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Availability Profiles
+         * @description Staff: list availability profiles for a therapist.
+         */
+        get: operations["list_availability_profiles_api_v1_booking_availability_profiles__therapist_profile_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/booking/availability/rules": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Availability Rule
+         * @description Staff: create a recurring availability rule for a therapist.
+         */
+        post: operations["create_availability_rule_api_v1_booking_availability_rules_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/booking/availability/rules/bulk": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Replace Availability Rules
+         * @description Staff: replace one profile's whole week atomically.
+         */
+        put: operations["replace_availability_rules_api_v1_booking_availability_rules_bulk_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/booking/availability/rules/{availability_profile_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Availability Rules
+         * @description Staff: list active availability rules for a profile.
+         */
+        get: operations["list_availability_rules_api_v1_booking_availability_rules__availability_profile_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/booking/availability/rules/{rule_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Update Availability Rule
+         * @description Staff: update a recurring availability rule.
+         */
+        put: operations["update_availability_rule_api_v1_booking_availability_rules__rule_id__put"];
+        post?: never;
+        /**
+         * Delete Availability Rule
+         * @description Staff: soft-delete a recurring availability rule.
+         */
+        delete: operations["delete_availability_rule_api_v1_booking_availability_rules__rule_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/booking/availability/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Availability Summary
+         * @description Staff: everything the four availability cards need, in one call.
+         */
+        get: operations["availability_summary_api_v1_booking_availability_summary_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/booking/availability/therapists": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Availability Therapists
+         * @description Staff: therapists whose schedule the caller may open.
+         *
+         *     A therapist gets only themselves. A superadmin gets the whole team, but
+         *     **only outside production** — same allowlist as the fallback above, so the
+         *     picker cannot appear on the live site.
+         */
+        get: operations["list_availability_therapists_api_v1_booking_availability_therapists_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/booking/configs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Upsert Booking Config
+         * @description Staff: create or update a booking config for a concrete offer.
+         */
+        post: operations["upsert_booking_config_api_v1_booking_configs_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/booking/slots": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Available Slots
+         * @description Public: list available slots for a service/therapist/format combo.
+         */
+        get: operations["get_available_slots_api_v1_booking_slots_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/booking/slots/hold": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Hold Slot
+         * @description Public: atomically hold a slot during form submission.
+         */
+        post: operations["hold_slot_api_v1_booking_slots_hold_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/booking/slots/hold/{hold_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Release Slot Hold
+         * @description Public: release a slot hold after submission or timeout.
+         */
+        delete: operations["release_slot_hold_api_v1_booking_slots_hold__hold_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/compass/flows": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Flows */
+        get: operations["list_compass_flow_versions"];
+        put?: never;
+        /** Create Flow */
+        post: operations["create_compass_flow"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/compass/flows/{flow_id}/versions/{version_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Update Flow */
+        put: operations["update_compass_flow_version"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/compass/flows/{flow_id}/versions/{version_id}/next": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create Next Version */
+        post: operations["create_next_compass_flow_version"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/compass/flows/{flow_id}/versions/{version_id}/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Preview Flow */
+        post: operations["preview_compass_flow_version"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/compass/flows/{flow_id}/versions/{version_id}/reviews": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Review Flow */
+        post: operations["review_compass_flow_version"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/compass/flows/{flow_id}/versions/{version_id}/transition": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Transition Flow */
+        post: operations["transition_compass_flow_version"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/content/entries": {
         parameters: {
             query?: never;
@@ -77,6 +796,29 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/content/entries/{entry_id}/revisions/{revision_id}/new-draft": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * New Content Draft
+         * @description Create a new DRAFT revision copying content from the current one (RW-3).
+         *
+         *     Does not mutate the source revision.  Published and archived sources stay
+         *     as-is; in_review and approved sources are marked as superseded.
+         */
+        post: operations["new_content_draft"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/content/entries/{entry_id}/revisions/{revision_id}/preview": {
         parameters: {
             query?: never;
@@ -131,6 +873,31 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/content/entries/{entry_id}/revisions/{revision_id}/submit-review": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Submit Article For Review
+         * @description Atomic save + transition ``draft → in_review`` in one transaction.
+         *
+         *     Idempotent: calling with the same ``idempotencyKey`` returns the
+         *     already-in-review revision; calling without changes on an already-in-review
+         *     revision also succeeds.  Only the first caller receives the side-effects
+         *     (audit event, outbox record).
+         */
+        post: operations["submit_article_for_review"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/content/entries/{entry_id}/revisions/{revision_id}/transition": {
         parameters: {
             query?: never;
@@ -142,6 +909,75 @@ export interface paths {
         put?: never;
         /** Transition Content Revision */
         post: operations["transition_content_revision"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/content/review-assignments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Review Assignments */
+        get: operations["list_review_assignments"];
+        put?: never;
+        /**
+         * Create Content Review Assignment
+         * @description Assign or re-activate a reviewer for a specific capability (RW-6).
+         */
+        post: operations["create_content_review_assignment"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/content/review-queue": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Review Queue
+         * @description Return all pending review tasks for the calling user (RW-6).
+         *
+         *     Filters out entries submitted by the user (four-eyes rule) and shows only
+         *     capabilities the user is assigned to review.
+         */
+        get: operations["list_review_queue"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/content/rich-doc/import-docx": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Import Rich Doc Docx
+         * @description Convert a `.docx` into RichDoc for any staff editor, writing nothing.
+         *
+         *     Preview only, exactly like the legal registry's import (ADR-017 Amendment 1
+         *     §A1.2): the panel shows the result and the author applies it by saving the
+         *     revision. Same conversion, same limits, same findings — the article editor
+         *     must not grow a second, subtly different importer.
+         */
+        post: operations["import_rich_doc_docx"];
         delete?: never;
         options?: never;
         head?: never;
@@ -162,6 +998,23 @@ export interface paths {
          * @description One allowlist normalizer for paste in every staff RichDoc editor.
          */
         post: operations["normalize_rich_html"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/content/staff-users": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Staff Users */
+        get: operations["list_staff_users"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -282,11 +1135,32 @@ export interface paths {
         get?: never;
         put?: never;
         post?: never;
-        delete?: never;
+        /** Delete Taxonomy Revision */
+        delete: operations["delete_taxonomy_revision"];
         options?: never;
         head?: never;
         /** Update Taxonomy Revision */
         patch: operations["update_taxonomy_revision"];
+        trace?: never;
+    };
+    "/api/v1/content/taxonomy/terms/{term_id}/revisions/{revision_id}/delete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Delete Taxonomy Revision Action
+         * @description Action-route counterpart for panel/proxy layers that reject DELETE.
+         */
+        post: operations["delete_taxonomy_revision_action"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/v1/content/taxonomy/terms/{term_id}/revisions/{revision_id}/reviews": {
@@ -440,6 +1314,60 @@ export interface paths {
         options?: never;
         head?: never;
         patch?: never;
+        trace?: never;
+    };
+    "/api/v1/organizations/me": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read My Organization */
+        get: operations["read_my_organization_api_v1_organizations_me_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/organizations/me/locales": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update My Organization Locales */
+        patch: operations["update_my_organization_locales_api_v1_organizations_me_locales_patch"];
+        trace?: never;
+    };
+    "/api/v1/organizations/{organization_id}/locales": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Update Organization Locales As Operator
+         * @description Operator correction (D-077 Amendment 2). Requires superadmin and a reason.
+         */
+        patch: operations["update_organization_locales_as_operator_api_v1_organizations__organization_id__locales_patch"];
         trace?: never;
     };
     "/api/v1/privacy/documents": {
@@ -605,6 +1533,57 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/public/compass/flows/{stable_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Public Flow */
+        get: operations["get_public_compass_flow"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/public/compass/flows/{stable_id}/recommendations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Get Public Experience */
+        post: operations["get_public_compass_experience"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/public/compass/recommendations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Get Public Compass Recommendations */
+        post: operations["get_public_compass_recommendations"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/public/compass/taxonomy": {
         parameters: {
             query?: never;
@@ -614,6 +1593,23 @@ export interface paths {
         };
         /** Get Public Taxonomy */
         get: operations["get_public_taxonomy"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/public/compass/taxonomy/pages/{route_kind}/{slug}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Public Compass Taxonomy Page */
+        get: operations["get_public_compass_taxonomy_page"];
         put?: never;
         post?: never;
         delete?: never;
@@ -710,6 +1706,36 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/public/organizations/{slug}/locales": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Read Public Locales
+         * @description The languages an organization renders in, by slug.
+         *
+         *     Unauthenticated on purpose, and deliberately narrow — it returns two locale
+         *     codes and nothing else. Both are already evident to anyone who loads the
+         *     public site, so this discloses nothing the page does not.
+         *
+         *     It exists because the frontend must know the locale **at build time**, with
+         *     no user session, or every public page falls from static to per-request
+         *     rendering (ADR-026 §3). A 404 here is not an error the visitor sees: the
+         *     frontend falls back to its checked-in registry so a build never depends on
+         *     this service being reachable.
+         */
+        get: operations["read_public_locales_api_v1_public_organizations__slug__locales_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/public/privacy/custom-documents/{slug}": {
         parameters: {
             query?: never;
@@ -753,6 +1779,139 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/public/research/submissions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Submit Research Survey */
+        post: operations["submit_research_survey"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/public/research/surveys/{stable_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Public Survey */
+        get: operations["get_public_survey"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/research/overview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Research Overview */
+        get: operations["get_research_overview"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/research/surveys/{stable_id}/results": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Research Results */
+        get: operations["get_research_results"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/superadmin/diagnostics": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Diagnostics
+         * @description List all registered diagnostic definitions (D6.1).
+         *
+         *     No execution — returns key, label, description, category and supported
+         *     modes for every entry in the diagnostic registry.
+         */
+        get: operations["list_diagnostics_api_v1_superadmin_diagnostics_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/superadmin/diagnostics/run": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Run Diagnostics
+         * @description Run diagnostics by category or all registered (D6.2).
+         *
+         *     ``organizationId: null`` is superadmin-only global scope (D6.5).
+         */
+        post: operations["run_diagnostics_api_v1_superadmin_diagnostics_run_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/superadmin/diagnostics/{key}/run": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Run Single Diagnostic
+         * @description Run a single diagnostic by key (D6.3).
+         */
+        post: operations["run_single_diagnostic_api_v1_superadmin_diagnostics__key__run_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/health": {
         parameters: {
             query?: never;
@@ -778,6 +1937,19 @@ export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
         /**
+         * AcceptAlternativeRequest
+         * @description Client accepts one of the proposed alternatives.
+         */
+        AcceptAlternativeRequest: {
+            /** Idempotency Key */
+            idempotency_key: string;
+            /**
+             * Proposal Id
+             * Format: uuid
+             */
+            proposal_id: string;
+        };
+        /**
          * ActorSummaryOut
          * @description Stable audit identity plus the human label shown in the panel.
          */
@@ -791,6 +1963,33 @@ export interface components {
              * Format: uuid
              */
             userId: string;
+        };
+        /** AdminFlowPreviewOut */
+        AdminFlowPreviewOut: {
+            experience: components["schemas"]["CompassExperienceOut"];
+            flow: components["schemas"]["CompassFlowVersionOut"];
+            selection: components["schemas"]["FlowSelectionOut"];
+        };
+        /** AlternativeProposalIn */
+        AlternativeProposalIn: {
+            /** Expires At */
+            expires_at?: string | null;
+            /** Format */
+            format: string;
+            /** Location Id */
+            location_id?: string | null;
+            /**
+             * Proposed End
+             * Format: date-time
+             */
+            proposed_end: string;
+            /**
+             * Proposed Start
+             * Format: date-time
+             */
+            proposed_start: string;
+            /** Therapist Note */
+            therapist_note?: string | null;
         };
         /**
          * ApiProblem
@@ -819,6 +2018,164 @@ export interface components {
              */
             type: string;
         };
+        /** AppointmentOut */
+        AppointmentOut: {
+            /** Appointment Request Id */
+            appointment_request_id: string | null;
+            /** Cancellation Reason */
+            cancellation_reason: string | null;
+            /** Cancelled At */
+            cancelled_at: string | null;
+            /** Cancelled By */
+            cancelled_by: string | null;
+            /** Client Email */
+            client_email: string;
+            /** Client Name */
+            client_name: string;
+            /** Client Note */
+            client_note: string | null;
+            /** Client Timezone */
+            client_timezone: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * End Time
+             * Format: date-time
+             */
+            end_time: string;
+            /** Format */
+            format: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Location Id */
+            location_id: string | null;
+            /**
+             * Organization Id
+             * Format: uuid
+             */
+            organization_id: string;
+            /**
+             * Service Id
+             * Format: uuid
+             */
+            service_id: string;
+            /**
+             * Start Time
+             * Format: date-time
+             */
+            start_time: string;
+            /** Status */
+            status: string;
+            /**
+             * Therapist Profile Id
+             * Format: uuid
+             */
+            therapist_profile_id: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /** AppointmentRequestIn */
+        AppointmentRequestIn: {
+            /** Client Email */
+            client_email: string;
+            /** Client Name */
+            client_name: string;
+            /** Client Note */
+            client_note?: string | null;
+            /** Client Phone */
+            client_phone?: string | null;
+            /** Client Timezone */
+            client_timezone: string;
+            /**
+             * Consent Booking Rules
+             * @default false
+             */
+            consent_booking_rules: boolean;
+            /** Existing Appointment Id */
+            existing_appointment_id?: string | null;
+            /** Format */
+            format: string;
+            /** Idempotency Key */
+            idempotency_key: string;
+            /** Location Id */
+            location_id?: string | null;
+            /** Preferred End */
+            preferred_end?: string | null;
+            /** Preferred Start */
+            preferred_start?: string | null;
+            /** Request Type */
+            request_type: string;
+            /**
+             * Service Id
+             * Format: uuid
+             */
+            service_id: string;
+            /** Therapist Profile Id */
+            therapist_profile_id?: string | null;
+        };
+        /** AppointmentRequestOut */
+        AppointmentRequestOut: {
+            /** Client Email */
+            client_email: string;
+            /** Client Name */
+            client_name: string;
+            /** Client Note */
+            client_note: string | null;
+            /** Client Timezone */
+            client_timezone: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Existing Appointment Id */
+            existing_appointment_id: string | null;
+            /** Expires At */
+            expires_at: string | null;
+            /** Format */
+            format: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Location Id */
+            location_id: string | null;
+            /**
+             * Organization Id
+             * Format: uuid
+             */
+            organization_id: string;
+            /** Preferred End */
+            preferred_end: string | null;
+            /** Preferred Start */
+            preferred_start: string | null;
+            /** Request Type */
+            request_type: string;
+            /**
+             * Service Id
+             * Format: uuid
+             */
+            service_id: string;
+            /** Status */
+            status: string;
+            /** Therapist Profile Id */
+            therapist_profile_id: string | null;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
         /**
          * ApprovalCapability
          * @description Approval capabilities from D-033. These are not auth roles.
@@ -844,8 +2201,302 @@ export interface components {
             /** Note */
             note?: string | null;
         };
+        /** AvailabilityExceptionIn */
+        AvailabilityExceptionIn: {
+            /** Availability Profile Id */
+            availability_profile_id?: string | null;
+            /**
+             * Client Visible
+             * @default false
+             */
+            client_visible: boolean;
+            /**
+             * Ends At
+             * Format: date-time
+             */
+            ends_at: string;
+            /** Format */
+            format?: string | null;
+            /** Kind */
+            kind: string;
+            /** Location Id */
+            location_id?: string | null;
+            /** Note */
+            note?: string | null;
+            /** Reason Code */
+            reason_code?: string | null;
+            /**
+             * Starts At
+             * Format: date-time
+             */
+            starts_at: string;
+            /**
+             * Therapist Profile Id
+             * Format: uuid
+             */
+            therapist_profile_id: string;
+        };
+        /** AvailabilityExceptionOut */
+        AvailabilityExceptionOut: {
+            /** Availability Profile Id */
+            availability_profile_id: string | null;
+            /** Client Visible */
+            client_visible: boolean;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Ends At
+             * Format: date-time
+             */
+            ends_at: string;
+            /** Format */
+            format: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Kind */
+            kind: string;
+            /** Location Id */
+            location_id: string | null;
+            /** Note */
+            note: string | null;
+            /**
+             * Organization Id
+             * Format: uuid
+             */
+            organization_id: string;
+            /** Reason Code */
+            reason_code: string | null;
+            /**
+             * Starts At
+             * Format: date-time
+             */
+            starts_at: string;
+            /**
+             * Therapist Profile Id
+             * Format: uuid
+             */
+            therapist_profile_id: string;
+        };
+        /** AvailabilityProfileIn */
+        AvailabilityProfileIn: {
+            /**
+             * Cancellation Notice Hours
+             * @default 24
+             */
+            cancellation_notice_hours: number;
+            /**
+             * Enabled
+             * @default true
+             */
+            enabled: boolean;
+            /**
+             * Min Lead Time Hours
+             * @default 24
+             */
+            min_lead_time_hours: number;
+            /** Mode */
+            mode: string;
+            /** Start Step Minutes */
+            start_step_minutes?: number | null;
+            /**
+             * Therapist Profile Id
+             * Format: uuid
+             */
+            therapist_profile_id: string;
+            /**
+             * Timezone
+             * @default Europe/Belgrade
+             */
+            timezone: string;
+        };
+        /** AvailabilityProfileOut */
+        AvailabilityProfileOut: {
+            /** Cancellation Notice Hours */
+            cancellation_notice_hours: number;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Enabled */
+            enabled: boolean;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Min Lead Time Hours */
+            min_lead_time_hours: number;
+            /** Mode */
+            mode: string;
+            /**
+             * Organization Id
+             * Format: uuid
+             */
+            organization_id: string;
+            /** Start Step Minutes */
+            start_step_minutes: number | null;
+            /**
+             * Therapist Profile Id
+             * Format: uuid
+             */
+            therapist_profile_id: string;
+            /** Timezone */
+            timezone: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /** AvailabilityRuleIn */
+        AvailabilityRuleIn: {
+            /**
+             * Availability Profile Id
+             * Format: uuid
+             */
+            availability_profile_id: string;
+            /** Day Of Week */
+            day_of_week: number;
+            /** End Local Time */
+            end_local_time: string;
+            /** Format */
+            format: string;
+            /** Location Id */
+            location_id?: string | null;
+            /** Start Local Time */
+            start_local_time: string;
+            /**
+             * Valid From
+             * Format: date
+             */
+            valid_from: string;
+            /** Valid Until */
+            valid_until?: string | null;
+        };
+        /** AvailabilityRuleOut */
+        AvailabilityRuleOut: {
+            /**
+             * Availability Profile Id
+             * Format: uuid
+             */
+            availability_profile_id: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Day Of Week */
+            day_of_week: number;
+            /** End Local Time */
+            end_local_time: string | null;
+            /** Format */
+            format: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Is Active */
+            is_active: boolean;
+            /** Location Id */
+            location_id: string | null;
+            /**
+             * Organization Id
+             * Format: uuid
+             */
+            organization_id: string;
+            /** Start Local Time */
+            start_local_time: string | null;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            /**
+             * Valid From
+             * Format: date
+             */
+            valid_from: string;
+            /** Valid Until */
+            valid_until: string | null;
+        };
+        /**
+         * AvailabilityRulesBulkIn
+         * @description Full replacement of one profile's recurring rules.
+         *
+         *     Replace, not merge: the list sent is the schedule after saving. The old
+         *     flow deleted rules one by one and re-created them, so a failure halfway
+         *     through left a half-written week.
+         */
+        AvailabilityRulesBulkIn: {
+            /**
+             * Availability Profile Id
+             * Format: uuid
+             */
+            availability_profile_id: string;
+            /** Rules */
+            rules: components["schemas"]["AvailabilityRuleIn"][];
+        };
+        /**
+         * AvailabilitySummaryOut
+         * @description Everything the four profile cards need, in one call.
+         *
+         *     `derived_slot_count` goes through the same `get_available_slots` path the
+         *     public booking uses, for the offering named in `service_id` — otherwise the
+         *     number on the card would be a second, quietly diverging calculation.
+         */
+        AvailabilitySummaryOut: {
+            /** Availability Profile Id */
+            availability_profile_id: string | null;
+            /** Buffer After Minutes */
+            buffer_after_minutes: number;
+            /** Cancellation Notice Hours */
+            cancellation_notice_hours: number;
+            /** Derived Slot Count */
+            derived_slot_count: number;
+            /** Duration Minutes */
+            duration_minutes: number;
+            /** Exceptions */
+            exceptions: components["schemas"]["AvailabilityExceptionOut"][];
+            /** Min Lead Time Hours */
+            min_lead_time_hours: number;
+            /** Mixed Durations */
+            mixed_durations: boolean;
+            /** Mode */
+            mode: string | null;
+            /** Reserved Capacity */
+            reserved_capacity: components["schemas"]["ReservedCapacityOut"][];
+            /** Rules */
+            rules: components["schemas"]["AvailabilityRuleOut"][];
+            /** Service Id */
+            service_id: string | null;
+            /**
+             * Therapist Profile Id
+             * Format: uuid
+             */
+            therapist_profile_id: string;
+            /** Timezone */
+            timezone: string;
+            /**
+             * Week Start
+             * Format: date
+             */
+            week_start: string;
+        };
         /** Body_import_legal_document_docx */
         Body_import_legal_document_docx: {
+            /** File */
+            file: string;
+        };
+        /** Body_import_rich_doc_docx */
+        Body_import_rich_doc_docx: {
             /** File */
             file: string;
         };
@@ -853,6 +2504,11 @@ export interface components {
         Body_preview_new_legal_document_docx: {
             /** File */
             file: string;
+        };
+        /** CancelAppointmentRequest */
+        CancelAppointmentRequest: {
+            /** Reason */
+            reason?: string | null;
         };
         /** ClaimIntakeCaseResponse */
         ClaimIntakeCaseResponse: {
@@ -867,6 +2523,214 @@ export interface components {
              * Format: uuid
              */
             therapistProfileId: string;
+        };
+        /**
+         * CompassContentCardOut
+         * @description A controlled CMS identity, never an editor-provided destination URL.
+         */
+        CompassContentCardOut: {
+            /**
+             * Accesslevel
+             * @default public
+             * @constant
+             */
+            accessLevel: "public";
+            contentFormat: components["schemas"]["ContentFormat"];
+            contentType: components["schemas"]["ContentType"];
+            /** Itemkey */
+            itemKey: string;
+            /** Locale */
+            locale: string;
+            /**
+             * Publishedat
+             * Format: date-time
+             */
+            publishedAt: string;
+            seo: components["schemas"]["SeoFields"];
+            /** Slug */
+            slug: string;
+            template: components["schemas"]["ContentTemplate"];
+        };
+        /** CompassExperienceOut */
+        CompassExperienceOut: {
+            /** Flowversion */
+            flowVersion: number;
+            handoffCandidate: components["schemas"]["CompassHandoffCandidateOut"];
+            normalizedSelection: components["schemas"]["CompassNormalizedSelectionOut"];
+            /** Sections */
+            sections: components["schemas"]["ResultSectionOut"][];
+            /** Selectionadjustments */
+            selectionAdjustments: components["schemas"]["CompassSelectionAdjustmentOut"][];
+            summary: components["schemas"]["ResultSummaryOut"];
+        };
+        /** CompassFlowDefinition */
+        CompassFlowDefinition: {
+            /** Entryquestionid */
+            entryQuestionId: string;
+            /** Questions */
+            questions: components["schemas"]["FlowQuestion"][];
+            /** Resultsections */
+            resultSections: components["schemas"]["ResultSectionDefinition"][];
+            /**
+             * Schemaversion
+             * @default 1
+             * @constant
+             */
+            schemaVersion: 1;
+        };
+        /** CompassFlowVersionOut */
+        CompassFlowVersionOut: {
+            definition: components["schemas"]["CompassFlowDefinition"];
+            /**
+             * Flowid
+             * Format: uuid
+             */
+            flowId: string;
+            /** Locale */
+            locale: string;
+            /** Lockversion */
+            lockVersion: number;
+            /** Stableid */
+            stableId: string;
+            status: components["schemas"]["RevisionStatus"];
+            /** Version */
+            version: number;
+            /**
+             * Versionid
+             * Format: uuid
+             */
+            versionId: string;
+        };
+        /** CompassHandoffCandidateOut */
+        CompassHandoffCandidateOut: {
+            /** Audienceids */
+            audienceIds: string[];
+            journeyIntent?: components["schemas"]["JourneyIntent"] | null;
+            /**
+             * Schemaversion
+             * @default 1
+             * @constant
+             */
+            schemaVersion: "1";
+            /** Taxonomyversion */
+            taxonomyVersion: string;
+            /** Topicgroupid */
+            topicGroupId?: string | null;
+            /** Topicids */
+            topicIds: string[];
+        };
+        /** CompassNormalizedSelectionOut */
+        CompassNormalizedSelectionOut: {
+            /** Audienceid */
+            audienceId?: string | null;
+            /** Goalids */
+            goalIds: string[];
+            journeyIntent?: components["schemas"]["JourneyIntent"] | null;
+            /** Topicgroupid */
+            topicGroupId?: string | null;
+            /** Topicids */
+            topicIds: string[];
+        };
+        /** CompassPaginationOut */
+        CompassPaginationOut: {
+            /** Hasmore */
+            hasMore: boolean;
+            /** Limit */
+            limit: number;
+            /** Offset */
+            offset: number;
+            /** Total */
+            total: number;
+        };
+        /** CompassReasonOut */
+        CompassReasonOut: {
+            /** Code */
+            code: string;
+            /** Text */
+            text: string;
+        };
+        /** CompassRecommendationItemOut */
+        CompassRecommendationItemOut: {
+            card: components["schemas"]["CompassContentCardOut"];
+            /** Goalids */
+            goalIds: string[];
+            /** Reasons */
+            reasons: components["schemas"]["CompassReasonOut"][];
+        };
+        /** CompassRecommendationOut */
+        CompassRecommendationOut: {
+            handoffCandidate: components["schemas"]["CompassHandoffCandidateOut"];
+            /** Locale */
+            locale: string;
+            normalizedSelection: components["schemas"]["CompassNormalizedSelectionOut"];
+            pagination: components["schemas"]["CompassPaginationOut"];
+            /** Recommendations */
+            recommendations: components["schemas"]["CompassRecommendationItemOut"][];
+            /** Relatedtopics */
+            relatedTopics: components["schemas"]["PublicTaxonomyTermOut"][];
+            /** Ruleversion */
+            ruleVersion: string;
+            /** Selectionadjustments */
+            selectionAdjustments: components["schemas"]["CompassSelectionAdjustmentOut"][];
+            /** Taxonomyversion */
+            taxonomyVersion: string;
+        };
+        /** CompassRecommendationRequest */
+        CompassRecommendationRequest: {
+            /** Audienceid */
+            audienceId?: string | null;
+            /** Goalids */
+            goalIds?: string[];
+            journeyIntent?: components["schemas"]["JourneyIntent"] | null;
+            /**
+             * Limit
+             * @default 12
+             */
+            limit: number;
+            /**
+             * Locale
+             * @default sr-Latn
+             */
+            locale: string;
+            /**
+             * Offset
+             * @default 0
+             */
+            offset: number;
+            /** Ruleversion */
+            ruleVersion: string;
+            /** Taxonomyversion */
+            taxonomyVersion: string;
+            /** Topicgroupid */
+            topicGroupId?: string | null;
+            /** Topicids */
+            topicIds?: string[];
+        };
+        /** CompassSelectionAdjustmentOut */
+        CompassSelectionAdjustmentOut: {
+            /** Code */
+            code: string;
+            /** Fieldpath */
+            fieldPath: string;
+            /** Message */
+            message: string;
+            /** Removedvalues */
+            removedValues?: string[];
+        };
+        /** CompassTaxonomyPageOut */
+        CompassTaxonomyPageOut: {
+            /** Children */
+            children: components["schemas"]["PublicTaxonomyTermOut"][];
+            /** Contentcards */
+            contentCards: components["schemas"]["CompassContentCardOut"][];
+            /** Locale */
+            locale: string;
+            parent?: components["schemas"]["PublicTaxonomyTermOut"] | null;
+            /** Relatedterms */
+            relatedTerms: components["schemas"]["PublicTaxonomyTermOut"][];
+            /** Taxonomyversion */
+            taxonomyVersion: string;
+            term: components["schemas"]["PublicTaxonomyTermOut"];
         };
         /** ConfirmTaxonomyRouteRequest */
         ConfirmTaxonomyRouteRequest: {
@@ -885,6 +2749,28 @@ export interface components {
          * @enum {string}
          */
         ConsentKind: "intake_data_processing_notice" | "intake_request_acknowledgement" | "marketing" | "ai_free_text_processing";
+        /**
+         * ContentDiscoveryMetadata
+         * @description Controlled Kompas metadata attached to exactly one CMS revision.
+         */
+        ContentDiscoveryMetadata: {
+            /** Accessleveltermid */
+            accessLevelTermId?: string | null;
+            /** Audiencetermids */
+            audienceTermIds?: string[];
+            /** Contentformattermid */
+            contentFormatTermId?: string | null;
+            /** Contentgoaltermids */
+            contentGoalTermIds?: string[];
+            /** Journeyintenttermid */
+            journeyIntentTermId?: string | null;
+            /** Relatedcontententryids */
+            relatedContentEntryIds?: string[];
+            /** Topicgrouptermid */
+            topicGroupTermId?: string | null;
+            /** Topictermids */
+            topicTermIds?: string[];
+        };
         /** ContentFindingOut */
         ContentFindingOut: {
             /** Fieldpath */
@@ -904,6 +2790,11 @@ export interface components {
              */
             severity: "info" | "warning" | "error";
         };
+        /**
+         * ContentFormat
+         * @enum {string}
+         */
+        ContentFormat: "article" | "pdf" | "video" | "audio" | "worksheet" | "program";
         /**
          * ContentHealthOut
          * @description Read-only result for one saved revision (CG-D4).
@@ -932,12 +2823,84 @@ export interface components {
          * @enum {string}
          */
         ContentManagement: "system" | "document" | "article" | "internal";
+        /** ContentReviewAssignmentOut */
+        ContentReviewAssignmentOut: {
+            /** Active */
+            active: boolean;
+            /**
+             * Assignmentid
+             * Format: uuid
+             */
+            assignmentId: string;
+            capability: components["schemas"]["ApprovalCapability"];
+            /** Displayname */
+            displayName: string;
+            /**
+             * Userid
+             * Format: uuid
+             */
+            userId: string;
+        };
+        /**
+         * ContentReviewQueueItemOut
+         * @description One entry in the reviewer's queue (RW-6).
+         */
+        ContentReviewQueueItemOut: {
+            /** Alreadydecided */
+            alreadyDecided: boolean;
+            capability: components["schemas"]["ApprovalCapability"];
+            contentType: components["schemas"]["ContentType"];
+            decidedOutcome: components["schemas"]["ReviewOutcome"] | null;
+            /**
+             * Entryid
+             * Format: uuid
+             */
+            entryId: string;
+            /**
+             * Revisionid
+             * Format: uuid
+             */
+            revisionId: string;
+            /** Slug */
+            slug: string;
+            /**
+             * Submittedat
+             * Format: date-time
+             */
+            submittedAt: string;
+            /** Submittedbydisplayname */
+            submittedByDisplayName: string | null;
+            /** Versionlabel */
+            versionLabel: string;
+        };
+        /**
+         * ContentRevisionChangeRequestOut
+         * @description Reason this draft was created by a rejected review (RW-4).
+         */
+        ContentRevisionChangeRequestOut: {
+            capability: components["schemas"]["ApprovalCapability"];
+            /** Note */
+            note: string;
+            /**
+             * Requestedat
+             * Format: date-time
+             */
+            requestedAt: string;
+            requestedBy?: components["schemas"]["ActorSummaryOut"] | null;
+            /**
+             * Sourcerevisionid
+             * Format: uuid
+             */
+            sourceRevisionId: string;
+        };
         /** ContentRevisionOut */
         ContentRevisionOut: {
+            changeRequest?: components["schemas"]["ContentRevisionChangeRequestOut"] | null;
             contentType: components["schemas"]["ContentType"];
             createdBy?: components["schemas"]["ActorSummaryOut"] | null;
             /** Decisions */
             decisions: components["schemas"]["ReviewDecisionOut"][];
+            discovery: components["schemas"]["ContentDiscoveryMetadata"];
             /**
              * Entryid
              * Format: uuid
@@ -979,15 +2942,18 @@ export interface components {
          *     slots but never invent a section type (CONTENT_MODEL_MATRIX §4).
          * @enum {string}
          */
-        ContentTemplate: "service_detail" | "therapist_profile" | "support_area" | "audience_page" | "program_detail" | "company_page" | "pricing_page" | "static_information" | "legal_page";
+        ContentTemplate: "service_detail" | "therapist_profile" | "support_area" | "audience_page" | "program_detail" | "company_page" | "pricing_page" | "static_information" | "legal_page" | "article_detail";
         /**
          * ContentType
-         * @description The six governed types from R1.4.i `ContentType`.
+         * @description The six governed types from R1.4.i, plus `article` since ADR-019.
          *
-         *     `article` is deliberately absent: the knowledge library is R3 (ADR-016).
+         *     The first six share one property `article` does not: their identity is a
+         *     closed allowlist of known pages (`system_catalog.py`). An article is one
+         *     entry per published text, unbounded in number, so it takes a separate
+         *     identity path — see ADR-019 §3.
          * @enum {string}
          */
-        ContentType: "static_page" | "service" | "therapist" | "program" | "company_plan" | "package_offer";
+        ContentType: "static_page" | "service" | "therapist" | "program" | "company_plan" | "package_offer" | "article";
         /** CreateContentEntryRequest */
         CreateContentEntryRequest: {
             contentType: components["schemas"]["ContentType"];
@@ -999,6 +2965,31 @@ export interface components {
             /** Slug */
             slug: string;
             template: components["schemas"]["ContentTemplate"];
+        };
+        /** CreateContentReviewAssignmentRequest */
+        CreateContentReviewAssignmentRequest: {
+            /**
+             * Active
+             * @default true
+             */
+            active: boolean;
+            capability: components["schemas"]["ApprovalCapability"];
+            /**
+             * Userid
+             * Format: uuid
+             */
+            userId: string;
+        };
+        /** CreateFlowRequest */
+        CreateFlowRequest: {
+            definition: components["schemas"]["CompassFlowDefinition"];
+            /**
+             * Locale
+             * @default sr-Latn
+             */
+            locale: string;
+            /** Stableid */
+            stableId: string;
         };
         /** CreateLegalDocumentRequest */
         CreateLegalDocumentRequest: {
@@ -1073,6 +3064,255 @@ export interface components {
             stableId: string;
         };
         /**
+         * DerivedSlotOut
+         * @description A computed availability slot for client display.
+         */
+        DerivedSlotOut: {
+            /** Duration Minutes */
+            duration_minutes: number;
+            /**
+             * End
+             * Format: date-time
+             */
+            end: string;
+            /** Format */
+            format: string;
+            /**
+             * Service Id
+             * Format: uuid
+             */
+            service_id: string;
+            /**
+             * Start
+             * Format: date-time
+             */
+            start: string;
+            /**
+             * Therapist Profile Id
+             * Format: uuid
+             */
+            therapist_profile_id: string;
+        };
+        /**
+         * DiagnosticDefinitionOut
+         * @description Public summary of a registered diagnostic (D6.1).
+         */
+        DiagnosticDefinitionOut: {
+            /** Category */
+            category: string;
+            /** Description */
+            description: string;
+            /** Key */
+            key: string;
+            /** Label */
+            label: string;
+            /** Supported Modes */
+            supported_modes: components["schemas"]["DiagnosticMode"][];
+            /** Tenant Aware */
+            tenant_aware: boolean;
+        };
+        /**
+         * DiagnosticMode
+         * @description How many sample rows the caller wants.
+         * @enum {string}
+         */
+        DiagnosticMode: "compact" | "full";
+        /**
+         * DiagnosticResult
+         * @description One collector run outcome — the only model the API layer sees.
+         */
+        DiagnosticResult: {
+            /**
+             * Affected Count
+             * @description Total matching rows (COUNT), never len(sample)
+             */
+            affected_count: number;
+            /**
+             * Checked At
+             * Format: date-time
+             */
+            checked_at?: string;
+            /** Duration Ms */
+            duration_ms: number;
+            /**
+             * Key
+             * @description Stable registry key, e.g. 'booking.appointment_overlaps'
+             */
+            key: string;
+            /**
+             * Sample Rows
+             * @description Evidence identifiers (no PII). Clipped to sample_limit & max_sample_rows.
+             */
+            sample_rows?: {
+                [key: string]: unknown;
+            }[];
+            status: components["schemas"]["DiagnosticStatus"];
+            /**
+             * Suggestion
+             * @description Recommended repair, null when ok
+             */
+            suggestion?: string | null;
+            /**
+             * Summary
+             * @description One-sentence finding, even when ok
+             */
+            summary: string;
+        };
+        /**
+         * DiagnosticRunRequest
+         * @description Request body for ``POST .../run`` (D6.2) and ``POST .../{key}/run`` (D6.3).
+         */
+        DiagnosticRunRequest: {
+            /**
+             * Category
+             * @description Run all diagnostics in this category
+             */
+            category?: string | null;
+            /** @default compact */
+            mode: components["schemas"]["DiagnosticMode"];
+            /**
+             * Organization Id
+             * @description Tenant scope; null = global (superadmin only)
+             */
+            organization_id?: string | null;
+        };
+        /**
+         * DiagnosticRunResponse
+         * @description Aggregated response for ``POST .../run`` (D6.2).
+         */
+        DiagnosticRunResponse: {
+            /**
+             * Checked At
+             * Format: date-time
+             */
+            checked_at: string;
+            /** Results */
+            results: components["schemas"]["DiagnosticResult"][];
+            summary: components["schemas"]["DiagnosticRunSummary"];
+        };
+        /**
+         * DiagnosticRunSummary
+         * @description Aggregated counts across all results in one run.
+         */
+        DiagnosticRunSummary: {
+            /**
+             * Error
+             * @default 0
+             */
+            error: number;
+            /**
+             * Failed
+             * @default 0
+             */
+            failed: number;
+            /**
+             * Info
+             * @default 0
+             */
+            info: number;
+            /**
+             * Ok
+             * @default 0
+             */
+            ok: number;
+            /**
+             * Warning
+             * @default 0
+             */
+            warning: number;
+        };
+        /**
+         * DiagnosticStatus
+         * @description Outcome of a single diagnostic check.
+         *
+         *     Ordered by severity from *nothing to report* through *operator should look*
+         *     to *something is definitely wrong*.
+         * @enum {string}
+         */
+        DiagnosticStatus: "ok" | "info" | "warning" | "error" | "failed";
+        /**
+         * EmptyBehavior
+         * @enum {string}
+         */
+        EmptyBehavior: "hide" | "show";
+        /** FlowAnswer */
+        FlowAnswer: {
+            /** Optionids */
+            optionIds: string[];
+            /** Questionid */
+            questionId: string;
+        };
+        /** FlowEvaluationRequest */
+        FlowEvaluationRequest: {
+            /** Answers */
+            answers?: components["schemas"]["FlowAnswer"][];
+        };
+        /** FlowQuestion */
+        FlowQuestion: {
+            /** Allowedtermids */
+            allowedTermIds?: string[];
+            /** Defaultnextquestionid */
+            defaultNextQuestionId?: string | null;
+            /**
+             * Filtertopicsbyselectedarea
+             * @default false
+             */
+            filterTopicsBySelectedArea: boolean;
+            /**
+             * Helptext
+             * @default
+             */
+            helpText: string;
+            inputMode: components["schemas"]["InputMode"];
+            /**
+             * Maxselections
+             * @default 1
+             */
+            maxSelections: number;
+            optionSource: components["schemas"]["OptionSource"];
+            /**
+             * Optional
+             * @default true
+             * @constant
+             */
+            optional: true;
+            /** Prompt */
+            prompt: string;
+            /** Questionid */
+            questionId: string;
+            selectionTarget: components["schemas"]["SelectionTarget"];
+            /** Skipnextquestionid */
+            skipNextQuestionId?: string | null;
+            /** Staticoptions */
+            staticOptions?: components["schemas"]["StaticFlowOption"][];
+            taxonomyAxis?: components["schemas"]["TaxonomyAxis"] | null;
+            terminal?: components["schemas"]["TerminalBehavior"] | null;
+        };
+        /** FlowReviewRequest */
+        FlowReviewRequest: {
+            capability: components["schemas"]["ApprovalCapability"];
+            /** Note */
+            note?: string | null;
+            outcome: components["schemas"]["ReviewOutcome"];
+        };
+        /** FlowSelectionOut */
+        FlowSelectionOut: {
+            /** Audienceid */
+            audienceId?: string | null;
+            /** Goalids */
+            goalIds?: string[];
+            journeyIntent?: components["schemas"]["JourneyIntent"] | null;
+            /**
+             * Startingpackage
+             * @default false
+             */
+            startingPackage: boolean;
+            /** Topicgroupid */
+            topicGroupId?: string | null;
+            /** Topicids */
+            topicIds?: string[];
+        };
+        /**
          * GuardianConsentStatus
          * @enum {string}
          */
@@ -1123,6 +3363,11 @@ export interface components {
             /** Requiresapproval */
             requiresApproval: boolean;
         };
+        /**
+         * InputMode
+         * @enum {string}
+         */
+        InputMode: "single_select" | "multi_select";
         /** IntakeAcknowledgementInput */
         IntakeAcknowledgementInput: {
             /** Documentversion */
@@ -1182,6 +3427,11 @@ export interface components {
          */
         IntakeSubmissionKind: "request" | "team_review";
         /**
+         * JourneyIntent
+         * @enum {string}
+         */
+        JourneyIntent: "explore" | "professional_support" | "both";
+        /**
          * LegalDocumentKind
          * @description Document identities the registry can hold.
          *
@@ -1225,6 +3475,99 @@ export interface components {
             /** Versionlabel */
             versionLabel: string;
         };
+        /** ManualAvailabilitySlotIn */
+        ManualAvailabilitySlotIn: {
+            /**
+             * Availability Profile Id
+             * Format: uuid
+             */
+            availability_profile_id: string;
+            /** Format */
+            format: string;
+            /** Location Id */
+            location_id?: string | null;
+            /**
+             * Source
+             * @default manual
+             */
+            source: string;
+            /**
+             * Starts At
+             * Format: date-time
+             */
+            starts_at: string;
+        };
+        /** ManualAvailabilitySlotOut */
+        ManualAvailabilitySlotOut: {
+            /**
+             * Availability Profile Id
+             * Format: uuid
+             */
+            availability_profile_id: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Format */
+            format: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Location Id */
+            location_id: string | null;
+            /**
+             * Organization Id
+             * Format: uuid
+             */
+            organization_id: string;
+            /** Source */
+            source: string;
+            /**
+             * Starts At
+             * Format: date-time
+             */
+            starts_at: string;
+        };
+        /**
+         * MyTherapistProfileOut
+         * @description Which therapist the signed-in staff member *is*.
+         *
+         *     The availability screens edit one therapist's schedule, and the browser only
+         *     knows a Clerk user. Resolving the link server-side keeps the mapping (and
+         *     the possibility of not being a therapist at all) out of the client.
+         */
+        MyTherapistProfileOut: {
+            /**
+             * Acting As
+             * @default false
+             */
+            acting_as: boolean;
+            /** Display Name */
+            display_name: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Slug */
+            slug: string;
+        };
+        /**
+         * NewContentDraftRequest
+         * @description Create a new draft revision from the current one (RW-3 / D-068 rule 3).
+         *
+         *     Copies slot_data, SEO and discovery metadata from the source revision.
+         */
+        NewContentDraftRequest: {
+            /**
+             * Reason
+             * @default author_withdrawal
+             */
+            reason: string;
+        };
         /** NormalizeRichHtmlRequest */
         NormalizeRichHtmlRequest: {
             /** Html */
@@ -1238,6 +3581,73 @@ export interface components {
             };
             /** Findings */
             findings: components["schemas"]["RichDocFindingOut"][];
+        };
+        /**
+         * OptionSource
+         * @enum {string}
+         */
+        OptionSource: "taxonomy_axis" | "static";
+        /** OptionTallyOut */
+        OptionTallyOut: {
+            /** Count */
+            count: number;
+            /** Label */
+            label: string;
+            /** Optionid */
+            optionId: string;
+        };
+        /** OrganizationLocaleUpdate */
+        OrganizationLocaleUpdate: {
+            /**
+             * Defaultcontentlocale
+             * @enum {string}
+             */
+            defaultContentLocale: "en" | "sr-Latn";
+            /** Reason */
+            reason?: string | null;
+            /**
+             * Uilocale
+             * @enum {string}
+             */
+            uiLocale: "en" | "sr-Latn";
+        };
+        /**
+         * OrganizationLocalesOut
+         * @description Just the locales — what the public read exposes.
+         */
+        OrganizationLocalesOut: {
+            /**
+             * Defaultcontentlocale
+             * @enum {string}
+             */
+            defaultContentLocale: "en" | "sr-Latn";
+            /**
+             * Uilocale
+             * @enum {string}
+             */
+            uiLocale: "en" | "sr-Latn";
+        };
+        /** OrganizationSettingsOut */
+        OrganizationSettingsOut: {
+            /**
+             * Defaultcontentlocale
+             * @enum {string}
+             */
+            defaultContentLocale: "en" | "sr-Latn";
+            /** Displayname */
+            displayName: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Slug */
+            slug: string;
+            /**
+             * Uilocale
+             * @enum {string}
+             */
+            uiLocale: "en" | "sr-Latn";
         };
         /**
          * PublicContentRevisionOut
@@ -1366,6 +3776,19 @@ export interface components {
             /** Slug */
             slug: string;
         };
+        /**
+         * PublicSurveyOut
+         * @description Published question set for the drawer. Never exposes submissions.
+         */
+        PublicSurveyOut: {
+            schema: components["schemas"]["SurveyQuestionSchema"];
+            /** Stableid */
+            stableId: string;
+            /** Title */
+            title: string;
+            /** Version */
+            version: number;
+        };
         /** PublicTaxonomyOut */
         PublicTaxonomyOut: {
             /** Locale */
@@ -1420,6 +3843,19 @@ export interface components {
             /** Slug */
             slug: string;
         };
+        /** QuestionTallyOut */
+        QuestionTallyOut: {
+            /** Answeredcount */
+            answeredCount: number;
+            /** Multi */
+            multi: boolean;
+            /** Options */
+            options: components["schemas"]["OptionTallyOut"][];
+            /** Prompt */
+            prompt: string;
+            /** Questionid */
+            questionId: string;
+        };
         /** ReassignIntakeCaseRequest */
         ReassignIntakeCaseRequest: {
             /**
@@ -1453,6 +3889,112 @@ export interface components {
          * @enum {string}
          */
         RequesterRole: "self_adult" | "guardian" | "adolescent_16_17" | "information_only";
+        /** ResearchOverviewOut */
+        ResearchOverviewOut: {
+            /** Surveys */
+            surveys: components["schemas"]["SurveyResultsOut"][];
+        };
+        /**
+         * ResearchSubmissionSurface
+         * @description Where the drawer was rendered — not who rendered it.
+         * @enum {string}
+         */
+        ResearchSubmissionSurface: "research-drawer" | "compass-feedback";
+        /**
+         * ResearchSubmissionTrigger
+         * @description What opened the drawer. Coarse by design; never a session identifier.
+         * @enum {string}
+         */
+        ResearchSubmissionTrigger: "manual" | "after-results" | "finish";
+        /**
+         * ResearchSurveyStatus
+         * @enum {string}
+         */
+        ResearchSurveyStatus: "draft" | "published" | "archived";
+        /**
+         * ReservedCapacityOut
+         * @description Company-reserved capacity (BDS-013 / D-073).
+         *
+         *     Always empty until R4 — the seam exists so the profile card can render its
+         *     real empty state instead of a placeholder.
+         */
+        ReservedCapacityOut: {
+            /** Company Name */
+            company_name: string;
+            /** Day Of Week */
+            day_of_week: number;
+            /** End Local Time */
+            end_local_time: string;
+            /** Format */
+            format?: string | null;
+            /** Location Label */
+            location_label?: string | null;
+            /** Start Local Time */
+            start_local_time: string;
+        };
+        /** ResultSectionDefinition */
+        ResultSectionDefinition: {
+            /** @default hide */
+            emptyBehavior: components["schemas"]["EmptyBehavior"];
+            /** Goalids */
+            goalIds?: string[];
+            /**
+             * Locked
+             * @default false
+             */
+            locked: boolean;
+            /**
+             * Maxitems
+             * @default 4
+             */
+            maxItems: number;
+            /**
+             * Sectionid
+             * @enum {string}
+             */
+            sectionId: "understanding" | "practical-tools" | "professional-support" | "related-areas" | "related-topics" | "other-topics-in-area";
+            /** Title */
+            title: string;
+        };
+        /** ResultSectionOut */
+        ResultSectionOut: {
+            /** Contentitems */
+            contentItems: components["schemas"]["CompassRecommendationItemOut"][];
+            emptyBehavior: components["schemas"]["EmptyBehavior"];
+            /**
+             * Locked
+             * @default false
+             */
+            locked: boolean;
+            /** Sectionid */
+            sectionId: string;
+            /** Taxonomyitems */
+            taxonomyItems: components["schemas"]["PublicTaxonomyTermOut"][];
+            /** Title */
+            title: string;
+        };
+        /** ResultSummaryOut */
+        ResultSummaryOut: {
+            /** Hasselection */
+            hasSelection: boolean;
+            /**
+             * Title
+             * @enum {string}
+             */
+            title: "Vaš prilagođeni prikaz" | "Polazni prikaz";
+        };
+        /**
+         * ReviewAction
+         * @description Therapist action on a pending appointment request.
+         */
+        ReviewAction: {
+            /** Action */
+            action: string;
+            /** Alternatives */
+            alternatives?: components["schemas"]["AlternativeProposalIn"][] | null;
+            /** Reason */
+            reason?: string | null;
+        };
         /** ReviewDecisionOut */
         ReviewDecisionOut: {
             capability: components["schemas"]["ApprovalCapability"];
@@ -1503,6 +4045,11 @@ export interface components {
             /** Severity */
             severity: string;
         };
+        /**
+         * SelectionTarget
+         * @enum {string}
+         */
+        SelectionTarget: "topic_group" | "topics" | "audience" | "content_goals" | "journey_intent" | "none";
         /** SeoFields */
         SeoFields: {
             /**
@@ -1519,10 +4066,220 @@ export interface components {
             title: string;
         };
         /**
+         * ServiceBookingConfigIn
+         * @description Create or update a booking config for a concrete offer.
+         */
+        ServiceBookingConfigIn: {
+            /** Availability Profile Id */
+            availability_profile_id?: string | null;
+            /** Booking Mode */
+            booking_mode: string;
+            /**
+             * Buffer After Minutes
+             * @default 0
+             */
+            buffer_after_minutes: number;
+            /**
+             * Buffer Before Minutes
+             * @default 0
+             */
+            buffer_before_minutes: number;
+            /** Duration Minutes */
+            duration_minutes?: number | null;
+            /** Format */
+            format: string;
+            /**
+             * Is Active
+             * @default true
+             */
+            is_active: boolean;
+            /** Location Id */
+            location_id?: string | null;
+            /**
+             * Service Id
+             * Format: uuid
+             */
+            service_id: string;
+            /** Therapist Profile Id */
+            therapist_profile_id?: string | null;
+        };
+        /** ServiceBookingConfigOut */
+        ServiceBookingConfigOut: {
+            /** Availability Profile Id */
+            availability_profile_id: string | null;
+            /** Booking Mode */
+            booking_mode: string;
+            /** Buffer After Minutes */
+            buffer_after_minutes: number;
+            /** Buffer Before Minutes */
+            buffer_before_minutes: number;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Duration Minutes */
+            duration_minutes: number | null;
+            /** Format */
+            format: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Is Active */
+            is_active: boolean;
+            /** Location Id */
+            location_id: string | null;
+            /**
+             * Organization Id
+             * Format: uuid
+             */
+            organization_id: string;
+            /**
+             * Service Id
+             * Format: uuid
+             */
+            service_id: string;
+            /** Therapist Profile Id */
+            therapist_profile_id: string | null;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /** SlotHoldOut */
+        SlotHoldOut: {
+            /**
+             * Expires At
+             * Format: date-time
+             */
+            expires_at: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Slot End
+             * Format: date-time
+             */
+            slot_end: string;
+            /**
+             * Slot Start
+             * Format: date-time
+             */
+            slot_start: string;
+        };
+        /** SlotHoldRequest */
+        SlotHoldRequest: {
+            /** Client Timezone */
+            client_timezone: string;
+            /** Idempotency Key */
+            idempotency_key: string;
+            /**
+             * Service Id
+             * Format: uuid
+             */
+            service_id: string;
+            /**
+             * Slot End
+             * Format: date-time
+             */
+            slot_end: string;
+            /**
+             * Slot Start
+             * Format: date-time
+             */
+            slot_start: string;
+            /**
+             * Therapist Profile Id
+             * Format: uuid
+             */
+            therapist_profile_id: string;
+        };
+        /**
+         * StaffUserOut
+         * @description Minimal user info for reviewer assignment dropdown.
+         */
+        StaffUserOut: {
+            /** Displayname */
+            displayName: string;
+            /** Email */
+            email: string;
+            /**
+             * Userid
+             * Format: uuid
+             */
+            userId: string;
+        };
+        /** StaticFlowOption */
+        StaticFlowOption: {
+            /** Label */
+            label: string;
+            /** Nextquestionid */
+            nextQuestionId?: string | null;
+            /** Optionid */
+            optionId: string;
+            /** Selectionvalue */
+            selectionValue?: string | null;
+            terminal?: components["schemas"]["TerminalBehavior"] | null;
+        };
+        /**
          * SubjectAgeBand
          * @enum {string}
          */
         SubjectAgeBand: "under_12" | "12_15" | "16_17" | "adult";
+        /**
+         * SubmitArticleForReviewRequest
+         * @description Atomic: save + transition `draft → in_review` in one transaction.
+         *
+         *     `lock_version` protects against concurrent writes.  `idempotency_key`
+         *     makes the second identical call return the already-in-review revision
+         *     instead of a 409 (D-068 rule 2).
+         */
+        SubmitArticleForReviewRequest: {
+            discovery?: components["schemas"]["ContentDiscoveryMetadata"] | null;
+            /**
+             * Idempotencykey
+             * Format: uuid
+             */
+            idempotencyKey: string;
+            /** Lockversion */
+            lockVersion: number;
+            seo?: components["schemas"]["SeoFields"] | null;
+            /** Slotdata */
+            slotData?: {
+                [key: string]: unknown;
+            } | null;
+        };
+        /** SubmitResearchRequest */
+        SubmitResearchRequest: {
+            /** Answers */
+            answers: components["schemas"]["SurveyAnswer"][];
+            /**
+             * Locale
+             * @default sr-Latn
+             */
+            locale: string;
+            surface: components["schemas"]["ResearchSubmissionSurface"];
+            /** Surveystableid */
+            surveyStableId: string;
+            trigger: components["schemas"]["ResearchSubmissionTrigger"];
+        };
+        /** SubmitResearchResponse */
+        SubmitResearchResponse: {
+            /**
+             * Submissionid
+             * Format: uuid
+             */
+            submissionId: string;
+            /** Surveystableid */
+            surveyStableId: string;
+            /** Surveyversion */
+            surveyVersion: number;
+        };
         /** SuggestTaxonomyRouteRequest */
         SuggestTaxonomyRouteRequest: {
             /**
@@ -1530,6 +4287,92 @@ export interface components {
              * @default sr-Latn
              */
             locale: string;
+        };
+        /** SurveyAnswer */
+        SurveyAnswer: {
+            /** Optionids */
+            optionIds: string[];
+            /** Questionid */
+            questionId: string;
+        };
+        /** SurveyOption */
+        SurveyOption: {
+            /** Label */
+            label: string;
+            /** Optionid */
+            optionId: string;
+        };
+        /** SurveyQuestion */
+        SurveyQuestion: {
+            /**
+             * Multi
+             * @default false
+             */
+            multi: boolean;
+            /**
+             * Optional
+             * @default false
+             */
+            optional: boolean;
+            /** Options */
+            options: components["schemas"]["SurveyOption"][];
+            /** Prompt */
+            prompt: string;
+            /** Questionid */
+            questionId: string;
+        };
+        /**
+         * SurveyQuestionSchema
+         * @description The `question_schema` JSON payload of one survey version.
+         */
+        SurveyQuestionSchema: {
+            /**
+             * Allowsfreetext
+             * @default false
+             */
+            allowsFreeText: boolean;
+            /** Introdescription */
+            introDescription: string;
+            /** Introtitle */
+            introTitle: string;
+            /** Questions */
+            questions: components["schemas"]["SurveyQuestion"][];
+            /**
+             * Schemaversion
+             * @default 1
+             */
+            schemaVersion: number;
+        };
+        /**
+         * SurveyResultsOut
+         * @description Per-survey-version panel view. Versions are never merged into one
+         *     percentage: a changed question set makes the older answers a different
+         *     measurement.
+         */
+        SurveyResultsOut: {
+            /** Firstsubmissionat */
+            firstSubmissionAt: string | null;
+            /** Lastsubmissionat */
+            lastSubmissionAt: string | null;
+            /** Questions */
+            questions: components["schemas"]["QuestionTallyOut"][];
+            /** Stableid */
+            stableId: string;
+            status: components["schemas"]["ResearchSurveyStatus"];
+            /** Submissioncount */
+            submissionCount: number;
+            /** Surfaces */
+            surfaces: {
+                [key: string]: number;
+            };
+            /** Title */
+            title: string;
+            /** Triggers */
+            triggers: {
+                [key: string]: number;
+            };
+            /** Version */
+            version: number;
         };
         /**
          * TaxonomyAxis
@@ -1811,6 +4654,17 @@ export interface components {
             subjectAgeBand: components["schemas"]["SubjectAgeBand"];
             submissionKind: components["schemas"]["IntakeSubmissionKind"];
         };
+        /**
+         * TerminalBehavior
+         * @enum {string}
+         */
+        TerminalBehavior: "results" | "starting_package";
+        /** TransitionFlowRequest */
+        TransitionFlowRequest: {
+            /** Lockversion */
+            lockVersion: number;
+            target: components["schemas"]["RevisionStatus"];
+        };
         /** TransitionRequest */
         TransitionRequest: {
             target: components["schemas"]["RevisionStatus"];
@@ -1821,6 +4675,7 @@ export interface components {
          *     default — the client always edits against a specific version it fetched.
          */
         UpdateContentRevisionRequest: {
+            discovery?: components["schemas"]["ContentDiscoveryMetadata"] | null;
             /** Lockversion */
             lockVersion: number;
             seo?: components["schemas"]["SeoFields"] | null;
@@ -1828,6 +4683,12 @@ export interface components {
             slotData?: {
                 [key: string]: unknown;
             } | null;
+        };
+        /** UpdateFlowVersionRequest */
+        UpdateFlowVersionRequest: {
+            definition: components["schemas"]["CompassFlowDefinition"];
+            /** Lockversion */
+            lockVersion: number;
         };
         /**
          * UpdateLegalDocumentRevisionRequest
@@ -1917,6 +4778,1486 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    list_appointment_requests_api_v1_booking_appointment_requests_get: {
+        parameters: {
+            query?: {
+                therapist_profile_id?: string | null;
+                status?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AppointmentRequestOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_appointment_request_api_v1_booking_appointment_requests_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AppointmentRequestIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AppointmentRequestOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_client_requests_api_v1_booking_appointment_requests_client__email__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                email: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AppointmentRequestOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    accept_alternative_api_v1_booking_appointment_requests__request_id__accept_alternative_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                request_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AcceptAlternativeRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: string;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    review_appointment_request_api_v1_booking_appointment_requests__request_id__review_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                request_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReviewAction"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: string;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_appointments_api_v1_booking_appointments_get: {
+        parameters: {
+            query?: {
+                therapist_profile_id?: string | null;
+                status?: string | null;
+                date_from?: string | null;
+                date_until?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AppointmentOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    cancel_appointment_api_v1_booking_appointments__appointment_id__cancel_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                appointment_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CancelAppointmentRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AppointmentOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    complete_appointment_api_v1_booking_appointments__appointment_id__complete_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                appointment_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AppointmentOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    mark_no_show_api_v1_booking_appointments__appointment_id__no_show_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                appointment_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AppointmentOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_availability_exception_api_v1_booking_availability_exceptions_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AvailabilityExceptionIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AvailabilityExceptionOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_availability_exception_api_v1_booking_availability_exceptions__exception_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                exception_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_availability_exceptions_api_v1_booking_availability_exceptions__therapist_profile_id__get: {
+        parameters: {
+            query: {
+                date_from: string;
+                date_until: string;
+            };
+            header?: never;
+            path: {
+                therapist_profile_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AvailabilityExceptionOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_manual_availability_slot_api_v1_booking_availability_manual_slots_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ManualAvailabilitySlotIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ManualAvailabilitySlotOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_manual_availability_slots_api_v1_booking_availability_manual_slots__availability_profile_id__get: {
+        parameters: {
+            query: {
+                date_from: string;
+                date_until: string;
+            };
+            header?: never;
+            path: {
+                availability_profile_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ManualAvailabilitySlotOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_manual_availability_slot_api_v1_booking_availability_manual_slots__slot_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                slot_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_my_therapist_profile_api_v1_booking_availability_me_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MyTherapistProfileOut"];
+                };
+            };
+        };
+    };
+    create_availability_profile_api_v1_booking_availability_profiles_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AvailabilityProfileIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AvailabilityProfileOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    copy_week_api_v1_booking_availability_profiles__availability_profile_id__copy_week_post: {
+        parameters: {
+            query: {
+                source_week_start: string;
+                target_week_start: string;
+            };
+            header?: never;
+            path: {
+                availability_profile_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ManualAvailabilitySlotOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    generate_week_api_v1_booking_availability_profiles__availability_profile_id__generate_week_post: {
+        parameters: {
+            query: {
+                week_start: string;
+            };
+            header?: never;
+            path: {
+                availability_profile_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ManualAvailabilitySlotOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_availability_profile_api_v1_booking_availability_profiles__profile_id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                profile_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AvailabilityProfileIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AvailabilityProfileOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_availability_profile_api_v1_booking_availability_profiles__profile_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                profile_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_availability_profiles_api_v1_booking_availability_profiles__therapist_profile_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                therapist_profile_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AvailabilityProfileOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_availability_rule_api_v1_booking_availability_rules_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AvailabilityRuleIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AvailabilityRuleOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    replace_availability_rules_api_v1_booking_availability_rules_bulk_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AvailabilityRulesBulkIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AvailabilityRuleOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_availability_rules_api_v1_booking_availability_rules__availability_profile_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                availability_profile_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AvailabilityRuleOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_availability_rule_api_v1_booking_availability_rules__rule_id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                rule_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AvailabilityRuleIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AvailabilityRuleOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_availability_rule_api_v1_booking_availability_rules__rule_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                rule_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    availability_summary_api_v1_booking_availability_summary_get: {
+        parameters: {
+            query: {
+                therapist_profile_id: string;
+                week_start: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AvailabilitySummaryOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_availability_therapists_api_v1_booking_availability_therapists_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MyTherapistProfileOut"][];
+                };
+            };
+        };
+    };
+    upsert_booking_config_api_v1_booking_configs_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ServiceBookingConfigIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ServiceBookingConfigOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_available_slots_api_v1_booking_slots_get: {
+        parameters: {
+            query: {
+                service_id: string;
+                therapist_profile_id: string;
+                format: string;
+                location_id?: string | null;
+                date_from: string;
+                date_until: string;
+                client_timezone?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DerivedSlotOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    hold_slot_api_v1_booking_slots_hold_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SlotHoldRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SlotHoldOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    release_slot_hold_api_v1_booking_slots_hold__hold_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                hold_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_compass_flow_versions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CompassFlowVersionOut"][];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+        };
+    };
+    create_compass_flow: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateFlowRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CompassFlowVersionOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+        };
+    };
+    update_compass_flow_version: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                flow_id: string;
+                version_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateFlowVersionRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CompassFlowVersionOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+        };
+    };
+    create_next_compass_flow_version: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                flow_id: string;
+                version_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CompassFlowVersionOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+        };
+    };
+    preview_compass_flow_version: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                flow_id: string;
+                version_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FlowEvaluationRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminFlowPreviewOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+        };
+    };
+    review_compass_flow_version: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                flow_id: string;
+                version_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FlowReviewRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CompassFlowVersionOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+        };
+    };
+    transition_compass_flow_version: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                flow_id: string;
+                version_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TransitionFlowRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CompassFlowVersionOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+        };
+    };
     list_content_entries: {
         parameters: {
             query?: {
@@ -2110,6 +6451,42 @@ export interface operations {
             };
         };
     };
+    new_content_draft: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                entry_id: string;
+                revision_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NewContentDraftRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ContentRevisionOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_content_revision_preview: {
         parameters: {
             query?: never;
@@ -2210,6 +6587,42 @@ export interface operations {
             };
         };
     };
+    submit_article_for_review: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                entry_id: string;
+                revision_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SubmitArticleForReviewRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ContentRevisionOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     transition_content_revision: {
         parameters: {
             query?: never;
@@ -2233,6 +6646,112 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ContentRevisionOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_review_assignments: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ContentReviewAssignmentOut"][];
+                };
+            };
+        };
+    };
+    create_content_review_assignment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateContentReviewAssignmentRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ContentReviewAssignmentOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_review_queue: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ContentReviewQueueItemOut"][];
+                };
+            };
+        };
+    };
+    import_rich_doc_docx: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_import_rich_doc_docx"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NormalizeRichHtmlResponse"];
                 };
             };
             /** @description Validation Error */
@@ -2275,6 +6794,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_staff_users: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StaffUserOut"][];
                 };
             };
         };
@@ -2756,6 +7295,63 @@ export interface operations {
             };
         };
     };
+    delete_taxonomy_revision: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                term_id: string;
+                revision_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+        };
+    };
     update_taxonomy_revision: {
         parameters: {
             query?: never;
@@ -2780,6 +7376,63 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["TaxonomyTermOut"];
                 };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+        };
+    };
+    delete_taxonomy_revision_action: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                term_id: string;
+                revision_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Forbidden */
             403: {
@@ -3235,6 +7888,94 @@ export interface operations {
             };
         };
     };
+    read_my_organization_api_v1_organizations_me_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrganizationSettingsOut"];
+                };
+            };
+        };
+    };
+    update_my_organization_locales_api_v1_organizations_me_locales_patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OrganizationLocaleUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrganizationSettingsOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_organization_locales_as_operator_api_v1_organizations__organization_id__locales_patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                organization_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OrganizationLocaleUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrganizationSettingsOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     list_legal_documents: {
         parameters: {
             query?: never;
@@ -3590,6 +8331,179 @@ export interface operations {
             };
         };
     };
+    get_public_compass_flow: {
+        parameters: {
+            query?: {
+                locale?: string;
+            };
+            header?: never;
+            path: {
+                stable_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CompassFlowVersionOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+        };
+    };
+    get_public_compass_experience: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                stable_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CompassRecommendationRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CompassExperienceOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+        };
+    };
+    get_public_compass_recommendations: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CompassRecommendationRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CompassRecommendationOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+        };
+    };
     get_public_taxonomy: {
         parameters: {
             query?: {
@@ -3617,6 +8531,65 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_public_compass_taxonomy_page: {
+        parameters: {
+            query?: {
+                locale?: string;
+            };
+            header?: never;
+            path: {
+                route_kind: components["schemas"]["TaxonomyRouteKind"];
+                slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CompassTaxonomyPageOut"];
+                };
+            };
+            /** @description Stara putanja preusmerava na aktuelnu kanonsku putanju. */
+            308: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
                 };
             };
         };
@@ -3790,6 +8763,37 @@ export interface operations {
             };
         };
     };
+    read_public_locales_api_v1_public_organizations__slug__locales_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrganizationLocalesOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_public_custom_document: {
         parameters: {
             query?: never;
@@ -3839,6 +8843,290 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PublicLegalDocumentOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    submit_research_survey: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SubmitResearchRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SubmitResearchResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+        };
+    };
+    get_public_survey: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                stable_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicSurveyOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+        };
+    };
+    get_research_overview: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResearchOverviewOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+        };
+    };
+    get_research_results: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                stable_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SurveyResultsOut"][];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiProblem"];
+                };
+            };
+        };
+    };
+    list_diagnostics_api_v1_superadmin_diagnostics_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DiagnosticDefinitionOut"][];
+                };
+            };
+        };
+    };
+    run_diagnostics_api_v1_superadmin_diagnostics_run_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DiagnosticRunRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DiagnosticRunResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    run_single_diagnostic_api_v1_superadmin_diagnostics__key__run_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                key: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DiagnosticRunRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DiagnosticRunResponse"];
                 };
             };
             /** @description Validation Error */

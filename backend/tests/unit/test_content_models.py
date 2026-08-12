@@ -21,6 +21,7 @@ from psihointegritet.modules.content.models import (
     ContentType,
     ReviewOutcome,
 )
+from psihointegritet.modules.content.system_catalog import SYSTEM_CONTENT_TEMPLATES
 from psihointegritet.modules.privacy import models as privacy_models
 from psihointegritet.modules.privacy.models import (
     LegalDocument,
@@ -44,6 +45,7 @@ GOVERNED_CONTENT_TYPES = {
     "program",
     "company_plan",
     "package_offer",
+    "article",
 }
 
 GOVERNED_TEMPLATES = {
@@ -56,6 +58,7 @@ GOVERNED_TEMPLATES = {
     "pricing_page",
     "static_information",
     "legal_page",
+    "article_detail",
 }
 
 
@@ -82,13 +85,17 @@ def index_of(model: type[Base], name: str) -> Index:
     raise AssertionError(f"{model.__name__} has no index named {name}")
 
 
-def test_content_types_match_the_governed_six() -> None:
+def test_content_types_match_the_governed_registry() -> None:
     assert {content_type.value for content_type in ContentType} == GOVERNED_CONTENT_TYPES
 
 
-def test_article_is_not_a_cms_core_content_type() -> None:
-    # The knowledge library stays R3 (ADR-016 "What this ADR does NOT open").
-    assert "article" not in {content_type.value for content_type in ContentType}
+def test_article_is_a_governed_content_type_since_adr_019() -> None:
+    # Inverted, not deleted: this test guarded the ADR-019 precondition while the
+    # knowledge library was still closed (ADR-016). It now guards the boundary
+    # that replaced it — an article is governed content, but it never becomes a
+    # *system* identity, because that allowlist is a closed set of known pages.
+    assert "article" in {content_type.value for content_type in ContentType}
+    assert not any(key[0] is ContentType.ARTICLE for key in SYSTEM_CONTENT_TEMPLATES)
 
 
 def test_templates_match_the_frontend_registry() -> None:

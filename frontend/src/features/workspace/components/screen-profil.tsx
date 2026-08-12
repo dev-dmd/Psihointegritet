@@ -1,5 +1,7 @@
 "use client";
 
+import { useTranslations } from "next-intl";
+
 import Image from "next/image";
 import { useState } from "react";
 
@@ -10,22 +12,21 @@ import { Chip } from "@/components/ui/chip";
 import { formatRsd, serviceCatalog } from "@/content/services";
 import { findTherapist } from "@/content/therapists";
 
-import {
-  availabilityLayers,
-  matchingPreferences,
-  myProfileSlug,
-} from "../data";
+import { matchingPreferences, myProfileSlug } from "../data";
+import { AvailabilityOverviewCards } from "./availability/availability-overview-cards";
 import { LockIcon } from "./icons";
 import { PageHeader } from "./page-header";
 
+// Stable codes — query values are never translated (D-077 Amendment §2).
 const tabs = [
-  { id: "javni", label: "Javni profil" },
-  { id: "match", label: "Matching preferencije" },
-  { id: "dostupnost", label: "Dostupnost" },
+  { id: "public", label: "Javni profil" },
+  { id: "matching", label: "Matching preferencije" },
+  { id: "availability", label: "Dostupnost" },
 ];
 
 export function ScreenProfil() {
-  const [tab, setTab] = useState("javni");
+  const t = useTranslations("screens.profile");
+  const [tab, setTab] = useState("public");
   const therapist = findTherapist(myProfileSlug);
 
   if (!therapist) {
@@ -75,7 +76,9 @@ export function ScreenProfil() {
               {`„${therapist.quote}“`}
             </p>
             <div className="grid grid-cols-2 gap-3.5">
-              <KV label="Grad i format">{therapist.city} · online</KV>
+              <KV label="Grad i format">
+                {therapist.city}, {therapist.cityRegionCode} · online
+              </KV>
               <KV label="Formati">{therapist.formats}</KV>
             </div>
           </div>
@@ -114,18 +117,18 @@ export function ScreenProfil() {
           <div className="bg-warm/16 border-warm/45 rounded-tile text-coffee flex items-center gap-2.5 border px-4 py-3 text-[13px]">
             <LockIcon />
             <span>
-              <span className="font-bold">Interno.</span> Ove preferencije čita
-              samo Matching engine — ne prikazuju se u javnoj biografiji.
+              <span className="font-bold">{t("internalLabel")}</span>{" "}
+              {t("internalNote")}
             </span>
           </div>
           <div className="grid grid-cols-1 gap-3.5 lg:grid-cols-2">
             <div className="rounded-card border-line bg-surface border px-6 py-6">
               <div className="text-sage mb-3.5 text-[11.5px] font-semibold tracking-[0.14em] uppercase">
-                Koga prima
+                {t("acceptsHeading")}
               </div>
               <div className="grid grid-cols-2 gap-3.5">
                 <KV label="Starosne grupe">{matchingPreferences.ageGroups}</KV>
-                <KV label="Max novih mesečno" serif>
+                <KV label={t("maxNewMonthly")} serif>
                   {matchingPreferences.maxNewMonthly}
                 </KV>
                 <KV label="Prioritet pri preporuci">
@@ -172,7 +175,7 @@ export function ScreenProfil() {
                 ))}
                 <div className="flex items-center justify-between gap-3 py-3">
                   <span className="text-coffee text-sm font-semibold">
-                    Online / uživo
+                    {t("onlineOrInPerson")}
                   </span>
                   <span className="text-ink-55 text-[13.5px] font-semibold">
                     {matchingPreferences.formatNote}
@@ -184,30 +187,7 @@ export function ScreenProfil() {
         </div>
       ) : null}
 
-      {tab === "dostupnost" ? (
-        <div className="flex flex-col gap-3.5">
-          <div className="bg-meadow/22 border-sage/30 text-coffee rounded-tile border px-4 py-3 text-[13px] leading-[1.5]">
-            <span className="font-bold">Četiri odvojena sloja:</span> radno
-            vreme → slotovi → izuzeci → rezervisani kapacitet. Booking engine ih
-            čita zasebno — raspoloživost nije isto što i termin.
-          </div>
-          <div className="grid grid-cols-1 gap-3.5 lg:grid-cols-2">
-            {availabilityLayers.map((layer) => (
-              <div
-                key={layer.index}
-                className="rounded-card border-line bg-surface border px-6 py-5"
-              >
-                <div className="text-sage mb-2.5 text-[11.5px] font-semibold tracking-[0.14em] uppercase">
-                  {layer.index} · {layer.title}
-                </div>
-                <p className="text-coffee/80 text-[13.5px] leading-[1.65] whitespace-pre-line">
-                  {layer.body}
-                </p>
-              </div>
-            ))}
-          </div>
-        </div>
-      ) : null}
+      {tab === "dostupnost" ? <AvailabilityOverviewCards /> : null}
     </section>
   );
 }

@@ -136,6 +136,29 @@ async function parseOrThrow<T>(response: Response): Promise<T> {
   return (await response.json()) as T;
 }
 
+/**
+ * Converts a `.docx` into RichDoc for a staff editor. Nothing is stored: the
+ * result lands in the editor's local state and reaches the server only when
+ * the author saves the revision.
+ */
+export async function importRichDocDocx(
+  file: File,
+): Promise<RichDocNormalizationResult> {
+  if (!file.name.toLowerCase().endsWith(".docx")) {
+    throw new ContentApiError(
+      "Izabrani fajl nije .docx. Sačuvajte Word dokument kao .docx i pokušajte ponovo.",
+      422,
+    );
+  }
+  const formData = new FormData();
+  formData.set("file", file);
+  const response = await fetch("/api/content/rich-doc/import-docx", {
+    method: "POST",
+    body: formData,
+  });
+  return parseOrThrow<RichDocNormalizationResult>(response);
+}
+
 export async function fetchContentEntries(
   contentType?: ContentType,
 ): Promise<ApiContentRevision[]> {
@@ -243,18 +266,121 @@ export async function transitionContentRevision(
   return parseOrThrow<ApiContentRevision>(response);
 }
 
+/** Atomic save + submit: persists pending edits and moves the revision
+ *  ``draft → in_review`` in a single backend transaction (RW-1 / D-068).
+ *  Idempotent — calling with the same ``idempotencyKey`` returns the
+ *  already-in-review revision instead of a 409. */
+export async function submitContentForReview(
+  entryId: string,
+  revisionId: string,
+  payload: {
+    lockVersion: number;
+    idempotencyKey: string;
+    slotData?: Record<string, unknown>;
+    seo?: SeoFields;
+    discovery?: ApiContentDiscovery;
+  },
+): Promise<ApiContentRevision> {
+  const response = await fetch(
+    `/api/content/entries/${encodeURIComponent(entryId)}/revisions/${encodeURIComponent(revisionId)}/submit-review`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    },
+  );
+  return parseOrThrow<ApiContentRevision>(response);
+}
+
+/** Creates a new DRAFT revision copying content from the current one (RW-3). */
+export async function newContentDraft(
+  entryId: string,
+  revisionId: string,
+  reason: string,
+): Promise<ApiContentRevision> {
+  const response = await fetch(
+    `/api/content/entries/${encodeURIComponent(entryId)}/revisions/${encodeURIComponent(revisionId)}/new-draft`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ reason }),
+    },
+  );
+  return parseOrThrow<ApiContentRevision>(response);
+}
+
+export interface ApiReviewQueueItem {
+  entryId: string;
+  revisionId: string;
+  contentType: string;
+  slug: string;
+  versionLabel: string;
+  submittedAt: string;
+  submittedByDisplayName: string | null;
+  capability: ApprovalCapability;
+  alreadyDecided: boolean;
+  decidedOutcome: "approved" | "rejected" | null;
+}
+
+export interface ApiReviewAssignment {
+  assignmentId: string;
+  userId: string;
+  displayName: string;
+  capability: ApprovalCapability;
+  active: boolean;
+}
+
+export interface ApiStaffUser {
+  userId: string;
+  displayName: string;
+  email: string;
+}
+
+/** Reviewer's queue (RW-6): revisions awaiting a decision for a capability
+ *  the signed-in reviewer is assigned to. */
+export async function fetchReviewQueue(): Promise<ApiReviewQueueItem[]> {
+  const response = await fetch("/api/content/review-queue", {
+    cache: "no-store",
+  });
+  return parseOrThrow<ApiReviewQueueItem[]>(response);
+}
+
+export async function fetchReviewAssignments(): Promise<ApiReviewAssignment[]> {
+  const response = await fetch("/api/content/review-assignments");
+  return parseOrThrow<ApiReviewAssignment[]>(response);
+}
+
+export async function fetchStaffUsers(): Promise<ApiStaffUser[]> {
+  const response = await fetch("/api/content/staff-users");
+  return parseOrThrow<ApiStaffUser[]>(response);
+}
+
+export async function createReviewAssignment(payload: {
+  userId: string;
+  capability: ApprovalCapability;
+  active: boolean;
+}): Promise<ApiReviewAssignment> {
+  const response = await fetch("/api/content/review-assignments", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  return parseOrThrow<ApiReviewAssignment>(response);
+}
+
 export async function recordContentReviewDecision(
   entryId: string,
   revisionId: string,
   capability: ApprovalCapability,
   outcome: "approved" | "rejected" = "approved",
+  note?: string,
 ): Promise<ApiContentRevision> {
   const response = await fetch(
     `/api/content/entries/${encodeURIComponent(entryId)}/revisions/${encodeURIComponent(revisionId)}/reviews`,
     {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ capability, outcome }),
+      body: JSON.stringify({ capability, outcome, note: note ?? null }),
     },
   );
   return parseOrThrow<ApiContentRevision>(response);

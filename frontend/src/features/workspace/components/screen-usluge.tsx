@@ -1,12 +1,16 @@
+"use client";
+
 import { StatusBadge } from "@/components/panel/status-badge";
 import { Chip } from "@/components/ui/chip";
 
 import { serviceCatalog } from "../data";
 import { STATUS_META } from "../types";
+import { useStatusLabel } from "../use-status-label";
 import { PageHeader } from "./page-header";
 
 /** Usluge i cene — service catalog with internal codes, variants, rules. */
 export function ScreenUsluge() {
+  const statusLabel = useStatusLabel();
   return (
     <section className="animate-fade-up">
       <PageHeader
@@ -30,7 +34,9 @@ export function ScreenUsluge() {
                     {service.code}
                   </div>
                 </div>
-                <StatusBadge tone={meta.tone}>{meta.label}</StatusBadge>
+                <StatusBadge tone={meta.tone}>
+                  {statusLabel(service.status)}
+                </StatusBadge>
               </div>
               <div className="text-ink-55 mt-3 flex flex-wrap gap-x-4 gap-y-1 text-[13px]">
                 <span>{service.duration}</span>

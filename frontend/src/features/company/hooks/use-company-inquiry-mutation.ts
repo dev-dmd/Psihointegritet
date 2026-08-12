@@ -7,10 +7,7 @@ import {
   type CompanyInquiryPayload,
 } from "@/lib/api/company-inquiry";
 
-export const companyInquiryMutationKey = [
-  "public",
-  "company-inquiry",
-] as const;
+export const companyInquiryMutationKey = ["public", "company-inquiry"] as const;
 
 export function useCompanyInquiryMutation() {
   return useMutation({

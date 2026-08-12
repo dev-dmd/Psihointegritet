@@ -3,6 +3,7 @@ import { SiteHeader } from "@/components/sections/site-header";
 import { CompanyProvider } from "@/features/company/company-context";
 import { GuidanceProvider } from "@/features/guidance/guidance-context";
 import { ResearchProvider } from "@/features/research/research-context";
+import { QueryProvider } from "@/providers/query-provider";
 
 /**
  * Chrome shared by every public page: header, footer, the guided-selection
@@ -15,14 +16,16 @@ export default function PublicLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <CompanyProvider>
-      <GuidanceProvider>
-        <ResearchProvider>
-          <SiteHeader />
-          <main>{children}</main>
-          <SiteFooter />
-        </ResearchProvider>
-      </GuidanceProvider>
-    </CompanyProvider>
+    <QueryProvider>
+      <CompanyProvider>
+        <GuidanceProvider>
+          <ResearchProvider>
+            <SiteHeader />
+            <main>{children}</main>
+            <SiteFooter />
+          </ResearchProvider>
+        </GuidanceProvider>
+      </CompanyProvider>
+    </QueryProvider>
   );
 }

@@ -56,6 +56,8 @@ function fieldToJson(spec: SlotFieldSpec): Record<string, any> {
         max: spec.max,
         required: spec.required ?? false,
       };
+    case "boolean":
+      return { kind: "boolean", required: spec.required ?? false };
     case "image":
       return { kind: "image", required: spec.required ?? false };
     case "imageList":
@@ -117,8 +119,8 @@ interface FixtureFile {
 const fixtures = JSON.parse(readFileSync(fixturePath, "utf-8")) as FixtureFile;
 
 describe(`slot-schema parity fixture (schema v${fixtures.fixtureSchemaVersion})`, () => {
-  it("loaded all nine templates", () => {
-    expect(Object.keys(fixtures.templates)).toHaveLength(9);
+  it("loaded all ten templates", () => {
+    expect(Object.keys(fixtures.templates)).toHaveLength(10);
   });
 
   it("TS registry matches the fixture exactly", () => {

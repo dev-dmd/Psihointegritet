@@ -1,5 +1,6 @@
 import { revalidatePath, revalidateTag } from "next/cache";
 
+import { revalidatePublicCompassAfterMutation } from "@/lib/compass/revalidation";
 import {
   pathsForContentChange,
   PUBLIC_CONTENT_CACHE_TAG,
@@ -39,6 +40,11 @@ export async function POST(
     return response;
   }
   if (target !== "published" && target !== "archived") return response;
+
+  // The anonymous aggregate may gain or lose this content card. It shares one
+  // bounded tag across every taxonomy page because one card can affect more
+  // than one published area/topic.
+  revalidatePublicCompassAfterMutation(response);
 
   try {
     const revision = (await response.clone().json()) as {

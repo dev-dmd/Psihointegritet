@@ -68,7 +68,7 @@ test("key public routes have no horizontal overflow on mobile", async ({
     "/usluge",
     "/usluge/individualna-psihoterapija",
     "/tim",
-    "/tim/anja-stamenkovic",
+    "/tim/maria-bullock",
     "/radionice",
     "/cene",
     "/podrska-roditeljima",

@@ -24,8 +24,15 @@ class InternalUser(Base):
 
     __tablename__ = "internal_users"
 
+    # Named UNIQUE constraint plus a plain index, exactly as migration 0001 built it.
+    # `unique=True` on the column would describe one unique index instead, which is
+    # the drift `alembic check` reported as D19.
+    __table_args__ = (
+        UniqueConstraint("external_auth_id", name="uq_internal_users_external_auth_id"),
+    )
+
     id: Mapped[UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid4)
-    external_auth_id: Mapped[str] = mapped_column(String(191), unique=True, index=True)
+    external_auth_id: Mapped[str] = mapped_column(String(191), index=True)
     email: Mapped[str | None] = mapped_column(String(320), nullable=True)
     display_name: Mapped[str | None] = mapped_column(String(160), nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, server_default="true")

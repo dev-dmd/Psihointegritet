@@ -40,6 +40,12 @@ const publicRoutePatterns = [
   "/usluge/[slug]",
   "/radionice",
   "/radionice/[slug]",
+  "/kompas",
+  // ⚠️ `/kompas/oblast/[slug]` and `/kompas/tema/[slug]` are registered here
+  // but their page files do not exist yet — a pattern without a page makes
+  // `isKnownPublicRoute` true for a URL that 404s. They land with K3B.
+  "/kompas/oblast/[slug]",
+  "/kompas/tema/[slug]",
   "/podrska-roditeljima",
   "/cene",
   "/znanje",
@@ -171,14 +177,14 @@ const staticPages: readonly StaticPageEntity[] = [
     seo: {
       title: "Psihointegritet",
       description:
-        "Psihoterapija, savetovanje i programi podrške online i uživo u Nišu i Leskovcu.",
+        "Psihoterapija, savetovanje i programi podrške online i uživo u Chicagu, Milwaukeeju i Madisonu.",
     },
     textFields: [
       { field: "h1", value: siteSettings.name, limit: "pageH1" },
       {
         field: "heroLead",
         value:
-          "Psihoterapija, savetovanje i programi podrške online i uživo u Nišu i Leskovcu.",
+          "Psihoterapija, savetovanje i programi podrške online i uživo u Chicagu, Milwaukeeju i Madisonu.",
         limit: "heroLead",
       },
       ...faqItems.flatMap((item) => [
@@ -214,7 +220,7 @@ const staticPages: readonly StaticPageEntity[] = [
     seo: {
       title: "O nama",
       description:
-        "Psihointegritet pruža podršku online i uživo u Nišu i Leskovcu.",
+        "Psihointegritet pruža podršku online i uživo u Chicagu, Milwaukeeju i Madisonu.",
     },
     textFields: [
       {
@@ -227,7 +233,7 @@ const staticPages: readonly StaticPageEntity[] = [
       {
         label: "Upoznajte tim",
         action: "VIEW_THERAPIST",
-        targetId: "therapist:anja-stamenkovic",
+        targetId: "therapist:maria-bullock",
       },
     ],
     widgets: noWidgets,
@@ -556,6 +562,38 @@ const staticPages: readonly StaticPageEntity[] = [
     textFields: [{ field: "h1", value: "Pronađi podršku", limit: "pageH1" }],
     ctas: noCtas,
     widgets: matchingWidget,
+    jsonLdKinds: noJsonLd,
+  }),
+  staticPage({
+    id: "page:kompas",
+    // `internal`, not `system`: the backend `SYSTEM_CONTENT_TEMPLATES`
+    // allowlist has no `/kompas` row yet, so registering it as system content
+    // would show it in the panel's „Sadržaj" tab and fail on first open. It
+    // becomes `system` in the pass that adds the backend registration.
+    management: "internal",
+    route: "/kompas",
+    canonicalSlug: "kompas",
+    // Kompas is an interactive discovery surface whose result is personal to
+    // the current selection; only the canonical area/topic pages are indexable
+    // (D-054).
+    indexingPolicy: "noindex",
+    template: "static_information",
+    slots: ["hero", "intro", "cta"],
+    h1: "Vaš vodič do podrške koja ima smisla za vas",
+    seo: {
+      title: "Kompas mentalnog zdravlja",
+      description:
+        "Izaberite oblast koja vam je bliska i pogledajte sadržaje, vežbe i programe koji bi vam sada mogli biti korisni.",
+    },
+    textFields: [
+      {
+        field: "h1",
+        value: "Vaš vodič do podrške koja ima smisla za vas",
+        limit: "pageH1",
+      },
+    ],
+    ctas: noCtas,
+    widgets: noWidgets,
     jsonLdKinds: noJsonLd,
   }),
   staticPage({

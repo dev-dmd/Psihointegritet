@@ -4,10 +4,11 @@ import { useSearchParams } from "next/navigation";
 import { Suspense, useCallback, useState } from "react";
 import type { ReactNode } from "react";
 
-import { ONLINE_EXPERIENCE_SURVEY_ID } from "@/content/survey";
-
-import { ResearchDrawer } from "./research-drawer";
 import { ResearchLauncher } from "./research-launcher";
+import { SurveyDrawer } from "./survey-drawer";
+
+/** Deep-link id kept stable so existing `?survey=` links keep working. */
+const ONLINE_EXPERIENCE_SURVEY_ID = "online-experience";
 
 /**
  * The floating "?" launcher + survey drawer. Auto-opens when the URL carries
@@ -29,7 +30,13 @@ function ResearchSurface() {
   return (
     <>
       <ResearchLauncher open={open} onOpen={openResearch} />
-      {open ? <ResearchDrawer onClose={closeResearch} /> : null}
+      <SurveyDrawer
+        surveyStableId={ONLINE_EXPERIENCE_SURVEY_ID}
+        surface="research-drawer"
+        trigger="manual"
+        open={open}
+        onClose={closeResearch}
+      />
     </>
   );
 }

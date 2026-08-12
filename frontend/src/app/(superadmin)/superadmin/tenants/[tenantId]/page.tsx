@@ -7,7 +7,8 @@ import { ArrowLeftIcon } from "@/features/superadmin/components/icons";
 import { TenantProfileView } from "@/features/superadmin/components/tenant-profile-view";
 import { psihointegritetTenant } from "@/features/superadmin/data";
 import { requireSuperadmin } from "@/lib/auth/guards";
-import { WORKSPACE_URL } from "@/lib/auth/routes";
+import { localizedPath } from "@/lib/routes/localized-path";
+import { resolveWorkspaceLocale } from "@/lib/tenant/workspace-locale";
 
 export const metadata: Metadata = { title: "Profil tenanta" };
 
@@ -16,6 +17,7 @@ export default async function SuperadminTenantProfilePage({
 }: {
   params: Promise<{ tenantId: string }>;
 }) {
+  const locale = await resolveWorkspaceLocale();
   await requireSuperadmin();
   const { tenantId } = await params;
   // Only the hardcoded Psihointegritet tenant exists in this phase.
@@ -27,7 +29,7 @@ export default async function SuperadminTenantProfilePage({
   return (
     <section className="animate-fade-up">
       <Link
-        href="/superadmin/tenants"
+        href={localizedPath("superadmin.tenants.list", { locale })}
         className="text-ink-55 hover:text-coffee mb-3.5 inline-flex items-center gap-2 py-1 text-[13.5px] font-semibold no-underline transition-colors"
       >
         <ArrowLeftIcon />
@@ -53,7 +55,9 @@ export default async function SuperadminTenantProfilePage({
           </div>
         </div>
         <Link
-          href={WORKSPACE_URL}
+          href={localizedPath("workspace.home", {
+            locale: await resolveWorkspaceLocale(),
+          })}
           target="_blank"
           rel="noopener noreferrer"
           className="bg-coffee text-panel-canvas hover:bg-coffee-hover rounded-full px-[22px] py-3 text-[13.5px] font-semibold whitespace-nowrap no-underline transition-colors"

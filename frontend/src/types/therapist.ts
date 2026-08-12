@@ -24,7 +24,14 @@ export interface Therapist {
   nameAccusative: string;
   /** Nominative, e.g. „Usluge koje pruža {firstName}". */
   firstName: string;
-  /** Instrumental case, for „razgovor sa {firstNameInstrumental}" — Anja → Anjom. */
+  /**
+   * Genitive case, for „Usluge kod {firstNameGenitive}" — Maria → Marije.
+   * Authored per person on purpose: Serbian case endings cannot be built
+   * programmatically, and a wrong ending misnames a real person. Foreign
+   * spellings decline too — John → Johna, not John.
+   */
+  firstNameGenitive: string;
+  /** Instrumental case, for „razgovor sa {firstNameInstrumental}" — Maria → Marijom. */
   firstNameInstrumental: string;
   initials: string;
   /** Confirmed certification wording (D-042 closed S1); never „pod supervizijom". */
@@ -34,8 +41,16 @@ export interface Therapist {
   formats: string;
   /** City the therapist works from in person, nominative case (T8). */
   city: string;
-  /** Locative case of `city`, for „uživo u {cityLocative}" — Niš → Nišu. */
+  /**
+   * Locative case of `city`, for „uživo u {cityLocative}" — Chicago → Chicagu.
+   * English city names keep their English spelling and take a Serbian ending;
+   * they are not transcribed (D-076), so „Milwaukee" becomes „Milwaukeeju".
+   */
   cityLocative: string;
+  /** US state, English spelling — shown next to the city: „u Chicagu (Illinois)". */
+  cityRegion: string;
+  /** Two-letter state code, for tight surfaces like the footer: „Chicago, IL". */
+  cityRegionCode: string;
   areas: string[];
   /** Non-catalog services with intentionally unconfirmed commercial details. */
   additionalServices: TherapistAdditionalService[];

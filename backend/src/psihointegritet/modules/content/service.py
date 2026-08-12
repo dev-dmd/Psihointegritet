@@ -8,11 +8,14 @@ with no writer would be exactly the "empty placeholder abstraction" rules
 
 from __future__ import annotations
 
+import contextlib
+import os
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from uuid import UUID
 
-from sqlalchemy import delete, select
+from sqlalchemy import delete, func, select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm.exc import StaleDataError
 
@@ -20,16 +23,21 @@ from psihointegritet.modules.content.health import (
     CONTENT_HEALTH_RULESET_VERSION,
     authored_content_findings,
 )
+from psihointegritet.modules.content.identity import require_content_identity
 from psihointegritet.modules.content.models import (
     ContentEntry,
     ContentPublicationEvent,
+    ContentReviewAssignment,
     ContentReviewDecision,
     ContentRevision,
     ContentRevisionDiscovery,
     ContentRevisionRelation,
     ContentRevisionTaxonomyTerm,
+    ContentSubmitIdempotency,
     ContentTaxonomyRole,
     ContentType,
+    NotificationOutbox,
+    ReviewOutcome,
 )
 from psihointegritet.modules.content.publication import (
     ContentFinding,
@@ -45,22 +53,27 @@ from psihointegritet.modules.content.schemas import (
     ContentDiscoveryMetadata,
     ContentFindingOut,
     ContentHealthOut,
+    ContentReviewAssignmentOut,
+    ContentReviewQueueItemOut,
+    ContentRevisionChangeRequestOut,
     ContentRevisionOut,
     CreateContentEntryRequest,
+    CreateContentReviewAssignmentRequest,
+    NewContentDraftRequest,
     PublicContentRevisionOut,
     PublishBlockOut,
     RecordReviewDecisionRequest,
     ReviewDecisionOut,
     SeoFields,
+    StaffUserOut,
+    SubmitArticleForReviewRequest,
     TransitionRequest,
     UpdateContentRevisionRequest,
 )
-from psihointegritet.modules.content.system_catalog import (
-    is_system_content_definition,
-    require_system_content_definition,
-)
+from psihointegritet.modules.content.system_catalog import is_system_content_definition
 from psihointegritet.modules.content.taxonomy_models import (
     TaxonomyAxis,
+    TaxonomyPublicationEvent,
     TaxonomyTerm,
     TaxonomyTermRevision,
 )
@@ -69,6 +82,7 @@ from psihointegritet.modules.identity.models import InternalUser
 from psihointegritet.modules.identity.schemas import ActorSummaryOut
 from psihointegritet.shared.domain.content_management import ContentManagement
 from psihointegritet.shared.domain.publication import (
+    ApprovalCapability,
     CannotDeleteRevisionError,
     RevisionStatus,
     reissues_revision,
@@ -211,6 +225,8 @@ class ContentService:
         axis: TaxonomyAxis,
         locale: str,
         field_path: str,
+        *,
+        strict: bool = True,
     ) -> TaxonomyTermRevision:
         term = await self._session.get(TaxonomyTerm, term_id)
         if (
@@ -228,7 +244,7 @@ class ContentService:
                 TaxonomyTermRevision.term_id == term.id,
                 TaxonomyTermRevision.organization_id == actor.organization_id,
                 TaxonomyTermRevision.locale == locale,
-                TaxonomyTermRevision.status == RevisionStatus.PUBLISHED,
+                TaxonomyTermRevision.status != "archived",
             )
         )
         revision = tenant_revision
@@ -238,10 +254,14 @@ class ContentService:
                     TaxonomyTermRevision.term_id == term.id,
                     TaxonomyTermRevision.organization_id.is_(None),
                     TaxonomyTermRevision.locale == locale,
-                    TaxonomyTermRevision.status == RevisionStatus.PUBLISHED,
+                    TaxonomyTermRevision.status != "archived",
                 )
             )
-        if revision is None or revision.status is RevisionStatus.ARCHIVED:
+        if revision is None:
+            raise ValueError(
+                f"Izabrana Kompas vrednost za „{field_path}” ne postoji ili je arhivirana."
+            )
+        if strict and revision.status != RevisionStatus.PUBLISHED:
             raise ValueError(
                 f"Izabrana Kompas vrednost za „{field_path}” nije objavljena i aktivna."
             )
@@ -253,18 +273,28 @@ class ContentService:
         revision: ContentRevision,
         locale: str,
         metadata: ContentDiscoveryMetadata,
+        *,
+        strict: bool = False,
     ) -> None:
-        """Persist only registry IDs, after validating every reference server-side."""
+        """Persist only registry IDs, after validating every reference server-side.
+
+        When `strict` is False (default during editing), draft/in-review terms
+        are accepted — the gate moves to publish time (D-065)."""
         unique_topic_ids = list(dict.fromkeys(metadata.topic_term_ids))
         unique_audience_ids = list(dict.fromkeys(metadata.audience_term_ids))
         unique_goal_ids = list(dict.fromkeys(metadata.content_goal_term_ids))
         if metadata.topic_group_term_id is not None:
             await self._require_taxonomy_term(
-                actor, metadata.topic_group_term_id, TaxonomyAxis.TOPIC_GROUP, locale, "oblast"
+                actor,
+                metadata.topic_group_term_id,
+                TaxonomyAxis.TOPIC_GROUP,
+                locale,
+                "oblast",
+                strict=strict,
             )
         for term_id in unique_topic_ids:
             topic_revision = await self._require_taxonomy_term(
-                actor, term_id, TaxonomyAxis.TOPIC, locale, "teme"
+                actor, term_id, TaxonomyAxis.TOPIC, locale, "teme", strict=strict
             )
             if (
                 metadata.topic_group_term_id is not None
@@ -273,11 +303,11 @@ class ContentService:
                 raise ValueError("Svaka izabrana tema mora pripadati izabranoj oblasti.")
         for term_id in unique_audience_ids:
             await self._require_taxonomy_term(
-                actor, term_id, TaxonomyAxis.AUDIENCE, locale, "publika"
+                actor, term_id, TaxonomyAxis.AUDIENCE, locale, "publika", strict=strict
             )
         for term_id in unique_goal_ids:
             await self._require_taxonomy_term(
-                actor, term_id, TaxonomyAxis.CONTENT_GOAL, locale, "cilj sadržaja"
+                actor, term_id, TaxonomyAxis.CONTENT_GOAL, locale, "cilj sadržaja", strict=strict
             )
         if metadata.journey_intent_term_id is not None:
             await self._require_taxonomy_term(
@@ -286,6 +316,7 @@ class ContentService:
                 TaxonomyAxis.JOURNEY_INTENT,
                 locale,
                 "put korisnika",
+                strict=strict,
             )
         if metadata.content_format_term_id is not None:
             await self._require_taxonomy_term(
@@ -294,10 +325,16 @@ class ContentService:
                 TaxonomyAxis.CONTENT_FORMAT,
                 locale,
                 "format",
+                strict=strict,
             )
         if metadata.access_level_term_id is not None:
             access = await self._require_taxonomy_term(
-                actor, metadata.access_level_term_id, TaxonomyAxis.ACCESS_LEVEL, locale, "pristup"
+                actor,
+                metadata.access_level_term_id,
+                TaxonomyAxis.ACCESS_LEVEL,
+                locale,
+                "pristup",
+                strict=strict,
             )
             # The only currently public CMS renderer is public. Do not let an
             # editor select an entitlement label the route cannot enforce.
@@ -374,6 +411,27 @@ class ContentService:
     ) -> ContentRevisionOut:
         created_by = await self._actor_summary(revision.created_by_user_id)
         updated_by = await self._actor_summary(revision.updated_by_user_id)
+        change_request: ContentRevisionChangeRequestOut | None = None
+        if revision.source_revision_id:
+            source_decisions = (
+                await self._session.scalars(
+                    select(ContentReviewDecision)
+                    .where(
+                        ContentReviewDecision.revision_id == revision.source_revision_id,
+                        ContentReviewDecision.outcome == ReviewOutcome.REJECTED,
+                    )
+                    .order_by(ContentReviewDecision.decided_at.desc())
+                    .limit(1)
+                )
+            ).first()
+            if source_decisions:
+                change_request = ContentRevisionChangeRequestOut(
+                    requested_by=await self._actor_summary(source_decisions.decided_by_user_id),
+                    requested_at=source_decisions.decided_at,
+                    capability=source_decisions.capability,
+                    note=source_decisions.note or "",
+                    source_revision_id=revision.source_revision_id,
+                )
         return ContentRevisionOut(
             entry_id=entry.id,
             revision_id=revision.id,
@@ -402,6 +460,7 @@ class ContentService:
             created_by=created_by,
             updated_by=updated_by,
             updated_at=revision.updated_at,
+            change_request=change_request,
         )
 
     async def _to_schema_loaded(
@@ -496,7 +555,7 @@ class ContentService:
         self, actor: StaffActor, request: CreateContentEntryRequest
     ) -> ContentRevisionOut:
         self._require_org_admin(actor)
-        require_system_content_definition(
+        require_content_identity(
             request.content_type,
             request.slug,
             request.template,
@@ -628,7 +687,25 @@ class ContentService:
             ReviewDecisionRecord(capability=d.capability, outcome=d.outcome)
             for d in await self._decisions(revision.id)
         ]
-        extra_findings = authored_content_findings(entry, revision)
+        # D-065: re-validate discovery references in strict mode at publish time.
+        # Draft/in-review terms that were accepted during editing are now
+        # blocking findings.
+        discovery_findings: tuple[ContentFinding, ...] = ()
+        try:
+            discovery = await self._discovery(revision.id)
+            await self._replace_discovery(actor, revision, entry.locale, discovery, strict=True)
+        except ValueError as exc:
+            discovery_findings = (
+                ContentFinding(
+                    rule_id="KOMPAS-REF-001",
+                    rule_version="1",
+                    severity="error",
+                    message=str(exc),
+                    remediation="Objavite termin(e) u Kompasu, pa pošaljite tekst na pregled.",
+                    field_path="discovery",
+                ),
+            )
+        extra_findings = authored_content_findings(entry, revision) + discovery_findings
         outcome: ContentPublishCheck = check_publishable(
             entry.content_type,
             revision.template,
@@ -780,6 +857,16 @@ class ContentService:
                 "Review decisions may be recorded only while a revision is in review"
             )
 
+        # ---- four-eyes rule (D-068 rule 4) --------------------------------
+        if request.outcome == ReviewOutcome.APPROVED:
+            submitters = await self._submission_actors(revision.id)
+            if actor.user_id in submitters:
+                raise ContentConflictError(
+                    "Ne možete odobriti tekst koji ste sami poslali na pregled."
+                    " Potreban je drugi član tima za odobrenje."
+                )
+
+        # ---- upsert decision -----------------------------------------------
         existing = await self._session.scalar(
             select(ContentReviewDecision).where(
                 ContentReviewDecision.revision_id == revision.id,
@@ -802,9 +889,650 @@ class ContentService:
                 )
             )
 
-        revision.updated_by_user_id = actor.user_id
+        # ---- rejected → create new draft + supersede (RW-4) -----------------
+        if request.outcome == ReviewOutcome.REJECTED:
+            if not request.note:
+                raise ValueError("Vraćanje na doradu zahteva obrazloženje.")
+            next_label = _next_version_label(revision.version_label)
+            draft = ContentRevision(
+                entry_id=entry.id,
+                version_label=next_label,
+                template=revision.template,
+                slot_data=revision.slot_data,
+                seo=revision.seo,
+                status=RevisionStatus.DRAFT,
+                source_revision_id=revision.id,
+                created_by_user_id=actor.user_id,  # the reviewer triggers the re-draft
+                updated_by_user_id=actor.user_id,
+            )
+            self._session.add(draft)
+            await self._session.flush()
+
+            previous_discovery = await self._discovery(revision.id)
+            await self._replace_discovery(actor, draft, entry.locale, previous_discovery)
+
+            revision.superseded_at = datetime.now(UTC)
+            revision.superseded_by_revision_id = draft.id
+
+            await self._log_event(
+                draft.id,
+                None,
+                RevisionStatus.DRAFT,
+                actor,
+                reason=f"changes_requested:{request.capability.value}",
+            )
+            await self._session.flush()
+
+            # ---- outbox: notify the original submitter (RW-7) ---------------
+            if revision.created_by_user_id:
+                await self._record_notification(
+                    "content.changes_requested",
+                    organization_id=actor.organization_id,
+                    aggregate_id=draft.id,
+                    recipient_user_id=revision.created_by_user_id,
+                    payload={
+                        "entryId": str(entry.id),
+                        "revisionId": str(draft.id),
+                        "slug": entry.slug,
+                        "capability": request.capability.value,
+                        "note": request.note or "",
+                    },
+                )
+
+            return await self._to_schema_loaded(entry, draft)
+
         await self._session.flush()
+
+        # ---- auto-approve when all required capabilities are granted (RW-4) ---
+        decisions = [
+            ReviewDecisionRecord(capability=d.capability, outcome=d.outcome)
+            for d in await self._decisions(revision.id)
+        ]
+        findings = structural_findings(
+            revision.template, revision.slot_data
+        ) + authored_content_findings(entry, revision)
+        required = effective_required_approvals(entry.content_type, revision.template, findings)
+        granted = granted_capabilities(decisions)
+        if required.issubset(granted):
+            from_status = revision.status
+            revision.status = RevisionStatus.APPROVED
+            await self._log_event(revision.id, from_status, RevisionStatus.APPROVED, actor)
+            await self._session.flush()
+
+            # ---- outbox: notify the original submitter (RW-7) ---------------
+            if revision.created_by_user_id:
+                await self._record_notification(
+                    "content.review_approved",
+                    organization_id=actor.organization_id,
+                    aggregate_id=revision.id,
+                    recipient_user_id=revision.created_by_user_id,
+                    payload={
+                        "entryId": str(entry.id),
+                        "revisionId": str(revision.id),
+                        "slug": entry.slug,
+                        "versionLabel": revision.version_label,
+                    },
+                )
+
         return await self._to_schema_loaded(entry, revision)
+
+    async def list_review_queue(
+        self,
+        actor: StaffActor,
+    ) -> list[ContentReviewQueueItemOut]:
+        """Return all pending review tasks for the calling user (RW-6).
+
+        Filters to entries where:
+        - The revision is ``in_review``
+        - The user is NOT the submitter (four-eyes rule)
+        - The user is assigned to at least one capability the revision needs,
+          OR no assignments exist at all (implicit: any org_admin may review)
+        """
+        self._require_org_admin(actor)
+        org_id = actor.organization_id
+
+        # Capabilities the user is explicitly assigned to review.
+        assigned_caps: set[ApprovalCapability] = {
+            row[0]
+            for row in (
+                await self._session.execute(
+                    select(ContentReviewAssignment.capability).where(
+                        ContentReviewAssignment.organization_id == org_id,
+                        ContentReviewAssignment.user_id == actor.user_id,
+                        ContentReviewAssignment.active.is_(True),
+                    )
+                )
+            ).all()
+        }
+
+        # If there are no assignments at all for this org, fall back to
+        # implicit — any org_admin may review any capability.
+        has_any_assignment = (
+            await self._session.scalar(
+                select(ContentReviewAssignment.id)
+                .where(
+                    ContentReviewAssignment.organization_id == org_id,
+                )
+                .limit(1)
+            )
+        ) is not None
+        if has_any_assignment and not assigned_caps:
+            return []  # Explicitly assigned reviewers exist, but this user isn't one.
+
+        effective_caps = assigned_caps if has_any_assignment else set(ApprovalCapability)
+
+        # All in-review revisions for this org, excluding those submitted by
+        # the current actor (four-eyes rule).
+        rows = (
+            await self._session.execute(
+                select(
+                    ContentEntry.id,
+                    ContentEntry.content_type,
+                    ContentEntry.slug,
+                    ContentRevision.id,
+                    ContentRevision.version_label,
+                    ContentRevision.updated_at,
+                    ContentRevision.created_by_user_id,
+                )
+                .join(ContentRevision, ContentRevision.entry_id == ContentEntry.id)
+                .where(
+                    ContentEntry.organization_id == org_id,
+                    ContentRevision.status == RevisionStatus.IN_REVIEW,
+                    ContentRevision.superseded_at.is_(None),
+                    ContentRevision.created_by_user_id != actor.user_id,
+                )
+                .order_by(ContentRevision.updated_at.desc())
+            )
+        ).all()
+
+        if not rows:
+            return []
+
+        revision_ids = [row[3] for row in rows]
+        # Batch-resolve submitter display names
+        user_ids: set[UUID] = {row[6] for row in rows if row[6] is not None}
+        user_names: dict[UUID, str] = {}
+        if user_ids:
+            for user in (
+                await self._session.scalars(
+                    select(InternalUser).where(InternalUser.id.in_(user_ids))
+                )
+            ).all():
+                user_names[user.id] = user.display_name or user.email or str(user.id)
+
+        # Batch-fetch all decisions for these revisions.
+        all_decisions: dict[UUID, list[ContentReviewDecision]] = {rid: [] for rid in revision_ids}
+        for dec in (
+            await self._session.scalars(
+                select(ContentReviewDecision).where(
+                    ContentReviewDecision.revision_id.in_(revision_ids)
+                )
+            )
+        ).all():
+            all_decisions.setdefault(dec.revision_id, []).append(dec)
+
+        # Batch-fetch required approvals per revision (simplified: use
+        # structural + authored findings as in transition).
+        results: list[ContentReviewQueueItemOut] = []
+        for row in rows:
+            entry_id, ctype, slug, rev_id, version_label, submitted_at, submitted_by_id = row
+            submitted_by = user_names.get(submitted_by_id) if submitted_by_id else None
+            decisions = all_decisions.get(rev_id, [])
+            decided_caps = {d.capability for d in decisions}
+
+            # For each capability the revision needs AND the user can review:
+            for capability in ApprovalCapability:
+                if capability not in effective_caps:
+                    continue
+                # Skip if no assignment and this is one we should filter.
+                decision = next((d for d in decisions if d.capability == capability), None)
+                results.append(
+                    ContentReviewQueueItemOut(
+                        entry_id=entry_id,
+                        revision_id=rev_id,
+                        content_type=ctype,
+                        slug=slug,
+                        version_label=version_label,
+                        submitted_at=submitted_at,
+                        submitted_by_display_name=submitted_by,
+                        capability=capability,
+                        already_decided=capability in decided_caps,
+                        decided_outcome=decision.outcome if decision else None,
+                    )
+                )
+
+        return results
+
+    async def create_review_assignment(
+        self,
+        actor: StaffActor,
+        request: CreateContentReviewAssignmentRequest,
+    ) -> ContentReviewAssignmentOut:
+        self._require_org_admin(actor)
+        existing = await self._session.scalar(
+            select(ContentReviewAssignment).where(
+                ContentReviewAssignment.organization_id == actor.organization_id,
+                ContentReviewAssignment.user_id == request.user_id,
+                ContentReviewAssignment.capability == request.capability,
+            )
+        )
+        if existing is not None:
+            existing.active = request.active
+            await self._session.flush()
+            user = await self._session.get(InternalUser, request.user_id)
+            display_name = (
+                user.display_name or user.email or str(user.id) if user else str(request.user_id)
+            )
+            return ContentReviewAssignmentOut(
+                assignment_id=existing.id,
+                user_id=existing.user_id,
+                display_name=display_name,
+                capability=existing.capability,
+                active=existing.active,
+            )
+
+        assignment = ContentReviewAssignment(
+            organization_id=actor.organization_id,
+            user_id=request.user_id,
+            capability=request.capability,
+            active=request.active,
+        )
+        self._session.add(assignment)
+        await self._session.flush()
+        user = await self._session.get(InternalUser, request.user_id)
+        display_name = (
+            user.display_name or user.email or str(user.id) if user else str(request.user_id)
+        )
+        return ContentReviewAssignmentOut(
+            assignment_id=assignment.id,
+            user_id=assignment.user_id,
+            display_name=display_name,
+            capability=assignment.capability,
+            active=assignment.active,
+        )
+
+    async def list_review_assignments(
+        self,
+        organization_id: UUID,
+    ) -> list[ContentReviewAssignmentOut]:
+        rows = (
+            await self._session.execute(
+                select(ContentReviewAssignment, InternalUser.display_name)
+                .join(
+                    InternalUser,
+                    InternalUser.id == ContentReviewAssignment.user_id,
+                )
+                .where(
+                    ContentReviewAssignment.organization_id == organization_id,
+                    ContentReviewAssignment.active.is_(True),
+                )
+                .order_by(ContentReviewAssignment.capability, InternalUser.display_name)
+            )
+        ).all()
+        return [
+            ContentReviewAssignmentOut(
+                assignment_id=assignment.id,
+                user_id=assignment.user_id,
+                display_name=display_name or str(assignment.user_id),
+                capability=assignment.capability,
+                active=assignment.active,
+            )
+            for assignment, display_name in rows
+        ]
+
+    async def list_staff_users(
+        self,
+        organization_id: UUID,
+    ) -> list[StaffUserOut]:
+        """Return all internal users for the reviewer-assignment dropdown."""
+        users = (
+            await self._session.scalars(select(InternalUser).order_by(InternalUser.display_name))
+        ).all()
+        return [
+            StaffUserOut(
+                user_id=user.id,
+                display_name=user.display_name or user.email or str(user.id),
+                email=user.email or "",
+            )
+            for user in users
+        ]
+
+    async def _submission_actors(self, revision_id: UUID) -> set[UUID]:
+        """Return the set of user IDs who submitted this revision for review."""
+        events = (
+            await self._session.scalars(
+                select(ContentPublicationEvent).where(
+                    ContentPublicationEvent.revision_id == revision_id,
+                    ContentPublicationEvent.to_status == RevisionStatus.IN_REVIEW,
+                )
+            )
+        ).all()
+        return {event.actor_user_id for event in events if event.actor_user_id}
+
+    async def _record_notification(
+        self,
+        event_type: str,
+        *,
+        organization_id: UUID,
+        aggregate_id: UUID,
+        recipient_user_id: UUID | None,
+        payload: dict[str, object] | None = None,
+    ) -> None:
+        """Append a notification to the transactional outbox (RW-7)."""
+        self._session.add(
+            NotificationOutbox(
+                organization_id=organization_id,
+                event_type=event_type,
+                aggregate_id=aggregate_id,
+                recipient_user_id=recipient_user_id,
+                payload=payload or {},
+                available_at=datetime.now(UTC),
+            )
+        )
+
+    async def submit_article_for_review(
+        self,
+        actor: StaffActor,
+        entry_id: UUID,
+        revision_id: UUID,
+        request: SubmitArticleForReviewRequest,
+    ) -> ContentRevisionOut:
+        """Atomic save + submit: persist pending edits and move the revision
+        to ``in_review`` in a single application command (D-068 / RW-1).
+
+        Idempotent: when the revision is already ``in_review`` the method
+        returns the current state (and the stored revision) unchanged, without
+        a 409, a re-mutation or a duplicate event.  A fresh ``idempotency_key``
+        on an already-in-review revision is still accepted — only the first
+        key that caused the transition is recorded.
+        """
+        self._require_org_admin(actor)
+        entry = await self._entry(actor, entry_id)
+        revision = await self._revision(actor, entry_id, revision_id)
+
+        # ---- idempotency: already in review → return current state ----------
+        if revision.status == RevisionStatus.IN_REVIEW:
+            return await self._to_schema_loaded(entry, revision)
+
+        # ---- guard: must be draft -------------------------------------------
+        if revision.status is not RevisionStatus.DRAFT:
+            raise ContentConflictError(
+                f"Cannot submit a revision in status {revision.status}; return it to draft first."
+            )
+
+        # ---- lock-guard -----------------------------------------------------
+        if request.lock_version != revision.lock_version:
+            raise ContentConflictError(
+                "Revizija je izmenjena u međuvremenu — osvežite i pokušajte ponovo."
+            )
+
+        # ---- apply pending content edits ------------------------------------
+        if request.slot_data is not None:
+            revision.slot_data = request.slot_data
+        if request.seo is not None:
+            revision.seo = request.seo.model_dump(by_alias=False, exclude_none=True)
+        if request.discovery is not None:
+            await self._replace_discovery(actor, revision, entry.locale, request.discovery)
+
+        revision.updated_by_user_id = actor.user_id
+
+        # ---- Content Health check (blocking findings) -----------------------
+        findings: tuple[ContentFinding, ...] = ()
+        if revision.status is RevisionStatus.DRAFT:
+            findings = structural_findings(
+                revision.template, revision.slot_data
+            ) + authored_content_findings(entry, revision)
+            if any(item.severity == "error" for item in findings):
+                raise ContentConflictError(
+                    "Tekst ima blokirajuće nalaze i ne može se poslati na pregled."
+                    " Otklonite greške iznad pre ponovnog slanja."
+                )
+
+        # ---- transition to in_review ----------------------------------------
+        from_status = revision.status
+        revision.status = RevisionStatus.IN_REVIEW
+        revision.updated_by_user_id = actor.user_id
+
+        await self._log_event(revision.id, from_status, RevisionStatus.IN_REVIEW, actor)
+
+        try:
+            await self._session.flush()
+        except StaleDataError as error:
+            raise ContentConflictError(
+                "Revizija je izmenjena u međuvremenu — osvežite i pokušajte ponovo."
+            ) from error
+
+        # ---- record idempotency key alongside the transition event ----------
+        await self._record_idempotency(revision.id, request.idempotency_key)
+
+        # ---- transition draft taxonomy terms in the same package (RW-5) ----
+        discovery = await self._discovery(revision.id)
+        await self._submit_package_terms(actor, discovery, entry.locale)
+
+        # ---- outbox: notify assigned reviewers (RW-7) ----------------------
+        await self._notify_reviewers_of_new_submission(actor.organization_id, revision, entry)
+
+        return await self._to_schema_loaded(entry, revision)
+
+    async def _notify_reviewers_of_new_submission(
+        self,
+        organization_id: UUID,
+        revision: ContentRevision,
+        entry: ContentEntry,
+    ) -> None:
+        """Create outbox records for every reviewer eligible to review this
+        revision (RW-7).  The submitter is excluded (four-eyes)."""
+        assigned_rows = (
+            await self._session.scalars(
+                select(ContentReviewAssignment.user_id)
+                .where(
+                    ContentReviewAssignment.organization_id == organization_id,
+                    ContentReviewAssignment.active.is_(True),
+                )
+                .distinct()
+            )
+        ).all()
+        reviewer_ids = list(assigned_rows)
+        if not reviewer_ids:
+            # No assigned reviewers — fall back to superadmin email (NULL recipient)
+            if os.getenv("SUPERADMIN_EMAIL"):
+                await self._record_notification(
+                    "content.review_requested",
+                    organization_id=organization_id,
+                    aggregate_id=revision.id,
+                    recipient_user_id=None,
+                    payload={
+                        "entryId": str(entry.id),
+                        "revisionId": str(revision.id),
+                        "slug": entry.slug,
+                        "versionLabel": revision.version_label,
+                        "contentType": entry.content_type.value,
+                        "_fallback": "no_assigned_reviewers",
+                    },
+                )
+            return
+
+        payload: dict[str, object] = {
+            "entryId": str(entry.id),
+            "revisionId": str(revision.id),
+            "slug": entry.slug,
+            "versionLabel": revision.version_label,
+            "contentType": entry.content_type.value,
+        }
+        for user_id in reviewer_ids:
+            if user_id == revision.created_by_user_id:
+                continue
+            await self._record_notification(
+                "content.review_requested",
+                organization_id=organization_id,
+                aggregate_id=revision.id,
+                recipient_user_id=user_id,
+                payload=payload,
+            )
+
+    async def _submit_package_terms(
+        self,
+        actor: StaffActor,
+        discovery: ContentDiscoveryMetadata,
+        locale: str,
+    ) -> None:
+        """Transition all draft tenant taxonomy terms referenced by this
+        article's discovery metadata to ``in_review`` (RW-5 / D-068 rule 1).
+
+        Already-published and already-in-review terms are left unchanged.
+        Only tenant-owned terms (not system-defined) are considered.
+        """
+        import itertools
+
+        term_ids: list[UUID] = list(
+            itertools.chain(
+                [discovery.topic_group_term_id] if discovery.topic_group_term_id else [],
+                discovery.topic_term_ids,
+            )
+        )
+        if not term_ids:
+            return
+
+        org_id = actor.organization_id
+
+        # Batch-fetch latest tenant revisions for all referenced terms at once.
+        tenant_latest_sub = (
+            select(
+                TaxonomyTermRevision.term_id,
+                func.max(TaxonomyTermRevision.created_at).label("max_at"),
+            )
+            .where(
+                TaxonomyTermRevision.term_id.in_(term_ids),
+                TaxonomyTermRevision.organization_id == org_id,
+                TaxonomyTermRevision.locale == locale,
+            )
+            .group_by(TaxonomyTermRevision.term_id)
+        ).subquery("pkg_tenant_latest")
+
+        revisions: dict[UUID, TaxonomyTermRevision] = {}
+        for rev in (
+            await self._session.scalars(
+                select(TaxonomyTermRevision)
+                .join(
+                    tenant_latest_sub,
+                    (TaxonomyTermRevision.term_id == tenant_latest_sub.c.term_id)
+                    & (TaxonomyTermRevision.created_at == tenant_latest_sub.c.max_at),
+                )
+                .where(
+                    TaxonomyTermRevision.organization_id == org_id,
+                    TaxonomyTermRevision.locale == locale,
+                )
+            )
+        ).all():
+            revisions.setdefault(rev.term_id, rev)
+
+        # Fetch the TaxonomyTerm rows so we have stable_ids for events.
+        terms: dict[UUID, TaxonomyTerm] = {}
+        for term in (
+            await self._session.scalars(select(TaxonomyTerm).where(TaxonomyTerm.id.in_(term_ids)))
+        ).all():
+            terms[term.id] = term
+
+        for term_id in term_ids:
+            term = terms.get(term_id)
+            revision = revisions.get(term_id)
+            if term is None or revision is None:
+                continue
+            # Only transition tenant-owned drafts
+            if term.organization_id != org_id:
+                continue
+            if revision.status is not RevisionStatus.DRAFT:
+                continue
+
+            from_status = revision.status
+            revision.status = RevisionStatus.IN_REVIEW
+            revision.updated_by_user_id = actor.user_id
+
+            self._session.add(
+                TaxonomyPublicationEvent(
+                    term_revision_id=revision.id,
+                    from_status=from_status,
+                    to_status=RevisionStatus.IN_REVIEW,
+                    actor_user_id=actor.user_id,
+                    reason="submitted_via_article_package",
+                )
+            )
+
+    async def create_new_draft(
+        self,
+        actor: StaffActor,
+        entry_id: UUID,
+        revision_id: UUID,
+        request: NewContentDraftRequest,
+    ) -> ContentRevisionOut:
+        """Creates a new DRAFT revision copying the content from the given
+        source revision, without mutating the source (RW-3 / D-068 rule 3).
+
+        Supported reasons (D-068 rule 3):
+          - ``author_withdrawal`` — author pulls ``in_review`` back to draft
+          - ``edit_after_approval`` — new draft from an ``approved`` revision
+          - ``edit_published_content`` — new draft from ``published``, source
+            stays published
+          - ``edit_archived_content`` — new draft from ``archived``
+        """
+        self._require_org_admin(actor)
+        entry = await self._entry(actor, entry_id)
+        source = await self._revision(actor, entry_id, revision_id)
+
+        if source.status is RevisionStatus.DRAFT:
+            raise ContentConflictError("Revizija je već u statusu draft.")
+
+        next_label = _next_version_label(source.version_label)
+        draft = ContentRevision(
+            entry_id=entry.id,
+            version_label=next_label,
+            template=source.template,
+            slot_data=source.slot_data,
+            seo=source.seo,
+            status=RevisionStatus.DRAFT,
+            source_revision_id=source.id,
+            created_by_user_id=actor.user_id,
+            updated_by_user_id=actor.user_id,
+        )
+        self._session.add(draft)
+        await self._session.flush()
+
+        # Copy discovery metadata
+        previous_discovery = await self._discovery(source.id)
+        await self._replace_discovery(actor, draft, entry.locale, previous_discovery)
+
+        # Mark source as superseded by this draft only for in_review / approved.
+        # Published and archived revisions retain their public status until the
+        # new draft is itself published or the source is explicitly archived.
+        if source.status in (RevisionStatus.IN_REVIEW, RevisionStatus.APPROVED):
+            source.superseded_at = datetime.now(UTC)
+            source.superseded_by_revision_id = draft.id
+
+        await self._log_event(draft.id, None, RevisionStatus.DRAFT, actor, reason=request.reason)
+        await self._session.flush()
+        return await self._to_schema_loaded(entry, draft)
+
+    async def _record_idempotency(self, revision_id: UUID, idempotency_key: UUID) -> None:
+        """Record that *this* key was used to submit *this* revision.
+
+        The table is append-only: a different key on an already-in-review
+        revision is silently accepted — the endpoint returns the existing
+        state without a new transition.  Only the first arrival receives
+        the unique constraint's guarantee.
+
+        The unique constraint ``(revision_id, idempotency_key)`` ensures
+        the same key cannot produce a second transition, even across
+        concurrent requests (serialized by the transaction).
+        """
+        self._session.add(
+            ContentSubmitIdempotency(
+                revision_id=revision_id,
+                idempotency_key=idempotency_key,
+                processed_at=datetime.now(UTC),
+            )
+        )
+        with contextlib.suppress(IntegrityError):
+            await self._session.flush()
 
     async def delete_revision(self, actor: StaffActor, entry_id: UUID, revision_id: UUID) -> None:
         self._require_org_admin(actor)

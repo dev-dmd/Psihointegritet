@@ -40,6 +40,7 @@ from psihointegritet.modules.guidance.authorization import (
     IntakeAuthorizationError,
     StaffActor,
     resolve_staff_actor,
+    staff_authorization_message,
 )
 from psihointegritet.modules.organizations.models import Organization
 from psihointegritet.shared.domain.publication import RevisionStatus
@@ -65,7 +66,7 @@ async def _actor(
             status_code=status.HTTP_403_FORBIDDEN,
             detail={
                 "code": "TAX-AUTH-001",
-                "message": "Nalog nema pristup Kompas registru.",
+                "message": staff_authorization_message(error),
                 "fieldPath": None,
             },
         ) from error

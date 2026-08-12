@@ -37,6 +37,16 @@ export interface Identity {
   userId: string;
   /** Primary email when the provider exposes one. */
   email: string | null;
+  /**
+   * How to address this person in the UI, or `null` when the provider holds no
+   * name yet.
+   *
+   * Null is a real state, not a defect: someone can sign in with an email
+   * before filling in a profile. Callers fall back to the email and then to a
+   * generic label — which is what the sidebar showed for everyone until this
+   * field existed, so a staff member saw "Član tima" instead of their own name.
+   */
+  displayName: string | null;
   /** Platform-wide superadmin — a global flag, independent of any org membership. */
   isSuperadmin: boolean;
   /** Organization memberships, each carrying one or more roles. */

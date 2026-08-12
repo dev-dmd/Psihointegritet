@@ -1,4 +1,13 @@
-"""Deterministic, explainable Intake matching owned by the backend domain."""
+"""Deterministic, explainable Intake matching owned by the backend domain.
+
+The three slugs below are the routing *slots*, not biographies. The
+2026-08-10 team replacement (D-074) handed each slot to a new person —
+Maria ← Anja, Elsa ← Marija, John ← Marjan — and the weights were
+inherited unchanged on purpose, so guided selection keeps working until
+the incoming team reviews them. `DEFAULT_PROFILES` is the fallback used
+when the database holds no `therapist_matching_profiles` rows; the real
+rows are created by `scripts/provision_team.py`.
+"""
 
 from collections.abc import Sequence
 from dataclasses import dataclass
@@ -19,10 +28,10 @@ from psihointegritet.modules.guidance.taxonomy import (
 
 RULE_VERSION = "intake-matching-v3"
 
-ANJA = "anja-stamenkovic"
-MARIJA = "marija-stamenkovic"
-MARJAN = "marjan-jankovic"
-PROFILE_ORDER = (ANJA, MARIJA, MARJAN)
+MARIA = "maria-bullock"
+ELSA = "elsa-browers"
+JOHN = "john-francis"
+PROFILE_ORDER = (MARIA, ELSA, JOHN)
 
 REASONS = {
     "anxiety": "Anksioznost",
@@ -59,7 +68,17 @@ GOALS = {
 }
 
 WORK_FORMATS = {"online": "Online", "in_person": "Uživo", "any": "Svejedno"}
-LOCATIONS = {"nis": "Niš", "leskovac": "Leskovac", "other": "Druga lokacija"}
+LOCATIONS = {
+    "chicago": "Chicago",
+    "milwaukee": "Milwaukee",
+    "madison": "Madison",
+    "other": "Druga lokacija",
+}
+
+#: Every location answer except „Druga lokacija" — the cities a profile can be
+#: filtered by. Derived rather than listed a second time, so adding a city to
+#: LOCATIONS cannot leave the filter silently ignoring it.
+IN_PERSON_CITIES = frozenset(LOCATIONS.values()) - {LOCATIONS["other"]}
 SUBJECT_AGE_BANDS = {
     SubjectAgeBand.UNDER_12: "Mlađe od 12 godina",
     SubjectAgeBand.TWELVE_TO_FIFTEEN: "12–15 godina",  # noqa: RUF001 - public option parity
@@ -155,8 +174,8 @@ SERVICES = {
 
 DEFAULT_PROFILES = (
     MatchingProfile(
-        slug=ANJA,
-        display_name="Anja Stamenković",
+        slug=MARIA,
+        display_name="Maria Bullock",
         areas=tuple(SupportAreaId(area) for area in SUPPORT_AREA_IDS),
         services=(
             "individualna-psihoterapija",
@@ -175,11 +194,11 @@ DEFAULT_PROFILES = (
             SubjectAgeBand.ADULT,
         ),
         supported_formats=("online", "in_person"),
-        locations=("Niš",),
+        locations=("Chicago",),
     ),
     MatchingProfile(
-        slug=MARIJA,
-        display_name="Marija Stamenković",
+        slug=ELSA,
+        display_name="Elsa Browers",
         areas=tuple(SupportAreaId(area) for area in SUPPORT_AREA_IDS),
         services=("individualna-psihoterapija", "roditeljsko-savetovanje"),
         service_capabilities=(
@@ -194,11 +213,11 @@ DEFAULT_PROFILES = (
             SubjectAgeBand.ADULT,
         ),
         supported_formats=("online", "in_person"),
-        locations=("Leskovac",),
+        locations=("Milwaukee",),
     ),
     MatchingProfile(
-        slug=MARJAN,
-        display_name="Marjan Janković",
+        slug=JOHN,
+        display_name="John Francis",
         areas=tuple(SupportAreaId(area) for area in SUPPORT_AREA_IDS),
         services=(
             "individualna-psihoterapija",
@@ -216,7 +235,7 @@ DEFAULT_PROFILES = (
             SubjectAgeBand.ADULT,
         ),
         supported_formats=("online", "in_person"),
-        locations=("Leskovac",),
+        locations=("Madison",),
     ),
 )
 
@@ -224,35 +243,35 @@ WeightMap = dict[str, int]
 WeightTable = dict[str, WeightMap]
 
 REASON_WEIGHTS: WeightTable = {
-    REASONS["anxiety"]: {ANJA: 3, MARIJA: 3, MARJAN: 3},
-    REASONS["depression"]: {MARIJA: 4, MARJAN: 4},
-    REASONS["partner_relationship"]: {ANJA: 5, MARJAN: 5},
-    REASONS["marital_problems"]: {ANJA: 5, MARJAN: 5},
-    REASONS["parenting"]: {ANJA: 4, MARIJA: 4},
-    REASONS["adolescent"]: {MARIJA: 6},
-    REASONS["burnout"]: {ANJA: 6},
-    REASONS["grief"]: {ANJA: 5, MARJAN: 5},
-    REASONS["self_esteem"]: {ANJA: 5, MARIJA: 2, MARJAN: 2},
-    REASONS["personal_growth"]: {ANJA: 3, MARIJA: 3, MARJAN: 3},
-    REASONS["trauma"]: {ANJA: 5, MARJAN: 5},
-    REASONS["addiction"]: {ANJA: 6},
-    REASONS["unsure"]: {ANJA: 1, MARIJA: 1, MARJAN: 1},
-    REASONS["other"]: {ANJA: 1, MARIJA: 1, MARJAN: 1},
+    REASONS["anxiety"]: {MARIA: 3, ELSA: 3, JOHN: 3},
+    REASONS["depression"]: {ELSA: 4, JOHN: 4},
+    REASONS["partner_relationship"]: {MARIA: 5, JOHN: 5},
+    REASONS["marital_problems"]: {MARIA: 5, JOHN: 5},
+    REASONS["parenting"]: {MARIA: 4, ELSA: 4},
+    REASONS["adolescent"]: {ELSA: 6},
+    REASONS["burnout"]: {MARIA: 6},
+    REASONS["grief"]: {MARIA: 5, JOHN: 5},
+    REASONS["self_esteem"]: {MARIA: 5, ELSA: 2, JOHN: 2},
+    REASONS["personal_growth"]: {MARIA: 3, ELSA: 3, JOHN: 3},
+    REASONS["trauma"]: {MARIA: 5, JOHN: 5},
+    REASONS["addiction"]: {MARIA: 6},
+    REASONS["unsure"]: {MARIA: 1, ELSA: 1, JOHN: 1},
+    REASONS["other"]: {MARIA: 1, ELSA: 1, JOHN: 1},
 }
 PARTICIPANT_WEIGHTS: WeightTable = {
-    PARTICIPANTS["alone"]: {ANJA: 1, MARIJA: 1, MARJAN: 1},
-    PARTICIPANTS["partner"]: {ANJA: 6, MARJAN: 6},
-    PARTICIPANTS["parent_child"]: {MARIJA: 6, ANJA: 2},
-    PARTICIPANTS["unsure"]: {ANJA: 1, MARIJA: 1, MARJAN: 1},
+    PARTICIPANTS["alone"]: {MARIA: 1, ELSA: 1, JOHN: 1},
+    PARTICIPANTS["partner"]: {MARIA: 6, JOHN: 6},
+    PARTICIPANTS["parent_child"]: {ELSA: 6, MARIA: 2},
+    PARTICIPANTS["unsure"]: {MARIA: 1, ELSA: 1, JOHN: 1},
 }
 GOAL_WEIGHTS: WeightTable = {
-    GOALS["understand_self"]: {ANJA: 3, MARIJA: 2, MARJAN: 2},
-    GOALS["emotions"]: {ANJA: 4, MARIJA: 4, MARJAN: 2},
-    GOALS["improve_partner"]: {ANJA: 6, MARJAN: 6},
-    GOALS["improve_child"]: {MARIJA: 6, ANJA: 3},
-    GOALS["stress"]: {ANJA: 4, MARJAN: 4, MARIJA: 2},
-    GOALS["concrete_situation"]: {MARJAN: 5, ANJA: 2, MARIJA: 2},
-    GOALS["unsure"]: {ANJA: 1, MARIJA: 1, MARJAN: 1},
+    GOALS["understand_self"]: {MARIA: 3, ELSA: 2, JOHN: 2},
+    GOALS["emotions"]: {MARIA: 4, ELSA: 4, JOHN: 2},
+    GOALS["improve_partner"]: {MARIA: 6, JOHN: 6},
+    GOALS["improve_child"]: {ELSA: 6, MARIA: 3},
+    GOALS["stress"]: {MARIA: 4, JOHN: 4, ELSA: 2},
+    GOALS["concrete_situation"]: {JOHN: 5, MARIA: 2, ELSA: 2},
+    GOALS["unsure"]: {MARIA: 1, ELSA: 1, JOHN: 1},
 }
 
 REASON_SENTENCES: dict[str, str] = {
@@ -324,7 +343,7 @@ class StaticMatchingAdapter:
             input.reason == REASONS["adolescent"]
             and input.participants == PARTICIPANTS["parent_child"]
         ):
-            scores[MARIJA] = scores.get(MARIJA, 0) + 3
+            scores[ELSA] = scores.get(ELSA, 0) + 3
 
         profiles = _eligible_profiles(self._profiles, service.slug)
         profiles, online_fallback = _apply_format_and_age_constraints(profiles, input)
@@ -419,7 +438,7 @@ def _apply_format_and_age_constraints(
         eligible = [profile for profile in eligible if "online" in profile.supported_formats]
     elif input.format == WORK_FORMATS["in_person"]:
         city = input.location
-        if city in {LOCATIONS["nis"], LOCATIONS["leskovac"]}:
+        if city in IN_PERSON_CITIES:
             in_city = [
                 profile
                 for profile in eligible

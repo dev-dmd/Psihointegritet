@@ -8,7 +8,8 @@ import { UserIcon } from "@heroicons/react/24/outline";
 
 import { MobileDrawerCloseContext } from "@/components/sections/mobile-menu-context";
 import { getInitials } from "@/lib/auth/clerk/initials";
-import { ACCOUNT_URL } from "@/lib/auth/routes";
+import { useUiLocale } from "@/i18n/use-ui-locale";
+import { localizedPath } from "@/lib/routes/localized-path";
 
 /**
  * Auth section rendered inside the mobile navigation drawer. Closing the drawer
@@ -22,6 +23,7 @@ import { ACCOUNT_URL } from "@/lib/auth/routes";
  * instantiated purely on the client after hydration. The hook is client-safe.
  */
 export function MobileAuthSection() {
+  const locale = useUiLocale();
   const closeDrawer = useContext(MobileDrawerCloseContext);
   const { isLoaded, isSignedIn, user } = useUser();
 
@@ -51,7 +53,7 @@ export function MobileAuthSection() {
   return (
     <div className="mt-3 flex items-center gap-3">
       <Link
-        href={ACCOUNT_URL}
+        href={localizedPath("account.home", { locale })}
         onClick={() => closeDrawer()}
         className="flex min-w-0 flex-1 items-center gap-3 no-underline"
       >

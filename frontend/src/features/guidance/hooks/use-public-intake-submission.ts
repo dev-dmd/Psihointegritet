@@ -14,7 +14,10 @@ interface PublicIntakeSubmissionVariables {
 
 export function usePublicIntakeSubmission() {
   return useMutation({
-    mutationFn: ({ payload, idempotencyKey }: PublicIntakeSubmissionVariables) =>
+    mutationFn: ({
+      payload,
+      idempotencyKey,
+    }: PublicIntakeSubmissionVariables) =>
       submitPublicIntakeCase(payload, idempotencyKey),
   });
 }

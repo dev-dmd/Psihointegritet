@@ -1,5 +1,6 @@
 "use client";
 
+import { useFormatter, useTranslations } from "next-intl";
 import { toast } from "sonner";
 
 import { BackToSiteButton } from "@/components/shared/back-to-site-button";
@@ -9,25 +10,16 @@ import { therapists } from "@/content/therapists";
 import { useWorkspace } from "../workspace-context";
 import { BellIcon, ChevronDownIcon, PlusIcon, TeamIcon } from "./icons";
 
-function formatToday(): string {
-  const formatted = new Intl.DateTimeFormat("sr-Latn-RS", {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  }).format(new Date());
-  return formatted.charAt(0).toUpperCase() + formatted.slice(1);
-}
-
 /** Cycle order for the admin therapist filter: all → each therapist → all. */
 const cycle: (string | null)[] = [null, ...therapists.map((t) => t.slug)];
 
-function therapistLabel(slug: string | null): string {
-  if (slug === null) return "Svi terapeuti";
+function therapistLabel(slug: string | null, allLabel: string): string {
+  if (slug === null) return allLabel;
   const therapist = therapists.find((t) => t.slug === slug);
+  // A therapist's own name is never translated — it is data, not copy.
   return therapist
     ? `${therapist.firstName} ${therapist.name.split(" ")[1]?.[0] ?? ""}.`
-    : "Svi terapeuti";
+    : allLabel;
 }
 
 /**
@@ -38,6 +30,20 @@ function therapistLabel(slug: string | null): string {
 export function WorkspaceTopbar() {
   const { isAdmin, selectedTherapistSlug, setSelectedTherapistSlug } =
     useWorkspace();
+  const t = useTranslations("workspace");
+  const format = useFormatter();
+
+  // Was `new Intl.DateTimeFormat("sr-Latn-RS", …)`, which pinned the language
+  // *and* silently used the runtime's timezone. `useFormatter` takes both from
+  // the request config, where `timeZone` is set explicitly — the server runs
+  // UTC and the browser does not, and around midnight the two disagreed.
+  const rawToday = format.dateTime(new Date(), {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+  const today = rawToday.charAt(0).toUpperCase() + rawToday.slice(1);
 
   const cycleTherapist = () => {
     const index = cycle.indexOf(selectedTherapistSlug);
@@ -56,9 +62,7 @@ export function WorkspaceTopbar() {
           className="bg-warm ml-1 h-[5px] w-[5px] rounded-full"
         />
       </span>
-      <span className="text-ink-55 hidden text-[13px] lg:inline">
-        {formatToday()}
-      </span>
+      <span className="text-ink-55 hidden text-[13px] lg:inline">{today}</span>
       <span className="flex-1" />
       {isAdmin ? (
         <button
@@ -67,16 +71,16 @@ export function WorkspaceTopbar() {
           className="border-coffee/12 text-coffee hover:border-sage bg-surface hidden items-center gap-2 rounded-full border px-3.5 py-2 text-[13px] font-semibold transition-colors lg:inline-flex"
         >
           <TeamIcon size={14} className="text-sage" />
-          {therapistLabel(selectedTherapistSlug)}
+          {therapistLabel(selectedTherapistSlug, t("topbar.allTherapists"))}
           <ChevronDownIcon />
         </button>
       ) : null}
       <BackToSiteButton className="border-coffee/12 text-coffee hover:border-sage bg-surface" />
       <button
         type="button"
-        title="Obaveštenja"
-        aria-label="Obaveštenja"
-        onClick={() => toast("Nema novih obaveštenja.")}
+        title={t("topbar.notifications")}
+        aria-label={t("topbar.notifications")}
+        onClick={() => toast(t("topbar.noNotifications"))}
         className="border-coffee/12 text-coffee hover:border-sage bg-surface relative flex h-10 w-10 items-center justify-center rounded-full border transition-colors"
       >
         <BellIcon />
@@ -88,17 +92,17 @@ export function WorkspaceTopbar() {
       <div className="lg:hidden">
         <LogoutAvatarMenu
           initials={isAdmin ? "A" : "T"}
-          label="Korisnički meni"
+          label={t("topbar.userMenu")}
           triggerClassName="border-meadow/55 bg-meadow/20 text-forest hover:border-sage focus-visible:ring-forest/35 flex h-10 w-10 cursor-pointer items-center justify-center rounded-full border text-[13px] font-semibold outline-none transition-colors focus-visible:ring-2"
         />
       </div>
       <button
         type="button"
-        onClick={() => toast("Brza akcija stiže sa Booking engine-om.")}
+        onClick={() => toast(t("shell.quickActionSoon"))}
         className="bg-forest text-canvas hover:bg-forest-hover hidden items-center gap-2 rounded-full border-0 px-5 py-2.5 text-[13.5px] font-semibold transition-colors lg:inline-flex"
       >
         <PlusIcon />
-        Brza akcija
+        {t("topbar.quickAction")}
       </button>
     </header>
   );

@@ -104,7 +104,7 @@ def test_submission_requires_both_mandatory_acknowledgements() -> None:
 
 def test_team_review_keeps_a_self_selected_therapist_as_a_non_binding_preference() -> None:
     payload = _submission_payload()
-    payload["preferredTherapistSlug"] = "anja-stamenkovic"
+    payload["preferredTherapistSlug"] = "maria-bullock"
     request = PublicIntakeSubmissionRequest.model_validate(payload)
 
     validate_submission_choice(

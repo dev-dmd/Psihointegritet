@@ -11,6 +11,8 @@ const BASE: Record<ContentType, readonly ApprovalCapability[]> = {
   program: ["business"],
   company_plan: ["business"],
   package_offer: ["business"],
+  // ADR-019 §9: the same floor as a therapist profile.
+  article: ["clinical", "business"],
 };
 
 const BY_TEMPLATE: Record<ContentTemplate, readonly ApprovalCapability[]> = {
@@ -23,6 +25,7 @@ const BY_TEMPLATE: Record<ContentTemplate, readonly ApprovalCapability[]> = {
   company_page: [],
   pricing_page: [],
   static_information: [],
+  article_detail: ["clinical"],
 };
 
 export function requiredContentApprovals(

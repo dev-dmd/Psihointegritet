@@ -1,0 +1,172 @@
+import { describe, expect, it } from "vitest";
+
+import { SUPPORTED_UI_LOCALES, type UiLocale } from "@/i18n/locales";
+
+import { localizedPath } from "./localized-path";
+import { platformRouteIds, routeDefinition } from "./platform-routes";
+import { decideProxyRoute, proxyFallbackLocale } from "./proxy-locale";
+
+describe("proxyFallbackLocale", () => {
+  it("resolves the live tenant to Serbian", () => {
+    expect(proxyFallbackLocale("psihointegritet")).toBe("sr-Latn");
+  });
+
+  it("falls back instead of throwing on an unknown or missing slug", () => {
+    // Unlike `org-context.ts`, which throws. The proxy runs before any error
+    // boundary: throwing here answers every request with a blank 500, including
+    // the sign-in page someone would use to go fix the configuration.
+    expect(proxyFallbackLocale(undefined)).toBe("en");
+    expect(proxyFallbackLocale("nepostojeca")).toBe("en");
+  });
+});
+
+describe("decideProxyRoute", () => {
+  const SR: UiLocale = "sr-Latn";
+
+  it("never touches API routes", () => {
+    // Rule: API paths are not localized. A 308 here would break every client
+    // that posts to them, and the failure would look like a CORS problem.
+    for (const path of [
+      "/api",
+      "/api/booking/slots",
+      "/api/content/entries",
+      "/api/compass/taxonomy",
+    ]) {
+      expect(decideProxyRoute(path, "", SR)).toEqual({ kind: "pass" });
+      expect(decideProxyRoute(path, "", "en")).toEqual({ kind: "pass" });
+    }
+  });
+
+  it("never touches auth routes", () => {
+    // Clerk holds these paths in its own configuration (D-077 Amendment §10).
+    for (const path of ["/prijava", "/prijava/sso-callback", "/registracija"]) {
+      expect(decideProxyRoute(path, "", SR)).toEqual({ kind: "pass" });
+    }
+  });
+
+  it("passes public and unregistered paths through", () => {
+    for (const path of [
+      "/",
+      "/tim/maria-bullock",
+      "/kompas/oblasti",
+      "/nista",
+    ]) {
+      expect(decideProxyRoute(path, "", SR)).toEqual({ kind: "pass" });
+    }
+  });
+
+  it("rewrites a Serbian workspace path onto the English physical route", () => {
+    expect(decideProxyRoute("/radni-prostor/podesavanja", "", SR)).toEqual({
+      kind: "rewrite",
+      internal: "/workspace/settings",
+    });
+  });
+
+  it("carries dynamic params and query through the rewrite", () => {
+    expect(
+      decideProxyRoute("/radni-prostor/kompas/sadrzaj/abc", "?tab=content", SR),
+    ).toEqual({
+      kind: "rewrite",
+      internal: "/workspace/compass/content/abc?tab=content",
+    });
+  });
+
+  it("rewrites the client panel too, now that it is English on disk", () => {
+    expect(decideProxyRoute("/nalog/termini", "", SR)).toEqual({
+      kind: "rewrite",
+      internal: "/account/appointments",
+    });
+  });
+
+  it("does not rewrite when the external path is already the physical one", () => {
+    // An English organization asks for the path that is on disk, so there is
+    // nothing to rewrite. The condition is path equality, not locale — which is
+    // what let the client panel move without touching the proxy.
+    expect(decideProxyRoute("/account/appointments", "", "en")).toEqual({
+      kind: "pass",
+    });
+    expect(decideProxyRoute("/workspace/settings", "", "en")).toEqual({
+      kind: "pass",
+    });
+  });
+
+  /**
+   * D-077 Amendment 3. These three used to assert a 308, and the assertions
+   * were the bug: the only locale this module can see is the build-time
+   * registry, so on an organization switched to English through the panel the
+   * proxy redirected every English URL the application produced back to
+   * Serbian. Both spellings are now accepted and rewritten.
+   */
+  it("serves an English path on a Serbian organization", () => {
+    expect(decideProxyRoute("/workspace/settings", "", SR)).toEqual({
+      kind: "pass",
+    });
+  });
+
+  it("serves a Serbian path on an English organization", () => {
+    expect(decideProxyRoute("/radni-prostor/klijenti", "", "en")).toEqual({
+      kind: "rewrite",
+      internal: "/workspace/clients",
+    });
+  });
+
+  it("preserves query when rewriting either spelling", () => {
+    expect(
+      decideProxyRoute("/radni-prostor/usluge", "?tab=pricing", "en"),
+    ).toEqual({ kind: "rewrite", internal: "/workspace/services?tab=pricing" });
+  });
+
+  it("redirects the retired /dostupnost alias to the canonical schedule path", () => {
+    expect(decideProxyRoute("/radni-prostor/dostupnost", "", SR)).toEqual({
+      kind: "redirect",
+      target: "/radni-prostor/raspored",
+    });
+    expect(decideProxyRoute("/workspace/availability", "", SR)).toEqual({
+      kind: "redirect",
+      target: "/radni-prostor/raspored",
+    });
+  });
+
+  describe("loop safety", () => {
+    it("never redirects the result of its own redirect", () => {
+      // The single most important property here. A one-character disagreement
+      // between `localizedPath` and `matchPlatformPath` turns the canonical
+      // redirect into an infinite bounce that no test of a single hop catches.
+      for (const locale of SUPPORTED_UI_LOCALES) {
+        for (const routeId of platformRouteIds()) {
+          const definition = routeDefinition(routeId);
+          const params = Object.fromEntries(
+            (definition.params ?? []).map((name) => [name, `${name}-1`]),
+          );
+          for (const from of SUPPORTED_UI_LOCALES) {
+            const path = localizedPath(routeId, {
+              locale: from,
+              ...(definition.params ? { params } : {}),
+            } as never);
+
+            const first = decideProxyRoute(path, "", locale);
+            if (first.kind !== "redirect") continue;
+
+            const second = decideProxyRoute(first.target, "", locale);
+            expect(
+              second.kind,
+              `${path} @ ${locale} redirected to ${first.target}, which redirects again`,
+            ).not.toBe("redirect");
+          }
+        }
+      }
+    });
+
+    it("settles a trailing slash without bouncing", () => {
+      const first = decideProxyRoute("/radni-prostor/termini/", "", SR);
+      expect(first.kind).toBe("rewrite");
+    });
+
+    it("resolves every alias in one hop", () => {
+      const alias = decideProxyRoute("/radni-prostor/dostupnost", "", SR);
+      expect(alias.kind).toBe("redirect");
+      if (alias.kind !== "redirect") return;
+      expect(decideProxyRoute(alias.target, "", SR).kind).not.toBe("redirect");
+    });
+  });
+});
