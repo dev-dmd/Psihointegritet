@@ -874,7 +874,7 @@ deployment = jedna organizacija · **Ne dira:** ADR-023 granicu izolacije
 | **ROUTE-I18N-3+4** | 18 fajlova → `app/(staff)/workspace/**`; klijentski panel → `/account`; proxy rewrite + 308; `dostupnost` → `raspored` | ✅ |
 | **I18N-4** | Shell oba panela iz kataloga (nav, topbar, role); 0 rendered srpskih niski u shell-u | ✅ |
 | **I18N-5** | superadmin porodica; **Content workspace porodica**; ratchet po fajlu | 🟡 **1269 niski / 165 fajlova preostalo** |
-| **Content locale** | `content/<locale>/`, `pickContent`, engleski fallback; `content:check` u **oba** locale-a drži iste granice znakova | 🟡 **2 od 9 modula** (`therapists`, `services`) |
+| **Content locale** | `content/<locale>/`, `pickContent`, engleski fallback; `content:check` u **oba** locale-a drži iste granice znakova | 🟡 **3 od 9 modula** (`therapists`, `services`, `homepage`) |
 | **I18N-7 backend** | migracija `e4a91c62d8f7` (kolone + CHECK + `organization_audit_events`); `shared/domain/audit.py`; `GET /organizations/me`, `PATCH /me/locales`, operatorski `PATCH /{id}/locales` | ✅ |
 | **I18N-7 frontend** | `api:generate`, BFF rute, ekran „Jezik i regionalna podešavanja", `router.refresh()` posle čuvanja | ✅ |
 | **Prekidač deluje** | javni `GET /public/organizations/{slug}/locales` + tagovano data-cache čitanje uz fallback na registar + `revalidateTag` na izmenu. **Dokazano:** isti env, promenjena samo baza → `lang` prati | ✅ |
