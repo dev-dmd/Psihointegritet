@@ -1,17 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useState } from "react";
 
 import { cn } from "@/helpers/cn";
 import { QueryProvider } from "@/providers/query-provider";
-
-import { CompassSheet } from "@/features/compass/quiz/compass-sheet";
 
 import {
   useSubmitSurveyMutation,
   useSurveyQuery,
 } from "./hooks/use-survey-queries";
 import type { ResearchSurface, ResearchTrigger } from "./research-api";
+import { ResearchDrawerShell } from "./research-drawer-shell";
 
 type Screen = "questions" | "done";
 
@@ -68,6 +67,7 @@ function SurveyDrawerContent({
 }) {
   const surveyQuery = useSurveyQuery(surveyStableId, open);
   const submitMutation = useSubmitSurveyMutation();
+  const resetSubmission = submitMutation.reset;
 
   const [index, setIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string[]>>({});
@@ -115,19 +115,19 @@ function SurveyDrawerContent({
     ? (answers[question.questionId]?.length ?? 0) > 0
     : false;
 
-  const close = () => {
+  const close = useCallback(() => {
     onClose();
     // Reset so a second opening in the same session starts clean.
     setIndex(0);
     setAnswers({});
     setScreen("questions");
-    submitMutation.reset();
-  };
+    resetSubmission();
+  }, [onClose, resetSubmission]);
 
   return (
-    <CompassSheet open={open} labelledBy={titleId} onClose={close}>
+    <ResearchDrawerShell open={open} labelledBy={titleId} onClose={close}>
       <div className="flex min-h-0 flex-col">
-        <header className="border-line shrink-0 border-b px-5 pb-4 md:px-8">
+        <header className="border-line shrink-0 border-b px-5 pt-10 pb-4 md:px-8">
           <div className="mx-auto flex max-w-[760px] items-start justify-between gap-4">
             <div>
               <p className="text-sage text-[11.5px] font-semibold tracking-[0.16em] uppercase">
@@ -234,7 +234,7 @@ function SurveyDrawerContent({
           </div>
         </div>
 
-        <footer className="border-line bg-surface shrink-0 border-t px-5 py-4 md:px-8">
+        <footer className="border-line shrink-0 border-t px-5 py-4 md:px-8">
           <div className="mx-auto flex max-w-[760px] flex-wrap items-center gap-2.5">
             {screen === "done" ? (
               <button
@@ -284,6 +284,6 @@ function SurveyDrawerContent({
           </div>
         </footer>
       </div>
-    </CompassSheet>
+    </ResearchDrawerShell>
   );
 }
