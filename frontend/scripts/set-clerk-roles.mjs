@@ -25,6 +25,12 @@ const ASSIGNMENTS = [
     email: "drazic.milan@gmail.com",
     publicMetadata: { superadmin: true },
   },
+  // ── Tim, po D-074 i `backend/.../identity/roster.py` ──
+  //
+  // Backend membership i Clerk publicMetadata su dva odvojena izvora dok se
+  // D-026 ne zameni sa GET /api/v1/me. Ovaj spisak zato mora ostati u potpunoj
+  // saglasnosti sa backend rosterom: Maria vodi centar, dok Elsa i John nemaju
+  // org_admin pristup tuđim rasporedima i organizacionim podešavanjima.
   {
     email: "maria.bullock@psihointegritet.com",
     publicMetadata: {
@@ -46,6 +52,10 @@ const ASSIGNMENTS = [
       org: "psihointegritet",
     },
   },
+  // Stari tim (Anja, Marija Stamenković i Marjan) namerno više nije ovde.
+  // Skript samo DODELJUJE role i nikada ih ne oduzima — uklanjanje njihovih
+  // production naloga ostaje zaseban potez
+  // (PATCH `{ roles: [] }` ili Clerk Dashboard), ne posledica ove izmene.
 ];
 
 const API = "https://api.clerk.com/v1";
