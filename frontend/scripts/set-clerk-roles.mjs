@@ -1,72 +1,48 @@
 #!/usr/bin/env node
 /**
- * Dodela rola kroz Clerk publicMetadata (privremeni izvor rola, D-026).
+ * Clerk publicMetadata bootstrap tool.
  *
- * Pokretanje iz frontend/:
- *   set -a; . ./.env.local; set +a; npm run roles:assign          # primeni
- *   set -a; . ./.env.local; set +a; npm run roles:assign -- --dry-run
+ * PostgreSQL membership is the authorization authority. This script exists only
+ * while the frontend's D-026 compatibility seam still needs metadata. It is
+ * intentionally strict because a development and a production Clerk instance
+ * have different users with the same email address.
  *
- * Ponašanje:
- * - idempotentno: PATCH metadata je shallow-merge, ponovno pokretanje je bezbedno;
- * - nalog koji ne postoji u Clerk instanci → SKIP (kreirati nalog pa ponovo);
- * - exit != 0 samo za API/auth greške, ne za nepostojeće naloge.
- *
- * Pri launchu OBAVEZNO pokrenuti i sa produkcionim CLERK_SECRET_KEY (O-18).
- * Ručna alternativa: Clerk Dashboard → Users → korisnik → Metadata → Public.
+ * From frontend/ (a production secret never belongs in .env.local):
+ *   read -rsp 'Clerk secret: ' CLERK_SECRET_KEY; echo; export CLERK_SECRET_KEY
+ *   npm run roles:assign -- --instance production --confirm-instance ins_...   # dry run
+ *   npm run roles:assign -- --instance production --confirm-instance ins_... --apply
  */
 
-const ASSIGNMENTS = [
-  {
-    email: "milan.drazic@dmdevelon.website",
-    publicMetadata: { superadmin: true },
-  },
-  // Postojeći Milanov login u dev instanci — superadmin i ovde (odluka 2026-07-20).
-  {
-    email: "drazic.milan@gmail.com",
-    publicMetadata: { superadmin: true },
-  },
-  // ── Tim, po D-074 i `backend/.../identity/roster.py` ──
-  //
-  // Backend membership i Clerk publicMetadata su dva odvojena izvora dok se
-  // D-026 ne zameni sa GET /api/v1/me. Ovaj spisak zato mora ostati u potpunoj
-  // saglasnosti sa backend rosterom: Maria vodi centar, dok Elsa i John nemaju
-  // org_admin pristup tuđim rasporedima i organizacionim podešavanjima.
-  {
-    email: "maria.bullock@psihointegritet.com",
-    publicMetadata: {
-      roles: ["org_admin", "therapist"],
-      org: "psihointegritet",
-    },
-  },
-  {
-    email: "elsa.browers@psihointegritet.com",
-    publicMetadata: {
-      roles: ["therapist"],
-      org: "psihointegritet",
-    },
-  },
-  {
-    email: "john.francis@psihointegritet.com",
-    publicMetadata: {
-      roles: ["therapist"],
-      org: "psihointegritet",
-    },
-  },
-  // Stari tim (Anja, Marija Stamenković i Marjan) namerno više nije ovde.
-  // Skript samo DODELJUJE role i nikada ih ne oduzima — uklanjanje njihovih
-  // production naloga ostaje zaseban potez
-  // (PATCH `{ roles: [] }` ili Clerk Dashboard), ne posledica ove izmene.
-];
-
 const API = "https://api.clerk.com/v1";
+const args = new Set(process.argv.slice(2));
+const valueAfter = (name) => {
+  const index = process.argv.indexOf(name);
+  return index === -1 ? null : (process.argv[index + 1] ?? null);
+};
+const instance = valueAfter("--instance");
+const confirmInstance = valueAfter("--confirm-instance");
+const apply = args.has("--apply");
 const secretKey = process.env.CLERK_SECRET_KEY;
-const dryRun = process.argv.includes("--dry-run");
 
-if (!secretKey) {
-  console.error(
-    "CLERK_SECRET_KEY nije postavljen. Pokreni: set -a; . ./.env.local; set +a",
-  );
+function die(message) {
+  console.error(`ERROR: ${message}`);
   process.exit(1);
+}
+
+if (instance !== "development" && instance !== "production") {
+  die("obavezan je --instance development ili --instance production");
+}
+if (!secretKey) die("CLERK_SECRET_KEY nije postavljen");
+if (instance === "development" && !secretKey.startsWith("sk_test_")) {
+  die("development zahteva sk_test_ Clerk secret");
+}
+if (instance === "production" && !secretKey.startsWith("sk_live_")) {
+  die("production zahteva sk_live_ Clerk secret");
+}
+if (!confirmInstance?.startsWith("ins_")) {
+  die(
+    "obavezan je --confirm-instance ins_...; prepiši ga iz Clerk Dashboard-a",
+  );
 }
 
 const headers = {
@@ -74,14 +50,51 @@ const headers = {
   "Content-Type": "application/json",
 };
 
+const TEAM = [
+  {
+    email: "maria.bullock@psihointegritet.com",
+    ids: {
+      development: "user_3Hh6tfRfCwxo8dv24ynFasyDGI2",
+      production: "user_3HhAuI4wlf8Pa5UaYl49ClDanWr",
+    },
+    publicMetadata: {
+      roles: ["org_admin", "therapist"],
+      org: "psihointegritet",
+    },
+  },
+  {
+    email: "elsa.browers@psihointegritet.com",
+    ids: {
+      development: "user_3Hh7bqnGryNrpxPSO4PYyiFlDQQ",
+      production: "user_3HhAk6ZXwrMb46XpVpbvJZ0D0ai",
+    },
+    publicMetadata: { roles: ["therapist"], org: "psihointegritet" },
+  },
+  {
+    email: "john.francis@psihointegritet.com",
+    ids: {
+      development: "user_3Hh7rWs8ualhw6509eHrpgsO4Qf",
+      production: "user_3HhAZZWpZkRHiE7c9yWBmmXCZ7w",
+    },
+    publicMetadata: { roles: ["therapist"], org: "psihointegritet" },
+  },
+];
+
+async function getInstance() {
+  const response = await fetch(`${API}/instance`, { headers });
+  if (!response.ok) throw new Error(`GET /instance: HTTP ${response.status}`);
+  return response.json();
+}
+
 async function findUser(email) {
-  const url = `${API}/users?email_address=${encodeURIComponent(email)}&limit=1`;
-  const response = await fetch(url, { headers });
-  if (!response.ok) {
+  const response = await fetch(
+    `${API}/users?email_address=${encodeURIComponent(email)}&limit=1`,
+    { headers },
+  );
+  if (!response.ok)
     throw new Error(`GET users (${email}): HTTP ${response.status}`);
-  }
   const users = await response.json();
-  return Array.isArray(users) && users.length > 0 ? users[0] : null;
+  return Array.isArray(users) && users.length === 1 ? users[0] : null;
 }
 
 async function patchMetadata(userId, publicMetadata) {
@@ -90,41 +103,56 @@ async function patchMetadata(userId, publicMetadata) {
     headers,
     body: JSON.stringify({ public_metadata: publicMetadata }),
   });
-  if (!response.ok) {
-    const body = await response.text();
-    throw new Error(
-      `PATCH metadata (${userId}): HTTP ${response.status} ${body}`,
-    );
-  }
+  if (!response.ok)
+    throw new Error(`PATCH metadata (${userId}): HTTP ${response.status}`);
 }
 
-let applied = 0;
-let skipped = 0;
+try {
+  const clerkInstance = await getInstance();
+  if (clerkInstance.environment_type !== instance) {
+    die(
+      `secret pripada '${clerkInstance.environment_type}', a tražen je '${instance}'`,
+    );
+  }
+  if (clerkInstance.id !== confirmInstance) {
+    die(
+      `instance mismatch: Clerk je '${clerkInstance.id}', potvrđen je '${confirmInstance}'`,
+    );
+  }
 
-for (const assignment of ASSIGNMENTS) {
-  const user = await findUser(assignment.email);
-  if (!user) {
-    console.log(
-      `SKIP  ${assignment.email} — nema Clerk naloga (kreirati nalog pa ponovo pokrenuti)`,
-    );
-    skipped += 1;
-    continue;
-  }
-  if (dryRun) {
-    console.log(
-      `DRY   ${assignment.email} [${user.id}] → ${JSON.stringify(assignment.publicMetadata)}`,
-    );
-    continue;
-  }
-  await patchMetadata(user.id, assignment.publicMetadata);
   console.log(
-    `OK    ${assignment.email} [${user.id}] → ${JSON.stringify(assignment.publicMetadata)}`,
+    `Clerk instance: ${clerkInstance.id} (${clerkInstance.environment_type}) — ${apply ? "APPLY" : "DRY RUN"}`,
   );
-  applied += 1;
-}
 
-console.log(
-  dryRun
-    ? `Dry-run gotov (${skipped} preskočeno).`
-    : `Gotovo: ${applied} ažurirano, ${skipped} preskočeno.`,
-);
+  // Resolve and validate every person before the first mutation. A mistyped
+  // secret, email or copied user ID must never partially update the team.
+  const resolved = await Promise.all(
+    TEAM.map(async (assignment) => ({
+      assignment,
+      user: await findUser(assignment.email),
+    })),
+  );
+  for (const { assignment, user } of resolved) {
+    if (!user) die(`${assignment.email} nema nalog u ovoj Clerk instanci`);
+    const expectedId = assignment.ids[instance];
+    if (user.id !== expectedId) {
+      die(
+        `${assignment.email}: očekivan ${expectedId}, Clerk je vratio ${user.id}`,
+      );
+    }
+  }
+
+  for (const { assignment, user } of resolved) {
+    if (apply) await patchMetadata(user.id, assignment.publicMetadata);
+    console.log(
+      `${apply ? "OK " : "DRY"} ${assignment.email} [${user.id}] → ${JSON.stringify(assignment.publicMetadata)}`,
+    );
+  }
+  console.log(
+    apply
+      ? `Gotovo: ${resolved.length} ažurirano.`
+      : "Dry-run gotov — dodaj --apply za upis.",
+  );
+} catch (error) {
+  die(error instanceof Error ? error.message : "nepoznata Clerk greška");
+}

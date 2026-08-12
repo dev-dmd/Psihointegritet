@@ -1,8 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { authMock, currentUserMock } = vi.hoisted(() => ({
+const { authMock, currentUserMock, fetchMock } = vi.hoisted(() => ({
   authMock: vi.fn(),
   currentUserMock: vi.fn(),
+  fetchMock: vi.fn(),
 }));
 
 vi.mock("server-only", () => ({}));
@@ -10,13 +11,26 @@ vi.mock("@clerk/nextjs/server", () => ({
   auth: authMock,
   currentUser: currentUserMock,
 }));
+vi.mock("@/lib/validation/env", () => ({
+  serverEnv: { NEXT_PUBLIC_API_URL: "https://api.test" },
+}));
 
 import { getClerkServerIdentity } from "./server-identity";
 
-function clerkUser(publicMetadata: unknown, email = "test@test.rs") {
+function clerkUser(email = "test@test.rs") {
   return {
-    publicMetadata,
     primaryEmailAddress: { emailAddress: email },
+  };
+}
+
+function backendIdentity(overrides: object = {}) {
+  return {
+    userId: "user_1",
+    email: "test@test.rs",
+    displayName: null,
+    isSuperadmin: false,
+    memberships: [],
+    ...overrides,
   };
 }
 
@@ -24,17 +38,25 @@ describe("getClerkServerIdentity", () => {
   beforeEach(() => {
     authMock.mockReset();
     currentUserMock.mockReset();
+    fetchMock.mockReset();
+    vi.stubGlobal("fetch", fetchMock);
   });
 
   it("returns null when signed out", async () => {
-    authMock.mockResolvedValue({ userId: null });
+    authMock.mockResolvedValue({ userId: null, getToken: vi.fn() });
     expect(await getClerkServerIdentity()).toBeNull();
     expect(currentUserMock).not.toHaveBeenCalled();
   });
 
-  it("returns identity without roles when metadata is empty", async () => {
-    authMock.mockResolvedValue({ userId: "user_1" });
-    currentUserMock.mockResolvedValue(clerkUser({}));
+  it("returns identity and roles from the backend", async () => {
+    authMock.mockResolvedValue({
+      userId: "user_1",
+      getToken: vi.fn().mockResolvedValue("token"),
+    });
+    currentUserMock.mockResolvedValue(clerkUser());
+    fetchMock.mockResolvedValue(
+      new Response(JSON.stringify(backendIdentity())),
+    );
     expect(await getClerkServerIdentity()).toEqual({
       userId: "user_1",
       email: "test@test.rs",
@@ -44,28 +66,59 @@ describe("getClerkServerIdentity", () => {
     });
   });
 
-  it("maps the superadmin flag", async () => {
-    authMock.mockResolvedValue({ userId: "user_2" });
-    currentUserMock.mockResolvedValue(clerkUser({ superadmin: true }));
+  it("maps the backend superadmin flag", async () => {
+    authMock.mockResolvedValue({
+      userId: "user_2",
+      getToken: vi.fn().mockResolvedValue("token"),
+    });
+    currentUserMock.mockResolvedValue(clerkUser());
+    fetchMock.mockResolvedValue(
+      new Response(
+        JSON.stringify(
+          backendIdentity({ userId: "user_2", isSuperadmin: true }),
+        ),
+      ),
+    );
     const identity = await getClerkServerIdentity();
     expect(identity?.isSuperadmin).toBe(true);
     expect(identity?.memberships).toEqual([]);
   });
 
-  it("maps staff roles into one membership", async () => {
-    authMock.mockResolvedValue({ userId: "user_3" });
-    currentUserMock.mockResolvedValue(
-      clerkUser({ roles: ["org_admin", "therapist"], org: "psihointegritet" }),
+  it("maps backend staff memberships", async () => {
+    authMock.mockResolvedValue({
+      userId: "user_3",
+      getToken: vi.fn().mockResolvedValue("token"),
+    });
+    currentUserMock.mockResolvedValue(clerkUser());
+    fetchMock.mockResolvedValue(
+      new Response(
+        JSON.stringify(
+          backendIdentity({
+            userId: "user_3",
+            memberships: [
+              { organizationId: "org-1", roles: ["org_admin", "therapist"] },
+            ],
+          }),
+        ),
+      ),
     );
     const identity = await getClerkServerIdentity();
     expect(identity?.memberships).toEqual([
-      { organizationId: "psihointegritet", roles: ["org_admin", "therapist"] },
+      { organizationId: "org-1", roles: ["org_admin", "therapist"] },
     ]);
   });
 
   it("tolerates a missing user record", async () => {
-    authMock.mockResolvedValue({ userId: "user_4" });
+    authMock.mockResolvedValue({
+      userId: "user_4",
+      getToken: vi.fn().mockResolvedValue("token"),
+    });
     currentUserMock.mockResolvedValue(null);
+    fetchMock.mockResolvedValue(
+      new Response(
+        JSON.stringify(backendIdentity({ userId: "user_4", email: null })),
+      ),
+    );
     expect(await getClerkServerIdentity()).toEqual({
       userId: "user_4",
       email: null,
@@ -73,6 +126,19 @@ describe("getClerkServerIdentity", () => {
       isSuperadmin: false,
       memberships: [],
     });
+  });
+
+  it("explains that a 404 means the backend revision is stale", async () => {
+    authMock.mockResolvedValue({
+      userId: "user_5",
+      getToken: vi.fn().mockResolvedValue("token"),
+    });
+    fetchMock.mockResolvedValue(new Response(null, { status: 404 }));
+
+    await expect(getClerkServerIdentity()).rejects.toThrow(
+      "Restart or redeploy the backend from the same revision as the frontend",
+    );
+    expect(currentUserMock).not.toHaveBeenCalled();
   });
 });
 
@@ -83,9 +149,21 @@ describe("display name", () => {
       firstName: "Maria",
       lastName: "Bullock",
       primaryEmailAddress: { emailAddress: "maria@psihointegritet.com" },
-      publicMetadata: {},
     });
-    authMock.mockResolvedValue({ userId: "user_9" });
+    authMock.mockResolvedValue({
+      userId: "user_9",
+      getToken: vi.fn().mockResolvedValue("token"),
+    });
+    fetchMock.mockResolvedValue(
+      new Response(
+        JSON.stringify(
+          backendIdentity({
+            userId: "user_9",
+            email: "maria@psihointegritet.com",
+          }),
+        ),
+      ),
+    );
 
     await expect(getClerkServerIdentity()).resolves.toMatchObject({
       displayName: "Maria Bullock",
@@ -101,9 +179,16 @@ describe("display name", () => {
       firstName: "Maria",
       lastName: null,
       primaryEmailAddress: null,
-      publicMetadata: {},
     });
-    authMock.mockResolvedValue({ userId: "user_10" });
+    authMock.mockResolvedValue({
+      userId: "user_10",
+      getToken: vi.fn().mockResolvedValue("token"),
+    });
+    fetchMock.mockResolvedValue(
+      new Response(
+        JSON.stringify(backendIdentity({ userId: "user_10", email: null })),
+      ),
+    );
 
     await expect(getClerkServerIdentity()).resolves.toMatchObject({
       displayName: "Maria",

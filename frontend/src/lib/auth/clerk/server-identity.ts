@@ -4,7 +4,7 @@ import { auth, currentUser } from "@clerk/nextjs/server";
 
 import type { Identity } from "@/lib/auth/identity";
 
-import { parseRoleMetadata } from "./public-metadata";
+import { serverEnv } from "@/lib/validation/env";
 
 /**
  * Clerk exposes `fullName` only when both parts are set, so a user with just a
@@ -24,31 +24,45 @@ function resolveDisplayName(
 }
 
 /**
- * Server-side Clerk → `Identity` adapter. Roles come from `publicMetadata`
- * via `parseRoleMetadata` (interim source, D-026).
- *
- * `currentUser()` is deduped per request by Next's fetch cache, so the
- * defense-in-depth pattern (layout guard + per-page guard) still costs a
- * single Clerk Backend API call per request. Deliberately no React `cache()`
- * wrapper — the fetch dedupe is sufficient and `cache` breaks under vitest.
+ * Server-side identity adapter. Clerk authenticates the subject; FastAPI's
+ * PostgreSQL-backed `/api/v1/me` is the sole source of domain roles. The
+ * endpoint creates a neutral `internal_users` row on first verified login.
  */
 export async function getClerkServerIdentity(): Promise<Identity | null> {
-  const { userId } = await auth();
+  const session = await auth();
+  const { userId } = session;
   if (!userId) {
     return null;
   }
 
+  const token = await session.getToken();
+  if (!token) return null;
+  const response = await fetch(`${serverEnv.NEXT_PUBLIC_API_URL}/api/v1/me`, {
+    headers: { Authorization: `Bearer ${token}` },
+    cache: "no-store",
+  });
+  if (!response.ok) {
+    if (response.status === 404) {
+      throw new Error(
+        "Identity endpoint /api/v1/me is missing. Restart or redeploy the backend from the same revision as the frontend.",
+      );
+    }
+    throw new Error(`Identity service failed: HTTP ${response.status}`);
+  }
+  const backend = (await response.json()) as {
+    userId: string;
+    email: string | null;
+    displayName: string | null;
+    isSuperadmin: boolean;
+    memberships: Identity["memberships"];
+  };
   const user = await currentUser();
-  const meta = parseRoleMetadata(user?.publicMetadata);
 
   return {
-    userId,
-    email: user?.primaryEmailAddress?.emailAddress ?? null,
-    displayName: resolveDisplayName(user),
-    isSuperadmin: meta.superadmin,
-    memberships:
-      meta.roles.length > 0
-        ? [{ organizationId: meta.org, roles: meta.roles }]
-        : [],
+    userId: backend.userId,
+    email: backend.email ?? user?.primaryEmailAddress?.emailAddress ?? null,
+    displayName: backend.displayName ?? resolveDisplayName(user),
+    isSuperadmin: backend.isSuperadmin,
+    memberships: backend.memberships,
   };
 }

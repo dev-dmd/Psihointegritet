@@ -15,6 +15,7 @@ import type { EnSuperadmin } from "@/messages/en/superadmin";
 import { psihointegritetTenant, usageTiles } from "../data";
 import { useGates } from "../gates-context";
 import type { GateStatus } from "../types";
+import { TenantUsersPanel } from "./tenant-users-panel";
 
 const GATE_STATUS: Record<
   GateStatus,
@@ -29,7 +30,7 @@ const tabs = [
   { id: "pregled", label: "Pregled" },
   { id: "funkcionalnosti", label: "Funkcionalnosti" },
   { id: "potrosnja", label: "Potrošnja" },
-  { id: "korisnici", label: "Korisnici · uskoro", disabled: true },
+  { id: "korisnici", label: "Korisnici" },
   { id: "pretplata", label: "Pretplata · uskoro", disabled: true },
 ];
 
@@ -148,6 +149,10 @@ export function TenantProfileView() {
             Read-only u ovoj fazi — plan i cena se unose ručno, naplata kasnije.
           </p>
         </>
+      ) : null}
+
+      {tab === "korisnici" ? (
+        <TenantUsersPanel tenantSlug="psihointegritet" />
       ) : null}
     </>
   );
