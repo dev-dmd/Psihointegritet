@@ -1,7 +1,9 @@
 """Swap the three therapist logins in one run (CTO decision, 2026-08-09).
 
 Maria Bullock takes Anja's slot, Elsa Browers takes Marija's, John Francis
-takes Marjan's. The three outgoing accounts are revoked and deleted.
+takes Marjan's. The three outgoing backend accounts are revoked and deleted.
+This script does not modify Clerk users or their public metadata; those are a
+separate, explicit production operation.
 
 Why a second command next to `provision_staff.py`: this is one atomic
 intent — "the team changed" — that must not end half applied, with new
@@ -93,6 +95,16 @@ REPLACEMENTS: tuple[tuple[str, str], ...] = (
     ("john", "marjan"),
 )
 
+# D-076 is identity data for the incoming team, not an attribute inherited
+# from the Serbian predecessor. Keep it next to the replacement map so every
+# provisioning run — including the first production run after migration 0025
+# updated zero rows — converges on the canonical US location.
+LOCATION_BY_PERSON: dict[str, str] = {
+    "maria": "Chicago",
+    "elsa": "Milwaukee",
+    "john": "Madison",
+}
+
 #: incoming roster key -> environment variable holding its Clerk user id
 CLERK_ID_ENV: dict[str, str] = {
     "maria": "THERAPIST_CLERK_ID_MARIA",
@@ -164,6 +176,7 @@ async def ensure_therapist_profile(
             TherapistMatchingProfile.slug == person.therapist_slug,
         )
     )
+    canonical_location = LOCATION_BY_PERSON.get(person.key)
     source: TherapistMatchingProfile | None = None
     if inherit_from_slug is not None:
         source = await session.scalar(
@@ -174,6 +187,9 @@ async def ensure_therapist_profile(
         )
 
     if source is None and existing is not None:
+        if canonical_location is not None:
+            existing.locations = [canonical_location]
+            await session.flush()
         return False, None
 
     if source is None:
@@ -190,7 +206,7 @@ async def ensure_therapist_profile(
                 services=[],
                 areas=[],
                 formats=[],
-                locations=[],
+                locations=[canonical_location] if canonical_location is not None else [],
                 min_child_age=18,
             )
         )
@@ -226,7 +242,9 @@ async def ensure_therapist_profile(
     target.services = list(source.services)
     target.areas = list(source.areas)
     target.formats = list(source.formats)
-    target.locations = list(source.locations)
+    target.locations = (
+        [canonical_location] if canonical_location is not None else list(source.locations)
+    )
     target.min_child_age = source.min_child_age
     await session.flush()
 

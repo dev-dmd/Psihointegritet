@@ -25,42 +25,36 @@ const ASSIGNMENTS = [
     email: "drazic.milan@gmail.com",
     publicMetadata: { superadmin: true },
   },
-  // ── Tim, po `backend/src/psihointegritet/modules/identity/roster.py` ──
+  // ── Tim, po D-074 i `backend/.../identity/roster.py` ──
   //
-  // Ovaj spisak je DRUGA kopija roster-a: backend čita svoj Python roster za
-  // membership redove u bazi, ovaj skript upisuje role u Clerk publicMetadata,
-  // a frontend čita isključivo Clerk (D-026, privremeni izvor). Kad se spiskovi
-  // raziđu, backend vidi osobu kao org_admin, a panel je vidi kao klijenta.
-  //
-  // Baš to se i dogodilo: roster.py je 2026-08-09 zamenio tim (Maria → Anja,
-  // Elsa → Marija, John → Marjan), a ovaj fajl je ostao na starom timu — pa
-  // trojici stvarnih ljudi nikada nije upisana nijedna rola.
-  //
-  // Sva trojica drže i `org_admin` i `therapist` (roster.py `BOTH_ROLES`).
+  // Backend membership i Clerk publicMetadata su dva odvojena izvora dok se
+  // D-026 ne zameni sa GET /api/v1/me. Ovaj spisak zato mora ostati u potpunoj
+  // saglasnosti sa backend rosterom: Maria vodi centar, dok Elsa i John nemaju
+  // org_admin pristup tuđim rasporedima i organizacionim podešavanjima.
   {
-    email: "anja.stamenkovic@psihointegritet.com",
+    email: "maria.bullock@psihointegritet.com",
     publicMetadata: {
       roles: ["org_admin", "therapist"],
       org: "psihointegritet",
     },
   },
   {
-    email: "marija.stamenkovic@psihointegritet.com",
+    email: "elsa.browers@psihointegritet.com",
     publicMetadata: {
-      roles: ["org_admin", "therapist"],
+      roles: ["therapist"],
       org: "psihointegritet",
     },
   },
   {
-    email: "marjan.jankovic@psihointegritet.com",
+    email: "john.francis@psihointegritet.com",
     publicMetadata: {
-      roles: ["org_admin", "therapist"],
+      roles: ["therapist"],
       org: "psihointegritet",
     },
   },
-  // Odlazeći tim (maria.bullock, elsa.browers, john.francis) namerno više nije
-  // ovde. Skript samo DODELJUJE role i nikada ih ne oduzima — ako ti nalozi i
-  // dalje postoje u nekoj instanci, oduzimanje je zaseban svestan potez
+  // Stari tim (Anja, Marija Stamenković i Marjan) namerno više nije ovde.
+  // Skript samo DODELJUJE role i nikada ih ne oduzima — uklanjanje njihovih
+  // production naloga ostaje zaseban potez
   // (PATCH `{ roles: [] }` ili Clerk Dashboard), ne posledica ove izmene.
 ];
 

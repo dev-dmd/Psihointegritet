@@ -55,9 +55,9 @@ def _guard_concurrent_runs(connection: Connection) -> None:
     """Serialise migration runs and bound how long DDL waits for a lock.
 
     Railway runs ``alembic upgrade head`` as a ``preDeployCommand`` while the
-    **previous** deployment is still serving traffic, and retries it up to three
-    times on failure. That gives two ways for a deadlock to appear, and the
-    production deploy on 2026-08-12 hit one of them: a live query holding
+    **previous** deployment is still serving traffic. A failed pre-deploy is not
+    retried; ``restartPolicyMaxRetries`` applies only after a container starts.
+    The production deploy on 2026-08-12 hit a live query holding
     ``AccessShareLock`` on a table the migration needed ``AccessExclusiveLock``
     for (``DROP TABLE availability_rules`` in ``20260810_0022``), each session
     waiting on a relation the other had already locked.
@@ -68,9 +68,9 @@ def _guard_concurrent_runs(connection: Connection) -> None:
       first instead of interleaving with it. Session-scoped, so it is released
       when the connection closes — including when a migration raises.
     - ``lock_timeout`` bounds how long any single statement waits for a table
-      lock. Without it a migration queues behind a live query indefinitely and
-      is free to deadlock; with it the run fails fast with a readable error and
-      the deploy retry gets a clean attempt.
+      lock. It does not make destructive DDL compatible with a live old app;
+      it only fails fast so an operator can drain the app and manually trigger
+      a clean deployment instead of leaving the migration queued indefinitely.
 
     ``statement_timeout`` is deliberately left alone: migrations legitimately
     run long data backfills, and capping those would trade a rare deadlock for

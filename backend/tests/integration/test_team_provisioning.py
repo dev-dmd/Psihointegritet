@@ -69,6 +69,7 @@ async def test_new_incoming_profile_inherits_live_state_once(
     assert target.acceptance_status is AcceptanceStatus.LIMITED
     assert target.presence_status is PresenceStatus.TEMPORARILY_ABSENT
     assert target.absence_until == datetime(2026, 9, 1, tzinfo=UTC)
+    assert target.locations == ["Chicago"]
     assert source.accepting_new_clients is False
     assert source.capacity_status is CapacityStatus.PAUSED
     assert source.acceptance_status is AcceptanceStatus.PAUSED
@@ -151,7 +152,7 @@ async def test_existing_incoming_profile_is_reconciled_with_predecessor(
     assert target.services == ["individualna-psihoterapija"]
     assert target.areas == ["anksioznost"]
     assert target.formats == ["online"]
-    assert target.locations == ["nis"]
+    assert target.locations == ["Milwaukee"]
     assert target.min_child_age == 16
     assert source.accepting_new_clients is False
     assert source.capacity_status is CapacityStatus.PAUSED
@@ -167,6 +168,7 @@ async def test_existing_incoming_profile_is_reconciled_with_predecessor(
     # Re-running is a reconciliation, not a duplicate insert.
     await ensure_therapist_profile(db_session, organization.slug, elsa, source.slug)
     await db_session.flush()
+    assert target.locations == ["Milwaukee"]
     repeated_count = await db_session.scalar(
         select(func.count())
         .select_from(TherapistMatchingProfileSupportArea)
