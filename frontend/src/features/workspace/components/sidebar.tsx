@@ -14,6 +14,17 @@ import { useWorkspace } from "../workspace-context";
 import { usePanelErrors } from "../panel-errors";
 import { visibleNav } from "../nav";
 import { PowerIcon } from "./icons";
+import { getInitials } from "@/lib/auth/clerk/initials";
+
+/**
+ * `getInitials` takes name parts, and the identity contract carries one string —
+ * the provider may hold a full name, a first name only, or an email. Splitting
+ * on the first space is the honest reading of that.
+ */
+function splitName(name: string): [string, string | null] {
+  const [first, ...rest] = name.trim().split(/\s+/);
+  return [first ?? name, rest.join(" ") || null];
+}
 
 /** Number of open requests shown on the Termini badge (demo). */
 const REQUEST_COUNT = 3;
@@ -24,7 +35,7 @@ export function WorkspaceSidebar() {
   const locale = useUiLocale();
   const t = useTranslations("workspace");
   const { signOut } = useClerk();
-  const { isAdmin, isTherapist, roleLabelKey } = useWorkspace();
+  const { isAdmin, isTherapist, displayName, roleLabelKey } = useWorkspace();
   const { hasErrorFor } = usePanelErrors();
   const sections = visibleNav({ isAdmin, isTherapist });
 
@@ -97,11 +108,15 @@ export function WorkspaceSidebar() {
       </nav>
       <div className="border-canvas/10 flex items-center gap-[11px] border-t px-[18px] pt-4 pb-5">
         <span className="border-meadow/55 bg-forest-lift text-canvas inline-flex h-[38px] w-[38px] items-center justify-center rounded-full border-2 text-[13px] font-semibold">
-          {isAdmin ? "A" : "T"}
+          {displayName
+            ? getInitials(...splitName(displayName))
+            : isAdmin
+              ? "A"
+              : "T"}
         </span>
         <div className="min-w-0 flex-1">
           <div className="text-canvas truncate text-[13.5px] font-semibold">
-            {t("shell.memberName")}
+            {displayName ?? t("shell.memberName")}
           </div>
           <div className="text-canvas/50 text-[11.5px]">
             {t(`roles.${roleLabelKey}`)}

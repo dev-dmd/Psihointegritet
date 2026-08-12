@@ -50,7 +50,11 @@ export default async function WorkspaceLayout({
   return (
     <NextIntlClientProvider messages={{ workspace, content, common }}>
       <QueryProvider>
-        <WorkspaceProvider isAdmin={isAdmin} isTherapist={isTherapist}>
+        <WorkspaceProvider
+          isAdmin={isAdmin}
+          isTherapist={isTherapist}
+          displayName={identity.displayName ?? identity.email}
+        >
           <PanelErrorsProvider>
             <div className="bg-panel-canvas flex min-h-screen">
               <WorkspaceSidebar />

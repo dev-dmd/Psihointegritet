@@ -34,6 +34,9 @@ export function useIdentity(): IdentityState {
     identity: {
       userId,
       email: user?.primaryEmailAddress?.emailAddress ?? null,
+      displayName:
+        user?.fullName ??
+        ([user?.firstName, user?.lastName].filter(Boolean).join(" ") || null),
       isSuperadmin: meta.superadmin,
       memberships:
         meta.roles.length > 0

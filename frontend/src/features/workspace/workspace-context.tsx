@@ -13,6 +13,8 @@ import type { ReactNode } from "react";
 interface WorkspaceContextValue {
   isAdmin: boolean;
   isTherapist: boolean;
+  /** How to address the signed-in person; null when the provider holds no name. */
+  displayName: string | null;
   /** Key into `workspace.roles`; the component renders it. */
   roleLabelKey: ReturnType<typeof roleLabelKeyFor>;
   /** Slug of the therapist the admin is filtering by, or null for all. */
@@ -41,10 +43,12 @@ export function roleLabelKeyFor(
 export function WorkspaceProvider({
   isAdmin,
   isTherapist,
+  displayName,
   children,
 }: {
   isAdmin: boolean;
   isTherapist: boolean;
+  displayName: string | null;
   children: ReactNode;
 }) {
   const [selectedTherapistSlug, setSelectedTherapistSlug] = useState<
@@ -55,11 +59,12 @@ export function WorkspaceProvider({
     () => ({
       isAdmin,
       isTherapist,
+      displayName,
       roleLabelKey: roleLabelKeyFor(isAdmin, isTherapist),
       selectedTherapistSlug,
       setSelectedTherapistSlug,
     }),
-    [isAdmin, isTherapist, selectedTherapistSlug],
+    [isAdmin, isTherapist, displayName, selectedTherapistSlug],
   );
 
   return (

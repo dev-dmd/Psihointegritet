@@ -36,6 +36,7 @@ function identity(partial: Partial<Identity>): Identity {
   return {
     userId: "user_1",
     email: "test@test.rs",
+    displayName: null,
     isSuperadmin: false,
     memberships: [],
     ...partial,

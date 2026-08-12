@@ -38,6 +38,7 @@ describe("getClerkServerIdentity", () => {
     expect(await getClerkServerIdentity()).toEqual({
       userId: "user_1",
       email: "test@test.rs",
+      displayName: null,
       isSuperadmin: false,
       memberships: [],
     });
@@ -68,8 +69,44 @@ describe("getClerkServerIdentity", () => {
     expect(await getClerkServerIdentity()).toEqual({
       userId: "user_4",
       email: null,
+      displayName: null,
       isSuperadmin: false,
       memberships: [],
+    });
+  });
+});
+
+describe("display name", () => {
+  it("prefers the provider's full name", async () => {
+    currentUserMock.mockResolvedValue({
+      fullName: "Maria Bullock",
+      firstName: "Maria",
+      lastName: "Bullock",
+      primaryEmailAddress: { emailAddress: "maria@psihointegritet.com" },
+      publicMetadata: {},
+    });
+    authMock.mockResolvedValue({ userId: "user_9" });
+
+    await expect(getClerkServerIdentity()).resolves.toMatchObject({
+      displayName: "Maria Bullock",
+    });
+  });
+
+  it("assembles a name when the provider has only the parts", async () => {
+    // Clerk fills `fullName` only when both halves are set, so a user with a
+    // first name alone would otherwise be nameless — and the sidebar would show
+    // the generic label to someone who does have a name.
+    currentUserMock.mockResolvedValue({
+      fullName: null,
+      firstName: "Maria",
+      lastName: null,
+      primaryEmailAddress: null,
+      publicMetadata: {},
+    });
+    authMock.mockResolvedValue({ userId: "user_10" });
+
+    await expect(getClerkServerIdentity()).resolves.toMatchObject({
+      displayName: "Maria",
     });
   });
 });

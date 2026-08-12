@@ -878,6 +878,7 @@ deployment = jedna organizacija · **Ne dira:** ADR-023 granicu izolacije
 | **I18N-7 backend** | migracija `e4a91c62d8f7` (kolone + CHECK + `organization_audit_events`); `shared/domain/audit.py`; `GET /organizations/me`, `PATCH /me/locales`, operatorski `PATCH /{id}/locales` | ✅ |
 | **I18N-7 frontend** | `api:generate`, BFF rute, ekran „Jezik i regionalna podešavanja", `router.refresh()` posle čuvanja | ✅ |
 | **Prekidač deluje** | javni `GET /public/organizations/{slug}/locales` + tagovano data-cache čitanje uz fallback na registar + `revalidateTag` na izmenu. **Dokazano:** isti env, promenjena samo baza → `lang` prati | ✅ |
+| **Identitet nosi ime** | `Identity.displayName` iz Clerk-a kroz provider-neutralni ugovor; sidebar prikazuje osobu i njene inicijale umesto zakucanog „Član tima" | ✅ |
 | **I18N-7 ostatak** | `SYSTEM_CATALOG_LOCALE` refaktor, kodovi grešaka za 4 modula, email copy, lična preferenca superadmina | ⚪ |
 
 ### Naučeno u isporuci (vredi zadržati)
@@ -912,7 +913,7 @@ deployment = jedna organizacija · **Ne dira:** ADR-023 granicu izolacije
 | 4b | **Rečenice čiji se oblik menja sa jezikom** | `therapist-row.tsx:62` gradi `Upoznaj {nameAccusative}` slaganjem stringa. `nameAccusative` postoji **zato što srpski traži padež**; engleski nema ekvivalent i „Meet {name}" je druga rečenica, ne drugi string. Takve CTA moraju u katalog kao **cela rečenica po locale-u**, ne kao konkatenacija — inače engleski tenant dobija gramatički nemoguć tekst |
 | 4c | **Audit autorstva (D-078)** | `organization_audit_events` mora nositi `actor` + `actor_kind` (`operator`/`member`); prikaz u panelu je zaseban UI posao |
 | 5 | `TestAppointmentOverlapRace` | Flake pod punim opterećenjem; prolazi izolovano i ponovljeno. Nije uzrokovan i18n radom |
-| 6 | **Prazan panel posle prijave u dev modu** | Sidebar se vidi, sadržaj ne. Na QA radi. Nije dijagnostikovano — `getClerkServerIdentity()` zove `auth()` i `currentUser()`; ako druga vrati `null`, identitet postoji bez ijedne role. Isti koren verovatno i za „učita se tek posle refresh-a" |
+| 6 | **Prazan panel posle prijave u dev modu** | Sidebar se vidi, sadržaj ne. Na QA radi. **Sužено 2026-08-12:** uloga se ispravno prikazuje („Administrator and therapist"), dakle `parseRoleMetadata` je pročitala metadata i `currentUser()` **jeste** vratio korisnika. Uzrok nije Clerk adapter |
 | 7 | `seoDescription` **170 → 200 privremeno** | Nije dizajnerska nego SEO granica (pretraživači seku na ~160). Steže samo jer `seo.description` deli izvor sa `cardExcerpt`; prava popravka je dati mu svoj izvor |
 
 
