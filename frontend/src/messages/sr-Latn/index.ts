@@ -1,5 +1,6 @@
 import type { PlatformMessages } from "@/messages/en";
 
+import { account } from "./account";
 import { common } from "./common";
 import { content } from "./content";
 import { errors } from "./errors";
@@ -15,6 +16,7 @@ import { workspace } from "./workspace";
  * catches a namespace that was added to English and never created here.
  */
 export const srLatnMessages: PlatformMessages = {
+  account,
   common,
   content,
   errors,

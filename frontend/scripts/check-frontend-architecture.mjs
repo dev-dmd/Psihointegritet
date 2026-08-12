@@ -213,11 +213,14 @@ for (const file of walk(sourceRoot)) {
  * inline Serbian is the thing this exists to stop.
  *
  * Anchored 2026-08-11 at 1311 strings across 172 files.
+ *
+ * Reduced 2026-08-12 by the client panel build: the four `(client)/account`
+ * pages and `features/account/components/topbar.tsx` reach zero (their copy now
+ * lives in the `account` namespace), and `auth-avatar-menu.tsx` drops one with
+ * „Podešavanja" → „Profil". Their entries are removed rather than zeroed —
+ * a file with no inline Serbian needs no baseline.
  */
 const inlineSerbianBaseline = new Map([
-  ["src/app/(client)/account/appointments/page.tsx", 3],
-  ["src/app/(client)/account/page.tsx", 3],
-  ["src/app/(client)/account/settings/page.tsx", 6],
   ["src/app/(public)/cene/page.tsx", 5],
   ["src/app/(public)/kolacici/page.tsx", 2],
   ["src/app/(public)/kompas/_components/area-card.tsx", 4],
@@ -273,7 +276,6 @@ const inlineSerbianBaseline = new Map([
   ["src/components/sections/therapists.tsx", 3],
   ["src/components/sections/workshop.tsx", 8],
   ["src/components/shared/resource-card.tsx", 1],
-  ["src/features/account/components/topbar.tsx", 4],
   ["src/features/booking-widget/booking-widget.fixtures.tsx", 4],
   ["src/features/booking-widget/components/BookingWidgetActions.tsx", 7],
   ["src/features/booking-widget/components/BookingWidgetCalendar.tsx", 1],
@@ -500,7 +502,7 @@ const inlineSerbianBaseline = new Map([
     "src/features/workspace/components/taxonomy-term-form/technical-details.tsx",
     1,
   ],
-  ["src/lib/auth/clerk/auth-avatar-menu.tsx", 4],
+  ["src/lib/auth/clerk/auth-avatar-menu.tsx", 3],
   ["src/lib/auth/clerk/identity-card.tsx", 3],
   ["src/lib/auth/clerk/mobile-auth-section.tsx", 1],
 ]);

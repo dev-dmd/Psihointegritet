@@ -1,27 +1,23 @@
-import type { Metadata } from "next";
+import { redirect } from "next/navigation";
 
-export const metadata: Metadata = {
-  title: "Podešavanja",
-};
+import { localizedPath } from "@/lib/routes/localized-path";
+import { requireClient } from "@/lib/auth/guards";
+import { resolveWorkspaceLocale } from "@/lib/tenant/workspace-locale";
 
 /**
- * Protected client area — account settings (Milestone 1 skeleton). Profile and
- * preferences editing arrive with the backend identity slice; this page exists
- * so the header account menu links to a real, session-gated destination.
+ * `/nalog/podesavanja` predates the panel and was a skeleton page. The design
+ * merges settings into „KP 04 Profil" — one screen for identity, notification
+ * preferences and consents — so this route now forwards there rather than
+ * offering a second, emptier version of the same thing.
+ *
+ * Kept as a redirect instead of deleted: the header account menu and any link
+ * minted before the panel existed still point at it.
  */
-export default function ClientSettingsPage() {
-  return (
-    <main className="mx-auto max-w-3xl px-5 py-20 md:px-8">
-      <p className="text-forest-lift text-sm font-medium tracking-wide uppercase">
-        Klijentska zona
-      </p>
-      <h1 className="text-forest mt-2 font-serif text-3xl md:text-4xl">
-        Podešavanja
-      </h1>
-      <p className="text-forest-lift mt-3 max-w-prose">
-        Zaštićeni skeleton. Uređivanje profila i preferencija stiže sa backend
-        identity sloja (<code>GET /api/v1/me</code>).
-      </p>
-    </main>
+export default async function ClientSettingsPage() {
+  await requireClient();
+  redirect(
+    localizedPath("account.profile", {
+      locale: await resolveWorkspaceLocale(),
+    }),
   );
 }

@@ -140,6 +140,27 @@ export async function requireTherapist(): Promise<Identity> {
 }
 
 /**
+ * Client panel pages. Anyone signed in who is not staff belongs here —
+ * including an account with no membership row yet, which is what a fresh
+ * sign-up looks like until the backend identity slice lands.
+ *
+ * Staff and superadmins are bounced to their own area rather than shown a
+ * client dashboard: `resolveLandingRoute` already knows where each role lives,
+ * and this is the same bounce `account/page.tsx` performed inline before the
+ * panel had four screens to guard.
+ */
+export async function requireClient(): Promise<Identity> {
+  const identity = await getServerIdentity();
+  if (!identity) {
+    redirect(SIGN_IN_URL as Route);
+  }
+  if (identity.isSuperadmin || isStaff(identity)) {
+    redirect(resolveLandingRoute(identity, await resolveWorkspaceLocale()));
+  }
+  return identity;
+}
+
+/**
  * Guard for future /superadmin route handlers: returns the identity, or null
  * when the caller must respond 404 — the route stays invisible to
  * non-superadmins instead of advertising itself with a 403.

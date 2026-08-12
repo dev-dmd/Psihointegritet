@@ -195,6 +195,23 @@ export async function getClientRequests(
   );
 }
 
+/**
+ * The signed-in client's own requests — the client panel's only booking read.
+ *
+ * Deliberately parameterless: unlike `getClientRequests`, the email is not the
+ * caller's to choose. `app/api/account/appointment-requests` resolves it from
+ * the session, which is what makes this safe to call from the browser.
+ */
+export async function getMyAppointmentRequests(): Promise<
+  AppointmentRequest[]
+> {
+  return requestJson(
+    "/api/account/appointment-requests",
+    { method: "GET" },
+    z.array(appointmentRequestOutSchema),
+  );
+}
+
 export async function acceptAlternative(
   requestId: string,
   proposalId: string,

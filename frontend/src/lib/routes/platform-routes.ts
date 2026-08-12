@@ -235,6 +235,22 @@ export const PLATFORM_ROUTES = {
     paths: { en: "/account/appointments", "sr-Latn": "/nalog/termini" },
     protected: true,
   },
+  "account.programs": {
+    internal: "/account/programs",
+    paths: { en: "/account/programs", "sr-Latn": "/nalog/programi" },
+    protected: true,
+  },
+  "account.profile": {
+    internal: "/account/profile",
+    paths: { en: "/account/profile", "sr-Latn": "/nalog/profil" },
+    protected: true,
+  },
+  /**
+   * Kept registered although the client panel's fourth tab is `account.profile`
+   * (design handoff „KP 04 Profil", which merges profile, notification
+   * preferences and consents into one screen). The page survives as a redirect
+   * so links minted before the panel existed keep landing somewhere real.
+   */
   "account.settings": {
     internal: "/account/settings",
     paths: { en: "/account/settings", "sr-Latn": "/nalog/podesavanja" },

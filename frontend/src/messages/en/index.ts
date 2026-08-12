@@ -1,5 +1,6 @@
 import type { Widen } from "@/messages/types";
 
+import { account } from "./account";
 import { common } from "./common";
 import { content } from "./content";
 import { errors } from "./errors";
@@ -16,6 +17,7 @@ import { workspace } from "./workspace";
  * one file would silently accept an unknown key in a namespace.
  */
 export const enMessages = {
+  account,
   common,
   content,
   errors,

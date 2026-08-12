@@ -84,6 +84,11 @@ describe("catalogue parity", () => {
     // Two placeholders and the word "completion", which the Serbian panel copy
     // already used untranslated before the extraction.
     "screens.overview.surveyProgress",
+    // Pure ICU interpolation — the greeting itself is a separate key, so these
+    // two patterns hold no words of their own, only punctuation.
+    "account.home.greeting",
+    "account.home.greetingPlain",
+    "account.format.online", // the Serbian panel says „Online" too
   ]);
 
   it("does not leave Serbian values identical to English", () => {

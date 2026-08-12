@@ -35,8 +35,10 @@ const ACCOUNT_LINKS = [
     Icon: CalendarDaysIcon,
   },
   {
-    routeId: "account.settings" satisfies PlatformRouteId,
-    label: "Podešavanja",
+    // „KP 04 Profil" absorbed what /nalog/podesavanja was going to be, so the
+    // menu points at the screen that exists rather than at its redirect.
+    routeId: "account.profile" satisfies PlatformRouteId,
+    label: "Profil",
     Icon: AdjustmentsHorizontalIcon,
   },
 ] as const;
