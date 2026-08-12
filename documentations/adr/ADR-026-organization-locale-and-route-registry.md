@@ -121,8 +121,34 @@ Fallback se prevodi jer nije tenantov: pokazuje adminu čemu polje služi i na *
 Izbor fallback locale-a je **build-time konstanta** (`content/locale.ts`), ne per-request:
 sadržaj čita 51 modul, većinom Server Components koje se prerenderuju.
 
+**Identitetska polja su bajt-identična u oba fajla** — slug, ime, slika, cena, trajanje,
+href, `bookingServiceSlugs`. Ona ne govore ništa nego pokazuju na rute, fajlove i iznose;
+prevedena bi vodila u nepostojeće. Razlikuje se samo proza.
+
 **`translation_group` se ne dodaje — nikad.** Jedan `default_content_locale` po organizaciji
 čini tu kolonu trajno nepotrebnom.
+
+## 6.1 Kako podešavanje jezika stvarno deluje
+
+Ekran upisuje u bazu, ali razrešavanje locale-a ne sme da čita per-request — inače pada
+statika. Lanac je zato:
+
+```
+ekran → PATCH → baza + audit → javni GET /public/organizations/{slug}/locales
+      → tagovano data-cache čitanje (uz fallback na registar) → render
+      ↑ revalidateTag na izmenu
+```
+
+**Javni read je namerno uzak** — dva locale koda i ništa više, oba ionako vidljiva svakome
+ko otvori sajt. Postoji jer frontend mora da zna jezik **u build vremenu**, bez sesije.
+
+**Nedostupan backend vraća `null` i registar odgovara sam.** Build prerenderuje ~100
+stranica i inače bi padao kad god API nije gore — što se već desilo jednom, na
+`/kompas/oblasti`.
+
+**Posle čuvanja ide `router.refresh()`.** Jezik živi u server stablu — labele navigacije,
+`<html lang>` i svaki href iz `localizedPath` — pa ažuriranje samo query keša ostavlja sve
+to renderovano na starom jeziku dok korisnik ručno ne osveži.
 
 ## 7. Posledice
 
@@ -142,6 +168,9 @@ sadržaj čita 51 modul, većinom Server Components koje se prerenderuju.
 - **`seoDescription` 170 → 200** je privremen. Nije dizajnerska nego SEO granica; steže samo
   zato što `seo.description` koristi `cardExcerpt`. Prava popravka je dati mu svoj izvor.
 - **Superadminova lična preferenca** treba skladište na korisniku i svoj resolver — dodatak
-  na I18N-7, ne isti posao.
+  na I18N-7, ne isti posao. Šav je označen sa `TODO(superadmin-locale)` u superadmin layout-u.
+- **Prazan panel posle prijave u dev modu** (QA radi) — nije dijagnostikovano; verovatno isti
+  koren kao „učita se tek posle refresh-a", u `currentUser()` koji vrati `null` na prvom
+  zahtevu posle Clerk handshake-a.
 - **Klijentski panel** je premešten na `/account`, ali njegovi ekrani po dizajnu još nisu
   izgrađeni; `account.programs` je nova ruta koju tabela nije imala.

@@ -863,7 +863,7 @@ Provereno u kodu 2026-08-09.
 **Plan:** `documentations/I18N_MULTITENANT_PLAN_v1_0.md` · **Zaključano:** C2(a) — jedan
 deployment = jedna organizacija · **Ne dira:** ADR-023 granicu izolacije
 
-### Isporučeno 2026-08-11
+### Isporučeno 2026-08-11 / 08-12
 
 | Slice | Šta | Status |
 |---|---|---|
@@ -873,9 +873,21 @@ deployment = jedna organizacija · **Ne dira:** ADR-023 granicu izolacije
 | **ROUTE-I18N-2** | 65 → **0** path literala; sve 4 kopije `isActive` obrisane; `panel-errors` na route ID | ✅ |
 | **ROUTE-I18N-3+4** | 18 fajlova → `app/(staff)/workspace/**`; klijentski panel → `/account`; proxy rewrite + 308; `dostupnost` → `raspored` | ✅ |
 | **I18N-4** | Shell oba panela iz kataloga (nav, topbar, role); 0 rendered srpskih niski u shell-u | ✅ |
-| **I18N-5** | superadmin porodica; ratchet po fajlu | 🟡 **1298 niski / 169 fajlova preostalo** |
-| **Content locale** | `content/<locale>/`, `pickContent`, engleski fallback za `therapists`; `content:check` u oba locale-a | 🟡 1 od 9 modula |
-| **I18N-7 backend** | kolone `ui_locale`/`default_content_locale`, `PATCH /organizations/me/locales`, audit, `SYSTEM_CATALOG_LOCALE` | ⚪ nije počet |
+| **I18N-5** | superadmin porodica; **Content workspace porodica**; ratchet po fajlu | 🟡 **1269 niski / 165 fajlova preostalo** |
+| **Content locale** | `content/<locale>/`, `pickContent`, engleski fallback; `content:check` u **oba** locale-a drži iste granice znakova | 🟡 **2 od 9 modula** (`therapists`, `services`) |
+| **I18N-7 backend** | migracija `e4a91c62d8f7` (kolone + CHECK + `organization_audit_events`); `shared/domain/audit.py`; `GET /organizations/me`, `PATCH /me/locales`, operatorski `PATCH /{id}/locales` | ✅ |
+| **I18N-7 frontend** | `api:generate`, BFF rute, ekran „Jezik i regionalna podešavanja", `router.refresh()` posle čuvanja | ✅ |
+| **Prekidač deluje** | javni `GET /public/organizations/{slug}/locales` + tagovano data-cache čitanje uz fallback na registar + `revalidateTag` na izmenu. **Dokazano:** isti env, promenjena samo baza → `lang` prati | ✅ |
+| **I18N-7 ostatak** | `SYSTEM_CATALOG_LOCALE` refaktor, kodovi grešaka za 4 modula, email copy, lična preferenca superadmina | ⚪ |
+
+### Naučeno u isporuci (vredi zadržati)
+
+- **Provider po podstablu, ne globalno.** Katalog koji podstablo traži mora mu se predati; propust ne pada nigde osim u browseru, kao `MISSING_MESSAGE`. Dogodilo se **dvaput** (superadmin, pa Content ekran), zato postoji `provider-coverage.test.ts` — poredi traženo i dato u **oba** smera, uključujući deljene komponente iz `components/shared` i `components/panel`, koje su bile slepa tačka.
+- **Deljeni chrome ide u `common`, ne u `workspace`.** „Odjavi se" i „Glavni sajt" renderuju se i u klijentskom panelu, koji nema workspace katalog.
+- **Konvencija imena constraint-a se primenjuje povrh prosleđenog imena.** Puno ime daje `ck_organizations_ck_organizations_...`; `alembic check` to **ne vidi** jer ne poredi CHECK constraint-e. Kratka imena na obe strane.
+- **Reducer ne sme da pravi tekst** — čista funkcija van React-a ne zna jezik organizacije. Naslov stiže već renderovan iz providera.
+- **Ne sinhronizovati server stanje u `useState` kroz `useEffect`** — forma drži samo izmene, ostalo izvodi iz keša.
+- **Testovi ne smeju da zakucavaju granice** koje čitaju iz izvora; promena `seoDescription` je oborila tri testa koji o njoj ništa ne govore.
 
 ### Zaključana pravila (ADR-026)
 
@@ -900,6 +912,8 @@ deployment = jedna organizacija · **Ne dira:** ADR-023 granicu izolacije
 | 4b | **Rečenice čiji se oblik menja sa jezikom** | `therapist-row.tsx:62` gradi `Upoznaj {nameAccusative}` slaganjem stringa. `nameAccusative` postoji **zato što srpski traži padež**; engleski nema ekvivalent i „Meet {name}" je druga rečenica, ne drugi string. Takve CTA moraju u katalog kao **cela rečenica po locale-u**, ne kao konkatenacija — inače engleski tenant dobija gramatički nemoguć tekst |
 | 4c | **Audit autorstva (D-078)** | `organization_audit_events` mora nositi `actor` + `actor_kind` (`operator`/`member`); prikaz u panelu je zaseban UI posao |
 | 5 | `TestAppointmentOverlapRace` | Flake pod punim opterećenjem; prolazi izolovano i ponovljeno. Nije uzrokovan i18n radom |
+| 6 | **Prazan panel posle prijave u dev modu** | Sidebar se vidi, sadržaj ne. Na QA radi. Nije dijagnostikovano — `getClerkServerIdentity()` zove `auth()` i `currentUser()`; ako druga vrati `null`, identitet postoji bez ijedne role. Isti koren verovatno i za „učita se tek posle refresh-a" |
+| 7 | `seoDescription` **170 → 200 privremeno** | Nije dizajnerska nego SEO granica (pretraživači seku na ~160). Steže samo jer `seo.description` deli izvor sa `cardExcerpt`; prava popravka je dati mu svoj izvor |
 
 
 ## 9. Poznati defekti i tehnički dug
