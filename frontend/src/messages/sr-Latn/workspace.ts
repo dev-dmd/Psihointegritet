@@ -75,11 +75,10 @@ export const workspace: Widen<EnWorkspace> = {
     contentLanguage: "Jezik javnog sajta i novog sadržaja",
     contentLanguageHelp:
       "Pomera javni sajt, njegove adrese i sitemap. Postojeći tekstovi se ne prevode.",
-    useSystemLanguage: "Koristi sistemski jezik i za nov sadržaj",
+    contentLanguageManaged:
+      "Vodi se kao izdanje sadržaja: pravna dokumenta, kanonski URL-ovi i sitemap se pomeraju zajedno sa njim. Za promenu se obratite operatoru.",
     notice:
       "Ovo menja navigaciju platforme, sistemske poruke i buduće sistemske emailove. Postojeći sadržaj neće biti preveden niti izmenjen.",
-    contentWarning:
-      "Promena jezika sadržaja ne prevodi ono što je već objavljeno. Dok neko ne napiše tekst na novom jeziku, javni sajt prikazuje placeholder tekstove.",
     save: "Sačuvaj jezike",
     saved: "Jezici su sačuvani.",
     onlyAdmin: "Samo administrator organizacije može da menja ova podešavanja.",

@@ -73,11 +73,10 @@ export const workspace = {
     contentLanguage: "Language of the public site and new content",
     contentLanguageHelp:
       "Moves the public site, its addresses and its sitemap. Existing texts are not translated.",
-    useSystemLanguage: "Use the system language for new content too",
+    contentLanguageManaged:
+      "Managed as a content release: legal documents, canonical URLs and the sitemap move with it. Ask an operator to prepare the change.",
     notice:
       "This changes platform navigation, system messages and future system emails. It does not translate or modify existing content.",
-    contentWarning:
-      "Changing the content language does not translate what is already published. Until someone writes it in the new language, the public site shows the placeholder texts.",
     save: "Save languages",
     saved: "Languages saved.",
     onlyAdmin: "Only an organization administrator can change these settings.",

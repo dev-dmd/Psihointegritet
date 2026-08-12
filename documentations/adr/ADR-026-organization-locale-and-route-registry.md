@@ -181,6 +181,32 @@ ume da pročita živu vrednost, ne u ovom.
 iz build-a, drugi iz baze — nije pitanje **da li** će se razići, nego kada. Sloj koji vidi
 manje ne sme da nadjačava sloj koji vidi više.
 
+## 6.3 Dva jezika, dva režima primene (Amandman 4)
+
+| Podešavanje | Vlasnik | Primena |
+| --- | --- | --- |
+| `ui_locale` | org_admin | Odmah, bez reload-a i bez deploy-a |
+| `default_content_locale` | org_admin bira/zahteva, release proces aktivira | Posle provere spremnosti sadržaja |
+| Postojeći sadržaj | CMS zapis | **Nikada** se ne prevodi automatski |
+
+Iz toga slede dva odvojena čitanja iste vrednosti:
+
+```
+javna površina    → getDeploymentOrganization("cached")  → tagovani keš, revalidate 300
+workspace/panel   → getDeploymentOrganization("live")    → no-store
+```
+
+**Nikad jedan zajednički resolver za obe površine.** Javnom sajtu keš čuva statiku;
+administratoru koji gleda ekran koji je upravo sačuvao isti taj keš servira staru vrednost.
+Ista funkcija, jedan argument, jer se URL, parsiranje i fallback ne razlikuju — razlikuje se
+samo svežina, i imenovanje te razlike je ono što sprečava da javna putanja tiho dobije
+`no-store`.
+
+Uz to, `revalidateTag` sa **imenovanim profilom** je stale-while-revalidate: prvi read posle
+upisa sme da vrati staru vrednost. Za podešavanje koje korisnik mora odmah da vidi to nije
+prihvatljivo, pa mutacija koristi `{ expire: 0 }`. (Čisto rešenje je Server Action sa
+`updateTag`; ovo je prelazno i tako je zapisano.)
+
 ## 7. Posledice
 
 - `next-intl` se koristi **samo kao sloj za poruke i formate**; njegov routing sloj traži

@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 import { NextIntlClientProvider } from "next-intl";
 
 import { AccountTopbar } from "@/features/account/components/topbar";
-import { getUiLocale } from "@/i18n/locale-boundary";
+import { resolveWorkspaceLocale } from "@/lib/tenant/workspace-locale";
 import { getPlatformMessages } from "@/messages";
 
 /**
@@ -20,10 +20,13 @@ export default async function ClientLayout({
 }: {
   children: ReactNode;
 }) {
-  const { common } = getPlatformMessages(await getUiLocale());
+  // The client panel is a tenant surface, so it follows the organization's
+  // `ui_locale` — never a personal choice, never the public content locale.
+  const locale = await resolveWorkspaceLocale();
+  const { common } = getPlatformMessages(locale);
 
   return (
-    <NextIntlClientProvider messages={{ common }}>
+    <NextIntlClientProvider locale={locale} messages={{ common }}>
       <AccountTopbar />
       {children}
     </NextIntlClientProvider>

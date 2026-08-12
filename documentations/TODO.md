@@ -8,14 +8,31 @@
 ### Otvoreno posle 2026-08-12
 
 **Javni sajt i dalje čita locale sadržaja iz build-a.** `content/locale.ts` razrešava
-`deploymentContentLocale()` iz **statičkog registra**, a org_admin upisuje u bazu — pa
-`qa.psihointegritet.com` servira `<html lang="en">` iznad srpskog fallback teksta
-(„Već ste klijent"). Radni prostor je popravljen (`workspaceDemo(locale)` bira po živoj
-vrednosti), javna površina nije: njen sadržaj čita **51 modulska konstanta**, a stranice su
-statične, pa se ne može samo dodati `await`. Dve opcije, obe traže svoju rundu: prebaciti
-javne stranice na razrešavanje sadržaja u server komponenti (veliki refaktor, čuva SSG uz
-`revalidateTag`), ili proglasiti `default_content_locale` deploy-time vrednošću i skloniti ga
-iz panela (što je ono što D-077 Amandman 1 već piše, a Amandman 2 protivreči).
+`deploymentContentLocale()` iz **statičkog registra**. Radni prostor je popravljen (živi
+`ui_locale`, `no-store`), javna površina nije.
+
+Put je poznat i **ne traži odustajanje od SSG-a** — `await` je problem samo u sadašnjim
+modulskim konstantama, ne u Server Komponenti:
+
+```tsx
+const locale = await resolvePublicLocale();
+const content = await getHomepageContent(locale);
+return <Homepage content={content} />;
+```
+
+Dok resolver ne dira `headers()`/`cookies()` i čita kroz tagovani keš, stranice ostaju
+SSG/ISR. Posao je zameniti **51 modulsku konstantu** server content provider-ima, postepeno.
+
+**Redosled (CTO, 2026-08-12):** 1. workspace live switching ✅ · 2. `default_content_locale`
+zaključan kao release-gated ✅ (D-077 Amandman 4) · 3. postepena zamena 51 konstante ·
+4. javni locale se aktivira tek kad ceo sadržaj tog jezika prođe Content Health.
+
+**Za QA odmah:** `ui_locale = en`, `default_content_locale = sr-Latn` — panel se proverava na
+engleskom dok javni sajt ostaje srpski. Ekran više ne nudi drugu vrednost, pa je postavlja
+operator (superadmin `PATCH /organizations/me/locales` sa `organization_id`).
+
+**Nije izgrađeno uz Amandman 4:** status kartice („Aktivan" / „Promena u pripremi" /
+„Nedostaje sadržaj"), dugme „Pripremi promenu jezika sadržaja", checklist gate-ova.
 
 ## 0. Kako se koristi ovaj dokument
 

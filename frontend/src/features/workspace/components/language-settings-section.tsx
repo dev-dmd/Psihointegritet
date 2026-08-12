@@ -40,11 +40,7 @@ export function LanguageSettingsSection() {
    * mean two sources of truth and a cascading render — and after a save the
    * form would show the pre-save values until the effect caught up.
    */
-  const [draft, setDraft] = useState<{
-    uiLocale: UiLocale;
-    contentLocale: UiLocale;
-    linked: boolean;
-  } | null>(null);
+  const [draft, setDraft] = useState<UiLocale | null>(null);
 
   const save = useOrganizationLocalesMutation({
     onSaved: () => {
@@ -66,10 +62,7 @@ export function LanguageSettingsSection() {
     return <p className="text-coffee/60 text-sm">{tc("state.loading")}</p>;
   }
 
-  const uiLocale = draft?.uiLocale ?? data.uiLocale;
-  const contentLocale = draft?.contentLocale ?? data.defaultContentLocale;
-  const linked = draft?.linked ?? data.uiLocale === data.defaultContentLocale;
-  const contentChanged = contentLocale !== data.defaultContentLocale;
+  const uiLocale = draft ?? data.uiLocale;
 
   return (
     <section className="rounded-card border-line bg-surface border p-6">
@@ -85,11 +78,7 @@ export function LanguageSettingsSection() {
             value={uiLocale}
             onChange={(event) => {
               const next = event.target.value as UiLocale;
-              setDraft({
-                uiLocale: next,
-                contentLocale: linked ? next : contentLocale,
-                linked,
-              });
+              setDraft(next);
             }}
             className="border-coffee/20 mt-2 block w-full rounded-xl border px-3 py-2 text-[15px]"
           >
@@ -104,63 +93,42 @@ export function LanguageSettingsSection() {
           </span>
         </label>
 
-        <label className="text-coffee/75 text-[14px] font-medium">
-          {t("settings.contentLanguage")}
-          <select
-            value={contentLocale}
-            disabled={linked}
-            onChange={(event) =>
-              setDraft({
-                uiLocale,
-                contentLocale: event.target.value as UiLocale,
-                linked,
-              })
-            }
-            className="border-coffee/20 mt-2 block w-full rounded-xl border px-3 py-2 text-[15px] disabled:opacity-60"
-          >
-            {SUPPORTED_UI_LOCALES.map((locale) => (
-              <option key={locale} value={locale}>
-                {LOCALE_ENDONYMS[locale]}
-              </option>
-            ))}
-          </select>
-          <span className="text-coffee/55 mt-1.5 block text-[13px]">
-            {t("settings.contentLanguageHelp")}
-          </span>
-        </label>
-      </div>
+        {/*
+          Read-only, by D-077 Amendment 4.
 
-      <label className="text-coffee/75 mt-4 flex items-center gap-2 text-[14px]">
-        <input
-          type="checkbox"
-          checked={linked}
-          onChange={(event) => {
-            const next = event.target.checked;
-            setDraft({
-              uiLocale,
-              contentLocale: next ? uiLocale : contentLocale,
-              linked: next,
-            });
-          }}
-        />
-        {t("settings.useSystemLanguage")}
-      </label>
+          `ui_locale` is a daily setting and takes effect on save. Moving the
+          public content language is a release operation — legal documents,
+          canonical URLs, sitemap and Content Health land with it — so this card
+          reports the current value instead of offering a switch that would
+          publish a half-translated site.
+        */}
+        <div className="border-line rounded-xl border px-4 py-3.5">
+          <span className="text-coffee/75 text-[14px] font-medium">
+            {t("settings.contentLanguage")}
+          </span>
+          <span className="text-forest mt-2 block text-[15px]">
+            {LOCALE_ENDONYMS[data.defaultContentLocale]}
+          </span>
+          <span className="text-coffee/55 mt-1.5 block text-[13px]">
+            {t("settings.contentLanguageManaged")}
+          </span>
+        </div>
+      </div>
 
       <p className="bg-meadow/18 text-coffee/80 mt-5 rounded-xl p-4 text-[13.5px]">
         {t("settings.notice")}
       </p>
 
-      {contentChanged ? (
-        <p className="bg-warm/16 text-coffee/80 mt-3 rounded-xl p-4 text-[13.5px]">
-          {t("settings.contentWarning")}
-        </p>
-      ) : null}
-
       <button
         type="button"
         disabled={save.isPending}
         onClick={() =>
-          save.mutate({ uiLocale, defaultContentLocale: contentLocale })
+          save.mutate({
+            uiLocale,
+            // Sent unchanged: the contract still carries both, and this screen is
+            // no longer allowed to move the second one.
+            defaultContentLocale: data.defaultContentLocale,
+          })
         }
         className="bg-forest text-canvas hover:bg-forest-hover mt-5 inline-flex min-h-11 items-center rounded-full px-6 text-[14px] font-semibold disabled:opacity-60"
       >

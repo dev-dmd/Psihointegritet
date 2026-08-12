@@ -55,7 +55,10 @@ export class OrganizationMismatchError extends Error {
 
 export const activeWorkspaceLocaleResolver: ActiveWorkspaceLocaleResolver = {
   async resolve(): Promise<UiLocale> {
-    const organization = await getDeploymentOrganization();
+    // "live": the workspace is request-time rendered, and an administrator
+    // who just changed the language must not be shown the old one while the
+    // tagged read catches up.
+    const organization = await getDeploymentOrganization("live");
     const identity = await getServerIdentity();
 
     // `memberships` is empty until the backend identity slice lands (see

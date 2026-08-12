@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 
 import { NextIntlClientProvider } from "next-intl";
 
-import { getUiLocale } from "@/i18n/locale-boundary";
+import { resolveWorkspaceLocale } from "@/lib/tenant/workspace-locale";
 import { getPlatformMessages } from "@/messages";
 
 import { WorkspaceBottomNav } from "@/features/workspace/components/bottom-nav";
@@ -44,11 +44,22 @@ export default async function WorkspaceLayout({
   // Only the namespaces this subtree renders. The root provider carries the
   // locale alone, so a public marketing page never ships the Control Center
   // catalogue to the browser.
-  const locale = await getUiLocale();
+  // `resolveWorkspaceLocale`, not `getUiLocale`: the latter asks next-intl what
+  // it rendered with, and `i18n/request.ts` deliberately resolves the *public*
+  // `default_content_locale` so the marketing pages stay static. The workspace
+  // is the surface `ui_locale` was created for (D-077), and reading the wrong
+  // one is why the panel kept its old language while the URL changed.
+  const locale = await resolveWorkspaceLocale();
   const { workspace, content, common, screens } = getPlatformMessages(locale);
 
   return (
-    <NextIntlClientProvider messages={{ workspace, content, common, screens }}>
+    <NextIntlClientProvider
+      // Explicit, because the provider otherwise inherits the root one — which
+      // carries the public locale. The messages below are chosen by `locale`,
+      // so leaving it implicit lets the two disagree.
+      locale={locale}
+      messages={{ workspace, content, common, screens }}
+    >
       <QueryProvider>
         <WorkspaceProvider
           isAdmin={isAdmin}

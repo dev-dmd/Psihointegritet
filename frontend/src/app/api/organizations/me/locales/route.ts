@@ -28,13 +28,16 @@ export async function PATCH(request: Request): Promise<Response> {
 
   if (response.ok) {
     // Next 16 requires a cache-life profile alongside the tag. `minutes`
-    // matches the `revalidate: 300` on the read in `org-context.ts`; the two
-    // describe the same data and drifting them apart would leave the setting
-    // visible on one path and stale on another.
-    revalidateTag(
-      organizationLocaleTag(serverEnv.DEFAULT_ORGANIZATION_SLUG),
-      "minutes",
-    );
+    // `{ expire: 0 }`, not a named profile. A profile is
+    // stale-while-revalidate: the first read after this write is allowed to
+    // return the old value while the new one loads behind it — which is exactly
+    // the request the administrator makes by watching the screen they just
+    // saved. Expiring immediately gives read-your-own-writes on the public
+    // path; the workspace does not depend on it either way, because
+    // `resolveWorkspaceLocale()` reads live.
+    revalidateTag(organizationLocaleTag(serverEnv.DEFAULT_ORGANIZATION_SLUG), {
+      expire: 0,
+    });
   }
 
   return response;

@@ -94,6 +94,47 @@ function namespacesProvidedBy(layout: string): Set<string> {
   );
 }
 
+describe("panel locale", () => {
+  /**
+   * Two mistakes that produced one symptom: the panel kept rendering in the
+   * previous language while the URL and the settings screen had already moved.
+   *
+   * The layouts called `getUiLocale()`, which reports what next-intl rendered
+   * with — and `i18n/request.ts` deliberately resolves the *public*
+   * `default_content_locale`, so the public site can stay static. Authenticated
+   * surfaces belong to `ui_locale` (D-077), which is what
+   * `resolveWorkspaceLocale()` returns.
+   *
+   * And the provider was mounted without an explicit `locale`, so it inherited
+   * the root one — the public locale again — while its messages came from the
+   * variable above. Two values for the language of one subtree.
+   */
+  it.each(SUBTREES)(
+    "$layout resolves ui_locale, not the public one",
+    ({ layout }) => {
+      const source = readFileSync(join(SRC, layout), "utf8");
+      expect(source, `${layout} must use resolveWorkspaceLocale()`).toContain(
+        "resolveWorkspaceLocale()",
+      );
+      expect(source, `${layout} must not use getUiLocale()`).not.toContain(
+        "getUiLocale()",
+      );
+    },
+  );
+
+  it.each(SUBTREES)(
+    "$layout hands its provider an explicit locale",
+    ({ layout }) => {
+      const source = readFileSync(join(SRC, layout), "utf8");
+      const provider = source.slice(source.indexOf("<NextIntlClientProvider"));
+      expect(
+        provider.slice(0, provider.indexOf(">")),
+        `${layout} lets the provider inherit the root locale`,
+      ).toContain("locale={locale}");
+    },
+  );
+});
+
 describe("intl provider coverage", () => {
   it.each(SUBTREES)(
     "$layout provides every namespace its subtree uses",

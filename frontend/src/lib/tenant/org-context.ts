@@ -74,6 +74,24 @@ export function resolveDeploymentOrganization(
   return { slug, ...settings };
 }
 
+/**
+ * How current the answer has to be.
+ *
+ * `"cached"` is the public site's contract: a tagged, revalidating read that
+ * keeps ~100 pages prerendered. Its cost is that a change may be served stale
+ * once while the new value loads behind it — invisible on a marketing page,
+ * wrong on a settings screen, where the person who just made the change is
+ * looking straight at it.
+ *
+ * `"live"` is for the authenticated surfaces. They are request-time rendered
+ * already, so a `no-store` read costs them nothing they were saving.
+ *
+ * Two modes rather than two resolvers because the URL, the parsing and the
+ * fallback are the same; only the freshness differs, and naming it is what
+ * stops the public path from quietly acquiring `no-store`.
+ */
+export type LocaleFreshness = "cached" | "live";
+
 /** Cache tag the settings mutation revalidates. One per organization. */
 export function organizationLocaleTag(slug: string): string {
   return `organization:locales:${slug}`;
@@ -95,6 +113,7 @@ export function organizationLocaleTag(slug: string): string {
  */
 async function fetchOrganizationLocales(
   slug: string,
+  freshness: LocaleFreshness = "cached",
 ): Promise<Pick<
   OrganizationLocaleSettings,
   "uiLocale" | "defaultContentLocale"
@@ -102,7 +121,9 @@ async function fetchOrganizationLocales(
   try {
     const response = await fetch(
       `${serverEnv.NEXT_PUBLIC_API_URL}/api/v1/public/organizations/${encodeURIComponent(slug)}/locales`,
-      { next: { tags: [organizationLocaleTag(slug)], revalidate: 300 } },
+      freshness === "live"
+        ? { cache: "no-store" }
+        : { next: { tags: [organizationLocaleTag(slug)], revalidate: 300 } },
     );
     if (!response.ok) return null;
     const body = (await response.json()) as {
@@ -130,9 +151,11 @@ async function fetchOrganizationLocales(
  * the backend is unreachable the registry answers alone — the deployment still
  * renders, in the language it was built with.
  */
-export async function getDeploymentOrganization(): Promise<OrganizationContext> {
+export async function getDeploymentOrganization(
+  freshness: LocaleFreshness = "cached",
+): Promise<OrganizationContext> {
   const slug = serverEnv.DEFAULT_ORGANIZATION_SLUG;
   const registry = resolveDeploymentOrganization(slug);
-  const live = await fetchOrganizationLocales(slug);
+  const live = await fetchOrganizationLocales(slug, freshness);
   return live === null ? registry : { ...registry, ...live };
 }
