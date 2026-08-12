@@ -3,6 +3,7 @@ import type { PlatformMessages } from "@/messages/en";
 import { common } from "./common";
 import { content } from "./content";
 import { errors } from "./errors";
+import { screens } from "./screens";
 import { superadmin } from "./superadmin";
 import { workspace } from "./workspace";
 
@@ -17,6 +18,7 @@ export const srLatnMessages: PlatformMessages = {
   common,
   content,
   errors,
+  screens,
   superadmin,
   workspace,
 };

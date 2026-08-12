@@ -1,5 +1,7 @@
 "use client";
 
+import { useTranslations } from "next-intl";
+
 import Image from "next/image";
 import { useState } from "react";
 
@@ -23,6 +25,7 @@ const tabs = [
 ];
 
 export function ScreenProfil() {
+  const t = useTranslations("screens.profile");
   const [tab, setTab] = useState("public");
   const therapist = findTherapist(myProfileSlug);
 
@@ -114,18 +117,18 @@ export function ScreenProfil() {
           <div className="bg-warm/16 border-warm/45 rounded-tile text-coffee flex items-center gap-2.5 border px-4 py-3 text-[13px]">
             <LockIcon />
             <span>
-              <span className="font-bold">Interno.</span> Ove preferencije čita
-              samo Matching engine — ne prikazuju se u javnoj biografiji.
+              <span className="font-bold">{t("internalLabel")}</span>{" "}
+              {t("internalNote")}
             </span>
           </div>
           <div className="grid grid-cols-1 gap-3.5 lg:grid-cols-2">
             <div className="rounded-card border-line bg-surface border px-6 py-6">
               <div className="text-sage mb-3.5 text-[11.5px] font-semibold tracking-[0.14em] uppercase">
-                Koga prima
+                {t("acceptsHeading")}
               </div>
               <div className="grid grid-cols-2 gap-3.5">
                 <KV label="Starosne grupe">{matchingPreferences.ageGroups}</KV>
-                <KV label="Max novih mesečno" serif>
+                <KV label={t("maxNewMonthly")} serif>
                   {matchingPreferences.maxNewMonthly}
                 </KV>
                 <KV label="Prioritet pri preporuci">
@@ -172,7 +175,7 @@ export function ScreenProfil() {
                 ))}
                 <div className="flex items-center justify-between gap-3 py-3">
                   <span className="text-coffee text-sm font-semibold">
-                    Online / uživo
+                    {t("onlineOrInPerson")}
                   </span>
                   <span className="text-ink-55 text-[13.5px] font-semibold">
                     {matchingPreferences.formatNote}

@@ -1,25 +1,34 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import Link from "next/link";
 
 import { ProgressBar } from "@/components/panel/progress-bar";
 import { localizedPath } from "@/lib/routes/localized-path";
 import { useUiLocale } from "@/i18n/use-ui-locale";
 
-import { priorityCards, todayAgenda, weekBars } from "../data";
+import { priorityCards, researchSurvey, todayAgenda, weekBars } from "../data";
 import { usePanelErrors } from "../panel-errors";
 import { isFreeSlot } from "../types";
 import { useWorkspace } from "../workspace-context";
 import { AgendaRow } from "./agenda-row";
 
-function greeting(): string {
+/**
+ * Local wall-clock greeting.
+ *
+ * Reads the browser's hour rather than the organization's timezone: the person
+ * looking at the screen is the one being greeted, and "Good evening" should
+ * match their evening even when the centre sits in another zone.
+ */
+function greeting(t: ReturnType<typeof useTranslations<"screens.overview">>) {
   const hour = new Date().getHours();
-  if (hour < 11) return "Dobro jutro";
-  if (hour < 18) return "Dobar dan";
-  return "Dobro veče";
+  if (hour < 11) return t("morning");
+  if (hour < 18) return t("afternoon");
+  return t("evening");
 }
 
 export function ScreenPregled() {
+  const t = useTranslations("screens.overview");
   const locale = useUiLocale();
   const { isAdmin, selectedTherapistSlug } = useWorkspace();
   const { errors, clearError } = usePanelErrors();
@@ -39,11 +48,9 @@ export function ScreenPregled() {
     <section className="animate-fade-up">
       <div className="mb-6">
         <h1 className="text-forest mb-1.5 font-serif text-[26px] leading-[1.1] font-normal md:text-[34px]">
-          {greeting()}.
+          {greeting(t)}.
         </h1>
-        <p className="text-ink-55 text-[14.5px]">
-          Evo šta danas traži vašu pažnju.
-        </p>
+        <p className="text-ink-55 text-[14.5px]">{t("lead")}</p>
       </div>
 
       {errors.length > 0 ? (
@@ -55,7 +62,7 @@ export function ScreenPregled() {
             id="panel-errors-heading"
             className="text-danger mb-3 text-[11px] font-semibold tracking-[0.14em] uppercase"
           >
-            Greške koje traže vašu pažnju ({errors.length})
+            {t("errors", { count: errors.length })}
           </h2>
           <ul className="flex flex-col gap-3">
             {errors.map((error) => (
@@ -88,7 +95,7 @@ export function ScreenPregled() {
                   <button
                     type="button"
                     onClick={() => clearError(error.id)}
-                    aria-label={`Ukloni grešku: ${error.title}`}
+                    aria-label={t("dismissError", { title: error.title })}
                     className="text-ink-55 hover:text-coffee shrink-0 cursor-pointer rounded-full border-0 bg-transparent px-2 py-1 text-lg leading-none transition-colors"
                   >
                     ×
@@ -139,7 +146,7 @@ export function ScreenPregled() {
         <div className="rounded-panel border-line bg-surface border px-6 pt-6 pb-3.5">
           <div className="mb-3.5 flex items-baseline justify-between gap-3">
             <h2 className="text-forest font-serif text-[22px] font-normal">
-              Današnji raspored
+              {t("todaySchedule")}
             </h2>
             <Link
               href={localizedPath("workspace.appointments.list", { locale })}
@@ -190,13 +197,16 @@ export function ScreenPregled() {
               className="bg-warm/16 border-warm/45 rounded-panel hover:bg-warm/28 block px-6 py-[22px] no-underline transition-colors"
             >
               <div className="text-ink-55 mb-2 text-[11px] font-semibold tracking-[0.14em] uppercase">
-                Istraživanja
+                {t("research")}
               </div>
               <div className="text-coffee mb-1 font-serif text-xl">
-                +18 novih odgovora ove nedelje
+                {t("newResponses", { count: 18 })}
               </div>
               <div className="text-ink-55 text-[13px]">
-                {`„Šta vas sprečava da zakažete prvi razgovor?“ · completion 72%`}
+                {t("surveyProgress", {
+                  survey: `„${researchSurvey.name}“`,
+                  rate: "72%",
+                })}
               </div>
             </Link>
           ) : null}

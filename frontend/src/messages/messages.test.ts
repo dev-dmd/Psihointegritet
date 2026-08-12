@@ -81,6 +81,9 @@ describe("catalogue parity", () => {
     "workspace.superadmin.nav.auditLog", // "Audit Log" — ditto
     "superadmin.comingSoon.auditLog.title", // the same feature name
     "content.counted", // pure ICU interpolation, no words of its own
+    // Two placeholders and the word "completion", which the Serbian panel copy
+    // already used untranslated before the extraction.
+    "screens.overview.surveyProgress",
   ]);
 
   it("does not leave Serbian values identical to English", () => {
