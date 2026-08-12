@@ -25,27 +25,43 @@ const ASSIGNMENTS = [
     email: "drazic.milan@gmail.com",
     publicMetadata: { superadmin: true },
   },
+  // ── Tim, po `backend/src/psihointegritet/modules/identity/roster.py` ──
+  //
+  // Ovaj spisak je DRUGA kopija roster-a: backend čita svoj Python roster za
+  // membership redove u bazi, ovaj skript upisuje role u Clerk publicMetadata,
+  // a frontend čita isključivo Clerk (D-026, privremeni izvor). Kad se spiskovi
+  // raziđu, backend vidi osobu kao org_admin, a panel je vidi kao klijenta.
+  //
+  // Baš to se i dogodilo: roster.py je 2026-08-09 zamenio tim (Maria → Anja,
+  // Elsa → Marija, John → Marjan), a ovaj fajl je ostao na starom timu — pa
+  // trojici stvarnih ljudi nikada nije upisana nijedna rola.
+  //
+  // Sva trojica drže i `org_admin` i `therapist` (roster.py `BOTH_ROLES`).
   {
-    email: "maria.bullock@psihointegritet.com",
+    email: "anja.stamenkovic@psihointegritet.com",
     publicMetadata: {
       roles: ["org_admin", "therapist"],
       org: "psihointegritet",
     },
   },
   {
-    email: "elsa.browers@psihointegritet.com",
+    email: "marija.stamenkovic@psihointegritet.com",
     publicMetadata: {
-      roles: ["therapist"],
+      roles: ["org_admin", "therapist"],
       org: "psihointegritet",
     },
   },
   {
-    email: "john.francis@psihointegritet.com",
+    email: "marjan.jankovic@psihointegritet.com",
     publicMetadata: {
-      roles: ["therapist"],
+      roles: ["org_admin", "therapist"],
       org: "psihointegritet",
     },
   },
+  // Odlazeći tim (maria.bullock, elsa.browers, john.francis) namerno više nije
+  // ovde. Skript samo DODELJUJE role i nikada ih ne oduzima — ako ti nalozi i
+  // dalje postoje u nekoj instanci, oduzimanje je zaseban svestan potez
+  // (PATCH `{ roles: [] }` ili Clerk Dashboard), ne posledica ove izmene.
 ];
 
 const API = "https://api.clerk.com/v1";
