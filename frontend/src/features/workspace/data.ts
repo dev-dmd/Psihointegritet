@@ -1,19 +1,22 @@
+import { pickContent } from "@/content/locale";
 import { therapists } from "@/content/therapists";
+
+import * as en from "@/content/en/workspace-demo";
+import * as srLatn from "@/content/sr-Latn/workspace-demo";
+
+import { ELSA, JOHN, MARIA } from "./demo-slugs";
 import { emptyRichDoc } from "@/lib/content-governance/rich-doc";
 
 import type { LegalDocument } from "./legal-documents";
 import type {
-  AgendaEntry,
   AppointmentRequest,
   AvailabilityLayer,
   Client,
   Company,
-  PriorityCard,
   ServiceRow,
   TherapistCard,
   UnassignedRequest,
   WaitlistEntry,
-  WeekBar,
 } from "./types";
 
 /**
@@ -22,106 +25,6 @@ import type {
  * 4.000/5.500/5.000) and therapist info comes from `content/therapists.ts`,
  * not the prototype's outdated copy. Everything is mock — no persistence.
  */
-
-const MARIA = "maria-bullock";
-const ELSA = "elsa-browers";
-const JOHN = "john-francis";
-
-export const priorityCards: PriorityCard[] = [
-  {
-    count: "3",
-    title: "Zahteva čeka potvrdu",
-    description: "Najstariji je poslat pre 4 sata.",
-    cta: "Pregledaj zahteve",
-    routeId: "workspace.appointments.list",
-    dot: "warm",
-  },
-  {
-    count: "2",
-    title: "Nedodeljena klijenta",
-    description: "Intake bez automatske preporuke.",
-    cta: "Otvori listu",
-    routeId: "workspace.clients.list",
-    dot: "warm",
-  },
-  {
-    count: "1",
-    title: "Novi upit kompanije",
-    description: "Hotel Ambasador — stigao juče.",
-    cta: "Otvori kompanije",
-    routeId: "workspace.companies.list",
-    dot: "meadow",
-    adminOnly: true,
-  },
-  {
-    count: "1",
-    title: "Otkazan termin",
-    description: "Jelena I. — sreda u 10:00.",
-    cta: "Vidi termine",
-    routeId: "workspace.appointments.list",
-    dot: "danger",
-  },
-];
-
-export const todayAgenda: AgendaEntry[] = [
-  {
-    time: "09:00",
-    end: "10:00",
-    client: "Ana Marković",
-    initials: "AM",
-    service: "Individualna psihoterapija",
-    format: "Online",
-    therapist: "Maria B.",
-    therapistSlug: MARIA,
-    source: "Javni booking",
-    status: "potvrdjen",
-  },
-  { time: "11:00", free: true },
-  {
-    time: "13:30",
-    end: "14:30",
-    client: "Marko Petrović",
-    initials: "MP",
-    service: "Individualna psihoterapija",
-    format: "Uživo · Chicago",
-    therapist: "Maria B.",
-    therapistSlug: MARIA,
-    source: "Javni booking",
-    status: "ceka",
-  },
-  {
-    time: "16:00",
-    end: "17:00",
-    client: "Rezervisan kapacitet",
-    initials: "TN",
-    service: "Kompanijski program — TechCore",
-    format: "Online",
-    therapist: "John F.",
-    therapistSlug: JOHN,
-    source: "Kompanijski program",
-    status: "rezervisano",
-  },
-  {
-    time: "17:30",
-    end: "18:30",
-    client: "Jelena Ilić",
-    initials: "JI",
-    service: "Bračno savetovanje",
-    format: "Online",
-    therapist: "John F.",
-    therapistSlug: JOHN,
-    source: "Vođeni izbor",
-    status: "potvrdjen",
-  },
-];
-
-export const weekBars: WeekBar[] = [
-  { day: "Pon", booked: 3, total: 6 },
-  { day: "Uto", booked: 4, total: 6 },
-  { day: "Sre", booked: 2, total: 6 },
-  { day: "Čet", booked: 5, total: 6 },
-  { day: "Pet", booked: 2, total: 6 },
-];
 
 export const appointmentRequests: AppointmentRequest[] = [
   {
@@ -398,42 +301,6 @@ export const serviceCatalog: ServiceRow[] = [
   },
 ];
 
-export const researchStats: { label: string; value: string }[] = [
-  { label: "Otvoreni draweri", value: "412" },
-  { label: "Započeti odgovori", value: "168" },
-  { label: "Završeni odgovori", value: "121" },
-  { label: "Completion rate", value: "72%" },
-];
-
-export const researchSurvey = {
-  name: "Šta vas sprečava da zakažete prvi razgovor?",
-  period: "1 — 19. jul 2026.",
-  responses: 121,
-  questions: [
-    {
-      q: "1 · Najveća prepreka za dolazak",
-      bars: [
-        { label: "Nesigurnost šta da očekujem", pct: 34 },
-        { label: "Cena", pct: 28 },
-        { label: "Nedostatak vremena", pct: 22 },
-        { label: "Neprijatnost / stigma", pct: 16 },
-      ],
-    },
-    {
-      q: "2 · Preferirani format rada",
-      bars: [
-        { label: "Online", pct: 58 },
-        { label: "Uživo", pct: 30 },
-        { label: "Svejedno mi je", pct: 12 },
-      ],
-    },
-  ],
-  open: [
-    'Nisam sigurna da li je moj problem „dovoljno ozbiljan" za terapiju.',
-    "Voleo bih kratak besplatan poziv pre prve seanse.",
-  ],
-};
-
 /** Therapist cards — real people from content/therapists.ts + demo load figures. */
 const LOAD: Record<
   string,
@@ -533,3 +400,19 @@ export const seedLegalDocuments: LegalDocument[] = [
     updatedAt: "2026-07-26T09:00:00.000Z",
   },
 ];
+
+/**
+ * The copy-bearing demo rows, in the deployment's content locale.
+ *
+ * Everything above this line is structure — slugs, ids and figures derived from
+ * `content/therapists.ts`. Everything below is text someone reads, so it lives
+ * in `content/<locale>/workspace-demo.ts` next to the other fallbacks. Callers
+ * keep importing `../data` and never learn there are two.
+ */
+const demo = pickContent({ en, "sr-Latn": srLatn });
+
+export const priorityCards = demo.priorityCards;
+export const todayAgenda = demo.todayAgenda;
+export const weekBars = demo.weekBars;
+export const researchStats = demo.researchStats;
+export const researchSurvey = demo.researchSurvey;
