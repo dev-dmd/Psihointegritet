@@ -25,14 +25,26 @@ export type ProxyRouteDecision =
   | { kind: "redirect"; target: string };
 
 /**
- * Locale for the proxy, read without any request-scoped input.
+ * The spelling the proxy reaches for when it has to *build* a path itself.
  *
- * Cannot import `lib/tenant/org-context.ts` — that module is `server-only` and
- * the proxy runs on the edge. It reads the same env var and the same table, and
- * `proxy-locale.test.ts` asserts the two agree, so there is one answer rather
- * than two implementations that drift.
+ * Read from the static registry, with no request-scoped input: this module
+ * cannot import `lib/tenant/org-context.ts` (`server-only`, and the proxy runs
+ * on the edge), so it cannot see the live `ui_locale` an administrator set
+ * through the panel.
+ *
+ * That limit is why this is no longer an authority over anyone's URL. It was:
+ * the proxy used to 308 any path whose locale disagreed with this value, and
+ * on a deployment whose organization had been switched to English in the panel
+ * it sent every English path straight back to Serbian — the registry saying
+ * `sr-Latn` at build time, the database saying `en` since. The proxy ran first,
+ * so the registry won, and no amount of translating the screens could show
+ * through. Now it only names the alias-redirect target, where either spelling
+ * resolves anyway.
+ *
+ * It reports `ui_locale` rather than `default_content_locale` because the paths
+ * it builds are workspace paths, and D-077 gives those to `ui_locale`.
  */
-export function proxyUiLocale(orgSlug: string | undefined): UiLocale {
+export function proxyFallbackLocale(orgSlug: string | undefined): UiLocale {
   const settings = orgSlug
     ? findOrganizationLocaleSettings(orgSlug)
     : undefined;
@@ -40,8 +52,7 @@ export function proxyUiLocale(orgSlug: string | undefined): UiLocale {
   // and throwing here answers every request with a blank 500 including the
   // sign-in page. `org-context.ts` still throws during render, so a bad slug is
   // loud — just not in a way that takes the whole site down first.
-  return (settings ?? FALLBACK_ORGANIZATION_LOCALE_SETTINGS)
-    .defaultContentLocale;
+  return (settings ?? FALLBACK_ORGANIZATION_LOCALE_SETTINGS).uiLocale;
 }
 
 /** Paths the proxy never touches: API, Next internals, auth and callbacks. */
@@ -62,29 +73,37 @@ function aliasTarget(pathname: string): PlatformRouteId | undefined {
 /**
  * Decide what to do with an incoming external path.
  *
- * Order matters and is the loop-safety argument:
- *
  * 1. exempt paths pass untouched — API routes are never localized;
  * 2. a retired alias redirects to its route's canonical path;
- * 3. a path whose locale disagrees with the organization's gets a **308** to
- *    the equivalent path, dynamic params and query preserved;
- * 4. a canonical non-English path is **rewritten** onto the physical English
- *    route — the browser keeps the Serbian URL, Next renders one page;
- * 5. anything unregistered passes through.
+ * 3. any registered path — in **either** locale's spelling — is rewritten onto
+ *    the physical English route; the browser keeps the URL it asked for and
+ *    Next renders one page;
+ * 4. anything unregistered passes through.
  *
- * Step 3 cannot fire twice: it only runs when `pathLocale !== uiLocale`, and the
- * path it redirects to is built by `localizedPath` for `uiLocale`, so the next
- * request matches. That holds only if
- * `matchPlatformPath(localizedPath(id, p, L))` round-trips exactly, which is
- * the property test in `platform-routes.test.ts`.
+ * # Why there is no locale redirect here (D-077 Amendment 3)
  *
- * Step 4 cannot re-enter: Next runs the proxy once per incoming request, and a
+ * There was one: a path whose locale disagreed with the organization's got a
+ * 308 to the equivalent. It could not be made correct. The only locale this
+ * module can see is the build-time registry, and the live one lives in the
+ * database, where an administrator changes it from the settings screen. Once
+ * those two disagree the proxy rewrote every link the application had just
+ * rendered — an English workspace whose every URL bounced back to Serbian.
+ *
+ * Accepting both spellings costs nothing that was actually being bought. The
+ * canonical-URL argument for a 308 is an SEO argument, and these are routes
+ * behind authentication that carry `noindex`; the URL a user sees is now simply
+ * the link they clicked, and a bookmark in the other spelling still resolves,
+ * silently, instead of jumping. Public marketing routes are not localized at
+ * all yet — when they are, canonicalization is theirs to solve, in the layer
+ * that can read the live value.
+ *
+ * Step 3 cannot re-enter: Next runs the proxy once per incoming request, and a
  * rewrite to an internal path does not re-dispatch it.
  */
 export function decideProxyRoute(
   pathname: string,
   search: string,
-  uiLocale: UiLocale,
+  fallbackLocale: UiLocale,
 ): ProxyRouteDecision {
   const normalized = normalizePathname(pathname);
   if (isExempt(normalized)) return { kind: "pass" };
@@ -93,39 +112,12 @@ export function decideProxyRoute(
   if (alias !== undefined) {
     return {
       kind: "redirect",
-      target: localizedPath(alias, { locale: uiLocale }) + search,
+      target: localizedPath(alias, { locale: fallbackLocale }) + search,
     };
   }
 
   const match = matchPlatformPath(normalized);
   if (match === null) return { kind: "pass" };
-
-  if (match.pathLocale !== uiLocale) {
-    // `as never` only because the params bag is dynamic here; the route's own
-    // param names came out of `matchPlatformPath`, so they are exactly the ones
-    // `localizedPath` requires.
-    const target = localizedPath(match.routeId, {
-      locale: uiLocale,
-      params: match.params,
-    } as never);
-
-    // Never redirect to the path we are already on.
-    //
-    // This is not defensive padding — it closes a real infinite loop found by
-    // the round-trip property test. A locale-neutral route (`/superadmin`) has
-    // the same path in every locale, so `matchPlatformPath` reports whichever
-    // locale it compiled first. On a Serbian organization that is `en`, the
-    // locale check above fires, and the redirect target is byte-identical to
-    // the request: every superadmin page would have bounced until the browser
-    // gave up.
-    //
-    // Comparing the computed target is stronger than special-casing
-    // `localeNeutral`, because it also holds for any future route whose two
-    // locale paths happen to coincide.
-    if (normalizePathname(target) !== normalized) {
-      return { kind: "redirect", target: target + search };
-    }
-  }
 
   // Rewrite whenever the external path differs from the physical one — not
   // "whenever the locale is not English". The workspace moved to English

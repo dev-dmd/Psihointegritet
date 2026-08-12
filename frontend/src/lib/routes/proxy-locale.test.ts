@@ -4,19 +4,19 @@ import { SUPPORTED_UI_LOCALES, type UiLocale } from "@/i18n/locales";
 
 import { localizedPath } from "./localized-path";
 import { platformRouteIds, routeDefinition } from "./platform-routes";
-import { decideProxyRoute, proxyUiLocale } from "./proxy-locale";
+import { decideProxyRoute, proxyFallbackLocale } from "./proxy-locale";
 
-describe("proxyUiLocale", () => {
+describe("proxyFallbackLocale", () => {
   it("resolves the live tenant to Serbian", () => {
-    expect(proxyUiLocale("psihointegritet")).toBe("sr-Latn");
+    expect(proxyFallbackLocale("psihointegritet")).toBe("sr-Latn");
   });
 
   it("falls back instead of throwing on an unknown or missing slug", () => {
     // Unlike `org-context.ts`, which throws. The proxy runs before any error
     // boundary: throwing here answers every request with a blank 500, including
     // the sign-in page someone would use to go fix the configuration.
-    expect(proxyUiLocale(undefined)).toBe("en");
-    expect(proxyUiLocale("nepostojeca")).toBe("en");
+    expect(proxyFallbackLocale(undefined)).toBe("en");
+    expect(proxyFallbackLocale("nepostojeca")).toBe("en");
   });
 });
 
@@ -90,24 +90,30 @@ describe("decideProxyRoute", () => {
     });
   });
 
-  it("308s an English path on a Serbian organization", () => {
+  /**
+   * D-077 Amendment 3. These three used to assert a 308, and the assertions
+   * were the bug: the only locale this module can see is the build-time
+   * registry, so on an organization switched to English through the panel the
+   * proxy redirected every English URL the application produced back to
+   * Serbian. Both spellings are now accepted and rewritten.
+   */
+  it("serves an English path on a Serbian organization", () => {
     expect(decideProxyRoute("/workspace/settings", "", SR)).toEqual({
-      kind: "redirect",
-      target: "/radni-prostor/podesavanja",
+      kind: "pass",
     });
   });
 
-  it("308s a Serbian path on an English organization", () => {
+  it("serves a Serbian path on an English organization", () => {
     expect(decideProxyRoute("/radni-prostor/klijenti", "", "en")).toEqual({
-      kind: "redirect",
-      target: "/workspace/clients",
+      kind: "rewrite",
+      internal: "/workspace/clients",
     });
   });
 
-  it("preserves params and query across the canonical redirect", () => {
+  it("preserves query when rewriting either spelling", () => {
     expect(
       decideProxyRoute("/radni-prostor/usluge", "?tab=pricing", "en"),
-    ).toEqual({ kind: "redirect", target: "/workspace/services?tab=pricing" });
+    ).toEqual({ kind: "rewrite", internal: "/workspace/services?tab=pricing" });
   });
 
   it("redirects the retired /dostupnost alias to the canonical schedule path", () => {

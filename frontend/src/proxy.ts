@@ -2,7 +2,10 @@ import { clerkMiddleware } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 
 import { PROTECTED_ROUTE_PREFIXES, SIGN_IN_URL } from "@/lib/auth/routes";
-import { decideProxyRoute, proxyUiLocale } from "@/lib/routes/proxy-locale";
+import {
+  decideProxyRoute,
+  proxyFallbackLocale,
+} from "@/lib/routes/proxy-locale";
 
 /**
  * Next.js 16 renamed the `middleware` convention to `proxy`; Clerk v7 supports
@@ -38,8 +41,11 @@ export default clerkMiddleware(async (auth, request) => {
   const externalPath = request.nextUrl.pathname;
   const search = request.nextUrl.search;
 
-  const uiLocale = proxyUiLocale(process.env.DEFAULT_ORGANIZATION_SLUG);
-  const decision = decideProxyRoute(externalPath, search, uiLocale);
+  const decision = decideProxyRoute(
+    externalPath,
+    search,
+    proxyFallbackLocale(process.env.DEFAULT_ORGANIZATION_SLUG),
+  );
 
   if (decision.kind === "redirect") {
     const response = NextResponse.redirect(

@@ -150,6 +150,37 @@ stranica i inače bi padao kad god API nije gore — što se već desilo jednom,
 `<html lang>` i svaki href iz `localizedPath` — pa ažuriranje samo query keša ostavlja sve
 to renderovano na starom jeziku dok korisnik ručno ne osveži.
 
+## 6.2 Zašto proxy ne preusmerava na locale (Amandman 3, 2026-08-12)
+
+Lanac iz §6.1 ima jednog učesnika koji u njemu **ne može da učestvuje**: `proxy.ts`.
+
+Radi na edge-u, ne sme da uvozi `server-only` (`org-context.ts`), i ne sme da gađa backend
+pre svake stranice. Vidi, dakle, isključivo **statički registar zapečen u build**. Živa
+vrednost je u bazi — tamo je ostavlja org_admin sa ekrana podešavanja.
+
+Dok se to dvoje slaže, ništa se ne primećuje. Kad se raziđe, proxy 308-uje **svaki link koji
+je aplikacija upravo iscrtala**. Izmereno na QA-u, sa organizacijom prebačenom na `en`:
+
+```
+GET /workspace/settings   → 308 → /radni-prostor/podesavanja   (proxy: registar, sr-Latn)
+GET /                     → <html lang="en">                    (render: baza, en)
+```
+
+Ista instalacija, dva odgovora. Prevođenje ekrana to nije moglo da nadjača — proxy radi prvi.
+
+**Rešenje je da proxy prestane da bude autoritet nad URL-om.** Prihvata oba pisanja
+registrovane rute i rewrite-uje ih na kanonsku internu putanju. Jezik URL-a više ne odlučuje
+proxy nego linkovi koje aplikacija gradi iz žive vrednosti — a to je jedini sloj koji je i
+vidi.
+
+Cena je kanonizacija, koja je SEO argument, a ove rute su iza logina i nose `noindex`. Javne
+marketing rute se još ne lokalizuju; kad se budu, kanonizacija je njihov posao — u sloju koji
+ume da pročita živu vrednost, ne u ovom.
+
+**Šire pravilo, vredno pamćenja:** kad dva sloja čitaju istu vrednost iz dva izvora — jedan
+iz build-a, drugi iz baze — nije pitanje **da li** će se razići, nego kada. Sloj koji vidi
+manje ne sme da nadjačava sloj koji vidi više.
+
 ## 7. Posledice
 
 - `next-intl` se koristi **samo kao sloj za poruke i formate**; njegov routing sloj traži
