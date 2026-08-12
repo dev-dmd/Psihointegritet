@@ -5,35 +5,6 @@
 
 ---
 
-### Otvoreno posle 2026-08-12
-
-**Javni sajt i dalje čita locale sadržaja iz build-a.** `content/locale.ts` razrešava
-`deploymentContentLocale()` iz **statičkog registra**. Radni prostor je popravljen (živi
-`ui_locale`, `no-store`), javna površina nije.
-
-Put je poznat i **ne traži odustajanje od SSG-a** — `await` je problem samo u sadašnjim
-modulskim konstantama, ne u Server Komponenti:
-
-```tsx
-const locale = await resolvePublicLocale();
-const content = await getHomepageContent(locale);
-return <Homepage content={content} />;
-```
-
-Dok resolver ne dira `headers()`/`cookies()` i čita kroz tagovani keš, stranice ostaju
-SSG/ISR. Posao je zameniti **51 modulsku konstantu** server content provider-ima, postepeno.
-
-**Redosled (CTO, 2026-08-12):** 1. workspace live switching ✅ · 2. `default_content_locale`
-zaključan kao release-gated ✅ (D-077 Amandman 4) · 3. postepena zamena 51 konstante ·
-4. javni locale se aktivira tek kad ceo sadržaj tog jezika prođe Content Health.
-
-**Za QA odmah:** `ui_locale = en`, `default_content_locale = sr-Latn` — panel se proverava na
-engleskom dok javni sajt ostaje srpski. Ekran više ne nudi drugu vrednost, pa je postavlja
-operator (superadmin `PATCH /organizations/me/locales` sa `organization_id`).
-
-**Nije izgrađeno uz Amandman 4:** status kartice („Aktivan" / „Promena u pripremi" /
-„Nedostaje sadržaj"), dugme „Pripremi promenu jezika sadržaja", checklist gate-ova.
-
 ## 0. Kako se koristi ovaj dokument
 
 - **Ovde se prati samo status.** Obim se menja u četiri obavezujuća dokumenta — nikada ovde.
@@ -889,8 +860,36 @@ Provereno u kodu 2026-08-09.
 
 ## §5H-i18n · Višejezičnost i registar ruta (D-077, ADR-026)
 
-**Plan:** `documentations/I18N_MULTITENANT_PLAN_v1_0.md` · **Zaključano:** C2(a) — jedan
-deployment = jedna organizacija · **Ne dira:** ADR-023 granicu izolacije
+**Plan (temelj):** `documentations/I18N_MULTITENANT_PLAN_v1_0.md` · **Zaključano:** C2(a) —
+jedan deployment = jedna organizacija · **Ne dira:** ADR-023 granicu izolacije
+
+**Plan (dovršetak, 2026-08-12):** **`documentations/I18N_COMPLETION_PLAN_v1_0.md`** —
+osam faza do kraja, sa izmerenim obimom i odlukama vlasnika. Stanje se čita odatle i iz
+tabele faza ispod.
+
+### Izmereni obim — ratchet je merio manje nego što je izgledalo
+
+| Sloj | Niski | Napomena |
+|---|---|---|
+| `.tsx` (u ratchet-u) | **1243** | 165 unosa, bez drift-a |
+| `.ts` (**nije skeniran**) | **933** | `features/compass/fallback-registry.ts` sam nosi 142 |
+| backend (**nije skeniran**) | **254** | 33 fajla, bez ijednog alata |
+
+Ranija brojka „856 niski" je bila druga metrika i **nije obuhvatala `.ts` ni backend**.
+Ispravka anchor-a ide uz Fazu A.
+
+### Faze dovršetka
+
+| Faza | Šta | Obim | Status |
+|---|---|---|---|
+| **A** | Selektor progleda: `registry.ts` + `getFallbackContent`/`useFallbackContent`; `ui_locale` jedini locale renderovanja; ratchet dobija `.ts` | ~20 fajlova | ⚪ |
+| **B** | Preostalih 5 sadržajnih modula (`company`, `programs`, `homepage-offers`, `site-navigation`, `site-settings`) | ~144 | ⚪ |
+| **C** | Ostatak `features/workspace/data.ts` | ~145 | ⚪ |
+| **D** | Ekrani panela (`PageHeader`, tabovi, prazna stanja, 17 toast-ova) | 637 | ⚪ |
+| **E** | Javne stranice + 11 `metadata` export-a sa srpskim | 259 | ⚪ |
+| **F** | Kompas (`compass`, `kompas-sadrzaj`, `screen-kompas`, `guidance`) | 796 | ⚪ |
+| **G** | Booking i widget | ~170 | ⚪ |
+| **H** | Backend: greške → kôd, email i dijagnostika → backend katalog | 254 | ⚪ |
 
 ### Isporučeno 2026-08-11 / 08-12
 
@@ -909,6 +908,18 @@ deployment = jedna organizacija · **Ne dira:** ADR-023 granicu izolacije
 | **Prekidač deluje** | javni `GET /public/organizations/{slug}/locales` + tagovano data-cache čitanje uz fallback na registar + `revalidateTag` na izmenu. **Dokazano:** isti env, promenjena samo baza → `lang` prati | ✅ |
 | **Identitet nosi ime** | `Identity.displayName` iz Clerk-a kroz provider-neutralni ugovor; sidebar prikazuje osobu i njene inicijale umesto zakucanog „Član tima" | ✅ |
 | **I18N-7 ostatak** | `SYSTEM_CATALOG_LOCALE` refaktor, kodovi grešaka za 4 modula, email copy, lična preferenca superadmina | ⚪ |
+
+### Otvoreno, i zašto
+
+**Javni sajt čita locale sadržaja iz build-a.** `content/locale.ts` razrešava
+`deploymentContentLocale()` iz **statičkog registra**, pa `<html lang="en">` stoji iznad
+srpskog fallback teksta. Radni prostor je popravljen (živi `ui_locale`, `no-store`),
+javna površina nije. **Rešava Faza A** — `await` je problem samo u sadašnjim modulskim
+konstantama, ne u Server Komponenti, pa se SSG ne gubi.
+
+**Za QA:** `ui_locale = en`, `default_content_locale = sr-Latn` postavlja operator kroz
+`PATCH /organizations/me/locales` sa eksplicitnim `organization_id` — ekran to više ne
+nudi, po D-077 Amandmanu 4.
 
 ### Naučeno u isporuci (vredi zadržati)
 
