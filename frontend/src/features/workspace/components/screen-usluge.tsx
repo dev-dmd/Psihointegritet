@@ -1,3 +1,5 @@
+"use client";
+
 import { StatusBadge } from "@/components/panel/status-badge";
 import { Chip } from "@/components/ui/chip";
 

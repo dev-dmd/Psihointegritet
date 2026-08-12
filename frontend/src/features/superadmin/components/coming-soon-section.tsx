@@ -1,3 +1,5 @@
+"use client";
+
 import { EmptyDashedCard } from "@/components/panel/empty-dashed-card";
 import { useTranslations } from "next-intl";
 

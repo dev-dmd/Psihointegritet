@@ -135,6 +135,52 @@ describe("panel locale", () => {
   );
 });
 
+describe("panel translations run on the client", () => {
+  /**
+   * Runtime crash on `/workspace/services`:
+   *
+   *   Attempted to call useStatusLabel() from the server but useStatusLabel is
+   *   on the client.
+   *
+   * `screen-usluge.tsx` was a Server Component, and a status label was added to
+   * it. Nothing caught it: the build only prerenders public pages, and every
+   * workspace route is dynamic, so the file was never rendered until someone
+   * opened the screen.
+   *
+   * Adding `"use client"` is the fix, and it is also the *correct* one rather
+   * than the convenient one. A Server Component here would read its messages
+   * from `i18n/request.ts`, which resolves the **public** content locale — so
+   * it would have rendered the panel's statuses in the public site's language
+   * even after the layouts were corrected. The panel's locale lives in the
+   * client provider.
+   */
+  const HOOKS = /use(?:Translations|Formatter|StatusLabel|UiLocale)\(/;
+
+  it.each(SUBTREES)(
+    "$layout has no server component reading messages",
+    ({ roots }) => {
+      const offenders = roots
+        .flatMap((root) => walk(join(SRC, root)))
+        .filter((file) => {
+          const source = readFileSync(file, "utf8");
+          // Comments stripped first: `data.ts` and `types.ts` name
+          // `useStatusLabel()` in prose that explains where the words went, and
+          // a sentence is not a call.
+          const code = source.replace(/\/\*[\s\S]*?\*\/|\/\/.*$/gm, "");
+          return (
+            HOOKS.test(code) && !source.trimStart().startsWith('"use client"')
+          );
+        })
+        .map((file) => file.slice(SRC.length + 1));
+
+      expect(
+        [...new Set(offenders)].sort(),
+        "these read panel messages but render on the server, where the locale is the public one",
+      ).toEqual([]);
+    },
+  );
+});
+
 describe("intl provider coverage", () => {
   it.each(SUBTREES)(
     "$layout provides every namespace its subtree uses",
