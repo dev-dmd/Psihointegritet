@@ -1,5 +1,5 @@
-import { pickContent } from "@/content/locale";
 import { therapists } from "@/content/therapists";
+import type { UiLocale } from "@/i18n/locales";
 
 import * as en from "@/content/en/workspace-demo";
 import * as srLatn from "@/content/sr-Latn/workspace-demo";
@@ -402,17 +402,37 @@ export const seedLegalDocuments: LegalDocument[] = [
 ];
 
 /**
- * The copy-bearing demo rows, in the deployment's content locale.
+ * The copy-bearing demo rows, chosen at render time.
  *
  * Everything above this line is structure — slugs, ids and figures derived from
- * `content/therapists.ts`. Everything below is text someone reads, so it lives
- * in `content/<locale>/workspace-demo.ts` next to the other fallbacks. Callers
- * keep importing `../data` and never learn there are two.
+ * `content/therapists.ts`. Everything below is text someone reads.
+ *
+ * # Why this is a function and not a module constant
+ *
+ * The other content fallbacks resolve once, at module scope, through
+ * `pickContent`. That reads the **static registry**, which is baked into the
+ * build — and the panel writes the organization's locale to the **database**.
+ * The two agree until an administrator uses the language switch, and then the
+ * Control Center rendered English chrome around Serbian cards: "Good morning"
+ * above "Zahteva čeka potvrdu".
+ *
+ * The workspace is request-time rendered, so it does not need the build-time
+ * answer. Taking the locale as an argument lets each screen pass the live one
+ * it already holds — `useUiLocale()` — and the demo data follows the switch
+ * immediately, without a redeploy.
+ *
+ * The public site cannot do this yet: its content is read by 51 module-scope
+ * constants and it is statically rendered, so its fallback locale is still
+ * whatever the registry said at build time. That is recorded as an open item,
+ * not fixed here.
  */
-const demo = pickContent({ en, "sr-Latn": srLatn });
-
-export const priorityCards = demo.priorityCards;
-export const todayAgenda = demo.todayAgenda;
-export const weekBars = demo.weekBars;
-export const researchStats = demo.researchStats;
-export const researchSurvey = demo.researchSurvey;
+export function workspaceDemo(locale: UiLocale) {
+  const demo = locale === "en" ? en : srLatn;
+  return {
+    priorityCards: demo.priorityCards,
+    todayAgenda: demo.todayAgenda,
+    weekBars: demo.weekBars,
+    researchStats: demo.researchStats,
+    researchSurvey: demo.researchSurvey,
+  };
+}

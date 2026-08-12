@@ -17,10 +17,12 @@ import {
 } from "../hooks/use-intake-team-queue";
 import type { IntakeTeamQueueItem } from "../intake-team-queue-api";
 import { STATUS_META } from "../types";
+import { useStatusLabel } from "../use-status-label";
 import { useWorkspace } from "../workspace-context";
 import { PageHeader } from "./page-header";
 
 export function ScreenKlijenti() {
+  const statusLabel = useStatusLabel();
   const [tab, setTab] = useState("svi");
   const { isTherapist, selectedTherapistSlug } = useWorkspace();
   const teamQueueEnabled = intakeFeatureFlags.teamQueueEnabled;
@@ -79,7 +81,9 @@ export function ScreenKlijenti() {
                       </div>
                     </div>
                   </div>
-                  <StatusBadge tone={meta.tone}>{meta.label}</StatusBadge>
+                  <StatusBadge tone={meta.tone}>
+                    {statusLabel(client.status)}
+                  </StatusBadge>
                 </div>
                 <div className="border-line text-ink-55 mt-3.5 flex flex-wrap gap-x-4 gap-y-1 border-t pt-3 text-[12.5px]">
                   <span>Sledeći: {client.next}</span>

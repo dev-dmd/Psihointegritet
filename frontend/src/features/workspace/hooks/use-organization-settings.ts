@@ -1,9 +1,11 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 
 import type { UiLocale } from "@/i18n/locales";
+import { localizedPath } from "@/lib/routes/localized-path";
+import { matchPlatformPath } from "@/lib/routes/match";
 
 import {
   fetchOrganizationSettings,
@@ -38,6 +40,7 @@ export function useOrganizationLocalesMutation(callbacks: {
 }) {
   const queryClient = useQueryClient();
   const router = useRouter();
+  const pathname = usePathname();
 
   return useMutation({
     mutationFn: (input: {
@@ -51,6 +54,21 @@ export function useOrganizationLocalesMutation(callbacks: {
       // cache alone leaves all of that rendered in the previous language until
       // the user reloads by hand, which is exactly what it did.
       router.refresh();
+      // …and the address bar, which `refresh()` does not touch.
+      //
+      // Since D-077 Amendment 3 the proxy accepts both spellings instead of
+      // redirecting, so nothing moves the URL on its own any more: the settings
+      // screen would go on reading /workspace/settings after a switch to
+      // Serbian, until the next link click or sign-in happened to rebuild it.
+      // Rewriting it here is the same route, said in the new language.
+      const here = matchPlatformPath(pathname);
+      if (here !== null) {
+        const target = localizedPath(here.routeId, {
+          locale: settings.uiLocale,
+          params: here.params,
+        } as never);
+        if (target !== pathname) router.replace(target);
+      }
       callbacks.onSaved(settings);
     },
     onError: callbacks.onFailed,

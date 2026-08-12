@@ -1,12 +1,19 @@
+"use client";
+
 import { ProgressBar } from "@/components/panel/progress-bar";
 import { StatusBadge } from "@/components/panel/status-badge";
 
 import { companies, companyPipeline } from "../data";
 import { STATUS_META } from "../types";
+import { useTranslations } from "next-intl";
+
+import { useStatusLabel } from "../use-status-label";
 import { PageHeader } from "./page-header";
 
 /** Kompanije — B2B pipeline + fund cards (admin only). */
 export function ScreenKompanije() {
+  const statusLabel = useStatusLabel();
+  const t = useTranslations("screens.companies");
   return (
     <section className="animate-fade-up">
       <PageHeader
@@ -44,7 +51,9 @@ export function ScreenKompanije() {
                     {company.contact}
                   </div>
                 </div>
-                <StatusBadge tone={meta.tone}>{meta.label}</StatusBadge>
+                <StatusBadge tone={meta.tone}>
+                  {statusLabel(company.status)}
+                </StatusBadge>
               </div>
               <p className="text-ink-55 mt-3 text-[13px] leading-[1.5]">
                 {company.goal}
@@ -68,7 +77,9 @@ export function ScreenKompanije() {
                   </div>
                 ) : (
                   <div className="text-ink-45 mt-2 text-[12px] italic">
-                    Bez aktivnog fonda — u fazi {meta.label.toLowerCase()}.
+                    {t("noActiveFund", {
+                      phase: statusLabel(company.status).toLowerCase(),
+                    })}
                   </div>
                 )}
               </div>

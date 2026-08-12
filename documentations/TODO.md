@@ -5,6 +5,18 @@
 
 ---
 
+### Otvoreno posle 2026-08-12
+
+**Javni sajt i dalje čita locale sadržaja iz build-a.** `content/locale.ts` razrešava
+`deploymentContentLocale()` iz **statičkog registra**, a org_admin upisuje u bazu — pa
+`qa.psihointegritet.com` servira `<html lang="en">` iznad srpskog fallback teksta
+(„Već ste klijent"). Radni prostor je popravljen (`workspaceDemo(locale)` bira po živoj
+vrednosti), javna površina nije: njen sadržaj čita **51 modulska konstanta**, a stranice su
+statične, pa se ne može samo dodati `await`. Dve opcije, obe traže svoju rundu: prebaciti
+javne stranice na razrešavanje sadržaja u server komponenti (veliki refaktor, čuva SSG uz
+`revalidateTag`), ili proglasiti `default_content_locale` deploy-time vrednošću i skloniti ga
+iz panela (što je ono što D-077 Amandman 1 već piše, a Amandman 2 protivreči).
+
 ## 0. Kako se koristi ovaj dokument
 
 - **Ovde se prati samo status.** Obim se menja u četiri obavezujuća dokumenta — nikada ovde.
@@ -624,7 +636,7 @@ Dokazuje `SlotSpec` registar koji pravni tok ne dokazuje (`legal_page` ima samo 
 | 1   | `SYSTEM_CONTENT_LOCALE = "sr-Latn"` je modulska konstanta i **diže grešku za svaki drugi jezik** na dva mesta. Namerna brana; treba da postane vrednost po organizaciji | `system_catalog.py:18,80` · `identity.py:97`       |
 | 2   | Nema jezika na nivou organizacije — `sr-Latn` je podrazumevani argument na desetak potpisa, plus `PUBLIC_COMPASS_LOCALE` i `lang="sr-Latn"`                             | `layout.tsx:40` · `lib/compass/public-taxonomy.ts` |
 | 3   | Backend danas vraća srpske **rečenice**, ne samo kodove (npr. `staff_authorization_message()`)                                                                          | `modules/guidance/authorization.py`                |
-| 4   | ~~`next-intl` sa nula import-a~~ → **rešeno 2026-08-11**: povezan kao sloj za poruke/formate (I18N-2). Inline srpski: 1311 → **856** niski / 122 fajla, uz baseline u `check-frontend-architecture.mjs` koji sme samo da pada (I18N-5 u toku) | `src/i18n/`, `src/messages/`       |
+| 4   | ~~`next-intl` sa nula import-a~~ → **rešeno 2026-08-11**: povezan kao sloj za poruke/formate (I18N-2). Inline srpski: 1311 → **848** niski / 120 fajlova, uz baseline u `check-frontend-architecture.mjs` koji sme samo da pada (I18N-5 u toku) | `src/i18n/`, `src/messages/`       |
 
 **Pravila koja se drže od sada, jer ne koštaju ništa danas a skupa su kasnije:**
 
@@ -873,7 +885,7 @@ deployment = jedna organizacija · **Ne dira:** ADR-023 granicu izolacije
 | **ROUTE-I18N-2** | 65 → **0** path literala; sve 4 kopije `isActive` obrisane; `panel-errors` na route ID | ✅ |
 | **ROUTE-I18N-3+4** | 18 fajlova → `app/(staff)/workspace/**`; klijentski panel → `/account`; proxy rewrite + 308; `dostupnost` → `raspored` | ✅ |
 | **I18N-4** | Shell oba panela iz kataloga (nav, topbar, role); 0 rendered srpskih niski u shell-u | ✅ |
-| **I18N-5** | superadmin porodica; Content workspace porodica; Pregled i Profil (`screens` namespace); **demo podaci panela** (ankete, agenda, kartice prioriteta); ratchet po fajlu | 🟡 **856 niski / 122 fajla preostalo** |
+| **I18N-5** | superadmin porodica; Content workspace porodica; Pregled/Profil/Termini (`screens` namespace, statusi, tabovi, badge-ovi); demo podaci panela **prate živi `ui_locale`**; ratchet po fajlu | 🟡 **856 niski / 122 fajla preostalo** |
 | **Content locale** | `content/<locale>/`, `pickContent`, engleski fallback; `content:check` u **oba** locale-a drži iste granice znakova | 🟡 **4 od 9 modula** (`therapists`, `services`, `homepage`, `workspace-demo`) |
 | **I18N-7 backend** | migracija `e4a91c62d8f7` (kolone + CHECK + `organization_audit_events`); `shared/domain/audit.py`; `GET /organizations/me`, `PATCH /me/locales`, operatorski `PATCH /{id}/locales` | ✅ |
 | **I18N-7 frontend** | `api:generate`, BFF rute, ekran „Jezik i regionalna podešavanja", `router.refresh()` posle čuvanja | ✅ |

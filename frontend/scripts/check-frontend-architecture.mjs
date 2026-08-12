@@ -303,7 +303,7 @@ const inlineSerbianBaseline = new Map([
   ["src/features/research/survey-drawer.tsx", 11],
   ["src/features/superadmin/components/diagnostics-view.tsx", 11],
   ["src/features/superadmin/components/tenant-profile-view.tsx", 3],
-  ["src/features/workspace/components/agenda-row.tsx", 1],
+  ["src/features/workspace/components/agenda-row.tsx", 0],
   [
     "src/features/workspace/components/availability/availability-conflict-modal.tsx",
     3,
@@ -453,7 +453,7 @@ const inlineSerbianBaseline = new Map([
   ["src/features/workspace/components/screen-kompas/term-list.tsx", 2],
   ["src/features/workspace/components/screen-pregled.tsx", 0],
   ["src/features/workspace/components/screen-profil.tsx", 0],
-  ["src/features/workspace/components/screen-termini.tsx", 7],
+  ["src/features/workspace/components/screen-termini.tsx", 0],
   ["src/features/workspace/components/screen-usluge.tsx", 3],
   ["src/features/workspace/components/seo-preview-panel.tsx", 3],
   ["src/features/workspace/components/slot-editor.tsx", 5],

@@ -7,7 +7,7 @@ import { ProgressBar } from "@/components/panel/progress-bar";
 import { localizedPath } from "@/lib/routes/localized-path";
 import { useUiLocale } from "@/i18n/use-ui-locale";
 
-import { priorityCards, researchSurvey, todayAgenda, weekBars } from "../data";
+import { workspaceDemo } from "../data";
 import { usePanelErrors } from "../panel-errors";
 import { isFreeSlot } from "../types";
 import { useWorkspace } from "../workspace-context";
@@ -29,7 +29,10 @@ function greeting(t: ReturnType<typeof useTranslations<"screens.overview">>) {
 
 export function ScreenPregled() {
   const t = useTranslations("screens.overview");
+  const ta = useTranslations("screens.appointments");
   const locale = useUiLocale();
+  const { priorityCards, researchSurvey, todayAgenda, weekBars } =
+    workspaceDemo(locale);
   const { isAdmin, selectedTherapistSlug } = useWorkspace();
   const { errors, clearError } = usePanelErrors();
 
@@ -152,7 +155,7 @@ export function ScreenPregled() {
               href={localizedPath("workspace.appointments.list", { locale })}
               className="text-forest hover:text-sage border-coffee/25 border-b-[1.5px] text-[13px] font-semibold no-underline transition-colors"
             >
-              Svi termini →
+              {ta("allAppointments")}
             </Link>
           </div>
           {agenda.map((entry, index) => (
@@ -164,10 +167,10 @@ export function ScreenPregled() {
           <div className="bg-forest rounded-panel px-6 py-6">
             <div className="mb-4 flex items-baseline justify-between">
               <h2 className="text-canvas font-serif text-xl font-normal">
-                Ova nedelja
+                {ta("thisWeek")}
               </h2>
               <span className="text-meadow text-xs font-semibold">
-                Popunjenost {weekPct}%
+                {ta("occupancy", { percent: weekPct })}
               </span>
             </div>
             <div className="flex flex-col gap-[11px]">
