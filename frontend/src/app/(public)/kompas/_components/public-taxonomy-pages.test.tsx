@@ -12,6 +12,7 @@ import type {
   PublicTaxonomyPageAggregate,
   RoutablePublicTaxonomyTerm,
 } from "@/lib/compass/types";
+import { getFallbackContentForLocale } from "@/content/registry";
 
 import { PublicTaxonomyListPage } from "./public-taxonomy-list-page";
 import { PublicTaxonomyPage } from "./public-taxonomy-page";
@@ -65,11 +66,16 @@ const aggregate: PublicTaxonomyPageAggregate = {
     },
   ],
 };
+const therapists = getFallbackContentForLocale("sr-Latn").therapists;
 
 describe("public Compass page renderers", () => {
   it("renders an aggregate through registry-controlled taxonomy and content links", () => {
     const { container } = render(
-      <PublicTaxonomyPage aggregate={aggregate} routeKind="oblast" />,
+      <PublicTaxonomyPage
+        aggregate={aggregate}
+        routeKind="oblast"
+        therapists={therapists}
+      />,
     );
 
     expect(
