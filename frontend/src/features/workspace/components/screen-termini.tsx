@@ -5,12 +5,10 @@ import { useState } from "react";
 import { ProgressBar } from "@/components/panel/progress-bar";
 import { StatusBadge } from "@/components/panel/status-badge";
 import { TabPills } from "@/components/panel/tab-pills";
+import { useFallbackContent } from "@/content/use-content";
 
 import { useTranslations } from "next-intl";
 
-import { useUiLocale } from "@/i18n/use-ui-locale";
-
-import { appointmentRequests, waitlist, workspaceDemo } from "../data";
 import { STATUS_META, isFreeSlot } from "../types";
 import { useStatusLabel } from "../use-status-label";
 import { useWorkspace } from "../workspace-context";
@@ -39,13 +37,13 @@ const TAB_KEYS = {
 
 export function ScreenTermini() {
   const statusLabel = useStatusLabel();
-  const locale = useUiLocale();
   const t = useTranslations("screens.appointments");
+  const { appointmentRequests, todayAgenda, waitlist, weekBars } =
+    useFallbackContent().workspaceDemo;
   const tabs = TAB_IDS.map((id) => ({
     id,
     label: t(`tabs.${TAB_KEYS[id]}`, { count: appointmentRequests.length }),
   }));
-  const { todayAgenda, weekBars } = workspaceDemo(locale);
   const [tab, setTab] = useState("danas");
   const { selectedTherapistSlug } = useWorkspace();
 

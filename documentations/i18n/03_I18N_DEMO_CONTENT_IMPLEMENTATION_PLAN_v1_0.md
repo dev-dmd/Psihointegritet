@@ -20,8 +20,8 @@ resolveri, CMS creation stamp, locale-aware public reads i fallback registry, ka
 API problem transport bez backend proze i tehničkih identifikatora u tenant response body-ju.
 
 Ovaj checkpoint ne zatvara kompletan I18N milestone. Three-state field override i centralna
-user-safe error prezentacija završeni su 2026-08-14; otvoreni su uklanjanje poslednjeg legacy
-`pickContent` selektora, content paketi, preostali platformski UI, backend
+user-safe error prezentacija i uklanjanje legacy content selektora završeni su 2026-08-14;
+otvoreni su content paketi, preostali platformski UI, backend
 email/notification katalozi, dijagnostika, D-079B plan i završni QA.
 
 ### Integracioni gate posle checkpoint-a
@@ -62,7 +62,7 @@ Proveren 2026-08-13 pre narednog funkcionalnog slice-a:
 **Gate:** prvi commit je documentation-only; nijedan aktivni dokument ne sme tvrditi da
 `default_content_locale` bira render locale.
 
-## Faza 2 — locale/content osnova i creation stamp
+## Faza 2 — locale/content osnova i creation stamp — completed 2026-08-14
 
 - `ui_locale` postaje jedini organization-scoped render locale.
 - Javno čitanje ostaje tagovano i SSG/ISR-safe; workspace ostaje live/no-store.
@@ -77,6 +77,20 @@ Proveren 2026-08-13 pre narednog funkcionalnog slice-a:
 
 **Gate:** promena `ui_locale` menja `<html lang>`, sistemske poruke i fallback; promena
 `default_content_locale` ne menja postojeći render i utiče samo na nov CMS zapis.
+
+Poslednji module-scope `pickContent` i njegovi deployment-locale moduli uklonjeni su
+2026-08-14. Javni server render koristi `getFallbackContent()`, klijentske površine
+`useFallbackContent()`, a eksplicitni resolver `getFallbackContentForLocale()`. Workspace
+demo kartice, termini, klijenti, kompanije, usluge, terapeuti, profil/matching i availability
+tekst sada su deo istog registry paketa i reaguju na live `ui_locale` bez refresh-a.
+Architecture gate zabranjuje ponovno uvođenje legacy selektora.
+
+**Status isporuke:** registry mehanizam i svi runtime potrošači su produkcijski kod;
+workspace redovi su jasno ograničen showcase/demo skup i nisu stvarni DB podaci. Nema
+draft ni provisioning promene u ovom slice-u. Automatski `en -> sr-Latn -> en` test pokriva
+kartice, termine, klijente, kompanije, usluge i terapeute; ručna vizuelna provera oba jezika
+ostaje otvorena za Fazu 10. Puni frontend gate: 719 testova prošlo i 1 preskočen,
+production build generiše 106 stranica.
 
 ## Faza 3 — CMS field override — completed 2026-08-14
 

@@ -1,13 +1,16 @@
+"use client";
+
 import Image from "next/image";
 
 import { ProgressBar } from "@/components/panel/progress-bar";
 import { StatusBadge } from "@/components/panel/status-badge";
+import { useFallbackContent } from "@/content/use-content";
 
-import { therapistCards } from "../data";
 import { PageHeader } from "./page-header";
 
 /** Terapeuti — team cards with load and „prima nove" status (admin only). */
 export function ScreenTerapeuti() {
+  const { therapistCards } = useFallbackContent().workspaceDemo;
   return (
     <section className="animate-fade-up">
       <PageHeader

@@ -9,10 +9,10 @@ import { KV } from "@/components/panel/kv";
 import { TabPills } from "@/components/panel/tab-pills";
 import { Toggle } from "@/components/panel/toggle";
 import { Chip } from "@/components/ui/chip";
-import { formatRsd, serviceCatalog } from "@/content/services";
-import { findTherapist } from "@/content/therapists";
+import { formatRsd } from "@/content/services";
+import { useFallbackContent } from "@/content/use-content";
 
-import { matchingPreferences, myProfileSlug } from "../data";
+import { MARIA } from "../demo-slugs";
 import { AvailabilityOverviewCards } from "./availability/availability-overview-cards";
 import { LockIcon } from "./icons";
 import { PageHeader } from "./page-header";
@@ -27,7 +27,10 @@ const tabs = [
 export function ScreenProfil() {
   const t = useTranslations("screens.profile");
   const [tab, setTab] = useState("public");
-  const therapist = findTherapist(myProfileSlug);
+  const fallback = useFallbackContent();
+  const { matchingPreferences } = fallback.workspaceDemo;
+  const serviceCatalog = fallback.services.serviceCatalog;
+  const therapist = fallback.therapists.find((item) => item.slug === MARIA);
 
   if (!therapist) {
     return null;

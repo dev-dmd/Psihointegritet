@@ -5,15 +5,17 @@ import { toast } from "sonner";
 
 import { BackToSiteButton } from "@/components/shared/back-to-site-button";
 import { LogoutAvatarMenu } from "@/components/shared/logout-avatar-menu";
-import { therapists } from "@/content/therapists";
+import { useFallbackContent } from "@/content/use-content";
+import type { Therapist } from "@/types/therapist";
 
 import { useWorkspace } from "../workspace-context";
 import { BellIcon, ChevronDownIcon, PlusIcon, TeamIcon } from "./icons";
 
-/** Cycle order for the admin therapist filter: all → each therapist → all. */
-const cycle: (string | null)[] = [null, ...therapists.map((t) => t.slug)];
-
-function therapistLabel(slug: string | null, allLabel: string): string {
+function therapistLabel(
+  therapists: readonly Therapist[],
+  slug: string | null,
+  allLabel: string,
+): string {
   if (slug === null) return allLabel;
   const therapist = therapists.find((t) => t.slug === slug);
   // A therapist's own name is never translated — it is data, not copy.
@@ -28,6 +30,11 @@ function therapistLabel(slug: string | null, allLabel: string): string {
  * role model replaces the design's Vlasnik/Terapeut toggle.
  */
 export function WorkspaceTopbar() {
+  const { therapists } = useFallbackContent();
+  const cycle: (string | null)[] = [
+    null,
+    ...therapists.map((therapist) => therapist.slug),
+  ];
   const { isAdmin, selectedTherapistSlug, setSelectedTherapistSlug } =
     useWorkspace();
   const t = useTranslations("workspace");
@@ -71,7 +78,11 @@ export function WorkspaceTopbar() {
           className="border-coffee/12 text-coffee hover:border-sage bg-surface hidden items-center gap-2 rounded-full border px-3.5 py-2 text-[13px] font-semibold transition-colors lg:inline-flex"
         >
           <TeamIcon size={14} className="text-sage" />
-          {therapistLabel(selectedTherapistSlug, t("topbar.allTherapists"))}
+          {therapistLabel(
+            therapists,
+            selectedTherapistSlug,
+            t("topbar.allTherapists"),
+          )}
           <ChevronDownIcon />
         </button>
       ) : null}

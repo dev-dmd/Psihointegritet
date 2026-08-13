@@ -4,10 +4,10 @@ import { useTranslations } from "next-intl";
 import Link from "next/link";
 
 import { ProgressBar } from "@/components/panel/progress-bar";
+import { useFallbackContent } from "@/content/use-content";
 import { localizedPath } from "@/lib/routes/localized-path";
 import { useUiLocale } from "@/i18n/use-ui-locale";
 
-import { workspaceDemo } from "../data";
 import { usePanelErrors } from "../panel-errors";
 import { isFreeSlot } from "../types";
 import { useWorkspace } from "../workspace-context";
@@ -32,7 +32,7 @@ export function ScreenPregled() {
   const ta = useTranslations("screens.appointments");
   const locale = useUiLocale();
   const { priorityCards, researchSurvey, todayAgenda, weekBars } =
-    workspaceDemo(locale);
+    useFallbackContent().workspaceDemo;
   const { isAdmin, selectedTherapistSlug } = useWorkspace();
   const { errors, clearError } = usePanelErrors();
 

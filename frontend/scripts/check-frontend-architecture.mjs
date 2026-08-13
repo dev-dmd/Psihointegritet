@@ -198,6 +198,26 @@ for (const file of walk(sourceRoot)) {
 }
 
 /**
+ * Locale-aware content is selected only through `content/registry.ts`.
+ * The deleted module-scope selector froze the deployment locale into imported
+ * constants, so a workspace locale change could not update existing cards.
+ */
+for (const file of walk(sourceRoot)) {
+  if (!file.endsWith(".ts") && !file.endsWith(".tsx")) continue;
+  const rel = relative(file);
+  if (rel.endsWith(".test.ts") || rel.endsWith(".test.tsx")) continue;
+  const text = fs.readFileSync(file, "utf8");
+  const code = text.replace(/\/\*[\s\S]*?\*\/|\/\/.*$/gm, "");
+  const match = code.match(/\bpickContent\b|["']@\/content\/locale["']/);
+  if (match) {
+    failures.push(
+      `${rel}:${lineOf(code, match.index ?? 0)} legacy content selector "${match[0]}"; ` +
+        `use getFallbackContentForLocale(), getFallbackContent() or useFallbackContent()`,
+    );
+  }
+}
+
+/**
  * Inline Serbian copy still waiting for the message catalogue (I18N-5).
  *
  * Counts diacritics in code (comments stripped), which is a proxy for "user

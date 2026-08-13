@@ -22,11 +22,38 @@ describe("fallback content registry", () => {
     const en = getFallbackContentForLocale("en");
     const sr = getFallbackContentForLocale("sr-Latn");
 
+    expect(Object.keys(en.workspaceDemo).sort()).toEqual(
+      Object.keys(sr.workspaceDemo).sort(),
+    );
+
     expect(en.services.serviceCatalog.map(({ slug }) => slug)).toEqual(
       sr.services.serviceCatalog.map(({ slug }) => slug),
     );
     expect(en.therapists.map(({ slug, image }) => ({ slug, image }))).toEqual(
       sr.therapists.map(({ slug, image }) => ({ slug, image })),
+    );
+    expect(
+      en.workspaceDemo.appointmentRequests.map(({ id, status }) => ({
+        id,
+        status,
+      })),
+    ).toEqual(
+      sr.workspaceDemo.appointmentRequests.map(({ id, status }) => ({
+        id,
+        status,
+      })),
+    );
+    expect(en.workspaceDemo.clients.map(({ id }) => id)).toEqual(
+      sr.workspaceDemo.clients.map(({ id }) => id),
+    );
+    expect(en.workspaceDemo.companies.map(({ id }) => id)).toEqual(
+      sr.workspaceDemo.companies.map(({ id }) => id),
+    );
+    expect(en.workspaceDemo.serviceCatalog.map(({ code }) => code)).toEqual(
+      sr.workspaceDemo.serviceCatalog.map(({ code }) => code),
+    );
+    expect(en.workspaceDemo.therapistCards.map(({ slug }) => slug)).toEqual(
+      sr.workspaceDemo.therapistCards.map(({ slug }) => slug),
     );
   });
 });

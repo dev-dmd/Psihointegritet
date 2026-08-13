@@ -2,8 +2,8 @@
 
 import { StatusBadge } from "@/components/panel/status-badge";
 import { Chip } from "@/components/ui/chip";
+import { useFallbackContent } from "@/content/use-content";
 
-import { serviceCatalog } from "../data";
 import { STATUS_META } from "../types";
 import { useStatusLabel } from "../use-status-label";
 import { PageHeader } from "./page-header";
@@ -11,6 +11,7 @@ import { PageHeader } from "./page-header";
 /** Usluge i cene — service catalog with internal codes, variants, rules. */
 export function ScreenUsluge() {
   const statusLabel = useStatusLabel();
+  const { serviceCatalog } = useFallbackContent().workspaceDemo;
   return (
     <section className="animate-fade-up">
       <PageHeader

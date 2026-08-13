@@ -6,22 +6,22 @@ import { toast } from "sonner";
 import { StatusBadge } from "@/components/panel/status-badge";
 import { TabPills } from "@/components/panel/tab-pills";
 import { Chip } from "@/components/ui/chip";
-import { findService } from "@/content/services";
-import { findTherapist } from "@/content/therapists";
+import { useFallbackContent } from "@/content/use-content";
 import { intakeFeatureFlags } from "@/features/guidance/intake-feature-flags";
 
-import { clients, unassignedRequests } from "../data";
 import {
   useClaimIntakeCaseMutation,
   useIntakeTeamQueueQuery,
 } from "../hooks/use-intake-team-queue";
 import type { IntakeTeamQueueItem } from "../intake-team-queue-api";
-import { STATUS_META } from "../types";
+import { STATUS_META, type UnassignedRequest } from "../types";
 import { useStatusLabel } from "../use-status-label";
 import { useWorkspace } from "../workspace-context";
 import { PageHeader } from "./page-header";
 
 export function ScreenKlijenti() {
+  const fallback = useFallbackContent();
+  const { clients, unassignedRequests } = fallback.workspaceDemo;
   const statusLabel = useStatusLabel();
   const [tab, setTab] = useState("svi");
   const { isTherapist, selectedTherapistSlug } = useWorkspace();
@@ -100,6 +100,8 @@ export function ScreenKlijenti() {
       {tab === "nedodeljeni" ? (
         teamQueueEnabled ? (
           <ProductionIntakeQueue
+            serviceCatalog={fallback.services.serviceCatalog}
+            therapists={fallback.therapists}
             queue={teamQueue}
             state={queueState}
             isTherapist={isTherapist}
@@ -107,7 +109,7 @@ export function ScreenKlijenti() {
             onClaim={claimMutation.mutate}
           />
         ) : (
-          <DemoIntakeQueue />
+          <DemoIntakeQueue requests={unassignedRequests} />
         )
       ) : null}
     </section>
@@ -115,12 +117,18 @@ export function ScreenKlijenti() {
 }
 
 function ProductionIntakeQueue({
+  serviceCatalog,
+  therapists,
   queue,
   state,
   isTherapist,
   claimingCaseId,
   onClaim,
 }: {
+  serviceCatalog: ReturnType<
+    typeof useFallbackContent
+  >["services"]["serviceCatalog"];
+  therapists: ReturnType<typeof useFallbackContent>["therapists"];
   queue: IntakeTeamQueueItem[];
   state: "idle" | "loading" | "error";
   isTherapist: boolean;
@@ -147,13 +155,15 @@ function ProductionIntakeQueue({
     <div className="flex flex-col gap-3">
       {queue.map((request) => {
         const service = request.serviceSlug
-          ? findService(request.serviceSlug)
+          ? serviceCatalog.find((item) => item.slug === request.serviceSlug)
           : undefined;
         const recommendations = request.recommendedTherapistSlugs
-          .map((slug) => findTherapist(slug)?.name)
+          .map((slug) => therapists.find((item) => item.slug === slug)?.name)
           .filter((name): name is string => Boolean(name));
         const preferredTherapist = request.preferredTherapistSlug
-          ? findTherapist(request.preferredTherapistSlug)
+          ? therapists.find(
+              (item) => item.slug === request.preferredTherapistSlug,
+            )
           : undefined;
         return (
           <div
@@ -227,7 +237,11 @@ function ProductionIntakeQueue({
   );
 }
 
-function DemoIntakeQueue() {
+function DemoIntakeQueue({
+  requests,
+}: {
+  requests: readonly UnassignedRequest[];
+}) {
   return (
     <div className="flex flex-col gap-3">
       <div className="bg-meadow/22 border-sage/30 text-coffee rounded-tile border px-5 py-3.5 text-[13px] leading-[1.5]">
@@ -235,7 +249,7 @@ function DemoIntakeQueue() {
         automatski dodelio terapeuta. Kada terapeut preuzme klijenta, ostalima
         je vidljivo samo ko ga je preuzeo.
       </div>
-      {unassignedRequests.map((request) => (
+      {requests.map((request) => (
         <div
           key={request.id}
           className="rounded-card border-line bg-surface border px-6 py-5"

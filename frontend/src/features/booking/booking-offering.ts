@@ -141,7 +141,7 @@ export function findOfferingById<T extends BookingOffering>(
  *
  * Order comes from the offering list itself, not from the content catalogue —
  * `buildBookingOfferings` already walks therapists in catalogue order, and
- * deriving it here would tie the widget to `content/therapists.ts` and make it
+ * deriving it here would tie the widget to a module-scope therapist catalogue and make it
  * untestable with any other data source.
  */
 export function therapistIdsWithOfferings(

@@ -1,6 +1,6 @@
 /**
  * Therapist profile shape shared by the team pages, the homepage section and
- * the guided-selection drawer. `src/content/therapists.ts` is the single
+ * the guided-selection drawer. `src/content/registry.ts` is the single
  * source of truth — never re-declare therapist data locally.
  *
  * Content status is `draft` until each therapist confirms their exact title in

@@ -2,8 +2,8 @@
 
 import { ProgressBar } from "@/components/panel/progress-bar";
 import { StatusBadge } from "@/components/panel/status-badge";
+import { useFallbackContent } from "@/content/use-content";
 
-import { companies, companyPipeline } from "../data";
 import { STATUS_META } from "../types";
 import { useTranslations } from "next-intl";
 
@@ -14,6 +14,7 @@ import { PageHeader } from "./page-header";
 export function ScreenKompanije() {
   const statusLabel = useStatusLabel();
   const t = useTranslations("screens.companies");
+  const { companies, companyPipeline } = useFallbackContent().workspaceDemo;
   return (
     <section className="animate-fade-up">
       <PageHeader
