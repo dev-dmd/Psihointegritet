@@ -55,9 +55,7 @@ class MembershipRolesUpdate(BaseModel):
     roles: set[MembershipRole]
 
 
-async def ensure_internal_user(
-    session: DatabaseSession, identity: CurrentIdentity
-) -> InternalUser:
+async def ensure_internal_user(session: DatabaseSession, identity: CurrentIdentity) -> InternalUser:
     """Register a verified person, but never grant a domain privilege implicitly."""
     user = await session.scalar(
         select(InternalUser).where(InternalUser.external_auth_id == identity.subject)

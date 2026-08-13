@@ -79,9 +79,7 @@ async def _handle_validation_error(_: Request, exc: Exception) -> JSONResponse:
     field_errors: dict[str, list[ApiFieldError]] = {}
     for error in exc.errors():
         location = ".".join(str(part) for part in error["loc"])
-        field_errors.setdefault(location, []).append(
-            ApiFieldError(code=str(error["type"]))
-        )
+        field_errors.setdefault(location, []).append(ApiFieldError(code=str(error["type"])))
     return _problem_response(
         ApiProblem(
             status=status.HTTP_422_UNPROCESSABLE_CONTENT,

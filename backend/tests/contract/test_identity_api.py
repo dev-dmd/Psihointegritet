@@ -10,10 +10,7 @@ def test_identity_routes_are_registered_in_openapi() -> None:
 
     assert "/api/v1/me" in paths
     assert "/api/v1/superadmin/organizations/{organization_slug}/users" in paths
-    assert (
-        "/api/v1/superadmin/organizations/{organization_slug}/users/{user_id}/roles"
-        in paths
-    )
+    assert "/api/v1/superadmin/organizations/{organization_slug}/users/{user_id}/roles" in paths
 
 
 async def test_me_is_a_real_protected_route_not_a_404() -> None:
