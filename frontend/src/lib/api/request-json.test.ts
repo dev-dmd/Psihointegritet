@@ -11,7 +11,7 @@ describe("requestJson", () => {
     vi.stubGlobal("fetch", fetchMock);
   });
 
-  it("preserves the safe fields from an application/problem+json error", async () => {
+  it("preserves only safe machine fields from a problem response", async () => {
     fetchMock.mockResolvedValue(
       new Response(
         JSON.stringify({
@@ -19,6 +19,7 @@ describe("requestJson", () => {
           title: "Izbor nije validan.",
           status: 422,
           code: "validation_error",
+          params: { limit: 2 },
           detail: "Proverite označeno polje.",
           correlationId: "correlation-1",
           fieldPath: "topicIds",
@@ -43,15 +44,16 @@ describe("requestJson", () => {
     expect(error).toBeInstanceOf(JsonRequestError);
     expect(error).toMatchObject({
       status: 422,
-      message: "Izbor nije validan. Proverite označeno polje.",
+      message: "Request failed",
       code: "validation_error",
+      params: { limit: 2 },
       fieldPath: "topicIds",
       fieldErrors: { topicIds: ["Najviše dve teme."] },
     });
     expect(error).not.toHaveProperty("internalDebugValue");
   });
 
-  it("keeps supporting the narrow same-origin error envelope", async () => {
+  it("never copies a same-origin error string into error.message", async () => {
     fetchMock.mockResolvedValue(
       Response.json({ error: "Servis nije dostupan." }, { status: 503 }),
     );
@@ -60,7 +62,7 @@ describe("requestJson", () => {
       requestJson("/api/example", {}, z.object({ ok: z.boolean() })),
     ).rejects.toMatchObject({
       status: 503,
-      message: "Servis nije dostupan.",
+      message: "Request failed",
     });
   });
 });

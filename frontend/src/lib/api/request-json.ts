@@ -1,13 +1,11 @@
 import { z } from "zod";
 
-const errorEnvelopeSchema = z.object({
-  error: z.string().optional(),
-});
-
 const apiProblemEnvelopeSchema = z.object({
-  title: z.string().min(1),
-  detail: z.string().min(1).optional(),
-  code: z.string().optional(),
+  status: z.number().int(),
+  code: z.string().min(1),
+  params: z
+    .record(z.string(), z.union([z.string(), z.number(), z.boolean()]))
+    .optional(),
   fieldPath: z.string().optional(),
   fieldErrors: z.record(z.string(), z.array(z.string())).optional(),
 });
@@ -21,6 +19,7 @@ export class JsonRequestError extends Error {
     readonly status: number,
     message = "Request failed",
     readonly code?: string,
+    readonly params?: Record<string, string | number | boolean>,
     readonly fieldPath?: string,
     readonly fieldErrors?: Record<string, string[]>,
   ) {
@@ -63,20 +62,15 @@ export async function requestJson<TResult>(
       const problem = parsedProblem.data;
       throw new JsonRequestError(
         response.status,
-        problem.detail ? `${problem.title} ${problem.detail}` : problem.title,
+        "Request failed",
         problem.code,
+        problem.params,
         problem.fieldPath,
         problem.fieldErrors,
       );
     }
 
-    const parsedError = errorEnvelopeSchema.safeParse(payload);
-    throw new JsonRequestError(
-      response.status,
-      parsedError.success && parsedError.data.error
-        ? parsedError.data.error
-        : "Request failed",
-    );
+    throw new JsonRequestError(response.status);
   }
 
   const parsed = responseSchema.safeParse(payload);
