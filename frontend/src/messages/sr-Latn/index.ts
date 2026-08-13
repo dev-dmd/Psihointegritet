@@ -4,6 +4,7 @@ import { account } from "./account";
 import { common } from "./common";
 import { content } from "./content";
 import { errors } from "./errors";
+import { guidance } from "./guidance";
 import { screens } from "./screens";
 import { superadmin } from "./superadmin";
 import { workspace } from "./workspace";
@@ -20,6 +21,7 @@ export const srLatnMessages: PlatformMessages = {
   common,
   content,
   errors,
+  guidance,
   screens,
   superadmin,
   workspace,

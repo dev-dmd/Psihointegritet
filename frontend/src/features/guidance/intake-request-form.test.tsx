@@ -1,5 +1,6 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { NextIntlClientProvider } from "next-intl";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { QueryProvider } from "@/providers/query-provider";
@@ -44,7 +45,12 @@ async function acceptRequiredNotices(user: ReturnType<typeof userEvent.setup>) {
 }
 
 function renderWithQueryProvider(element: React.ReactElement) {
-  return render(element, { wrapper: QueryProvider });
+  return render(
+    <NextIntlClientProvider locale="sr-Latn" messages={{}}>
+      {element}
+    </NextIntlClientProvider>,
+    { wrapper: QueryProvider },
+  );
 }
 
 describe("IntakeRequestForm", () => {

@@ -1,6 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
+import type { Therapist } from "@/types/therapist";
 
 import type { IntakeAnswers } from "../matching";
 import {
@@ -28,10 +29,12 @@ export function useAuthoritativeIntakeMatch(
   answers: IntakeAnswers,
   enabled: boolean,
   attempt: number,
+  therapists: readonly Therapist[],
 ) {
   return useQuery({
     queryKey: publicIntakeQueryKeys.match(answers, attempt),
-    queryFn: ({ signal }) => fetchAuthoritativeIntakeMatch(answers, signal),
+    queryFn: ({ signal }) =>
+      fetchAuthoritativeIntakeMatch(answers, therapists, signal),
     enabled,
     staleTime: 0,
     retry: false,

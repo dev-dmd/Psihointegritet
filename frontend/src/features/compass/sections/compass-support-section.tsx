@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { MonogramAvatar } from "@/components/ui/monogram-avatar";
-import { therapists } from "@/content/therapists";
+import { getFallbackContent } from "@/content/server";
 
 /**
  * Stručna podrška — the evergreen professional-support block that closes every
@@ -22,7 +22,8 @@ const COPY = {
     "Kontekst je prenet u Pronađi podršku. Tamo možete da ga izmenite ili uklonite pre nego što nastavite.",
 } as const;
 
-export function CompassSupportSection() {
+export async function CompassSupportSection() {
+  const { therapists } = await getFallbackContent();
   return (
     <section
       aria-labelledby="kompas-support-title"

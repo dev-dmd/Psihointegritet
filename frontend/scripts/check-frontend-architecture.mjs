@@ -298,7 +298,7 @@ const inlineSerbianBaseline = new Map([
   ["src/features/guidance/consent-document-disclosure.tsx", 3],
   ["src/features/guidance/guidance-cta.tsx", 1],
   ["src/features/guidance/guidance-drawer.tsx", 2],
-  ["src/features/guidance/guidance-flow.tsx", 40],
+  ["src/features/guidance/guidance-flow.tsx", 34],
   ["src/features/guidance/guidance-intro-actions.tsx", 1],
   ["src/features/guidance/intake-request-form.tsx", 42],
   ["src/features/research/research-launcher.tsx", 2],

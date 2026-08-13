@@ -1,5 +1,5 @@
-import { therapists } from "@/content/therapists";
 import type { components } from "@/types/api.generated";
+import type { Therapist } from "@/types/therapist";
 
 import type {
   IntakeAnswers,
@@ -67,6 +67,7 @@ export async function fetchPublicIntakeCapabilities(
 
 export async function fetchAuthoritativeIntakeMatch(
   answers: IntakeAnswers,
+  therapists: readonly Therapist[],
   signal?: AbortSignal,
 ): Promise<IntakeMatchResult> {
   const response = await fetch("/api/intake/match", {
@@ -80,6 +81,7 @@ export async function fetchAuthoritativeIntakeMatch(
   }
   return toDisplayMatchResult(
     (await response.json()) as PublicIntakeMatchResponse,
+    therapists,
   );
 }
 
@@ -103,6 +105,7 @@ export async function submitPublicIntakeCase(
 
 function toDisplayMatchResult(
   response: PublicIntakeMatchResponse,
+  therapists: readonly Therapist[],
 ): IntakeMatchResult {
   const recommendedTherapists: TherapistMatch[] = response.candidates.flatMap(
     (candidate) => {

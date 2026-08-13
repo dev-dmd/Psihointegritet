@@ -1,4 +1,5 @@
-import { therapists } from "@/content/therapists";
+import { getFallbackContentForLocale } from "@/content/registry";
+import { PLATFORM_DEFAULT_LOCALE } from "@/i18n/locales";
 import {
   ADDICTION_RELATED_SUPPORT,
   SUPPORT_AREA_IDS,
@@ -520,7 +521,14 @@ export interface IntakeMatchResult {
   scoreBreakdown: Record<string, number>;
 }
 
-function therapistBySlug(slug: Slug): Therapist {
+const platformTherapists = getFallbackContentForLocale(
+  PLATFORM_DEFAULT_LOCALE,
+).therapists;
+
+function therapistBySlug(
+  slug: Slug,
+  therapists: readonly Therapist[],
+): Therapist {
   const found = therapists.find((item) => item.slug === slug);
   if (!found) {
     throw new Error(`Matching config references unknown therapist: ${slug}`);
@@ -536,7 +544,10 @@ function therapistBySlug(slug: Slug): Therapist {
  * 3. top result ≥3 points ahead → one primary + optional alternative;
  *    otherwise show the top two together.
  */
-export function evaluateIntake(answers: IntakeAnswers): IntakeMatchResult {
+export function evaluateIntake(
+  answers: IntakeAnswers,
+  therapists: readonly Therapist[] = platformTherapists,
+): IntakeMatchResult {
   const scores: Record<Slug, number> = { [MARIA]: 0, [ELSA]: 0, [JOHN]: 0 };
 
   const apply = (weights: WeightMap | undefined) => {
@@ -668,7 +679,7 @@ export function evaluateIntake(answers: IntakeAnswers): IntakeMatchResult {
     );
 
   const toMatch = (slug: Slug): TherapistMatch => ({
-    therapist: therapistBySlug(slug),
+    therapist: therapistBySlug(slug, therapists),
     reasons: buildReasons(slug, answers, service),
   });
 
