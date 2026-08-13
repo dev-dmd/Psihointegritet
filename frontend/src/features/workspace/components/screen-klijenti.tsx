@@ -18,6 +18,7 @@ import { STATUS_META, type UnassignedRequest } from "../types";
 import { useStatusLabel } from "../use-status-label";
 import { useWorkspace } from "../workspace-context";
 import { PageHeader } from "./page-header";
+import { WorkspaceDataNotice } from "./workspace-data-notice";
 
 export function ScreenKlijenti() {
   const fallback = useFallbackContent();
@@ -56,6 +57,7 @@ export function ScreenKlijenti() {
         title="Klijenti"
         description="Aktivan rad, dodele i Intake zahtevi bez terapeuta."
       />
+      <WorkspaceDataNotice />
       <TabPills tabs={tabs} activeId={tab} onChange={setTab} className="mb-5" />
 
       {tab === "svi" ? (

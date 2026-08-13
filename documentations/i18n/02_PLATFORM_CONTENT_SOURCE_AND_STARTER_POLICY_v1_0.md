@@ -218,3 +218,15 @@ Ovaj milestone ne redizajnira poslovne workflow-e.
 
 I18n refaktor sme da izdvoji copy, tipove i adaptere potrebne za budući UX, ali ne sme usput
 da vrati nestalo dugme, promeni redosled Booking unosa ili prepravi Kompas flow.
+
+## 8. Provisioning granica
+
+Aktuelni C2(a) runtime bira paket iz proverene deployment organization konfiguracije. To
+nije organization DB polje i nije korisnički izbor. `psihointegritet` je mapiran samo na
+verifikovane Psihointegritet deployment slugove.
+
+Izbor `mental-health-starter` ili `blank` za novu organizaciju i trajno skladištenje tog
+izbora pripadaju zasebnom budućem provisioning slice-u. Taj slice mora odlučiti da li se
+paket materijalizuje u početne CMS revizije ili ostaje provisioning receipt, definisati
+idempotency/audit i review status, i dokazati da ponovno pokretanje ne prepisuje tenantove
+izmene. Do tada nema `packId` kolone, javnog pack parametra ni runtime tenant switchera.

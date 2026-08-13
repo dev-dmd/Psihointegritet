@@ -12,6 +12,7 @@ import { usePanelErrors } from "../panel-errors";
 import { isFreeSlot } from "../types";
 import { useWorkspace } from "../workspace-context";
 import { AgendaRow } from "./agenda-row";
+import { WorkspaceDataNotice } from "./workspace-data-notice";
 
 /**
  * Local wall-clock greeting.
@@ -45,7 +46,8 @@ export function ScreenPregled() {
     : todayAgenda;
   const weekTotal = weekBars.reduce((sum, w) => sum + w.total, 0);
   const weekBooked = weekBars.reduce((sum, w) => sum + w.booked, 0);
-  const weekPct = Math.round((weekBooked / weekTotal) * 100);
+  const weekPct =
+    weekTotal === 0 ? 0 : Math.round((weekBooked / weekTotal) * 100);
 
   return (
     <section className="animate-fade-up">
@@ -55,6 +57,8 @@ export function ScreenPregled() {
         </h1>
         <p className="text-ink-55 text-[14.5px]">{t("lead")}</p>
       </div>
+
+      <WorkspaceDataNotice />
 
       {errors.length > 0 ? (
         <section

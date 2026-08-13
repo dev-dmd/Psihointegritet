@@ -59,6 +59,7 @@ describe("getDeploymentOrganization", () => {
     // (backend/.env.example). One deployment, one organization, one name.
     await expect(getDeploymentOrganization()).resolves.toMatchObject({
       slug: "psihointegritet",
+      contentPack: "psihointegritet",
       uiLocale: "sr-Latn",
     });
   });

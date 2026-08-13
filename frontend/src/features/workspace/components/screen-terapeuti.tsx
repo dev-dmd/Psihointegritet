@@ -7,6 +7,7 @@ import { StatusBadge } from "@/components/panel/status-badge";
 import { useFallbackContent } from "@/content/use-content";
 
 import { PageHeader } from "./page-header";
+import { WorkspaceDataNotice } from "./workspace-data-notice";
 
 /** Terapeuti — team cards with load and „prima nove" status (admin only). */
 export function ScreenTerapeuti() {
@@ -17,6 +18,7 @@ export function ScreenTerapeuti() {
         title="Terapeuti"
         description="Tim, popunjenost i dostupnost za nove klijente."
       />
+      <WorkspaceDataNotice />
       <div className="grid grid-cols-1 gap-3.5 md:grid-cols-2 lg:grid-cols-3">
         {therapistCards.map((therapist) => (
           <div

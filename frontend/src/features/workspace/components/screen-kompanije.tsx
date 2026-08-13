@@ -9,6 +9,7 @@ import { useTranslations } from "next-intl";
 
 import { useStatusLabel } from "../use-status-label";
 import { PageHeader } from "./page-header";
+import { WorkspaceDataNotice } from "./workspace-data-notice";
 
 /** Kompanije — B2B pipeline + fund cards (admin only). */
 export function ScreenKompanije() {
@@ -21,6 +22,7 @@ export function ScreenKompanije() {
         title="Kompanije"
         description="Kompanijski programi, fondovi termina i tok saradnje."
       />
+      <WorkspaceDataNotice />
       <div className="mb-5 flex flex-wrap gap-2">
         {companyPipeline.map((stage, index) => (
           <span

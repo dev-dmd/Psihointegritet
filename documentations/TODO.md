@@ -640,7 +640,7 @@ Dokazuje `SlotSpec` registar koji pravni tok ne dokazuje (`legal_page` ima samo 
 | Three-state CMS field override | ✅ 2026-08-14 | Backward-compatible primitive/inherit/custom/hidden resolver, eksplicitna hide whitelist-a, backend validator, editor/preview i parity testovi; bez DB migracije i language detection-a |
 | Centralni user-safe error presentation | ✅ 2026-08-14 | Jedan safe response boundary i locale-aware mapper; en/sr-Latn surface/code katalog, backend-code contract i architecture zabrana raw/lokalnih adaptera |
 | Uklanjanje poslednjeg `pickContent` | ✅ 2026-08-14 | Legacy selector/moduli obrisani; ceo workspace demo ide kroz live registry, architecture zabrana i `en -> sr-Latn -> en` test za kartice/termine/klijente/kompanije/usluge/terapeute |
-| Content paketi | ⬜ | Sledeći slice: `psihointegritet`, `mental-health-starter`, `blank`; bez `packId` DB kolone |
+| Content paketi | ✅ 2026-08-14 | Tri dvojezična paketa iza centralnog registry-ja; C2(a) slug mapping bez DB `packId`, source statusi, staff-only blank help i odvojeni showcase/real Research tok; 729 pass / 1 skip, build 106 |
 
 ---
 
@@ -902,7 +902,7 @@ Ispravka anchor-a ide uz Fazu A.
 | **2** | Locale/content osnova + backend creation stamp + audit svih CMS write putanja | frontend/backend | ✅ 2026-08-14 |
 | **3** | Backward-compatible CMS field `inherit/custom/hidden` resolver i validacija | CMS | ✅ 2026-08-14 |
 | **4** | Centralni user-safe error contract i katalozi (D-079A) | frontend/backend | ✅ 2026-08-14 |
-| **5** | `psihointegritet`, `mental-health-starter` i `blank` content paketi | content | ⚪ |
+| **5** | `psihointegritet`, `mental-health-starter` i `blank` content paketi | content | ✅ 2026-08-14 |
 | **6** | Javni UI, workspace/account i domeni bez promene poslovne semantike | frontend | ⚪ |
 | **7** | Backend email/notification katalozi + route helper | backend | ⚪ |
 | **8** | Lokalizacija postojeće dijagnostike (D-079A) | frontend/backend | ⚪ |
@@ -915,8 +915,8 @@ Ispravka anchor-a ide uz Fazu A.
 CMS creation stamp, locale-aware public reads, centralni fallback registry i code-only error
 transport su isporučeni. Backend `title`, `detail`, raw poruka i tehnički identifikatori više
 nisu tenant-facing transportni ugovor. Three-state CMS override i centralna user-safe error
-prezentacija i uklanjanje poslednjeg legacy content selektora završeni su 2026-08-14.
-**Kompletan I18N milestone ostaje otvoren**: content paketi, preostali
+prezentacija, uklanjanje poslednjeg legacy content selektora i content paketi završeni su
+2026-08-14. **Kompletan I18N milestone ostaje otvoren**: preostali
 UI/email/diagnostics i završni QA nisu obeleženi kao završeni.
 
 **Integracioni gate — ✅ 2026-08-13.** Full Vitest 624 pass / 1 skip; production build 106
@@ -936,7 +936,7 @@ refresh-a. Jedna Kompas server/client regresija je zatvorena u zasebnom commitu 
 | **ROUTE-I18N-3+4** | 18 fajlova → `app/(staff)/workspace/**`; klijentski panel → `/account`; proxy rewrite + 308; `dostupnost` → `raspored` | ✅ |
 | **I18N-4** | Shell oba panela iz kataloga (nav, topbar, role); 0 rendered srpskih niski u shell-u | ✅ |
 | **I18N-5** | superadmin porodica; Content workspace porodica; Pregled/Profil/Termini (`screens` namespace, statusi, tabovi, badge-ovi); demo podaci panela **prate živi `ui_locale`**; ratchet po fajlu | 🟡 **856 niski / 122 fajla preostalo** |
-| **Content locale** | `content/<locale>/`, `pickContent`, engleski fallback; `content:check` u **oba** locale-a drži iste granice znakova | 🟡 **4 od 9 modula** (`therapists`, `services`, `homepage`, `workspace-demo`) |
+| **Content locale** | Centralni locale+pack registry, tri paketa i engleski fallback; `content:check` u oba locale-a drži iste granice znakova | ✅ registry/paketi; preostali UI prevod je I18N-5/Faza 6 |
 | **I18N-7 backend** | migracija `e4a91c62d8f7` (kolone + CHECK + `organization_audit_events`); `shared/domain/audit.py`; `GET /organizations/me`, `PATCH /me/locales`, operatorski `PATCH /{id}/locales` | ✅ |
 | **I18N-7 frontend** | `api:generate`, BFF rute, ekran „Jezik i regionalna podešavanja", `router.refresh()` posle čuvanja | ✅ |
 | **Prekidač deluje** | javni `GET /public/organizations/{slug}/locales` + tagovano data-cache čitanje uz fallback na registar + `revalidateTag` na izmenu. **Dokazano:** isti env, promenjena samo baza → `lang` prati | ✅ |
@@ -945,10 +945,9 @@ refresh-a. Jedna Kompas server/client regresija je zatvorena u zasebnom commitu 
 
 ### Otvoreno, i zašto
 
-**Javni sajt još bira fallback kroz pogrešan izvor.** `content/locale.ts` razrešava
-`deploymentContentLocale()` iz statičkog registra, dok `public-locale.ts` čita
-`default_content_locale`. Oba moraju preći na tagovano, SSG/ISR-safe čitanje živog
-`ui_locale`; workspace ostaje `no-store`. **Rešava Faza 2.**
+**Javni fallback izvor — rešeno.** Javni render koristi tagovano, SSG/ISR-safe čitanje
+živog `ui_locale`, workspace ostaje `no-store`, a content pack bira isključivo verifikovani
+C2(a) organization/deployment registry.
 
 `default_content_locale` se više ne podešava kao javni render jezik. Backend ga čita samo
 pri kreiranju novog CMS zapisa ako zahtev ne prosledi eksplicitan, podržan locale.

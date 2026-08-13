@@ -7,6 +7,7 @@ import { useFallbackContent } from "@/content/use-content";
 import { STATUS_META } from "../types";
 import { useStatusLabel } from "../use-status-label";
 import { PageHeader } from "./page-header";
+import { WorkspaceDataNotice } from "./workspace-data-notice";
 
 /** Usluge i cene — service catalog with internal codes, variants, rules. */
 export function ScreenUsluge() {
@@ -18,6 +19,7 @@ export function ScreenUsluge() {
         title="Usluge i cene"
         description="Centralni katalog iz kojeg Booking i Matching engine čitaju podatke."
       />
+      <WorkspaceDataNotice />
       <div className="grid grid-cols-1 gap-3.5 lg:grid-cols-2">
         {serviceCatalog.map((service) => {
           const meta = STATUS_META[service.status];

@@ -16,6 +16,7 @@ import { MARIA } from "../demo-slugs";
 import { AvailabilityOverviewCards } from "./availability/availability-overview-cards";
 import { LockIcon } from "./icons";
 import { PageHeader } from "./page-header";
+import { WorkspaceDataNotice } from "./workspace-data-notice";
 
 // Stable codes — query values are never translated (D-077 Amendment §2).
 const tabs = [
@@ -33,7 +34,15 @@ export function ScreenProfil() {
   const therapist = fallback.therapists.find((item) => item.slug === MARIA);
 
   if (!therapist) {
-    return null;
+    return (
+      <section className="animate-fade-up">
+        <PageHeader
+          title="Moj profil"
+          description="Javni profil, interne matching preferencije i slojevi dostupnosti."
+        />
+        <WorkspaceDataNotice />
+      </section>
+    );
   }
 
   const publicServices = [
@@ -53,6 +62,7 @@ export function ScreenProfil() {
         title="Moj profil"
         description="Javni profil, interne matching preferencije i slojevi dostupnosti."
       />
+      <WorkspaceDataNotice />
       <TabPills tabs={tabs} activeId={tab} onChange={setTab} className="mb-5" />
 
       {tab === "javni" ? (

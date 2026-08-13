@@ -21,7 +21,7 @@ API problem transport bez backend proze i tehničkih identifikatora u tenant res
 
 Ovaj checkpoint ne zatvara kompletan I18N milestone. Three-state field override i centralna
 user-safe error prezentacija i uklanjanje legacy content selektora završeni su 2026-08-14;
-otvoreni su content paketi, preostali platformski UI, backend
+Content paketi završeni su 2026-08-14; otvoreni su preostali platformski UI, backend
 email/notification katalozi, dijagnostika, D-079B plan i završni QA.
 
 ### Integracioni gate posle checkpoint-a
@@ -158,7 +158,7 @@ kod; nema draft/showcase podataka ni provisioning promene u ovom slice-u. Oba je
 automatski proverena kroz catalog parity i presentation contract testove; ručna vizuelna
 provera oba jezika ostaje otvorena za Fazu 10.
 
-## Faza 5 — content paketi
+## Faza 5 — content paketi — completed 2026-08-14
 
 - `psihointegritet`: stvarni/demo sadržaj za oba locale-a, sa source statusom.
 - `mental-health-starter`: neutralan SEO/CTA/accessibility starter bez izmišljenih
@@ -169,6 +169,30 @@ provera oba jezika ostaje otvorena za Fazu 10.
 
 **Gate:** deep-key i stable-identity parity; nedostajuća stručna odobrenja blokiraju samo
 status `approved`, ne registry, starter ili označen showcase.
+
+Isporučena su sva tri zaključana paketa iza jednog registry boundary-ja. Verifikovani
+C2(a) organization/deployment registry bira `psihointegritet`; nije uvedeno
+`organizations.pack_id`, `packId` polje, nova migracija niti host/request izbor paketa.
+`mental-health-starter` ima neutralni dvojezični SEO/CTA/accessibility copy, ali namerno
+nema izmišljene terapeute, zvanja, lokacije, cene, usluge ni kliničke tvrdnje. `blank`
+javni payload je prazan, dok su CMS uputstva izolovana u staff-only `editorGuidance`.
+
+Psihointegritet source statusi prate `PLATFORM-CONTENT/CONTENT_GAPS.yaml` bez implicitnog
+podizanja u `approved`/`published`: public site, therapists i compass su `in_review`, a
+services, companies, research i legal `missing`. Workspace primeri nose vidljivu
+`showcase` oznaku; starter `empty`, a blank `off` empty-state. Demo Research anketa ostaje
+u content paketu i nijedna realna Research API/aggregate putanja je ne čita. Architecture
+gate zabranjuje direktne `packs/**` importe iz potrošača.
+
+**Status isporuke:** registry, C2(a) razrešavanje, paketi, staff metadata i empty/showcase
+prezentacija su produkcijski kod. Psihointegritet copy je kombinacija stvarnog i showcase
+sadržaja, a stručni izvori ostaju `in_review`/`missing` kako je navedeno. Neutralni starter
+je `draft` do product review-a. Izbor startera pri provisioningu i njegova trajna
+materijalizacija su budući provisioning posao opisan u
+`05_CONTENT_PACK_PROVISIONING_FUTURE_SLICE.md`. Oba jezika su automatski proverena kroz
+parity/DOM testove; ručna vizuelna provera ostaje otvorena za Fazu 10. Puni frontend gate:
+82 test fajla, 729 testova prošlo i 1 preskočen; typecheck, lint, format, architecture i
+content health prolaze; production build generiše 106 stranica.
 
 ## Faza 6 — platformski UI i domeni
 

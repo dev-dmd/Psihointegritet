@@ -4,8 +4,8 @@ import { getFallbackContentForLocale } from "./registry";
 
 describe("fallback content registry", () => {
   it("selects complete locale packages without module-scope environment reads", () => {
-    const en = getFallbackContentForLocale("en");
-    const sr = getFallbackContentForLocale("sr-Latn");
+    const en = getFallbackContentForLocale("en", "psihointegritet");
+    const sr = getFallbackContentForLocale("sr-Latn", "psihointegritet");
 
     expect(en.homepage.companies.title).toBe("Working with companies");
     expect(sr.homepage.companies.title).toBe("Rad sa kompanijama");
@@ -19,8 +19,8 @@ describe("fallback content registry", () => {
   });
 
   it("keeps stable identity fields equal across locale packages", () => {
-    const en = getFallbackContentForLocale("en");
-    const sr = getFallbackContentForLocale("sr-Latn");
+    const en = getFallbackContentForLocale("en", "psihointegritet");
+    const sr = getFallbackContentForLocale("sr-Latn", "psihointegritet");
 
     expect(Object.keys(en.workspaceDemo).sort()).toEqual(
       Object.keys(sr.workspaceDemo).sort(),

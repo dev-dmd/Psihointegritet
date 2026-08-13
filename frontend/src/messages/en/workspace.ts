@@ -46,6 +46,17 @@ export const workspace = {
     quickActionSoon: "Quick actions arrive with the Booking engine.",
     moreSoon: "More options are coming soon.",
   },
+  demoData: {
+    showcaseTitle: "Showcase data",
+    showcaseDescription:
+      "These examples demonstrate the workspace and are separate from organization records and research aggregates.",
+    emptyTitle: "Starter workspace",
+    emptyDescription:
+      "No example records are loaded. Connect or create organization data to use this screen.",
+    blankTitle: "No workspace data",
+    blankDescription:
+      "This blank setup contains no public content, people, services or research responses.",
+  },
   settings: {
     page: {
       title: "Settings",

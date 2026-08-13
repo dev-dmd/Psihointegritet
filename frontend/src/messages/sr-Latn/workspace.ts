@@ -48,6 +48,17 @@ export const workspace: Widen<EnWorkspace> = {
     quickActionSoon: "Brza akcija stiže sa Booking engine-om.",
     moreSoon: "Još opcija stiže uskoro.",
   },
+  demoData: {
+    showcaseTitle: "Showcase podaci",
+    showcaseDescription:
+      "Ovi primeri prikazuju radni prostor i odvojeni su od zapisa organizacije i agregata istraživanja.",
+    emptyTitle: "Početni radni prostor",
+    emptyDescription:
+      "Primeri zapisa nisu učitani. Povežite ili unesite podatke organizacije da biste koristili ovaj ekran.",
+    blankTitle: "Nema podataka radnog prostora",
+    blankDescription:
+      "Ova prazna postavka nema javni sadržaj, osobe, usluge ni odgovore istraživanja.",
+  },
   settings: {
     page: {
       title: "Podešavanja",

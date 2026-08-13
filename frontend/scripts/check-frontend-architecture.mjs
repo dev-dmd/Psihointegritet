@@ -197,6 +197,22 @@ for (const file of walk(sourceRoot)) {
   }
 }
 
+/** Content packs are implementation details behind the central registry. */
+for (const file of walk(sourceRoot)) {
+  if (!file.endsWith(".ts") && !file.endsWith(".tsx")) continue;
+  const rel = relative(file);
+  if (rel.startsWith("src/content/packs/")) continue;
+  if (rel === "src/content/registry.ts") continue;
+  if (rel.endsWith(".test.ts") || rel.endsWith(".test.tsx")) continue;
+  const text = fs.readFileSync(file, "utf8");
+  const match = text.match(/from\s+["'][^"']*content\/packs\//);
+  if (match) {
+    failures.push(
+      `${rel}:${lineOf(text, match.index ?? 0)} direct content-pack import; use src/content/registry.ts`,
+    );
+  }
+}
+
 /**
  * Locale-aware content is selected only through `content/registry.ts`.
  * The deleted module-scope selector froze the deployment locale into imported

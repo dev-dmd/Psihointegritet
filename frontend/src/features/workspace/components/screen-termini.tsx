@@ -14,6 +14,7 @@ import { useStatusLabel } from "../use-status-label";
 import { useWorkspace } from "../workspace-context";
 import { AgendaRow } from "./agenda-row";
 import { PageHeader } from "./page-header";
+import { WorkspaceDataNotice } from "./workspace-data-notice";
 
 /**
  * Tab ids are stable and Serbian; only the labels are translated. The id is
@@ -60,6 +61,7 @@ export function ScreenTermini() {
         title="Termini"
         description="Booking kontrola — jedan status sistem kroz celu platformu."
       />
+      <WorkspaceDataNotice />
       <TabPills tabs={tabs} activeId={tab} onChange={setTab} className="mb-5" />
 
       {tab === "danas" ? (
@@ -82,7 +84,11 @@ export function ScreenTermini() {
                   {bar.day}
                 </span>
                 <ProgressBar
-                  value={Math.round((bar.booked / bar.total) * 100)}
+                  value={
+                    bar.total === 0
+                      ? 0
+                      : Math.round((bar.booked / bar.total) * 100)
+                  }
                 />
                 <span className="text-ink-55 text-right text-[13px]">
                   {bar.booked}/{bar.total}
