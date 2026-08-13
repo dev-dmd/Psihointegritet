@@ -62,6 +62,7 @@ async def env(db_session: AsyncSession) -> tuple[UUID, UUID, UUID]:
         organization_id=org.id,
         content_type=ContentType.SERVICE,
         slug=f"ds-{uuid4().hex[:8]}",
+        locale="sr-Latn",
     )
     db_session.add(entry)
     await db_session.flush()

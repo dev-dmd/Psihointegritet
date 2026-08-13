@@ -1316,6 +1316,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/me": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Read Me
+         * @description Create the neutral internal identity on first verified login and return DB roles.
+         */
+        get: operations["read_me_api_v1_me_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/organizations/me": {
         parameters: {
             query?: never;
@@ -1906,6 +1926,40 @@ export interface paths {
          * @description Run a single diagnostic by key (D6.3).
          */
         post: operations["run_single_diagnostic_api_v1_superadmin_diagnostics__key__run_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/superadmin/organizations/{organization_slug}/users": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Tenant Users */
+        get: operations["list_tenant_users_api_v1_superadmin_organizations__organization_slug__users_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/superadmin/organizations/{organization_slug}/users/{user_id}/roles": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Replace Tenant User Roles */
+        put: operations["replace_tenant_user_roles_api_v1_superadmin_organizations__organization_slug__users__user_id__roles_put"];
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -2957,11 +3011,7 @@ export interface components {
         /** CreateContentEntryRequest */
         CreateContentEntryRequest: {
             contentType: components["schemas"]["ContentType"];
-            /**
-             * Locale
-             * @default sr-Latn
-             */
-            locale: string;
+            locale?: components["schemas"]["UiLocale"] | null;
             /** Slug */
             slug: string;
             template: components["schemas"]["ContentTemplate"];
@@ -3531,6 +3581,36 @@ export interface components {
              */
             starts_at: string;
         };
+        /** MeOut */
+        MeOut: {
+            /** Displayname */
+            displayName: string | null;
+            /** Email */
+            email: string | null;
+            /** Issuperadmin */
+            isSuperadmin: boolean;
+            /** Memberships */
+            memberships: components["schemas"]["MembershipOut"][];
+            /** Userid */
+            userId: string;
+        };
+        /** MembershipOut */
+        MembershipOut: {
+            /** Organizationid */
+            organizationId: string;
+            /** Roles */
+            roles: components["schemas"]["MembershipRole"][];
+        };
+        /**
+         * MembershipRole
+         * @enum {string}
+         */
+        MembershipRole: "org_admin" | "therapist";
+        /** MembershipRolesUpdate */
+        MembershipRolesUpdate: {
+            /** Roles */
+            roles: components["schemas"]["MembershipRole"][];
+        };
         /**
          * MyTherapistProfileOut
          * @description Which therapist the signed-in staff member *is*.
@@ -3598,42 +3678,22 @@ export interface components {
         };
         /** OrganizationLocaleUpdate */
         OrganizationLocaleUpdate: {
-            /**
-             * Defaultcontentlocale
-             * @enum {string}
-             */
-            defaultContentLocale: "en" | "sr-Latn";
+            defaultContentLocale: components["schemas"]["UiLocale"];
             /** Reason */
             reason?: string | null;
-            /**
-             * Uilocale
-             * @enum {string}
-             */
-            uiLocale: "en" | "sr-Latn";
+            uiLocale: components["schemas"]["UiLocale"];
         };
         /**
          * OrganizationLocalesOut
          * @description Just the locales — what the public read exposes.
          */
         OrganizationLocalesOut: {
-            /**
-             * Defaultcontentlocale
-             * @enum {string}
-             */
-            defaultContentLocale: "en" | "sr-Latn";
-            /**
-             * Uilocale
-             * @enum {string}
-             */
-            uiLocale: "en" | "sr-Latn";
+            defaultContentLocale: components["schemas"]["UiLocale"];
+            uiLocale: components["schemas"]["UiLocale"];
         };
         /** OrganizationSettingsOut */
         OrganizationSettingsOut: {
-            /**
-             * Defaultcontentlocale
-             * @enum {string}
-             */
-            defaultContentLocale: "en" | "sr-Latn";
+            defaultContentLocale: components["schemas"]["UiLocale"];
             /** Displayname */
             displayName: string;
             /**
@@ -3643,11 +3703,7 @@ export interface components {
             id: string;
             /** Slug */
             slug: string;
-            /**
-             * Uilocale
-             * @enum {string}
-             */
-            uiLocale: "en" | "sr-Latn";
+            uiLocale: components["schemas"]["UiLocale"];
         };
         /**
          * PublicContentRevisionOut
@@ -4654,6 +4710,24 @@ export interface components {
             subjectAgeBand: components["schemas"]["SubjectAgeBand"];
             submissionKind: components["schemas"]["IntakeSubmissionKind"];
         };
+        /** TenantUserOut */
+        TenantUserOut: {
+            /** Displayname */
+            displayName: string | null;
+            /** Email */
+            email: string | null;
+            /** Externalauthid */
+            externalAuthId: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Isactive */
+            isActive: boolean;
+            /** Roles */
+            roles: components["schemas"]["MembershipRole"][];
+        };
         /**
          * TerminalBehavior
          * @enum {string}
@@ -4669,6 +4743,8 @@ export interface components {
         TransitionRequest: {
             target: components["schemas"]["RevisionStatus"];
         };
+        /** @enum {string} */
+        UiLocale: "en" | "sr-Latn";
         /**
          * UpdateContentRevisionRequest
          * @description `lock_version` is required, not optional: CG-B3 has no meaningful
@@ -7888,6 +7964,26 @@ export interface operations {
             };
         };
     };
+    read_me_api_v1_me_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MeOut"];
+                };
+            };
+        };
+    };
     read_my_organization_api_v1_organizations_me_get: {
         parameters: {
             query?: never;
@@ -9127,6 +9223,73 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DiagnosticRunResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_tenant_users_api_v1_superadmin_organizations__organization_slug__users_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                organization_slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TenantUserOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    replace_tenant_user_roles_api_v1_superadmin_organizations__organization_slug__users__user_id__roles_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                organization_slug: string;
+                user_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MembershipRolesUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TenantUserOut"];
                 };
             };
             /** @description Validation Error */

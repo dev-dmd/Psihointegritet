@@ -20,9 +20,9 @@ from __future__ import annotations
 import re
 from typing import Final
 
+from psihointegritet.core.locales import is_supported_locale
 from psihointegritet.modules.content.models import ContentTemplate, ContentType
 from psihointegritet.modules.content.system_catalog import (
-    SYSTEM_CONTENT_LOCALE,
     is_system_content_definition,
     require_system_content_definition,
 )
@@ -62,7 +62,7 @@ def is_article_identity(
     return (
         content_type is ContentType.ARTICLE
         and template is ContentTemplate.ARTICLE_DETAIL
-        and locale == SYSTEM_CONTENT_LOCALE
+        and is_supported_locale(locale)
         and is_valid_content_slug(slug)
         and slug not in RESERVED_ARTICLE_SLUGS
     )
@@ -94,8 +94,8 @@ def require_content_identity(
     """Validate a new entry's identity and report which registry owns it."""
 
     if content_type is ContentType.ARTICLE:
-        if locale != SYSTEM_CONTENT_LOCALE:
-            raise ValueError(f"Articles currently support only locale {SYSTEM_CONTENT_LOCALE!r}")
+        if not is_supported_locale(locale):
+            raise ValueError(f"Unsupported content locale {locale!r}")
         if template is not ContentTemplate.ARTICLE_DETAIL:
             raise ValueError(
                 f"An article requires template {ContentTemplate.ARTICLE_DETAIL.value!r}"

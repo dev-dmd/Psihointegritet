@@ -24,9 +24,10 @@ SERVICES = [
 async def main() -> None:
     engine = create_async_engine(DATABASE_URL)
     async with engine.connect() as conn:
-        # Get organization_id
+        # The locale is explicit: operational writes must not depend on a DB
+        # server default that cannot follow the organization.
         result = await conn.execute(
-            text("SELECT id FROM organizations WHERE slug = :slug"),
+            text("SELECT id, default_content_locale FROM organizations WHERE slug = :slug"),
             {"slug": ORG_SLUG},
         )
         org_row = result.fetchone()
@@ -34,6 +35,7 @@ async def main() -> None:
             print(f"ERROR: Organization '{ORG_SLUG}' not found.")
             return
         org_id = org_row[0]
+        content_locale = org_row[1]
 
         for slug in SERVICES:
             existing = await conn.execute(
@@ -47,10 +49,16 @@ async def main() -> None:
                 new_id = uuid4()
                 await conn.execute(
                     text(
-                        "INSERT INTO content_entries (id, organization_id, content_type, slug) "
-                        "VALUES (:id, :org_id, 'service', :slug)"
+                        "INSERT INTO content_entries "
+                        "(id, organization_id, content_type, slug, locale) "
+                        "VALUES (:id, :org_id, 'service', :slug, :locale)"
                     ),
-                    {"id": new_id, "org_id": org_id, "slug": slug},
+                    {
+                        "id": new_id,
+                        "org_id": org_id,
+                        "slug": slug,
+                        "locale": content_locale,
+                    },
                 )
                 await conn.commit()
                 print(f"{slug}: {new_id} (created)")
