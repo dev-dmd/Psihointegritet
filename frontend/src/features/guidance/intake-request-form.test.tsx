@@ -24,11 +24,8 @@ afterEach(() => {
 function successfulResponse(
   submissionKind: "request" | "team_review" = "request",
   reviewPriority: "standard" | "priority" = "standard",
-) {
-  return {
-    ok: true,
-    json: vi.fn().mockResolvedValue({ submissionKind, reviewPriority }),
-  };
+): Response {
+  return Response.json({ submissionKind, reviewPriority });
 }
 
 async function fillRequiredContact(user: ReturnType<typeof userEvent.setup>) {

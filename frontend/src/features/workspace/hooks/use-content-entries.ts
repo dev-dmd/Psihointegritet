@@ -32,10 +32,6 @@ export function usePublishedRelationTargetsQuery() {
   });
 }
 
-export function contentErrorMessage(error: unknown, fallback: string): string {
-  return error instanceof ContentApiError ? error.message : fallback;
-}
-
 /**
  * Opens a system page from the static catalogue: registers a CMS entry the
  * first time somebody edits a code fallback.

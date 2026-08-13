@@ -1,27 +1,25 @@
-/**
- * Stable problem-details envelope shared with the FastAPI backend.
- * The UI must never depend on raw backend exception strings.
- */
-export interface ApiProblem {
-  type: string;
-  status: number;
-  code: string;
-  params?: Record<string, string | number | boolean>;
-  fieldPath?: string;
-  fieldErrors?: Record<
-    string,
-    Array<{ code: string; params?: Record<string, string | number | boolean> }>
-  >;
-}
+import { z } from "zod";
+
+const safeParamSchema = z.union([z.string(), z.number(), z.boolean()]);
+
+export const apiFieldErrorSchema = z.object({
+  code: z.string().min(1),
+  params: z.record(z.string(), safeParamSchema).optional(),
+});
+
+/** Stable problem-details envelope shared with the FastAPI backend. Unknown
+ * backend keys (including prose and technical identifiers) are stripped. */
+export const apiProblemSchema = z.object({
+  type: z.string().optional(),
+  status: z.number().int(),
+  code: z.string().min(1),
+  params: z.record(z.string(), safeParamSchema).optional(),
+  fieldPath: z.string().optional(),
+  fieldErrors: z.record(z.string(), z.array(apiFieldErrorSchema)).optional(),
+});
+
+export type ApiProblem = z.infer<typeof apiProblemSchema>;
 
 export function isApiProblem(value: unknown): value is ApiProblem {
-  if (typeof value !== "object" || value === null) {
-    return false;
-  }
-  const candidate = value as Record<string, unknown>;
-  return (
-    typeof candidate.type === "string" &&
-    typeof candidate.status === "number" &&
-    typeof candidate.code === "string"
-  );
+  return apiProblemSchema.safeParse(value).success;
 }

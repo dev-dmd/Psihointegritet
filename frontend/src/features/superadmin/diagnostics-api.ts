@@ -1,3 +1,5 @@
+import { parseJsonResponse as parseOrThrow } from "@/lib/api/request-json";
+
 /**
  * Client for the Diagnostic Engine backend (`modules/diagnostics/router.py`),
  * proxied through `app/api/superadmin/diagnostics/**` Next Route Handlers
@@ -52,31 +54,6 @@ export interface RunDiagnosticsVariables {
   mode?: DiagnosticModeValue;
   /** null = global scope (superadmin only). */
   organizationId?: string | null;
-}
-
-export class DiagnosticsApiError extends Error {
-  constructor(
-    message: string,
-    public readonly status: number,
-  ) {
-    super(message);
-    this.name = "DiagnosticsApiError";
-  }
-}
-
-async function parseOrThrow<T>(response: Response): Promise<T> {
-  if (!response.ok) {
-    const text = await response.text().catch(() => "");
-    let message = text || `Zahtev nije uspeo (${response.status}).`;
-    try {
-      const parsed: { detail?: { message?: string } } = JSON.parse(text);
-      if (parsed.detail?.message) message = parsed.detail.message;
-    } catch {
-      // keep raw text
-    }
-    throw new DiagnosticsApiError(message, response.status);
-  }
-  return (await response.json()) as T;
 }
 
 /** GET /api/v1/superadmin/diagnostics — registered definitions, no execution. */

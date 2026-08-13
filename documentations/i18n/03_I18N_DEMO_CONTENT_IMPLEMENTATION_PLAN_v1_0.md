@@ -19,8 +19,8 @@ je unet.
 resolveri, CMS creation stamp, locale-aware public reads i fallback registry, kao i code-only
 API problem transport bez backend proze i tehničkih identifikatora u tenant response body-ju.
 
-Ovaj checkpoint ne zatvara kompletan I18N milestone. Three-state field override je završen
-2026-08-14; otvoreni su centralna user-safe error prezentacija, uklanjanje poslednjeg legacy
+Ovaj checkpoint ne zatvara kompletan I18N milestone. Three-state field override i centralna
+user-safe error prezentacija završeni su 2026-08-14; otvoreni su uklanjanje poslednjeg legacy
 `pickContent` selektora, content paketi, preostali platformski UI, backend
 email/notification katalozi, dijagnostika, D-079B plan i završni QA.
 
@@ -111,7 +111,7 @@ backend ga ne može objaviti. Language detection i upozorenja za tenantov unos n
 draft/showcase podataka ni provisioning promene u ovom slice-u. Automatski DOM test renderuje
 field statuse na `en` i `sr-Latn`; ručna vizuelna provera oba jezika ostaje otvorena za Fazu 10.
 
-## Faza 4 — centralni error contract (D-079A)
+## Faza 4 — centralni error contract (D-079A) — completed 2026-08-14
 
 - Jedan transportni ugovor: stabilan `code`, bezbedne `params` i HTTP status.
 - Jedan frontend mapper i `en`/`sr-Latn` error katalozi.
@@ -123,6 +123,26 @@ field statuse na `en` i `sr-Latn`; ručna vizuelna provera oba jezika ostaje otv
   lokalizuje. `global-error.tsx` ne prikazuje digest i koristi samostalan platform fallback.
 
 **Gate:** adapter i render testovi dokazuju da tehnički tekst ne može do korisnika.
+
+Isporučen je jedan `request-json` response boundary i jedan locale-aware presentation
+mapper. Content, Legal, Taxonomy, Research, Compass, Diagnostics, Organization, Intake,
+availability i tenant-user adapteri više ne parsiraju lokalno backend prozu. `en` i
+`sr-Latn` katalozi razdvajaju opis nezavršene radnje od sledećeg koraka, podržavaju
+surface-specific poruke, a status fallback se koristi samo kada nema kontrolisanog code
+override-a. Mapper ignoriše raw `Error.message`, `title`, `detail` i tehničke identifikatore;
+nepoznat code se nikada ne prikazuje kao tekst.
+
+Zajednički fixture i backend AST contract test drže kompletan skup javnih machine code-ova,
+a frontend contract test dokazuje da svaki ima lokalizovanu prezentaciju ili kontrolisan
+fallback na oba jezika. Architecture gate zabranjuje povratak lokalnog/raw parsera u
+obuhvaćene adaptere. Puni gate: frontend typecheck/lint/format/architecture, 720 testova
+prošlo i 1 preskočen, production build 106 stranica; backend Ruff/Pyright, 540 testova
+prošlo i 1 preskočen.
+
+**Status isporuke:** transport boundary, mapper, katalozi i adapter migracije su produkcijski
+kod; nema draft/showcase podataka ni provisioning promene u ovom slice-u. Oba jezika su
+automatski proverena kroz catalog parity i presentation contract testove; ručna vizuelna
+provera oba jezika ostaje otvorena za Fazu 10.
 
 ## Faza 5 — content paketi
 

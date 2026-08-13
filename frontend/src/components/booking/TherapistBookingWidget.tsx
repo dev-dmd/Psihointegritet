@@ -28,6 +28,7 @@ import { BookingWidgetConfirmationOverlay } from "@/features/booking-widget/comp
 import type { ConfirmationDetails } from "@/features/booking-widget/components/BookingWidgetConfirmation";
 import type { BookingWidgetSubmitPayload } from "@/features/booking-widget/booking-widget.types";
 import { bookingWidgetThemes } from "@/features/booking-widget/booking-widget.variants";
+import { useUserSafeError } from "@/lib/errors/use-user-safe-error";
 
 const glassTheme = bookingWidgetThemes.glass;
 
@@ -72,6 +73,7 @@ export function TherapistBookingWidget({
   selectionPolicy,
 }: TherapistBookingWidgetProps) {
   const router = useRouter();
+  const safeError = useUserSafeError();
   const fallback = useFallbackContent();
   const serviceCatalog = fallback.services.serviceCatalog;
   const therapistCatalog = fallback.therapists;
@@ -204,16 +206,12 @@ export function TherapistBookingWidget({
         });
         setFlowState("confirming");
       } catch (err: unknown) {
-        setSubmitError(
-          err instanceof Error
-            ? err.message
-            : "Slanje zahteva nije uspelo. Pokušajte ponovo.",
-        );
+        setSubmitError(safeError.text(err, "booking", "submit"));
       } finally {
         setIsSubmitting(false);
       }
     },
-    [selectedPayload, serviceCatalog, therapistCatalog],
+    [safeError, selectedPayload, serviceCatalog, therapistCatalog],
   );
 
   return (

@@ -23,7 +23,7 @@ describe("requestJson", () => {
           detail: "Proverite označeno polje.",
           correlationId: "correlation-1",
           fieldPath: "topicIds",
-          fieldErrors: { topicIds: ["Najviše dve teme."] },
+          fieldErrors: { topicIds: [{ code: "too_many_items" }] },
           internalDebugValue: "must not cross the adapter boundary",
         }),
         {
@@ -48,7 +48,7 @@ describe("requestJson", () => {
       code: "validation_error",
       params: { limit: 2 },
       fieldPath: "topicIds",
-      fieldErrors: { topicIds: ["Najviše dve teme."] },
+      fieldErrors: { topicIds: [{ code: "too_many_items" }] },
     });
     expect(error).not.toHaveProperty("internalDebugValue");
   });

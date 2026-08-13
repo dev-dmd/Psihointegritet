@@ -1,3 +1,4 @@
+import { JsonRequestError, parseJsonResponse } from "@/lib/api/request-json";
 import type { components } from "@/types/api.generated";
 import type { Therapist } from "@/types/therapist";
 
@@ -27,11 +28,7 @@ export interface PublicIntakeCapabilities {
   requestAcknowledgementVersion: string | null;
 }
 
-export class PublicIntakeApiError extends Error {
-  constructor(readonly status: number) {
-    super("Public Intake request failed");
-  }
-}
+export { JsonRequestError as PublicIntakeApiError };
 
 export function toPublicIntakeAnswers(
   answers: IntakeAnswers,
@@ -59,10 +56,7 @@ export async function fetchPublicIntakeCapabilities(
     cache: "no-store",
     ...(signal ? { signal } : {}),
   });
-  if (!response.ok) {
-    throw new PublicIntakeApiError(response.status);
-  }
-  return (await response.json()) as PublicIntakeCapabilities;
+  return parseJsonResponse<PublicIntakeCapabilities>(response);
 }
 
 export async function fetchAuthoritativeIntakeMatch(
@@ -76,11 +70,8 @@ export async function fetchAuthoritativeIntakeMatch(
     body: JSON.stringify({ answers: toPublicIntakeAnswers(answers) }),
     ...(signal ? { signal } : {}),
   });
-  if (!response.ok) {
-    throw new PublicIntakeApiError(response.status);
-  }
   return toDisplayMatchResult(
-    (await response.json()) as PublicIntakeMatchResponse,
+    await parseJsonResponse<PublicIntakeMatchResponse>(response),
     therapists,
   );
 }
@@ -97,10 +88,7 @@ export async function submitPublicIntakeCase(
     },
     body: JSON.stringify(payload),
   });
-  if (!response.ok) {
-    throw new PublicIntakeApiError(response.status);
-  }
-  return (await response.json()) as PublicIntakeSubmissionResponse;
+  return parseJsonResponse<PublicIntakeSubmissionResponse>(response);
 }
 
 function toDisplayMatchResult(

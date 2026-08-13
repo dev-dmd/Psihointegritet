@@ -1,14 +1,6 @@
 import { z } from "zod";
 
-const apiProblemEnvelopeSchema = z.object({
-  status: z.number().int(),
-  code: z.string().min(1),
-  params: z
-    .record(z.string(), z.union([z.string(), z.number(), z.boolean()]))
-    .optional(),
-  fieldPath: z.string().optional(),
-  fieldErrors: z.record(z.string(), z.array(z.string())).optional(),
-});
+import { apiProblemSchema, type ApiProblem } from "@/lib/errors/api-problem";
 
 /**
  * Error raised by same-origin frontend adapters. The body is parsed only to a
@@ -21,7 +13,7 @@ export class JsonRequestError extends Error {
     readonly code?: string,
     readonly params?: Record<string, string | number | boolean>,
     readonly fieldPath?: string,
-    readonly fieldErrors?: Record<string, string[]>,
+    readonly fieldErrors?: ApiProblem["fieldErrors"],
   ) {
     super(message);
     this.name = "JsonRequestError";
@@ -48,6 +40,34 @@ async function readJson(response: Response): Promise<unknown> {
   }
 }
 
+function errorForResponse(
+  response: Response,
+  payload: unknown,
+): JsonRequestError {
+  const parsedProblem = apiProblemSchema.safeParse(payload);
+  if (!parsedProblem.success) return new JsonRequestError(response.status);
+  const problem = parsedProblem.data;
+  return new JsonRequestError(
+    response.status,
+    "Request failed",
+    problem.code,
+    problem.params,
+    problem.fieldPath,
+    problem.fieldErrors,
+  );
+}
+
+/** Shared response boundary for hand-shaped API clients. It preserves only
+ * machine-safe problem fields and never copies backend prose into Error.message. */
+export async function parseJsonResponse<TResult>(
+  response: Response,
+): Promise<TResult> {
+  const payload = await readJson(response);
+  if (!response.ok) throw errorForResponse(response, payload);
+  if (response.status === 204) return undefined as TResult;
+  return payload as TResult;
+}
+
 export async function requestJson<TResult>(
   input: RequestInfo | URL,
   init: RequestInit,
@@ -57,20 +77,7 @@ export async function requestJson<TResult>(
   const payload = await readJson(response);
 
   if (!response.ok) {
-    const parsedProblem = apiProblemEnvelopeSchema.safeParse(payload);
-    if (parsedProblem.success) {
-      const problem = parsedProblem.data;
-      throw new JsonRequestError(
-        response.status,
-        "Request failed",
-        problem.code,
-        problem.params,
-        problem.fieldPath,
-        problem.fieldErrors,
-      );
-    }
-
-    throw new JsonRequestError(response.status);
+    throw errorForResponse(response, payload);
   }
 
   const parsed = responseSchema.safeParse(payload);

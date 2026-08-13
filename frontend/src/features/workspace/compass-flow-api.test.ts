@@ -1,5 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 
+import { JsonRequestError } from "@/lib/api/request-json";
+
 import { fetchCompassFlows } from "./compass-flow-api";
 
 /**
@@ -7,11 +9,7 @@ import { fetchCompassFlows } from "./compass-flow-api";
  * technical identifiers are never a user-facing message.
  */
 function problemResponse(status: number, body: unknown): Response {
-  return {
-    ok: false,
-    status,
-    json: async () => body,
-  } as unknown as Response;
+  return Response.json(body, { status });
 }
 
 describe("compass flow admin client", () => {
@@ -30,9 +28,14 @@ describe("compass flow admin client", () => {
       ),
     );
 
-    await expect(fetchCompassFlows()).rejects.toThrow(
-      "Kompas zahtev nije završen. Pokušajte ponovo.",
-    );
+    const error = await fetchCompassFlows().catch((reason: unknown) => reason);
+    expect(error).toBeInstanceOf(JsonRequestError);
+    expect(error).toMatchObject({
+      status: 403,
+      code: "http_error",
+      message: "Request failed",
+    });
+    expect(JSON.stringify(error)).not.toMatch(/Vaša prijava|abc123/);
     vi.unstubAllGlobals();
   });
 
@@ -44,9 +47,10 @@ describe("compass flow admin client", () => {
         .mockResolvedValue(problemResponse(500, "<html>proxy error</html>")),
     );
 
-    await expect(fetchCompassFlows()).rejects.toThrow(
-      "Kompas zahtev nije uspeo (500).",
-    );
+    await expect(fetchCompassFlows()).rejects.toMatchObject({
+      status: 500,
+      message: "Request failed",
+    });
     vi.unstubAllGlobals();
   });
 });

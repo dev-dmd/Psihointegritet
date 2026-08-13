@@ -11,7 +11,10 @@
 
 import type { RichDoc } from "@/lib/content-governance/rich-doc";
 import type { ActorSummary } from "@/components/panel/actor-badge";
-import { isApiProblem } from "@/lib/errors/api-problem";
+import {
+  JsonRequestError,
+  parseJsonResponse as parseOrThrow,
+} from "@/lib/api/request-json";
 
 import type {
   ApprovalCapability,
@@ -66,15 +69,7 @@ export interface ApiImportDocxResult {
   requiresApproval: boolean;
 }
 
-export class LegalDocumentsApiError extends Error {
-  constructor(
-    message: string,
-    public readonly status: number,
-  ) {
-    super(message);
-    this.name = "LegalDocumentsApiError";
-  }
-}
+export { JsonRequestError as LegalDocumentsApiError };
 
 /**
  * The panel's `approvals: ApprovalCapability[]` is deliberately a flat list
@@ -103,27 +98,6 @@ export function toLegalDocument(
     versionLabel: revision.versionLabel,
     updatedAt: revision.updatedAt,
   };
-}
-
-async function parseOrThrow<T>(response: Response): Promise<T> {
-  if (!response.ok) {
-    const text = await response.text().catch(() => "");
-    let detail = "Dokument nije sačuvan. Pokušajte ponovo.";
-    try {
-      const parsed: unknown = text ? JSON.parse(text) : null;
-      if (isApiProblem(parsed)) {
-        detail =
-          parsed.status >= 500
-            ? "Server trenutno ne može da obradi zahtev. Pokušajte ponovo."
-            : "Dokument nije sačuvan. Proverite unos i pokušajte ponovo.";
-      }
-    } catch {
-      // Keep a non-JSON proxy/network response as-is.
-    }
-    throw new LegalDocumentsApiError(detail, response.status);
-  }
-  if (response.status === 204) return undefined as T;
-  return (await response.json()) as T;
 }
 
 export async function fetchLegalDocuments(): Promise<LegalDocument[]> {
@@ -272,8 +246,5 @@ export async function previewNewLegalDocumentDocx(
 
 function requireDocxFile(file: File): void {
   if (file.name.toLowerCase().endsWith(".docx")) return;
-  throw new LegalDocumentsApiError(
-    "Izabrani fajl nije .docx. Sačuvajte Word dokument kao .docx i pokušajte ponovo.",
-    422,
-  );
+  throw new JsonRequestError(422, "Request failed", "file_type_invalid");
 }

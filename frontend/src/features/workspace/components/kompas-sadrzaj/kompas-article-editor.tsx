@@ -18,7 +18,7 @@ import {
   useSubmitArticleReviewMutation,
 } from "../../hooks/use-content-revision";
 import { useTaxonomyRegistryLookupQuery } from "../../hooks/use-taxonomy-registry";
-import { contentErrorMessage } from "../../hooks/use-content-entries";
+import { useUserSafeError } from "@/lib/errors/use-user-safe-error";
 import { usePanelErrors } from "../../panel-errors";
 import type { RichDoc } from "@/lib/content-governance/rich-doc";
 import type { PlatformRouteId } from "@/lib/routes/platform-routes";
@@ -63,15 +63,15 @@ function initialSlotData(entry: ApiContentRevision): Record<string, unknown> {
  * The article's own page (D-063).
  *
  * Reuses the schema-driven slot layer and every transport hook the CMS editor
- * uses, but not that editor's information architecture: an article is not one
- * of six fixed system pages and must not be rendered underneath their
+ * uses, but not its information architecture: an article is not one of six
+ * fixed system pages and must not be rendered underneath their
  * catalogue. `content-revision-editor.tsx` is untouched and stays at its
  * architecture baseline.
  */
 export function KompasArticleEditor({ entry }: { entry: ApiContentRevision }) {
   const router = useRouter();
   const locale = useUiLocale();
-
+  const safeError = useUserSafeError();
   // Both call sites used `window.location.href`, bypassing the router
   // (Rules §35) — harmless while the path was a Serbian literal, wrong once the
   // physical route is English and this must follow the organization's locale.
@@ -135,7 +135,7 @@ export function KompasArticleEditor({ entry }: { entry: ApiContentRevision }) {
       routeId: ROUTE_ID,
       tabLabel: TAB_LABEL,
       title,
-      description: contentErrorMessage(error, "Pokušajte ponovo."),
+      description: safeError.text(error, "content", "change"),
       details: [],
     });
 

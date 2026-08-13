@@ -4,11 +4,9 @@ import { useState } from "react";
 
 import { ConfirmModal } from "@/components/panel/confirm-modal";
 import { StatusBadge } from "@/components/panel/status-badge";
+import { useUserSafeError } from "@/lib/errors/use-user-safe-error";
 
-import {
-  taxonomyErrorMessage,
-  useDeleteTaxonomyRevisionMutation,
-} from "../../hooks/use-taxonomy-registry";
+import { useDeleteTaxonomyRevisionMutation } from "../../hooks/use-taxonomy-registry";
 import type { TaxonomyTerm } from "../../taxonomy-api";
 import { LockIcon } from "../icons";
 import { ActivityActorBadges, ApprovalEvidence } from "./activity-evidence";
@@ -31,6 +29,7 @@ export function TermCard({
   onChanged?: (term: TaxonomyTerm) => void;
   onDeleted?: () => void;
 }) {
+  const safeError = useUserSafeError();
   const [deleteOpen, setDeleteOpen] = useState(false);
   const deleteMutation = useDeleteTaxonomyRevisionMutation(term, () => {
     setDeleteOpen(false);
@@ -207,10 +206,7 @@ export function TermCard({
       </div>
       {deleteMutation.isError ? (
         <p className="text-danger mt-2 text-right text-[12px]">
-          {taxonomyErrorMessage(
-            deleteMutation.error,
-            "Radna verzija nije obrisana. Pokušajte ponovo.",
-          )}
+          {safeError.text(deleteMutation.error, "taxonomy", "change")}
         </p>
       ) : null}
       <ConfirmModal

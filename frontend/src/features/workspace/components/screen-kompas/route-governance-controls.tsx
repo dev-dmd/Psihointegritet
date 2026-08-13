@@ -3,15 +3,14 @@
 import { useState } from "react";
 
 import { cn } from "@/helpers/cn";
+import { useUserSafeError } from "@/lib/errors/use-user-safe-error";
 
 import {
-  firstTaxonomyError,
   useConfirmTaxonomyRouteMutation,
   useSuggestTaxonomyRouteMutation,
 } from "../../hooks/use-taxonomy-registry";
 import {
   suggestTaxonomyRoute,
-  taxonomyFieldErrors,
   type TaxonomyRoute,
   type TaxonomyRouteSuggestion,
   type TaxonomyTerm,
@@ -29,6 +28,7 @@ export function RouteGovernanceControls({
   term: TaxonomyTerm;
   onConfirmed: (route: TaxonomyRoute) => void;
 }) {
+  const safeError = useUserSafeError();
   const [suggestion, setSuggestion] = useState<TaxonomyRouteSuggestion | null>(
     term.canonicalPath
       ? {
@@ -81,23 +81,23 @@ export function RouteGovernanceControls({
     });
   };
 
-  const routeError = firstTaxonomyError([
-    {
-      isError: suggestMutation.isError,
-      error: suggestMutation.error,
-      fallback: "Predlog javne putanje nije dostupan. Pokušajte ponovo.",
-    },
-    {
-      isError: confirmMutation.isError,
-      error: confirmMutation.error,
-      fallback: "Javna putanja nije sačuvana. Pokušajte ponovo.",
-    },
-  ]);
+  const routeCause = suggestMutation.isError
+    ? suggestMutation.error
+    : confirmMutation.isError
+      ? confirmMutation.error
+      : null;
+  const routePresentation = routeCause
+    ? safeError.present(routeCause, "taxonomy", "change")
+    : null;
+  const routeError = routePresentation
+    ? `${routePresentation.message} ${routePresentation.nextAction}`
+    : null;
   const invalidLocally =
     slug.trim().length > 0 && !ROUTE_SLUG_PATTERN.test(slug.trim());
   const fieldError = invalidLocally
     ? "Javna putanja koristi mala slova, brojeve i crtice, na primer stres-i-preopterecenost."
-    : taxonomyFieldErrors(confirmMutation.error).slug;
+    : safeError.present(confirmMutation.error, "taxonomy", "change").fieldErrors
+        .slug;
   const globalError = fieldError ? null : routeError;
   const busy = suggestMutation.isPending || confirmMutation.isPending;
 

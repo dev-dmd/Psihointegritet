@@ -1,4 +1,5 @@
 import type { MembershipRole } from "@/lib/auth/identity";
+import { parseJsonResponse } from "@/lib/api/request-json";
 
 export type TenantUser = {
   id: string;
@@ -15,9 +16,7 @@ export async function fetchTenantUsers(
   const response = await fetch(
     `/api/superadmin/tenants/${encodeURIComponent(tenantSlug)}/users`,
   );
-  if (!response.ok)
-    throw new Error(`Tenant users request failed: ${response.status}`);
-  return (await response.json()) as TenantUser[];
+  return parseJsonResponse<TenantUser[]>(response);
 }
 
 export async function replaceTenantUserRoles(
@@ -33,7 +32,5 @@ export async function replaceTenantUserRoles(
       body: JSON.stringify({ roles }),
     },
   );
-  if (!response.ok)
-    throw new Error(`Tenant roles request failed: ${response.status}`);
-  return (await response.json()) as TenantUser;
+  return parseJsonResponse<TenantUser>(response);
 }

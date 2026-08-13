@@ -5,16 +5,10 @@ import { useState } from "react";
 
 import { EmptyDashedCard } from "@/components/panel/empty-dashed-card";
 import { cn } from "@/helpers/cn";
+import { useUserSafeError } from "@/lib/errors/use-user-safe-error";
 
-import {
-  taxonomyErrorMessage,
-  useCreateTaxonomyIntakeLinkMutation,
-} from "../../hooks/use-taxonomy-registry";
-import {
-  taxonomyFieldErrors,
-  type TaxonomyIntakeLink,
-  type TaxonomyTerm,
-} from "../../taxonomy-api";
+import { useCreateTaxonomyIntakeLinkMutation } from "../../hooks/use-taxonomy-registry";
+import { type TaxonomyIntakeLink, type TaxonomyTerm } from "../../taxonomy-api";
 import { FieldError } from "./governance-error";
 import { sortTerms } from "./helpers";
 import { IntakeLinkCards } from "./intake-link-cards";
@@ -28,6 +22,7 @@ function IntakeLinkCreator({
   links: TaxonomyIntakeLink[];
   onCreated: (link: TaxonomyIntakeLink) => void;
 }) {
+  const safeError = useUserSafeError();
   const [topicTermId, setTopicTermId] = useState("");
   const [supportAreaTermId, setSupportAreaTermId] = useState("");
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
@@ -50,7 +45,8 @@ function IntakeLinkCreator({
       setSupportAreaTermId("");
     },
     (error) => {
-      const apiFieldErrors = taxonomyFieldErrors(error);
+      const presentation = safeError.present(error, "taxonomy", "change");
+      const apiFieldErrors = presentation.fieldErrors;
       if (Object.keys(apiFieldErrors).length > 0) {
         setFieldErrors(apiFieldErrors);
         const field = Object.keys(apiFieldErrors)[0];
@@ -67,12 +63,7 @@ function IntakeLinkCreator({
         }
         return;
       }
-      setServerError(
-        taxonomyErrorMessage(
-          error,
-          "Povezivanje nije sačuvano. Pokušajte ponovo.",
-        ),
-      );
+      setServerError(`${presentation.message} ${presentation.nextAction}`);
     },
   );
 

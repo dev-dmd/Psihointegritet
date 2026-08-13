@@ -4,6 +4,7 @@ import { useCallback, useState } from "react";
 import { toast } from "sonner";
 
 import type { BookingWidgetSubmitPayload } from "@/features/booking-widget/booking-widget.types";
+import { useUserSafeError } from "@/lib/errors/use-user-safe-error";
 
 import type { ContactFormData } from "../components/BookingWidgetContactForm";
 import type { ConfirmationDetails } from "../components/BookingWidgetConfirmation";
@@ -47,6 +48,7 @@ interface UseBookingSubmissionResult {
 export function useBookingSubmission(
   params: UseBookingSubmissionParams,
 ): UseBookingSubmissionResult {
+  const safeError = useUserSafeError();
   const [flowState, setFlowState] = useState<BookingFlowState>("selecting");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -123,16 +125,12 @@ export function useBookingSubmission(
 
         params.onSubmitProp?.(params.buildSubmitPayload(undefined));
       } catch (err: unknown) {
-        const message =
-          err instanceof Error
-            ? err.message
-            : "Slanje zahteva nije uspelo. Pokušajte ponovo.";
-        setSubmitError(message);
+        setSubmitError(safeError.text(err, "booking", "submit"));
       } finally {
         setIsSubmitting(false);
       }
     },
-    [params],
+    [params, safeError],
   );
 
   return {

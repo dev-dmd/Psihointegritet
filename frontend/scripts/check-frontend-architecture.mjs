@@ -51,7 +51,7 @@ const largeFileBaseline = new Map([
   ["src/features/booking/booking-request-form.tsx", 659],
   ["src/features/company/company-configurator-drawer.tsx", 517],
   ["src/features/guidance/guidance-flow.tsx", 950],
-  ["src/features/workspace/components/content-revision-editor.tsx", 596],
+  ["src/features/workspace/components/content-revision-editor.tsx", 592],
   [
     "src/features/workspace/components/kompas-sadrzaj/kompas-article-editor.tsx",
     408,
@@ -249,7 +249,7 @@ const inlineSerbianBaseline = new Map([
   ["src/app/error.tsx", 7],
   ["src/app/layout.tsx", 3],
   ["src/app/not-found.tsx", 5],
-  ["src/components/booking/TherapistBookingWidget.tsx", 3],
+  ["src/components/booking/TherapistBookingWidget.tsx", 2],
   ["src/components/content/rich-text-editor.tsx", 5],
   ["src/components/panel/error-banner.tsx", 2],
   ["src/components/sections/companies/companies-page.tsx", 33],
@@ -333,7 +333,7 @@ const inlineSerbianBaseline = new Map([
   ],
   ["src/features/workspace/components/availability/screen-dostupnost.tsx", 21],
   ["src/features/workspace/components/content-discovery-metadata.tsx", 22],
-  ["src/features/workspace/components/content-revision-editor.tsx", 19],
+  ["src/features/workspace/components/content-revision-editor.tsx", 16],
   ["src/features/workspace/components/content-revision-preview.tsx", 6],
   [
     "src/features/workspace/components/kompas-sadrzaj/article-author-field.tsx",
@@ -364,11 +364,11 @@ const inlineSerbianBaseline = new Map([
   ["src/features/workspace/components/kompas-sadrzaj/article-text-step.tsx", 6],
   [
     "src/features/workspace/components/kompas-sadrzaj/kompas-article-editor.tsx",
-    11,
+    10,
   ],
   [
     "src/features/workspace/components/kompas-sadrzaj/kompas-article-screen.tsx",
-    9,
+    7,
   ],
   [
     "src/features/workspace/components/kompas-sadrzaj/kompas-content-actions.tsx",
@@ -380,11 +380,11 @@ const inlineSerbianBaseline = new Map([
   ],
   [
     "src/features/workspace/components/kompas-sadrzaj/kompas-content-list.tsx",
-    17,
+    13,
   ],
   [
     "src/features/workspace/components/kompas-sadrzaj/kompas-content-new.tsx",
-    7,
+    6,
   ],
   [
     "src/features/workspace/components/kompas-sadrzaj/kompas-content-row.tsx",
@@ -392,7 +392,7 @@ const inlineSerbianBaseline = new Map([
   ],
   [
     "src/features/workspace/components/kompas-sadrzaj/kompas-docx-import.tsx",
-    9,
+    8,
   ],
   [
     "src/features/workspace/components/kompas-sadrzaj/kompas-editor-header.tsx",
@@ -403,8 +403,8 @@ const inlineSerbianBaseline = new Map([
     8,
   ],
   ["src/features/workspace/components/kompas-sadrzaj/next-action-card.tsx", 1],
-  ["src/features/workspace/components/review-assignment-manager.tsx", 11],
-  ["src/features/workspace/components/review-queue-screen.tsx", 18],
+  ["src/features/workspace/components/review-assignment-manager.tsx", 10],
+  ["src/features/workspace/components/review-queue-screen.tsx", 16],
   [
     "src/features/workspace/components/screen-dokumenti/docx-import-findings.tsx",
     2,
@@ -419,22 +419,22 @@ const inlineSerbianBaseline = new Map([
   ],
   [
     "src/features/workspace/components/screen-dokumenti/screen-dokumenti.tsx",
-    18,
+    10,
   ],
-  ["src/features/workspace/components/screen-istrazivanja.tsx", 15],
+  ["src/features/workspace/components/screen-istrazivanja.tsx", 13],
   ["src/features/workspace/components/screen-klijenti.tsx", 6],
   ["src/features/workspace/components/screen-kompanije.tsx", 1],
   ["src/features/workspace/components/screen-kompas/approval-controls.tsx", 1],
   [
     "src/features/workspace/components/screen-kompas/compass-admin-workspace.tsx",
-    24,
+    22,
   ],
   ["src/features/workspace/components/screen-kompas/intake-link-cards.tsx", 1],
   [
     "src/features/workspace/components/screen-kompas/intake-link-governance-controls.tsx",
-    12,
+    8,
   ],
-  ["src/features/workspace/components/screen-kompas/intake-links.tsx", 19],
+  ["src/features/workspace/components/screen-kompas/intake-links.tsx", 17],
   ["src/features/workspace/components/screen-kompas/lifecycle-button.tsx", 1],
   [
     "src/features/workspace/components/screen-kompas/readiness-checklist.tsx",
@@ -443,14 +443,14 @@ const inlineSerbianBaseline = new Map([
   ["src/features/workspace/components/screen-kompas/review-queue.tsx", 5],
   [
     "src/features/workspace/components/screen-kompas/route-governance-controls.tsx",
-    10,
+    7,
   ],
-  ["src/features/workspace/components/screen-kompas/screen-kompas.tsx", 13],
+  ["src/features/workspace/components/screen-kompas/screen-kompas.tsx", 10],
   ["src/features/workspace/components/screen-kompas/system-choices.tsx", 6],
-  ["src/features/workspace/components/screen-kompas/term-card.tsx", 11],
+  ["src/features/workspace/components/screen-kompas/term-card.tsx", 10],
   [
     "src/features/workspace/components/screen-kompas/term-governance-controls.tsx",
-    10,
+    6,
   ],
   ["src/features/workspace/components/screen-kompas/term-list.tsx", 2],
   ["src/features/workspace/components/screen-pregled.tsx", 0],
@@ -579,6 +579,44 @@ for (const rel of ssgSafeModules) {
     failures.push(
       `${rel}:${lineOf(code, match.index ?? 0)} request-time API "${match[0]}" ` +
         `in an SSG-safe module; this drops the public site to per-request SSR`,
+    );
+  }
+}
+
+/**
+ * User-facing API adapters share one narrow error boundary (I18N-ERROR-2).
+ * An adapter may shape a successful payload, but it may not read raw response
+ * prose or grow a local problem parser. Presentation happens later from the
+ * stable code/status envelope and the live organization UI locale.
+ */
+const userFacingApiAdapters = [
+  "src/features/guidance/public-intake-api.ts",
+  "src/features/superadmin/diagnostics-api.ts",
+  "src/features/superadmin/tenant-users-api.ts",
+  "src/features/workspace/compass-flow-api.ts",
+  "src/features/workspace/content-api.ts",
+  "src/features/workspace/intake-team-queue-api.ts",
+  "src/features/workspace/legal-documents-api.ts",
+  "src/features/workspace/organization-api.ts",
+  "src/features/workspace/research-api.ts",
+  "src/features/workspace/taxonomy-api.ts",
+  "src/lib/api/availability.ts",
+];
+
+const localErrorBoundaryPattern =
+  /response\.text\s*\(|\bisApiProblem\b|\b(?:error|reason)\.message\b|parsed\.(?:title|detail)\b/;
+
+for (const rel of userFacingApiAdapters) {
+  const absolute = path.join(projectRoot, rel);
+  const text = fs.readFileSync(absolute, "utf8");
+  if (!text.includes("@/lib/api/request-json")) {
+    failures.push(`${rel}: use the central request-json error boundary`);
+  }
+  const match = text.match(localErrorBoundaryPattern);
+  if (match) {
+    failures.push(
+      `${rel}:${lineOf(text, match.index ?? 0)} local/raw API error parsing "${match[0]}"; ` +
+        `use the central request-json boundary`,
     );
   }
 }

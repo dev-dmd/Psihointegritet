@@ -4,6 +4,7 @@ import { useState } from "react";
 
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
+import { useUserSafeError } from "@/lib/errors/use-user-safe-error";
 
 import {
   LOCALE_ENDONYMS,
@@ -30,6 +31,7 @@ export function LanguageSettingsSection() {
   const t = useTranslations("workspace");
   // Loading and saving states are shared chrome, not settings copy.
   const tc = useTranslations("common");
+  const safeError = useUserSafeError();
   const { data, isPending, isError } = useOrganizationSettingsQuery();
 
   /**
@@ -46,11 +48,7 @@ export function LanguageSettingsSection() {
       toast.success(t("settings.saved"));
     },
     onFailed: (error) =>
-      toast.error(
-        error instanceof Error && error.message
-          ? error.message
-          : t("settings.loadFailed"),
-      ),
+      toast.error(safeError.text(error, "organization", "change")),
   });
 
   if (isError) {

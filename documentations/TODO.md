@@ -638,8 +638,8 @@ Dokazuje `SlotSpec` registar koji pravni tok ne dokazuje (`legal_page` ima samo 
 | ----- | ------ | ------------ |
 | I18N Foundation & Safe Error Transport | ✅ 2026-08-13 | Locale resolver/creation stamp/public fallback i code-only transport; nije kompletan I18N milestone |
 | Three-state CMS field override | ✅ 2026-08-14 | Backward-compatible primitive/inherit/custom/hidden resolver, eksplicitna hide whitelist-a, backend validator, editor/preview i parity testovi; bez DB migracije i language detection-a |
-| Centralni user-safe error presentation | ⬜ | Sledeći slice |
-| Uklanjanje poslednjeg `pickContent` | ⬜ | Posle centralnog error mappera |
+| Centralni user-safe error presentation | ✅ 2026-08-14 | Jedan safe response boundary i locale-aware mapper; en/sr-Latn surface/code katalog, backend-code contract i architecture zabrana raw/lokalnih adaptera |
+| Uklanjanje poslednjeg `pickContent` | ⬜ | Sledeći slice |
 | Content paketi | ⬜ | `psihointegritet`, `mental-health-starter`, `blank`; bez `packId` DB kolone |
 
 ---
@@ -899,9 +899,9 @@ Ispravka anchor-a ide uz Fazu A.
 | Faza | Šta | Obim | Status |
 |---|---|---|---|
 | **1** | Dokumentacioni autoritet, content-source README i gap manifest | dokumentacija | ✅ 2026-08-13 |
-| **2** | Locale/content osnova + backend creation stamp + audit svih CMS write putanja | frontend/backend | ⚪ |
-| **3** | Backward-compatible CMS field `inherit/custom/hidden` resolver i validacija | CMS | ⚪ |
-| **4** | Centralni user-safe error contract i katalozi (D-079A) | frontend/backend | ⚪ |
+| **2** | Locale/content osnova + backend creation stamp + audit svih CMS write putanja | frontend/backend | ✅ 2026-08-13 |
+| **3** | Backward-compatible CMS field `inherit/custom/hidden` resolver i validacija | CMS | ✅ 2026-08-14 |
+| **4** | Centralni user-safe error contract i katalozi (D-079A) | frontend/backend | ✅ 2026-08-14 |
 | **5** | `psihointegritet`, `mental-health-starter` i `blank` content paketi | content | ⚪ |
 | **6** | Javni UI, workspace/account i domeni bez promene poslovne semantike | frontend | ⚪ |
 | **7** | Backend email/notification katalozi + route helper | backend | ⚪ |
@@ -914,9 +914,10 @@ Ispravka anchor-a ide uz Fazu A.
 **I18N Foundation & Safe Error Transport — ✅ completed.** Organization locale resolveri,
 CMS creation stamp, locale-aware public reads, centralni fallback registry i code-only error
 transport su isporučeni. Backend `title`, `detail`, raw poruka i tehnički identifikatori više
-nisu tenant-facing transportni ugovor. **Kompletan I18N milestone ostaje otvoren**: završna
-error prezentacija, three-state CMS override, poslednji `pickContent`, content paketi,
-preostali UI/email/diagnostics i završni QA nisu obeleženi kao završeni.
+nisu tenant-facing transportni ugovor. Three-state CMS override i centralna user-safe error
+prezentacija završeni su 2026-08-14. **Kompletan I18N milestone ostaje otvoren**: poslednji
+`pickContent`, content paketi, preostali UI/email/diagnostics i završni QA nisu obeleženi
+kao završeni.
 
 **Integracioni gate — ✅ 2026-08-13.** Full Vitest 624 pass / 1 skip; production build 106
 statičkih stranica; izolovani Alembic upgrade/downgrade/upgrade/check i offline SQL prolaze;
