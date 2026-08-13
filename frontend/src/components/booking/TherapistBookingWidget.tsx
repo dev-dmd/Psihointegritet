@@ -213,7 +213,7 @@ export function TherapistBookingWidget({
         setIsSubmitting(false);
       }
     },
-    [selectedPayload],
+    [selectedPayload, serviceCatalog, therapistCatalog],
   );
 
   return (

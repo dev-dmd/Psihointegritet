@@ -109,7 +109,7 @@ function BookingRequestFormContent(props: BookingRequestFormProps) {
   const selectedService = useMemo(
     () =>
       serviceCatalog.find((service) => service.slug === serviceSlug) ?? null,
-    [serviceSlug],
+    [serviceCatalog, serviceSlug],
   );
   const selectedTherapist = therapistSlug
     ? (therapists.find((therapist) => therapist.slug === therapistSlug) ?? null)
