@@ -3,9 +3,10 @@ import type { Route } from "next";
 import Link from "next/link";
 
 import { ButtonLink } from "@/components/ui/button-link";
-import { clientLink, companies } from "@/content/homepage";
+import { getFallbackContent } from "@/content/server";
 
-export function Hero() {
+export async function Hero() {
+  const { clientLink, companies } = (await getFallbackContent()).homepage;
   return (
     <section id="vrh" className="scroll-mt-24 pt-6">
       <div className="mx-auto max-w-[1536px] px-5 md:px-8">

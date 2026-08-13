@@ -1,9 +1,10 @@
 import { Reveal } from "@/components/motion/reveal";
 import { ButtonLink } from "@/components/ui/button-link";
 import { Eyebrow } from "@/components/ui/eyebrow";
-import { firstSessionSteps } from "@/content/homepage";
+import { getFallbackContent } from "@/content/server";
 
-export function FirstSession() {
+export async function FirstSession() {
+  const { firstSessionSteps } = (await getFallbackContent()).homepage;
   return (
     <section id="prvi-razgovor" className="scroll-mt-24 pt-[72px] md:pt-32">
       <div className="mx-auto max-w-[1536px] px-5 md:px-8">

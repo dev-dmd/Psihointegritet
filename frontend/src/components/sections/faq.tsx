@@ -2,9 +2,10 @@ import { Reveal } from "@/components/motion/reveal";
 import { Accordion } from "@/components/ui/accordion";
 import { ArrowLink } from "@/components/ui/arrow-link";
 import { SectionHeading } from "@/components/ui/section-heading";
-import { faqItems } from "@/content/homepage";
+import { getFallbackContent } from "@/content/server";
 
-export function Faq() {
+export async function Faq() {
+  const { faqItems } = (await getFallbackContent()).homepage;
   return (
     <section id="faq" className="scroll-mt-24 pt-[72px] md:pt-32">
       <div className="mx-auto max-w-[1536px] px-5 md:px-8">

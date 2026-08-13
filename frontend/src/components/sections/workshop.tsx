@@ -1,9 +1,10 @@
 import { Reveal } from "@/components/motion/reveal";
 import { ButtonLink } from "@/components/ui/button-link";
 import { Eyebrow } from "@/components/ui/eyebrow";
-import { workshopFacts } from "@/content/homepage";
+import { getFallbackContent } from "@/content/server";
 
-export function Workshop() {
+export async function Workshop() {
+  const { workshopFacts } = (await getFallbackContent()).homepage;
   return (
     <section id="radionice" className="scroll-mt-24 pt-[72px] md:pt-32">
       <div className="mx-auto max-w-[1536px] px-5 md:px-8">

@@ -2,14 +2,15 @@ import { Reveal } from "@/components/motion/reveal";
 import { PageHero } from "@/components/shared/page-hero";
 import { Chip } from "@/components/ui/chip";
 import { Eyebrow } from "@/components/ui/eyebrow";
-import { resources } from "@/content/homepage";
+import { getFallbackContent } from "@/content/server";
 
 /**
  * /znanje — resource listing. The three planned articles are shown as „u
  * pripremi" only: no read links, no fake published content (master plan
  * R1.1). Real articles ship with the R3 Content Engine.
  */
-export function KnowledgePage() {
+export async function KnowledgePage() {
+  const { resources } = (await getFallbackContent()).homepage;
   return (
     <>
       <PageHero id="resursi">

@@ -1,9 +1,10 @@
 import { Reveal } from "@/components/motion/reveal";
 import { ReasonCard } from "@/components/shared/reason-card";
 import { SectionHeading } from "@/components/ui/section-heading";
-import { reasons } from "@/content/homepage";
+import { getFallbackContent } from "@/content/server";
 
-export function Reasons() {
+export async function Reasons() {
+  const { reasons } = (await getFallbackContent()).homepage;
   return (
     <section id="razlozi" className="scroll-mt-24 pt-[72px] md:pt-32">
       <div className="mx-auto max-w-[1536px] px-5 md:px-8">

@@ -1,5 +1,6 @@
 import { Reveal } from "@/components/motion/reveal";
-import { trustItems, type TrustIcon } from "@/content/homepage";
+import type { TrustIcon } from "@/content/homepage";
+import { getFallbackContent } from "@/content/server";
 
 const iconPaths: Record<TrustIcon, React.ReactNode> = {
   screen: (
@@ -24,7 +25,8 @@ const iconPaths: Record<TrustIcon, React.ReactNode> = {
   shield: <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z" />,
 };
 
-export function TrustStrip() {
+export async function TrustStrip() {
+  const { trustItems } = (await getFallbackContent()).homepage;
   return (
     <section className="scroll-mt-24 pt-[72px]">
       <div className="mx-auto max-w-[1536px] px-5 md:px-8">

@@ -2,9 +2,10 @@ import { Reveal } from "@/components/motion/reveal";
 import { ResourceCard } from "@/components/shared/resource-card";
 import { ButtonLink } from "@/components/ui/button-link";
 import { SectionHeading } from "@/components/ui/section-heading";
-import { resources } from "@/content/homepage";
+import { getFallbackContent } from "@/content/server";
 
-export function Resources() {
+export async function Resources() {
+  const { resources } = (await getFallbackContent()).homepage;
   return (
     <section id="resursi" className="scroll-mt-24 pt-[72px] md:pt-32">
       <div className="mx-auto max-w-[1536px] px-5 md:px-8">

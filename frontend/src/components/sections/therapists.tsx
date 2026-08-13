@@ -2,9 +2,10 @@ import { Reveal } from "@/components/motion/reveal";
 import { TherapistCard } from "@/components/shared/therapist-card";
 import { ArrowLink } from "@/components/ui/arrow-link";
 import { SectionHeading } from "@/components/ui/section-heading";
-import { therapists } from "@/content/therapists";
+import { getFallbackContent } from "@/content/server";
 
-export function Therapists() {
+export async function Therapists() {
+  const { therapists } = await getFallbackContent();
   return (
     <section id="terapeuti" className="scroll-mt-24 pt-[72px] md:pt-32">
       <div className="mx-auto max-w-[1536px] px-5 md:px-8">
