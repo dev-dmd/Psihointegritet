@@ -33,9 +33,11 @@ export default async function ParentSupportPage() {
           <h1 className="text-forest mb-4 font-serif text-[clamp(32px,8.5vw,52px)] leading-[1.06] font-normal">
             Roditeljsko savetovanje i programi
           </h1>
-          <p className="text-coffee/75 text-[16.5px] leading-[1.65]">
-            {parentService.description}
-          </p>
+          {parentService.description ? (
+            <p className="text-coffee/75 text-[16.5px] leading-[1.65]">
+              {parentService.description}
+            </p>
+          ) : null}
           <Link
             href={
               buildBookingHref({

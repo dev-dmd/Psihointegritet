@@ -65,9 +65,11 @@ export async function Hero() {
               <p className="text-coffee mb-2 font-serif text-2xl leading-tight">
                 {companies.title}
               </p>
-              <p className="text-coffee/70 mb-3.5 text-sm leading-relaxed">
-                {companies.description}
-              </p>
+              {companies.description ? (
+                <p className="text-coffee/70 mb-3.5 text-sm leading-relaxed">
+                  {companies.description}
+                </p>
+              ) : null}
               <span className="text-coffee inline-flex items-center gap-2 text-sm font-semibold">
                 {companies.action.label} <span aria-hidden>→</span>
               </span>

@@ -2,6 +2,7 @@
 
 import type { Route } from "next";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 
 import { RichText } from "@/components/content/rich-text";
 import { PageHero } from "@/components/shared/page-hero";
@@ -9,8 +10,10 @@ import {
   CmsContentProvider,
   type PublishedContentOverride,
 } from "@/lib/content-governance/cms-provider";
+import { normalizeContentFieldOverride } from "@/lib/content-governance/content-field-override";
 import type { RichDoc } from "@/lib/content-governance/rich-doc";
-import { staticContentProvider } from "@/lib/content-governance/static-provider";
+import { slotSpecRegistry } from "@/lib/content-governance/slot-schema";
+import { staticContentProviderForLocale } from "@/lib/content-governance/static-provider";
 import type { ContentEntity } from "@/lib/content-governance/types";
 import { localizedPath } from "@/lib/routes/localized-path";
 import { useUiLocale } from "@/i18n/use-ui-locale";
@@ -181,6 +184,8 @@ export function ContentRevisionPreview({
   revision: ApiContentRevision;
 }) {
   const locale = useUiLocale();
+  const t = useTranslations("content.fieldOverride");
+  const staticContentProvider = staticContentProviderForLocale(locale);
   const fallback =
     staticContentProvider
       .listAll()
@@ -254,6 +259,12 @@ export function ContentRevisionPreview({
             rawSlot && typeof rawSlot === "object"
               ? (rawSlot as SlotOverride)
               : {};
+          const slotSpec = slotSpecRegistry[revision.template][slotName];
+          const fieldNames = Object.keys(
+            slotSpec?.editability === "editable"
+              ? slotSpec.fields
+              : (slot.fields ?? {}),
+          );
           return (
             <section
               key={slotName}
@@ -268,14 +279,27 @@ export function ContentRevisionPreview({
                 </p>
               ) : slot.mode === "override" ? (
                 <div className="mt-4 space-y-5">
-                  {Object.entries(slot.fields ?? {}).map(([name, value]) => (
-                    <div key={name}>
-                      <h3 className="text-coffee text-sm font-semibold">
-                        {name.replace(/_/g, " ")}
-                      </h3>
-                      <PreviewValue value={value} />
-                    </div>
-                  ))}
+                  {fieldNames.map((name) => {
+                    const normalized = normalizeContentFieldOverride(
+                      slot.fields?.[name],
+                    );
+                    const mode = normalized.valid ? normalized.mode : "inherit";
+                    return (
+                      <div key={name}>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <h3 className="text-coffee text-sm font-semibold">
+                            {name.replace(/_/g, " ")}
+                          </h3>
+                          <span className="bg-badge-neutral-bg text-badge-neutral rounded-full px-2.5 py-1 text-[11px] font-semibold">
+                            {t(mode)}
+                          </span>
+                        </div>
+                        {normalized.valid && normalized.mode === "custom" ? (
+                          <PreviewValue value={normalized.value} />
+                        ) : null}
+                      </div>
+                    );
+                  })}
                 </div>
               ) : (
                 <p className="text-ink-55 mt-2 text-sm">

@@ -129,9 +129,11 @@ function FeaturedOfferCard({ offer }: { offer: HomepageOfferCard }) {
         <h3 className="text-canvas mt-[22px] mb-4 font-serif text-[34px] leading-[1.08] font-normal tracking-[-0.01em] md:text-[42px]">
           {offer.title}
         </h3>
-        <p className="text-canvas/72 max-w-[520px] text-base leading-[1.65]">
-          {offer.description}
-        </p>
+        {offer.description ? (
+          <p className="text-canvas/72 max-w-[520px] text-base leading-[1.65]">
+            {offer.description}
+          </p>
+        ) : null}
       </div>
       <div className="flex flex-wrap items-end justify-between gap-8">
         <div className="flex flex-wrap gap-[18px] md:gap-10">
@@ -210,9 +212,11 @@ function OfferCard({ offer }: { offer: HomepageOfferCard }) {
         >
           {offer.title}
         </h3>
-        <p className={cn("text-[14.5px] leading-7", styles.description)}>
-          {offer.description}
-        </p>
+        {offer.description ? (
+          <p className={cn("text-[14.5px] leading-7", styles.description)}>
+            {offer.description}
+          </p>
+        ) : null}
       </div>
       <div className="relative z-10 mt-auto">
         <div className="mb-[18px] flex flex-wrap gap-2.5">

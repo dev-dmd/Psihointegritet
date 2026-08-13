@@ -46,8 +46,7 @@ const STATUS_TONES: Record<string, StatusBadgeTone> = {
 
 const ROUTE_ID = "workspace.content.list" satisfies PlatformRouteId;
 const TAB_LABEL = "Sadržaj";
-/** Single-tenant seed org; the backend membership check owns the real value
- * (same pattern as `screen-dokumenti.tsx`'s `ORGANIZATION_ID`). */
+/** Single-tenant seed org; the backend membership check owns the real value. */
 const ORGANIZATION_ID = "psihointegritet";
 const RESOURCE_TYPE = "content_entry";
 
@@ -404,6 +403,7 @@ export function ContentRevisionEditor({
           return (
             <SlotEditor
               key={slotName}
+              template={entry.template}
               slotName={slotName}
               spec={spec}
               value={slotData[slotName]}

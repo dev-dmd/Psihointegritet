@@ -632,6 +632,16 @@ Dokazuje `SlotSpec` registar koji pravni tok ne dokazuje (`legal_page` ima samo 
 2. **Nijedan nov tekst ne ide inline u JSX** nego u copy modul (`taxonomy-copy.ts`, `taxonomy-error-copy.ts`, `label`/`searchTerms` u `taxonomy-icon-registry.ts`). UX-0 to već radi iz drugog razloga; ako se navika održi kroz UX-0B i UX-0C, kasniji prelaz je zamena mehanizma nad rečnicima koji postoje, a ne prepisivanje komponenata.
 3. **Ijekavica nije prevod nego pravopisna varijanta** i ne sme se raditi automatskom zamenom `e → je/ije` — pravilo ima previše izuzetaka da bi se puštalo nad kliničkim tekstom. Tretira se kao pun locale sa svojim revizijama, uz regionalnu oznaku tipa `sr-Latn-BA`; ne izmišljati podoznaku.
 
+**Aktivni i18n implementacioni slice-ovi (plan:** `i18n/03_I18N_DEMO_CONTENT_IMPLEMENTATION_PLAN_v1_0.md`**):**
+
+| Slice | Status | Stvarni obim |
+| ----- | ------ | ------------ |
+| I18N Foundation & Safe Error Transport | ✅ 2026-08-13 | Locale resolver/creation stamp/public fallback i code-only transport; nije kompletan I18N milestone |
+| Three-state CMS field override | ✅ 2026-08-14 | Backward-compatible primitive/inherit/custom/hidden resolver, eksplicitna hide whitelist-a, backend validator, editor/preview i parity testovi; bez DB migracije i language detection-a |
+| Centralni user-safe error presentation | ⬜ | Sledeći slice |
+| Uklanjanje poslednjeg `pickContent` | ⬜ | Posle centralnog error mappera |
+| Content paketi | ⬜ | `psihointegritet`, `mental-health-starter`, `blank`; bez `packId` DB kolone |
+
 ---
 
 ## 5H. Kompas authoring je content-first (D-063…D-067, 2026-08-04)

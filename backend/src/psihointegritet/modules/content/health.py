@@ -15,6 +15,11 @@ import unicodedata
 from collections.abc import Mapping
 from typing import cast
 
+from psihointegritet.modules.content.field_override import (
+    MISSING_CONTENT_FIELD,
+    can_hide_content_field,
+    normalize_content_field_override,
+)
 from psihointegritet.modules.content.identity import is_valid_content_slug
 from psihointegritet.modules.content.models import ContentEntry, ContentRevision
 from psihointegritet.modules.content.publication import ContentFinding, Severity
@@ -77,7 +82,7 @@ CONTENT_CHARACTER_LIMITS: Mapping[str, int] = {
 # Slug shape lives with the identity rules, so a slug accepted at creation
 # cannot be rejected at publication for its shape alone.
 
-_MISSING = object()
+_MISSING = MISSING_CONTENT_FIELD
 
 
 def _length(value: str) -> int:
@@ -593,11 +598,38 @@ def authored_content_findings(
                 )
             )
         for field_name, field_spec in spec.fields.items():
+            path = f"{slot_name}.{field_name}"
+            normalized = normalize_content_field_override(fields.get(field_name, _MISSING))
+            if not normalized.valid:
+                findings.append(
+                    _finding(
+                        "MODEL-003",
+                        "error",
+                        f"Polje „{path}” nema važeći override oblik.",
+                        "Izaberite Početni tekst, Prilagođeno ili Sakriveno.",
+                        path,
+                    )
+                )
+                continue
+            if normalized.mode == "hidden":
+                if not can_hide_content_field(revision.template, slot_name, field_name):
+                    findings.append(
+                        _finding(
+                            "MODEL-003",
+                            "error",
+                            f"Polje „{path}” ne može biti sakriveno.",
+                            "Vratite polje na Početni tekst ili Prilagođeno.",
+                            path,
+                        )
+                    )
+                continue
+            if normalized.mode == "inherit":
+                continue
             findings.extend(
                 _validate_field(
-                    f"{slot_name}.{field_name}",
+                    path,
                     field_spec,
-                    fields.get(field_name, _MISSING),
+                    normalized.value,
                 )
             )
 

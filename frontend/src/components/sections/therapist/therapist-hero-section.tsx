@@ -28,26 +28,32 @@ export function TherapistHeroSection({ therapist }: { therapist: Therapist }) {
           />
         </div>
         <div>
-          <Chip variant="label" className="mb-[22px]">
-            {therapist.badge}
-          </Chip>
+          {therapist.badge ? (
+            <Chip variant="label" className="mb-[22px]">
+              {therapist.badge}
+            </Chip>
+          ) : null}
           <h1 className="text-forest mb-3 font-serif text-[clamp(30px,8.5vw,40px)] leading-[1.06] font-normal tracking-[-0.015em] text-pretty md:text-[52px]">
             {therapist.name}
           </h1>
           <div className="text-coffee/62 mb-6 text-[15px] font-semibold">
             {therapist.title}
           </div>
-          <p className="text-coffee/82 mb-7 max-w-[560px] font-serif text-[21px] leading-[1.5] italic">
-            „{therapist.quote}“
-          </p>
-          <div className="mb-8">
-            <div className="text-sage mb-2 text-[11.5px] font-semibold tracking-[0.14em] uppercase">
-              Formati rada
+          {therapist.quote ? (
+            <p className="text-coffee/82 mb-7 max-w-[560px] font-serif text-[21px] leading-[1.5] italic">
+              „{therapist.quote}“
+            </p>
+          ) : null}
+          {therapist.formats ? (
+            <div className="mb-8">
+              <div className="text-sage mb-2 text-[11.5px] font-semibold tracking-[0.14em] uppercase">
+                Formati rada
+              </div>
+              <div className="text-coffee/75 text-[15px] leading-[1.6]">
+                {therapist.formats}
+              </div>
             </div>
-            <div className="text-coffee/75 text-[15px] leading-[1.6]">
-              {therapist.formats}
-            </div>
-          </div>
+          ) : null}
           <div className="flex flex-wrap items-center gap-3.5">
             <Link
               href={

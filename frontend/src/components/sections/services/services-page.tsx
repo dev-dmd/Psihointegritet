@@ -56,9 +56,11 @@ export async function ServicesPage({
                     <h2 className="text-forest mb-3 font-serif text-[26px] leading-[1.12] font-normal">
                       {service.name}
                     </h2>
-                    <p className="text-coffee/68 text-[15px] leading-[1.6]">
-                      {service.description}
-                    </p>
+                    {service.description ? (
+                      <p className="text-coffee/68 text-[15px] leading-[1.6]">
+                        {service.description}
+                      </p>
+                    ) : null}
                   </div>
                   <div className="flex flex-wrap gap-2.5">
                     <Chip>{service.duration}</Chip>

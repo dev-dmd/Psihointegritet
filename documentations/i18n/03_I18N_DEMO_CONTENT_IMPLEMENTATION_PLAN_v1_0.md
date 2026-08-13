@@ -19,10 +19,10 @@ je unet.
 resolveri, CMS creation stamp, locale-aware public reads i fallback registry, kao i code-only
 API problem transport bez backend proze i tehničkih identifikatora u tenant response body-ju.
 
-Ovaj checkpoint ne zatvara kompletan I18N milestone. Otvoreni su three-state field override,
-centralna user-safe error prezentacija, uklanjanje poslednjeg legacy `pickContent` selektora,
-content paketi, preostali platformski UI, backend email/notification katalozi, dijagnostika,
-D-079B plan i završni QA.
+Ovaj checkpoint ne zatvara kompletan I18N milestone. Three-state field override je završen
+2026-08-14; otvoreni su centralna user-safe error prezentacija, uklanjanje poslednjeg legacy
+`pickContent` selektora, content paketi, preostali platformski UI, backend
+email/notification katalozi, dijagnostika, D-079B plan i završni QA.
 
 ### Integracioni gate posle checkpoint-a
 
@@ -78,7 +78,7 @@ Proveren 2026-08-13 pre narednog funkcionalnog slice-a:
 **Gate:** promena `ui_locale` menja `<html lang>`, sistemske poruke i fallback; promena
 `default_content_locale` ne menja postojeći render i utiče samo na nov CMS zapis.
 
-## Faza 3 — CMS field override
+## Faza 3 — CMS field override — completed 2026-08-14
 
 Postojeći slot-level `inherit | override | hidden` ostaje. Field ugovor je kompatibilan:
 
@@ -98,6 +98,18 @@ type ContentFieldOverride<T> =
 - nema nove DB kolone ni masovne migracije sadržaja.
 
 **Gate:** testovi pokrivaju primitive/missing/null/empty/hidden i zabranjena skrivanja.
+
+Isporučen je centralni TypeScript/Python normalizer sa zajedničkim parity fixture-om,
+eksplicitna whitelist-a opcionih display polja, backend publish validacija, javni CMS
+resolver, editor i preview statusi na oba jezika. Stare primitive/object/array vrednosti
+čitaju se kao `custom`, a missing/`null`/legacy prazan tekst kao `inherit`, bez DB migracije
+i bez prepisivanja starih published revizija. Required H1, CTA, image/accessibility i SEO
+fallback nisu u whitelist-i; nevalidan required `hidden` javno pada na bezbedni fallback i
+backend ga ne može objaviti. Language detection i upozorenja za tenantov unos nisu uvedeni.
+
+**Status isporuke:** resolver, validacija, editor i javno čitanje su produkcijski kod; nema
+draft/showcase podataka ni provisioning promene u ovom slice-u. Automatski DOM test renderuje
+field statuse na `en` i `sr-Latn`; ručna vizuelna provera oba jezika ostaje otvorena za Fazu 10.
 
 ## Faza 4 — centralni error contract (D-079A)
 

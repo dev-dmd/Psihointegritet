@@ -94,9 +94,11 @@ export default async function ServiceDetailPage({ params }: ServicePageProps) {
           <h1 className="text-forest mb-4 font-serif text-[clamp(32px,8.5vw,52px)] leading-[1.06] font-normal text-pretty">
             {service.name}
           </h1>
-          <p className="text-coffee/75 max-w-[680px] text-[16.5px] leading-[1.65]">
-            {service.description}
-          </p>
+          {service.description ? (
+            <p className="text-coffee/75 max-w-[680px] text-[16.5px] leading-[1.65]">
+              {service.description}
+            </p>
+          ) : null}
           <div className="mt-7 flex flex-wrap gap-2.5">
             <Chip>{service.duration}</Chip>
             <Chip>{formatRsd(service.priceAmount)}</Chip>

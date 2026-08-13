@@ -2,6 +2,7 @@ import type { GroupProgram } from "@/content/programs";
 import type { ServiceCatalogItem, SessionPackage } from "@/content/services";
 import type { Therapist } from "@/types/therapist";
 
+import { normalizeContentFieldOverride } from "./content-field-override";
 import type {
   CompanyPlanContentEntity,
   ContentEntity,
@@ -107,17 +108,29 @@ function field(
 ): unknown {
   const current = slot(revision, slotName);
   if (current?.mode !== "override") return undefined;
-  const value = current.fields?.[fieldName];
-  return typeof value === "string" && !value.trim() ? undefined : value;
+  const normalized = normalizeContentFieldOverride(current.fields?.[fieldName]);
+  return normalized.valid && normalized.mode === "custom"
+    ? normalized.value
+    : undefined;
 }
 
-function text(
+function resolvedText(
   revision: PublishedContentOverride,
   slotName: string,
   fieldName: string,
+  fallback: string | undefined,
 ): string | undefined {
-  const value = field(revision, slotName, fieldName);
-  return typeof value === "string" ? value : richDocText(value);
+  const current = slot(revision, slotName);
+  if (current?.mode !== "override") return fallback;
+  const normalized = normalizeContentFieldOverride(current.fields?.[fieldName]);
+  if (!normalized.valid || normalized.mode === "inherit") return fallback;
+  if (normalized.mode === "hidden") return undefined;
+  const value = normalized.value;
+  return (
+    (typeof value === "string"
+      ? value.trim() || undefined
+      : richDocText(value)) ?? fallback
+  );
 }
 
 function richDocParagraphs(value: unknown): string[] {
@@ -194,8 +207,8 @@ function overlayStaticPage(
   return {
     ...base,
     h1:
-      text(revision, "hero", "h1") ??
-      text(revision, "title", "title") ??
+      resolvedText(revision, "hero", "h1", undefined) ??
+      resolvedText(revision, "title", "title", undefined) ??
       fallback.h1,
   };
 }
@@ -206,13 +219,23 @@ function overlayService(
 ): ServiceContentEntity {
   const source: ServiceCatalogItem = {
     ...fallback.source,
-    name: text(revision, "hero", "title") ?? fallback.source.name,
-    description: text(revision, "hero", "lead") ?? fallback.source.description,
-    duration: text(revision, "facts", "duration") ?? fallback.source.duration,
-    format: text(revision, "facts", "format") ?? fallback.source.format,
-    audience: text(revision, "description", "body") ?? fallback.source.audience,
+    name:
+      resolvedText(revision, "hero", "title", fallback.source.name) ??
+      fallback.source.name,
+    description:
+      resolvedText(revision, "hero", "lead", fallback.source.description) ?? "",
+    duration:
+      resolvedText(revision, "facts", "duration", fallback.source.duration) ??
+      fallback.source.duration,
+    format:
+      resolvedText(revision, "facts", "format", fallback.source.format) ??
+      fallback.source.format,
+    audience:
+      resolvedText(revision, "description", "body", fallback.source.audience) ??
+      fallback.source.audience,
     firstStep:
-      text(revision, "first_step", "body") ?? fallback.source.firstStep,
+      resolvedText(revision, "first_step", "body", fallback.source.firstStep) ??
+      fallback.source.firstStep,
   };
   return {
     ...(publishedBase(fallback, revision) as ServiceContentEntity),
@@ -244,11 +267,16 @@ function overlayTherapist(
   const paragraphs = richDocParagraphs(bioValue);
   const source: Therapist = {
     ...fallback.source,
-    badge: text(revision, "hero", "badge") ?? fallback.source.badge,
-    name: text(revision, "hero", "name") ?? fallback.source.name,
-    title: text(revision, "hero", "title") ?? fallback.source.title,
-    quote: text(revision, "hero", "quote") ?? fallback.source.quote,
-    formats: text(revision, "hero", "formats") ?? fallback.source.formats,
+    badge: resolvedText(revision, "hero", "badge", fallback.source.badge) ?? "",
+    name:
+      resolvedText(revision, "hero", "name", fallback.source.name) ??
+      fallback.source.name,
+    title:
+      resolvedText(revision, "hero", "title", fallback.source.title) ??
+      fallback.source.title,
+    quote: resolvedText(revision, "hero", "quote", fallback.source.quote) ?? "",
+    formats:
+      resolvedText(revision, "hero", "formats", fallback.source.formats) ?? "",
     image:
       image &&
       typeof image === "object" &&
@@ -259,7 +287,12 @@ function overlayTherapist(
       stringList(field(revision, "areas", "items"), "label") ??
       fallback.source.areas,
     cardExcerpt:
-      text(revision, "bio", "cardExcerpt") ?? fallback.source.cardExcerpt,
+      resolvedText(
+        revision,
+        "bio",
+        "cardExcerpt",
+        fallback.source.cardExcerpt,
+      ) ?? "",
     bio: paragraphs.length ? paragraphs : fallback.source.bio,
   };
   return {
@@ -272,18 +305,32 @@ function overlayProgram(
   fallback: ProgramContentEntity,
   revision: PublishedContentOverride,
 ): ProgramContentEntity {
-  const details = text(revision, "facts", "details");
-  const note = text(revision, "facts", "note");
+  const details = resolvedText(
+    revision,
+    "facts",
+    "details",
+    fallback.source.details,
+  );
+  const note = resolvedText(revision, "facts", "note", fallback.source.note);
   const source: GroupProgram = {
     ...fallback.source,
-    title: text(revision, "hero", "title") ?? fallback.source.title,
-    sessions: text(revision, "facts", "sessions") ?? fallback.source.sessions,
+    title:
+      resolvedText(revision, "hero", "title", fallback.source.title) ??
+      fallback.source.title,
+    sessions:
+      resolvedText(revision, "facts", "sessions", fallback.source.sessions) ??
+      fallback.source.sessions,
     priceLine:
-      text(revision, "facts", "priceLine") ?? fallback.source.priceLine,
-    audience: text(revision, "audience", "body") ?? fallback.source.audience,
+      resolvedText(revision, "facts", "priceLine", fallback.source.priceLine) ??
+      fallback.source.priceLine,
+    audience:
+      resolvedText(revision, "audience", "body", fallback.source.audience) ??
+      fallback.source.audience,
     ...(details ? { details } : {}),
     ...(note ? { note } : {}),
   };
+  if (!details) delete source.details;
+  if (!note) delete source.note;
   return {
     ...(publishedBase(fallback, revision) as ProgramContentEntity),
     source,
@@ -298,9 +345,12 @@ function overlayCompanyPlan(
     ...(publishedBase(fallback, revision) as CompanyPlanContentEntity),
     source: {
       ...fallback.source,
-      title: text(revision, "hero", "title") ?? fallback.source.title,
+      title:
+        resolvedText(revision, "hero", "title", fallback.source.title) ??
+        fallback.source.title,
       description:
-        text(revision, "hero", "lead") ?? fallback.source.description,
+        resolvedText(revision, "hero", "lead", fallback.source.description) ??
+        "",
     },
   };
 }

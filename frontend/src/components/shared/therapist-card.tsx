@@ -16,7 +16,9 @@ export function TherapistCard({ therapist }: TherapistCardProps) {
           name={therapist.name}
           imageSrc={therapist.image}
         />
-        <Chip variant="label">{therapist.badge}</Chip>
+        {therapist.badge ? (
+          <Chip variant="label">{therapist.badge}</Chip>
+        ) : null}
       </div>
       <div>
         <h3 className="text-forest mb-1.5 font-serif text-[29px] leading-[1.1] font-normal">
@@ -26,17 +28,21 @@ export function TherapistCard({ therapist }: TherapistCardProps) {
           {therapist.title}
         </div>
       </div>
-      <p className="text-coffee/82 font-serif text-[18.5px] leading-[1.45] italic">
-        „{therapist.quote}“
-      </p>
-      <div className="border-coffee/8 border-t pt-[18px]">
-        <div className="text-sage mb-2 text-[11.5px] font-semibold tracking-[0.14em] uppercase">
-          Formati rada
+      {therapist.quote ? (
+        <p className="text-coffee/82 font-serif text-[18.5px] leading-[1.45] italic">
+          „{therapist.quote}“
+        </p>
+      ) : null}
+      {therapist.formats ? (
+        <div className="border-coffee/8 border-t pt-[18px]">
+          <div className="text-sage mb-2 text-[11.5px] font-semibold tracking-[0.14em] uppercase">
+            Formati rada
+          </div>
+          <div className="text-coffee/75 text-[14.5px] leading-[1.6]">
+            {therapist.formats}
+          </div>
         </div>
-        <div className="text-coffee/75 text-[14.5px] leading-[1.6]">
-          {therapist.formats}
-        </div>
-      </div>
+      ) : null}
       <div>
         <div className="text-sage mb-2.5 text-[11.5px] font-semibold tracking-[0.14em] uppercase">
           Glavne oblasti

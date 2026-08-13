@@ -2,6 +2,7 @@ import {
   contentCharacterLimits,
   templateRegistry,
 } from "@/lib/content-governance/limits";
+import { normalizeContentFieldOverride } from "@/lib/content-governance/content-field-override";
 import { slotSpecRegistry } from "@/lib/content-governance/slot-schema";
 import {
   isKnownPublicRoute,
@@ -49,11 +50,17 @@ function textFieldsFor(
     const values = overrideFields(slotData[slotName]);
     for (const [fieldName, fieldSpec] of Object.entries(slotSpec.fields)) {
       if (fieldSpec.kind !== "text") continue;
-      const value = values[fieldName];
-      if (typeof value !== "string") continue;
+      const normalized = normalizeContentFieldOverride(values[fieldName]);
+      if (
+        !normalized.valid ||
+        normalized.mode !== "custom" ||
+        typeof normalized.value !== "string"
+      ) {
+        continue;
+      }
       fields.push({
         field: `${slotName}.${fieldName}`,
-        value,
+        value: normalized.value,
         limit: fieldSpec.limit,
       });
     }
