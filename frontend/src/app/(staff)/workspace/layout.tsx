@@ -46,7 +46,7 @@ export default async function WorkspaceLayout({
   // catalogue to the browser.
   // `resolveWorkspaceLocale`, not `getUiLocale`: the latter asks next-intl what
   // it rendered with, and `i18n/request.ts` deliberately resolves the *public*
-  // `default_content_locale` so the marketing pages stay static. The workspace
+  // cached `ui_locale` so the marketing pages stay static. The workspace
   // is the surface `ui_locale` was created for (D-077), and reading the wrong
   // one is why the panel kept its old language while the URL changed.
   const locale = await resolveWorkspaceLocale();

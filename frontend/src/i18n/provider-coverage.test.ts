@@ -100,17 +100,17 @@ describe("panel locale", () => {
    * previous language while the URL and the settings screen had already moved.
    *
    * The layouts called `getUiLocale()`, which reports what next-intl rendered
-   * with — and `i18n/request.ts` deliberately resolves the *public*
-   * `default_content_locale`, so the public site can stay static. Authenticated
-   * surfaces belong to `ui_locale` (D-077), which is what
-   * `resolveWorkspaceLocale()` returns.
+   * with — and `i18n/request.ts` resolves the cached public read of
+   * `ui_locale`, so the public site can stay static. Authenticated surfaces need
+   * the live read of that same value, which is what `resolveWorkspaceLocale()`
+   * returns.
    *
    * And the provider was mounted without an explicit `locale`, so it inherited
    * the root one — the public locale again — while its messages came from the
    * variable above. Two values for the language of one subtree.
    */
   it.each(SUBTREES)(
-    "$layout resolves ui_locale, not the public one",
+    "$layout resolves live ui_locale, not the cached public read",
     ({ layout }) => {
       const source = readFileSync(join(SRC, layout), "utf8");
       expect(source, `${layout} must use resolveWorkspaceLocale()`).toContain(

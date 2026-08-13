@@ -26,13 +26,11 @@ export function useOrganizationSettingsQuery() {
 }
 
 /**
- * Changing the organization's languages.
+ * Changing the organization's render language.
  *
- * The panel is request-time rendered, so `ui_locale` takes effect on the next
- * navigation — but `default_content_locale` moves the public site, its canonical
- * URLs and its sitemap, which is a release operation rather than a toggle
- * (D-077). The screen says so; this hook only refreshes the cache it owns and
- * deliberately does not try to make the change look instant.
+ * The panel is request-time rendered, while public renders use the tagged read
+ * of the same `ui_locale`. `default_content_locale` is sent unchanged because
+ * it is only a creation default for new CMS entries (D-077 A5).
  */
 export function useOrganizationLocalesMutation(callbacks: {
   onSaved: (settings: OrganizationSettings) => void;

@@ -19,11 +19,9 @@ import {
 /**
  * Language and regional settings (D-077 §20).
  *
- * Two fields, not one, because they answer different questions: `ui_locale` is
- * the language the team works in, `default_content_locale` the language the
- * public site speaks. An organization whose staff work in English while
- * publishing for Serbian clients needs them to differ — so the linked toggle is
- * a convenience, on by default, not the model.
+ * Two stored values answer different questions: `ui_locale` is the only
+ * organization-scoped render locale; `default_content_locale` is the initial
+ * locale stamped on a newly created CMS entry. Existing content is untouched.
  *
  * Language names are **endonyms** and never translated: a picker that says
  * „Serbian" in English to someone who only reads Serbian defeats its purpose.
@@ -96,11 +94,9 @@ export function LanguageSettingsSection() {
         {/*
           Read-only, by D-077 Amendment 4.
 
-          `ui_locale` is a daily setting and takes effect on save. Moving the
-          public content language is a release operation — legal documents,
-          canonical URLs, sitemap and Content Health land with it — so this card
-          reports the current value instead of offering a switch that would
-          publish a half-translated site.
+          `ui_locale` takes effect on save. The CMS creation default is shown
+          read-only until its own settings workflow exists; it never chooses
+          which locale the public site renders.
         */}
         <div className="border-line rounded-xl border px-4 py-3.5">
           <span className="text-coffee/75 text-[14px] font-medium">

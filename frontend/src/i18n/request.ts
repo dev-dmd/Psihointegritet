@@ -31,14 +31,13 @@ import { getPlatformMessages } from "@/messages";
  *
  * The shared root layout serves both surfaces, so there is exactly one default
  * here, and it must be the one that is safe to compute statically. Under the
- * rendering contract that is the public surface's `default_content_locale`.
+ * rendering contract that is the cached public read of `ui_locale`.
  *
- * Authenticated surfaces take `ui_locale` explicitly when the two differ:
+ * Authenticated surfaces take the same `ui_locale` through a live read:
  * next-intl 4.x accepts `getTranslations({ locale })` and
  * `getFormatter({ locale })`, so a workspace subtree overrides the default
- * without dragging the public tree into request-time rendering. Today the only
- * organization has both values equal, so nothing overrides anything yet — but
- * the seam is here and named rather than discovered later under pressure.
+ * without dragging the public tree into request-time rendering. The value is
+ * shared; only freshness differs.
  */
 export default getRequestConfig(async () => {
   // `requestLocale` is deliberately ignored. Its own docstring names this exact

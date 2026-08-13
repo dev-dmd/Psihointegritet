@@ -3,15 +3,19 @@ import { join } from "node:path";
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { serverEnvMock, getServerIdentityMock } = vi.hoisted(() => ({
-  serverEnvMock: { DEFAULT_ORGANIZATION_SLUG: "psihointegritet" },
-  getServerIdentityMock: vi.fn(),
-}));
+const { getDeploymentOrganizationMock, getServerIdentityMock } = vi.hoisted(
+  () => ({
+    getDeploymentOrganizationMock: vi.fn(),
+    getServerIdentityMock: vi.fn(),
+  }),
+);
 
 vi.mock("server-only", () => ({}));
-vi.mock("@/lib/validation/env", () => ({ serverEnv: serverEnvMock }));
 vi.mock("@/lib/auth/identity-server", () => ({
   getServerIdentity: getServerIdentityMock,
+}));
+vi.mock("@/lib/tenant/org-context", () => ({
+  getDeploymentOrganization: getDeploymentOrganizationMock,
 }));
 
 import { resolvePublicLocale } from "./public-locale";
@@ -21,14 +25,28 @@ import {
 } from "./workspace-locale";
 
 beforeEach(() => {
-  serverEnvMock.DEFAULT_ORGANIZATION_SLUG = "psihointegritet";
+  getDeploymentOrganizationMock.mockReset();
+  getDeploymentOrganizationMock.mockResolvedValue({
+    slug: "psihointegritet",
+    uiLocale: "sr-Latn",
+    defaultContentLocale: "sr-Latn",
+    timeZone: "Europe/Belgrade",
+  });
   getServerIdentityMock.mockReset();
   getServerIdentityMock.mockResolvedValue(null);
 });
 
 describe("PublicDeploymentLocaleResolver", () => {
-  it("follows the content locale, not the panel locale", async () => {
-    await expect(resolvePublicLocale()).resolves.toBe("sr-Latn");
+  it("follows ui_locale when the CMS creation default differs", async () => {
+    getDeploymentOrganizationMock.mockResolvedValue({
+      slug: "psihointegritet",
+      uiLocale: "en",
+      defaultContentLocale: "sr-Latn",
+      timeZone: "Europe/Belgrade",
+    });
+
+    await expect(resolvePublicLocale()).resolves.toBe("en");
+    expect(getDeploymentOrganizationMock).toHaveBeenCalledWith();
   });
 
   it("resolves without any authenticated identity", async () => {

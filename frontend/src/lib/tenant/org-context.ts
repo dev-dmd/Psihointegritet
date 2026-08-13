@@ -28,7 +28,7 @@ import { serverEnv } from "@/lib/validation/env";
  * through one of two resolvers, deliberately separate so the public surface is
  * never dragged into the workspace's rendering mode:
  *
- * - `lib/tenant/public-locale.ts` → `default_content_locale`, SSG/ISR-safe
+ * - `lib/tenant/public-locale.ts` → `ui_locale`, SSG/ISR-safe cached read
  * - `lib/tenant/workspace-locale.ts` → `ui_locale`, request-time
  *
  * TODO(org-backend): when `GET /api/v1/organizations/me` lands (I18N-7), this

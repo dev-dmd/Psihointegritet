@@ -69,16 +69,16 @@ export const workspace = {
       "Language belongs to the organization, not to a person — a change here applies to everyone who works in it.",
     systemLanguage: "System language",
     systemLanguageHelp:
-      "Navigation, system messages, statuses and system email. Takes effect on the next screen you open.",
-    contentLanguage: "Language of the public site and new content",
+      "Public site controls, navigation, system messages, statuses, errors and system email. Takes effect when you save.",
+    contentLanguage: "Default language for new CMS content",
     contentLanguageHelp:
-      "Moves the public site, its addresses and its sitemap. Existing texts are not translated.",
+      "Stamped on each new CMS entry when no explicit locale is provided. Existing content is not changed or translated.",
     contentLanguageManaged:
-      "Managed as a content release: legal documents, canonical URLs and the sitemap move with it. Ask an operator to prepare the change.",
+      "Currently managed by an operator. It does not choose the language rendered on the public site.",
     notice:
       "This changes platform navigation, system messages and future system emails. It does not translate or modify existing content.",
-    save: "Save languages",
-    saved: "Languages saved.",
+    save: "Save language",
+    saved: "Language saved.",
     onlyAdmin: "Only an organization administrator can change these settings.",
     loadFailed: "Settings could not be loaded.",
   },
