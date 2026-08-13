@@ -908,6 +908,12 @@ nisu tenant-facing transportni ugovor. **Kompletan I18N milestone ostaje otvoren
 error prezentacija, three-state CMS override, poslednji `pickContent`, content paketi,
 preostali UI/email/diagnostics i završni QA nisu obeleženi kao završeni.
 
+**Integracioni gate — ✅ 2026-08-13.** Full Vitest 624 pass / 1 skip; production build 106
+statičkih stranica; izolovani Alembic upgrade/downgrade/upgrade/check i offline SQL prolaze;
+CMS create bez locale-a koristi organization default; postojeći published locale/revision
+ostaje netaknut; `en -> sr-Latn -> en` save pokreće odgovarajuću navigaciju bez ručnog
+refresh-a. Jedna Kompas server/client regresija je zatvorena u zasebnom commitu `dffe8b9`.
+
 ### Isporučeno 2026-08-11 / 08-12
 
 | Slice | Šta | Status |

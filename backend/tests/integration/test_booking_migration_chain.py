@@ -286,3 +286,102 @@ def test_fresh_chain_round_trips_through_reconciliation(
         assert "availability_profiles" in tables
         assert "manual_availability_slots" in tables
     engine.dispose()
+
+
+def test_content_locale_contract_migration_preserves_published_rows(
+    isolated_migration_database: URL,
+) -> None:
+    config = _alembic_config()
+    command.upgrade(config, "e4a91c62d8f7")
+
+    organization_id = str(uuid4())
+    entry_id = str(uuid4())
+    revision_id = str(uuid4())
+    engine = sa.create_engine(isolated_migration_database)
+    with engine.begin() as connection:
+        connection.execute(
+            sa.text(
+                "INSERT INTO organizations (id, slug, display_name) "
+                "VALUES (:id, :slug, 'Locale preservation')"
+            ),
+            {"id": organization_id, "slug": f"locale-preservation-{uuid4().hex}"},
+        )
+        connection.execute(
+            sa.text(
+                """
+                INSERT INTO content_entries (
+                    id, organization_id, content_type, slug, locale
+                ) VALUES (
+                    :id, :organization_id, 'static_page', 'postojeca-stranica',
+                    'sr-Latn'
+                )
+                """
+            ),
+            {"id": entry_id, "organization_id": organization_id},
+        )
+        connection.execute(
+            sa.text(
+                """
+                INSERT INTO content_revisions (
+                    id, entry_id, version_label, template, slot_data, seo,
+                    status, validation_snapshot, lock_version, published_at
+                ) VALUES (
+                    :id, :entry_id, 'v1', 'static_information',
+                    '{"hero":{"title":"Postojeći naslov"}}'::json,
+                    '{"title":"Postojeći SEO","description":"Postojeći opis"}'::json,
+                    'published', '{}'::json, 1, now()
+                )
+                """
+            ),
+            {"id": revision_id, "entry_id": entry_id},
+        )
+
+    command.upgrade(config, "f1a7c9d2e4b6")
+
+    with engine.connect() as connection:
+        entry = connection.execute(
+            sa.text("SELECT locale FROM content_entries WHERE id = :id"),
+            {"id": entry_id},
+        ).one()
+        revision = connection.execute(
+            sa.text("SELECT status, slot_data, seo FROM content_revisions WHERE id = :id"),
+            {"id": revision_id},
+        ).one()
+        locale_default = next(
+            column["default"]
+            for column in sa.inspect(connection).get_columns("content_entries")
+            if column["name"] == "locale"
+        )
+
+        assert entry.locale == "sr-Latn"
+        assert revision.status == "published"
+        assert revision.slot_data == {"hero": {"title": "Postojeći naslov"}}
+        assert revision.seo == {
+            "title": "Postojeći SEO",
+            "description": "Postojeći opis",
+        }
+        assert locale_default is None
+
+    command.downgrade(config, "e4a91c62d8f7")
+    with engine.connect() as connection:
+        assert (
+            connection.scalar(
+                sa.text("SELECT locale FROM content_entries WHERE id = :id"),
+                {"id": entry_id},
+            )
+            == "sr-Latn"
+        )
+        assert (
+            connection.scalar(
+                sa.text("SELECT status FROM content_revisions WHERE id = :id"),
+                {"id": revision_id},
+            )
+            == "published"
+        )
+        locale_default = next(
+            column["default"]
+            for column in sa.inspect(connection).get_columns("content_entries")
+            if column["name"] == "locale"
+        )
+        assert "sr-Latn" in str(locale_default)
+    engine.dispose()

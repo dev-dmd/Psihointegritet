@@ -24,6 +24,23 @@ centralna user-safe error prezentacija, uklanjanje poslednjeg legacy `pickConten
 content paketi, preostali platformski UI, backend email/notification katalozi, dijagnostika,
 D-079B plan i završni QA.
 
+### Integracioni gate posle checkpoint-a
+
+Proveren 2026-08-13 pre narednog funkcionalnog slice-a:
+
+- puni frontend Vitest: 76 fajlova, 624 testa prošla, 1 preskočen;
+- Next.js production build: 106 statičkih stranica generisano;
+- izolovani PostgreSQL migration chain: fresh upgrade, downgrade, ponovni upgrade i
+  `alembic check` prolaze;
+- offline SQL za `e4a91c62d8f7 -> f1a7c9d2e4b6` generiše samo `DROP DEFAULT`;
+- CMS create bez locale-a koristi verifikovani `organization.default_content_locale`;
+- postojeći published entry/revision zadržava locale, status, slot podatke i SEO kroz
+  upgrade/downgrade migracije;
+- automatizovani smoke test potvrđuje `en -> sr-Latn -> en` navigaciju odmah nakon save-a,
+  bez ručnog refresh-a;
+- integraciona regresija server/client granice u Kompas support bloku pronađena je punim
+  suite-om i popravljena zasebnim commitom `dffe8b9`.
+
 ## Zaključane granice
 
 - Ne uvode se organization `default_locale` ni `supported_locales`.
