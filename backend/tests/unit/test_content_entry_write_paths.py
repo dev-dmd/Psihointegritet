@@ -4,6 +4,8 @@ import ast
 import re
 from pathlib import Path
 
+from psihointegritet.modules.content.models import ContentEntry
+
 BACKEND_ROOT = Path(__file__).resolve().parents[2]
 WRITE_ROOTS = (BACKEND_ROOT / "src", BACKEND_ROOT / "scripts")
 INSERT_PATTERN = re.compile(
@@ -47,3 +49,9 @@ def test_every_raw_sql_content_entry_insert_supplies_locale() -> None:
                 missing.append(f"{path.relative_to(BACKEND_ROOT)}:{line}")
 
     assert missing == [], f"Raw content_entries inserts without locale: {missing}"
+
+
+def test_the_orm_model_has_no_locale_default() -> None:
+    locale = ContentEntry.__table__.columns["locale"]  # pyright: ignore[reportUnknownMemberType]
+    assert locale.default is None
+    assert locale.server_default is None

@@ -150,10 +150,9 @@ class ContentEntry(Base):
         value_enum(ContentType, length=32), nullable=False
     )
     slug: Mapped[str] = mapped_column(String(160))
-    # Every current application write supplies this explicitly. The server
-    # default remains for one expand/contract release and is removed by the
-    # following, dedicated CMS migration after write-path tests pass.
-    locale: Mapped[str] = mapped_column(String(16), server_default="sr-Latn")
+    # Every write supplies this explicitly. There is deliberately no server
+    # default: only the verified organization can provide the creation locale.
+    locale: Mapped[str] = mapped_column(String(16))
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
