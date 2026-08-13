@@ -1,6 +1,7 @@
 # Psihointegritet — i18n, CMS sadržaj i bezbedne greške: aktivni plan v1.0
 
-**Status:** odobren 2026-08-13
+**Status:** u toku — **I18N Foundation & Safe Error Transport completed 2026-08-13**;
+kompletan I18N milestone nije završen.
 **Autoritet:** D-077 Amandmani 5–6, D-079, ADR-026
 **Istorija:** raniji planovi su u `documentations/i18n/archive/` i nisu aktivni autoritet.
 
@@ -11,6 +12,17 @@ platformski UI, kompletan platformski fallback, workspace, klijentski panel, sis
 poruke, email i user-safe greške. `organization.default_content_locale` samo pečati locale
 na novi tenant CMS sadržaj. Tenantov CMS override ostaje po polju i prikazuje se tačno kako
 je unet.
+
+## Implementacioni checkpoint — 2026-08-13
+
+**I18N Foundation & Safe Error Transport — completed.** Završeni su organization locale
+resolveri, CMS creation stamp, locale-aware public reads i fallback registry, kao i code-only
+API problem transport bez backend proze i tehničkih identifikatora u tenant response body-ju.
+
+Ovaj checkpoint ne zatvara kompletan I18N milestone. Otvoreni su three-state field override,
+centralna user-safe error prezentacija, uklanjanje poslednjeg legacy `pickContent` selektora,
+content paketi, preostali platformski UI, backend email/notification katalozi, dijagnostika,
+D-079B plan i završni QA.
 
 ## Zaključane granice
 

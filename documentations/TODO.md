@@ -899,6 +899,15 @@ Ispravka anchor-a ide uz Fazu A.
 | **9** | Zaseban D-079B Incident Registry plan, bez lažne persistence | dokumentacija | ⚪ |
 | **10** | Puni gate i vizuelni QA na oba jezika | QA | ⚪ |
 
+### Checkpoint 2026-08-13
+
+**I18N Foundation & Safe Error Transport — ✅ completed.** Organization locale resolveri,
+CMS creation stamp, locale-aware public reads, centralni fallback registry i code-only error
+transport su isporučeni. Backend `title`, `detail`, raw poruka i tehnički identifikatori više
+nisu tenant-facing transportni ugovor. **Kompletan I18N milestone ostaje otvoren**: završna
+error prezentacija, three-state CMS override, poslednji `pickContent`, content paketi,
+preostali UI/email/diagnostics i završni QA nisu obeleženi kao završeni.
+
 ### Isporučeno 2026-08-11 / 08-12
 
 | Slice | Šta | Status |
