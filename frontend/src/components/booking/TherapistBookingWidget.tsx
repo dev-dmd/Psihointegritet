@@ -4,8 +4,7 @@ import { useMemo, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
 
-import { serviceCatalog } from "@/content/services";
-import { therapists as therapistCatalog } from "@/content/therapists";
+import { useFallbackContent } from "@/content/use-content";
 import type {
   BookingFormat,
   BookingSelectionPolicy,
@@ -73,14 +72,21 @@ export function TherapistBookingWidget({
   selectionPolicy,
 }: TherapistBookingWidgetProps) {
   const router = useRouter();
+  const fallback = useFallbackContent();
+  const serviceCatalog = fallback.services.serviceCatalog;
+  const therapistCatalog = fallback.therapists;
 
   const { offerings, therapists } = useMemo(() => {
+    const catalogs = {
+      services: serviceCatalog,
+      therapists: therapistCatalog,
+    };
     // One offering per therapist × service × format — same grain as the
     // backend `service_booking_configs` row this projects.
-    const built: BookingWidgetOffering[] = buildBookingOfferings().map(
+    const built: BookingWidgetOffering[] = buildBookingOfferings(catalogs).map(
       (offering) => ({
         ...offering,
-        serviceName: offeringServiceName(offering),
+        serviceName: offeringServiceName(offering, catalogs),
       }),
     );
 
@@ -96,7 +102,7 @@ export function TherapistBookingWidget({
     }));
 
     return { offerings: built, therapists: thr };
-  }, []);
+  }, [serviceCatalog, therapistCatalog]);
 
   // Locked selections came from the guided flow, so "back" returns there
   // rather than unwinding arbitrary history.

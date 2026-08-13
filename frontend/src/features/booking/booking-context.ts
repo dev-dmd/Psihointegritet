@@ -1,5 +1,26 @@
-import { findService, serviceCatalog } from "@/content/services";
-import { findTherapist, therapists } from "@/content/therapists";
+import { getFallbackContentForLocale } from "@/content/registry";
+import type { ServiceCatalogItem } from "@/content/services";
+import { PLATFORM_DEFAULT_LOCALE } from "@/i18n/locales";
+import type { Therapist } from "@/types/therapist";
+
+export interface BookingCatalogs {
+  services: readonly ServiceCatalogItem[];
+  therapists: readonly Therapist[];
+}
+
+const platformFallback = getFallbackContentForLocale(PLATFORM_DEFAULT_LOCALE);
+const defaultBookingCatalogs: BookingCatalogs = {
+  services: platformFallback.services.serviceCatalog,
+  therapists: platformFallback.therapists,
+};
+
+function findService(catalogs: BookingCatalogs, slug: string) {
+  return catalogs.services.find((service) => service.slug === slug);
+}
+
+function findTherapist(catalogs: BookingCatalogs, slug: string) {
+  return catalogs.therapists.find((therapist) => therapist.slug === slug);
+}
 
 export const bookingFormats = ["online", "uzivo"] as const;
 export type BookingFormat = (typeof bookingFormats)[number];
@@ -97,6 +118,7 @@ function isBookingSource(value: string | null): value is BookingSource {
  */
 export function parseBookingContext(
   searchParams: BookingSearchParams,
+  catalogs: BookingCatalogs = defaultBookingCatalogs,
 ): BookingContext {
   const messages: string[] = [];
   const requestedService = singleValue(searchParams.service);
@@ -105,9 +127,11 @@ export function parseBookingContext(
   const requestedSource = singleValue(searchParams.source);
 
   const serviceSlug =
-    requestedService && findService(requestedService) ? requestedService : null;
+    requestedService && findService(catalogs, requestedService)
+      ? requestedService
+      : null;
   let therapistSlug =
-    requestedTherapist && findTherapist(requestedTherapist)
+    requestedTherapist && findTherapist(catalogs, requestedTherapist)
       ? requestedTherapist
       : null;
 
@@ -124,7 +148,7 @@ export function parseBookingContext(
   if (
     serviceSlug !== null &&
     therapistSlug !== null &&
-    !therapistProvidesService(therapistSlug, serviceSlug)
+    !therapistProvidesService(therapistSlug, serviceSlug, catalogs)
   ) {
     therapistSlug = null;
     messages.push(
@@ -150,23 +174,31 @@ export function parseBookingContext(
 export function therapistProvidesService(
   therapistSlug: string,
   serviceSlug: string,
+  catalogs: BookingCatalogs = defaultBookingCatalogs,
 ): boolean {
   return (
-    findTherapist(therapistSlug)?.bookingServiceSlugs.includes(serviceSlug) ??
-    false
+    findTherapist(catalogs, therapistSlug)?.bookingServiceSlugs.includes(
+      serviceSlug,
+    ) ?? false
   );
 }
 
-export function servicesForTherapist(therapistSlug: string) {
-  const therapist = findTherapist(therapistSlug);
-  if (!therapist) return serviceCatalog;
-  return serviceCatalog.filter((service) =>
+export function servicesForTherapist(
+  therapistSlug: string,
+  catalogs: BookingCatalogs = defaultBookingCatalogs,
+) {
+  const therapist = findTherapist(catalogs, therapistSlug);
+  if (!therapist) return catalogs.services;
+  return catalogs.services.filter((service) =>
     therapist.bookingServiceSlugs.includes(service.slug),
   );
 }
 
-export function therapistsForService(serviceSlug: string) {
-  return therapists.filter((therapist) =>
+export function therapistsForService(
+  serviceSlug: string,
+  catalogs: BookingCatalogs = defaultBookingCatalogs,
+) {
+  return catalogs.therapists.filter((therapist) =>
     therapist.bookingServiceSlugs.includes(serviceSlug),
   );
 }
@@ -187,15 +219,19 @@ export function locationLabel(location: BookingLocation): BookingLocationLabel {
 export function therapistWorksAtLocation(
   therapistSlug: string,
   location: BookingLocation,
+  catalogs: BookingCatalogs = defaultBookingCatalogs,
 ): boolean {
-  const therapist = findTherapist(therapistSlug);
+  const therapist = findTherapist(catalogs, therapistSlug);
   return therapist?.city === locationLabel(location);
 }
 
-export function locationsForTherapist(therapistSlug: string | null) {
+export function locationsForTherapist(
+  therapistSlug: string | null,
+  catalogs: BookingCatalogs = defaultBookingCatalogs,
+) {
   if (therapistSlug === null) return [...bookingLocations];
   return bookingLocations.filter((location) =>
-    therapistWorksAtLocation(therapistSlug, location.value),
+    therapistWorksAtLocation(therapistSlug, location.value, catalogs),
   );
 }
 
@@ -207,12 +243,15 @@ export interface BookingHrefContext {
 }
 
 /** Creates a public booking URL from the allowlisted, non-sensitive context. */
-export function buildBookingHref(context: BookingHrefContext = {}): string {
+export function buildBookingHref(
+  context: BookingHrefContext = {},
+  catalogs: BookingCatalogs = defaultBookingCatalogs,
+): string {
   const params = new URLSearchParams();
-  if (context.service && findService(context.service)) {
+  if (context.service && findService(catalogs, context.service)) {
     params.set("service", context.service);
   }
-  if (context.therapist && findTherapist(context.therapist)) {
+  if (context.therapist && findTherapist(catalogs, context.therapist)) {
     params.set("therapist", context.therapist);
   }
   if (context.format && bookingFormats.includes(context.format)) {

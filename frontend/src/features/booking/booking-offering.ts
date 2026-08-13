@@ -1,7 +1,17 @@
-import { findService } from "@/content/services";
-import { findTherapist, therapists } from "@/content/therapists";
+import { getFallbackContentForLocale } from "@/content/registry";
+import { PLATFORM_DEFAULT_LOCALE } from "@/i18n/locales";
 
-import { bookingFormats, type BookingFormat } from "./booking-context";
+import {
+  bookingFormats,
+  type BookingCatalogs,
+  type BookingFormat,
+} from "./booking-context";
+
+const platformFallback = getFallbackContentForLocale(PLATFORM_DEFAULT_LOCALE);
+const defaultBookingCatalogs: BookingCatalogs = {
+  services: platformFallback.services.serviceCatalog,
+  therapists: platformFallback.therapists,
+};
 
 /**
  * A concrete bookable combination: this therapist, this service, this format.
@@ -71,12 +81,16 @@ function formatsForService(format: string): BookingFormat[] {
  * Expands the catalogues into one offering per therapist × service × format —
  * the same grain as a `service_booking_configs` row.
  */
-export function buildBookingOfferings(): BookingOffering[] {
+export function buildBookingOfferings(
+  catalogs: BookingCatalogs = defaultBookingCatalogs,
+): BookingOffering[] {
   const offerings: BookingOffering[] = [];
 
-  for (const therapist of therapists) {
+  for (const therapist of catalogs.therapists) {
     for (const serviceSlug of therapist.bookingServiceSlugs) {
-      const service = findService(serviceSlug);
+      const service = catalogs.services.find(
+        (candidate) => candidate.slug === serviceSlug,
+      );
       if (!service) continue;
       const durationMinutes = parseDurationMinutes(service.duration);
       if (durationMinutes === null) continue;
@@ -193,10 +207,23 @@ export function offeringPriceLabel(offering: BookingOffering): string {
     .concat(` ${offering.currency}`);
 }
 
-export function offeringServiceName(offering: BookingOffering): string {
-  return findService(offering.serviceId)?.name ?? offering.serviceId;
+export function offeringServiceName(
+  offering: BookingOffering,
+  catalogs: BookingCatalogs = defaultBookingCatalogs,
+): string {
+  return (
+    catalogs.services.find((service) => service.slug === offering.serviceId)
+      ?.name ?? offering.serviceId
+  );
 }
 
-export function offeringTherapistName(offering: BookingOffering): string {
-  return findTherapist(offering.therapistId)?.name ?? offering.therapistId;
+export function offeringTherapistName(
+  offering: BookingOffering,
+  catalogs: BookingCatalogs = defaultBookingCatalogs,
+): string {
+  return (
+    catalogs.therapists.find(
+      (therapist) => therapist.slug === offering.therapistId,
+    )?.name ?? offering.therapistId
+  );
 }

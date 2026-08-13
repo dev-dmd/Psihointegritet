@@ -1,5 +1,6 @@
 import { PageHero } from "@/components/shared/page-hero";
 import { TherapistBookingWidget } from "@/components/booking/TherapistBookingWidget";
+import { getFallbackContent } from "@/content/server";
 import {
   deriveBookingSelectionPolicy,
   parseBookingContext,
@@ -18,12 +19,16 @@ interface BookingPageProps {
 
 export default async function BookingPage({ searchParams }: BookingPageProps) {
   const params = await searchParams;
+  const fallback = await getFallbackContent();
 
   // `parseBookingContext` is the validated entry parser: unknown slugs are
   // dropped and an incompatible therapist/service pair is reconciled before it
   // ever reaches the widget. The policy is derived here, once — components
   // downstream read the policy, never `source`.
-  const context = parseBookingContext(params);
+  const context = parseBookingContext(params, {
+    services: fallback.services.serviceCatalog,
+    therapists: fallback.therapists,
+  });
   const selectionPolicy = deriveBookingSelectionPolicy(context.source);
 
   return (

@@ -1,5 +1,6 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { NextIntlClientProvider } from "next-intl";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { BookingRequestForm } from "./booking-request-form";
@@ -11,15 +12,17 @@ afterEach(() => {
 
 function renderForm() {
   render(
-    <BookingRequestForm
-      initialContext={{
-        serviceSlug: "individualna-psihoterapija",
-        therapistSlug: "maria-bullock",
-        format: "online",
-        source: "service",
-        messages: [],
-      }}
-    />,
+    <NextIntlClientProvider locale="sr-Latn" messages={{}}>
+      <BookingRequestForm
+        initialContext={{
+          serviceSlug: "individualna-psihoterapija",
+          therapistSlug: "maria-bullock",
+          format: "online",
+          source: "service",
+          messages: [],
+        }}
+      />
+    </NextIntlClientProvider>,
   );
 }
 
