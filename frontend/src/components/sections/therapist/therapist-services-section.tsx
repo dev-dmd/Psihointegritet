@@ -4,16 +4,18 @@ import type { Route } from "next";
 import { Reveal } from "@/components/motion/reveal";
 import { Chip } from "@/components/ui/chip";
 import { Eyebrow } from "@/components/ui/eyebrow";
-import { formatRsd, PRICE_NOTE, serviceCatalog } from "@/content/services";
+import { getFallbackContent } from "@/content/server";
+import { formatRsd } from "@/content/services";
 import { buildBookingHref } from "@/features/booking/booking-context";
 import type { Therapist } from "@/types/therapist";
 
 /** Canonical service data is read from `services.ts`, never duplicated in a profile. */
-export function TherapistServicesSection({
+export async function TherapistServicesSection({
   therapist,
 }: {
   therapist: Therapist;
 }) {
+  const { PRICE_NOTE, serviceCatalog } = (await getFallbackContent()).services;
   const services = serviceCatalog.filter((service) =>
     therapist.bookingServiceSlugs.includes(service.slug),
   );

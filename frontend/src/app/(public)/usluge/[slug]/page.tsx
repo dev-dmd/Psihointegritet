@@ -6,15 +6,8 @@ import { notFound } from "next/navigation";
 import { PageHero } from "@/components/shared/page-hero";
 import { JsonLd } from "@/components/shared/json-ld";
 import { Chip } from "@/components/ui/chip";
-import { faqItems } from "@/content/homepage";
-import {
-  findService,
-  formatRsd,
-  PRICE_NOTE,
-  serviceCatalog,
-  sessionPackages,
-} from "@/content/services";
-import { therapists } from "@/content/therapists";
+import { getFallbackContent } from "@/content/server";
+import { formatRsd } from "@/content/services";
 import { buildBookingHref } from "@/features/booking/booking-context";
 import {
   jsonLdForEntity,
@@ -27,14 +20,17 @@ interface ServicePageProps {
   params: Promise<{ slug: string }>;
 }
 
-export function generateStaticParams(): { slug: string }[] {
+export async function generateStaticParams(): Promise<{ slug: string }[]> {
+  const { serviceCatalog } = (await getFallbackContent()).services;
   return serviceCatalog.map((service) => ({ slug: service.slug }));
 }
 
 export async function generateMetadata({
   params,
 }: ServicePageProps): Promise<Metadata> {
-  const service = findService((await params).slug);
+  const { slug } = await params;
+  const { serviceCatalog } = (await getFallbackContent()).services;
+  const service = serviceCatalog.find((candidate) => candidate.slug === slug);
   if (!service) return {};
   const entity = (await getContentProvider()).getEntity(
     "service",
@@ -45,9 +41,16 @@ export async function generateMetadata({
 
 export default async function ServiceDetailPage({ params }: ServicePageProps) {
   const slug = (await params).slug;
+  const {
+    homepage: { faqItems },
+    services: { PRICE_NOTE, serviceCatalog, sessionPackages },
+    therapists,
+  } = await getFallbackContent();
   const provider = await getContentProvider();
   const contentEntity = provider.getEntity("service", `service:${slug}`);
-  const service = contentEntity?.source ?? findService(slug);
+  const service =
+    contentEntity?.source ??
+    serviceCatalog.find((candidate) => candidate.slug === slug);
   if (!service) notFound();
 
   const providers = therapists.filter((therapist) =>

@@ -1,15 +1,17 @@
 import Link from "next/link";
 
 import { PageHero } from "@/components/shared/page-hero";
+import { getFallbackContent } from "@/content/server";
+import { formatRsd } from "@/content/services";
 import { metadataForRoute } from "@/lib/content-governance/discoverability";
 import { getContentProvider } from "@/lib/content-governance/provider-resolver";
-import { formatRsd, PRICE_NOTE } from "@/content/services";
 
 export async function generateMetadata() {
   return metadataForRoute("/cene", await getContentProvider());
 }
 
 export default async function PricesPage() {
+  const { PRICE_NOTE } = (await getFallbackContent()).services;
   const entities = (await getContentProvider()).listAll();
   const services = entities
     .filter((entity) => entity.type === "service")

@@ -3,21 +3,23 @@ import Link from "next/link";
 
 import { PageHero } from "@/components/shared/page-hero";
 import { parentPrograms } from "@/content/programs";
-import { findService, formatRsd } from "@/content/services";
-import { therapists } from "@/content/therapists";
+import { getFallbackContent } from "@/content/server";
+import { formatRsd } from "@/content/services";
 import { buildBookingHref } from "@/features/booking/booking-context";
 import { metadataForRoute } from "@/lib/content-governance/discoverability";
 import { getContentProvider } from "@/lib/content-governance/provider-resolver";
-
-const parentService = findService("roditeljsko-savetovanje");
 
 export async function generateMetadata() {
   return metadataForRoute("/podrska-roditeljima", await getContentProvider());
 }
 
-export default function ParentSupportPage() {
+export default async function ParentSupportPage() {
+  const fallback = await getFallbackContent();
+  const parentService = fallback.services.serviceCatalog.find(
+    (service) => service.slug === "roditeljsko-savetovanje",
+  );
   if (!parentService) return null;
-  const providers = therapists.filter((therapist) =>
+  const providers = fallback.therapists.filter((therapist) =>
     therapist.bookingServiceSlugs.includes(parentService.slug),
   );
 

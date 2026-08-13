@@ -12,6 +12,7 @@ import {
   redirectRegistry,
   staticContentEntities,
   staticContentProvider,
+  staticContentProviderForLocale,
 } from "./static-provider";
 import type { ContentEntity } from "./types";
 import {
@@ -33,6 +34,21 @@ function entity(id: string): ContentEntity {
 }
 
 describe("content governance contract", () => {
+  it("builds localized fallback providers with stable entity identities", () => {
+    const english = staticContentProviderForLocale("en").getEntity(
+      "service",
+      "service:individualna-psihoterapija",
+    );
+    const serbian = staticContentProviderForLocale("sr-Latn").getEntity(
+      "service",
+      "service:individualna-psihoterapija",
+    );
+
+    expect(english?.source.slug).toBe(serbian?.source.slug);
+    expect(english?.source.name).toBe("Individual psychotherapy");
+    expect(serbian?.source.name).toBe("Individualna psihoterapija");
+  });
+
   it.each(["/kompas/oblast/stres-i-preopterecenost", "/kompas/tema/burnout"])(
     "recognizes the canonical Kompas taxonomy route %s",
     (path) => {

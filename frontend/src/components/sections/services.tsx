@@ -6,9 +6,10 @@ import { ButtonLink } from "@/components/ui/button-link";
 import { Chip } from "@/components/ui/chip";
 import { SectionHeading } from "@/components/ui/section-heading";
 import {
-  homepageOfferCards,
+  buildHomepageOfferCards,
   type HomepageOfferCard,
 } from "@/content/homepage-offers";
+import { getFallbackContent } from "@/content/server";
 import { cn } from "@/helpers/cn";
 
 type OfferCardVariant = "default" | "glass" | "light" | "dark";
@@ -82,7 +83,10 @@ const offerCardStyles: Record<
   },
 };
 
-export function Services() {
+export async function Services() {
+  const homepageOfferCards = buildHomepageOfferCards(
+    (await getFallbackContent()).services.serviceCatalog,
+  );
   const featured = homepageOfferCards.find((item) => item.featured);
   const standard = homepageOfferCards.filter((item) => !item.featured);
   const standardLead = standard.slice(0, -2);

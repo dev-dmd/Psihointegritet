@@ -17,7 +17,10 @@ vi.mock("@/lib/validation/env", () => ({
 
 import { publicContentCacheTag } from "./cache";
 import { getContentProvider } from "./provider-resolver";
-import { staticContentProvider } from "./static-provider";
+import {
+  staticContentProvider,
+  staticContentProviderForLocale,
+} from "./static-provider";
 
 beforeEach(() => {
   resolvePublicLocaleMock.mockReset();
@@ -46,6 +49,17 @@ describe("public CMS locale", () => {
   it("has a distinct cache identity for each supported locale", () => {
     expect(publicContentCacheTag("en")).toBe("content:published:en");
     expect(publicContentCacheTag("sr-Latn")).toBe("content:published:sr-Latn");
+  });
+
+  it("uses the same ui_locale for the static fallback", async () => {
+    resolvePublicLocaleMock.mockResolvedValue("sr-Latn");
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(null, { status: 503 }),
+    );
+
+    await expect(getContentProvider()).resolves.toBe(
+      staticContentProviderForLocale("sr-Latn"),
+    );
   });
 
   it.each([

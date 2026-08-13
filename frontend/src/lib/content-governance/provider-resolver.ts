@@ -8,7 +8,10 @@ import {
   parsePublishedContentOverrides,
 } from "./cms-provider";
 import { publicContentCacheTag } from "./cache";
-import { staticContentProvider } from "./static-provider";
+import {
+  staticContentProvider,
+  staticContentProviderForLocale,
+} from "./static-provider";
 import type { ContentProvider } from "./types";
 
 /**
@@ -17,8 +20,10 @@ import type { ContentProvider } from "./types";
  * static provider.
  */
 export async function getContentProvider(): Promise<ContentProvider> {
+  let fallback = staticContentProvider;
   try {
     const locale = await resolvePublicLocale();
+    fallback = staticContentProviderForLocale(locale);
     const response = await fetch(
       `${serverEnv.NEXT_PUBLIC_API_URL}/api/v1/public/content/published?locale=${encodeURIComponent(locale)}`,
       {
@@ -28,13 +33,13 @@ export async function getContentProvider(): Promise<ContentProvider> {
         },
       },
     );
-    if (!response.ok) return staticContentProvider;
+    if (!response.ok) return fallback;
     const revisions = parsePublishedContentOverrides(await response.json());
     if (!revisions || revisions.length === 0) {
-      return staticContentProvider;
+      return fallback;
     }
-    return new CmsContentProvider(staticContentProvider, revisions);
+    return new CmsContentProvider(fallback, revisions);
   } catch {
-    return staticContentProvider;
+    return fallback;
   }
 }

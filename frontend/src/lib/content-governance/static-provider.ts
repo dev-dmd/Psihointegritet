@@ -3,11 +3,11 @@ import {
   companyPlanCards,
   type CompanyPlanCard,
 } from "@/content/company";
-import { faqItems } from "@/content/homepage";
 import { groupPrograms } from "@/content/programs";
-import { serviceCatalog, sessionPackages } from "@/content/services";
+import { getFallbackContentForLocale } from "@/content/registry";
+import type { ServiceCatalogItem } from "@/content/services";
 import { siteSettings } from "@/content/site-settings";
-import { therapists } from "@/content/therapists";
+import { PLATFORM_DEFAULT_LOCALE, type UiLocale } from "@/i18n/locales";
 
 import type {
   ApprovalCapability,
@@ -158,719 +158,747 @@ const noWidgets: readonly WidgetPlacement[] = [];
 const noCtas: readonly CtaReference[] = [];
 const noJsonLd: readonly JsonLdKind[] = [];
 
-function serviceSeoDescription(
-  service: (typeof serviceCatalog)[number],
-): string {
+function serviceSeoDescription(service: ServiceCatalogItem): string {
   return `${service.name} - ${service.format}, ${service.duration}.`;
 }
 
-const staticPages: readonly StaticPageEntity[] = [
-  staticPage({
-    id: "page:home",
-    management: "system",
-    route: "/",
-    canonicalSlug: "pocetna",
-    indexingPolicy: "index",
-    template: "static_information",
-    slots: ["hero", "intro", "prose", "cta", "faq"],
-    h1: siteSettings.name,
-    seo: {
-      title: "Psihointegritet",
-      description:
-        "Psihoterapija, savetovanje i programi podrške online i uživo u Chicagu, Milwaukeeju i Madisonu.",
-    },
-    textFields: [
-      { field: "h1", value: siteSettings.name, limit: "pageH1" },
-      {
-        field: "heroLead",
-        value:
-          "Psihoterapija, savetovanje i programi podrške online i uživo u Chicagu, Milwaukeeju i Madisonu.",
-        limit: "heroLead",
-      },
-      ...faqItems.flatMap((item) => [
-        {
-          field: `faq.${item.id}.question`,
-          value: item.question,
-          limit: "faqQuestion" as const,
-        },
-        {
-          field: `faq.${item.id}.answer`,
-          value: item.answer,
-          limit: "faqAnswer" as const,
-        },
-      ]),
-    ],
-    ctas: [
-      { label: "Pronađite podršku", action: "START_MATCHING" },
-      { label: "Rad sa kompanijama", action: "OPEN_COMPANY_CONFIGURATOR" },
-    ],
-    widgets: matchingWidget,
-    jsonLdKinds: ["organization", "website", "faq"],
-    faq: faqItems.map(({ question, answer }) => ({ question, answer })),
-  }),
-  staticPage({
-    id: "page:o-nama",
-    management: "system",
-    route: "/o-nama",
-    canonicalSlug: "o-nama",
-    indexingPolicy: "index",
-    template: "static_information",
-    slots: ["hero", "intro", "prose", "cta"],
-    h1: "Digitalni centar za mentalno zdravlje",
-    seo: {
-      title: "O nama",
-      description:
-        "Psihointegritet pruža podršku online i uživo u Chicagu, Milwaukeeju i Madisonu.",
-    },
-    textFields: [
-      {
-        field: "h1",
-        value: "Digitalni centar za mentalno zdravlje",
-        limit: "pageH1",
-      },
-    ],
-    ctas: [
-      {
-        label: "Upoznajte tim",
-        action: "VIEW_THERAPIST",
-        targetId: "therapist:maria-bullock",
-      },
-    ],
-    widgets: noWidgets,
-    jsonLdKinds: noJsonLd,
-  }),
-  staticPage({
-    id: "page:tim",
-    management: "system",
-    route: "/tim",
-    canonicalSlug: "tim",
-    indexingPolicy: "index",
-    template: "static_information",
-    slots: ["hero", "intro", "prose", "cta"],
-    h1: "Naš tim",
-    seo: {
-      title: "Naš tim",
-      description:
-        "Upoznajte terapeute Psihointegriteta, oblasti rada i dostupne formate.",
-    },
-    textFields: [{ field: "h1", value: "Naš tim", limit: "pageH1" }],
-    ctas: [{ label: "Pronađite podršku", action: "START_MATCHING" }],
-    widgets: matchingWidget,
-    jsonLdKinds: noJsonLd,
-  }),
-  staticPage({
-    id: "page:usluge",
-    management: "system",
-    route: "/usluge",
-    canonicalSlug: "usluge",
-    indexingPolicy: "index",
-    template: "static_information",
-    slots: ["hero", "intro", "prose", "cta"],
-    h1: "Usluge",
-    seo: {
-      title: "Usluge",
-      description:
-        "Individualna psihoterapija, bračno i roditeljsko savetovanje online i uživo.",
-    },
-    textFields: [{ field: "h1", value: "Usluge", limit: "pageH1" }],
-    ctas: [{ label: "Pogledajte cene", action: "VIEW_PRICING" }],
-    widgets: noWidgets,
-    jsonLdKinds: noJsonLd,
-  }),
-  staticPage({
-    id: "page:radionice",
-    management: "system",
-    route: "/radionice",
-    canonicalSlug: "radionice",
-    indexingPolicy: "index",
-    template: "static_information",
-    slots: ["hero", "intro", "prose"],
-    h1: "Radionice i programi",
-    seo: {
-      title: "Radionice i programi",
-      description: "Najavljeni grupni programi i radionice Psihointegriteta.",
-    },
-    textFields: [
-      { field: "h1", value: "Radionice i programi", limit: "pageH1" },
-    ],
-    ctas: noCtas,
-    widgets: noWidgets,
-    jsonLdKinds: noJsonLd,
-  }),
-  staticPage({
-    id: "page:podrska-roditeljima",
-    management: "system",
-    route: "/podrska-roditeljima",
-    canonicalSlug: "podrska-roditeljima",
-    indexingPolicy: "index",
-    template: "audience_page",
-    slots: [
-      "hero",
-      "audience",
-      "first_step",
-      "related",
-      "cta",
-      "program_cards",
-    ],
-    h1: "Roditeljsko savetovanje i programi",
-    seo: {
-      title: "Podrška roditeljima",
-      description:
-        "Roditeljsko savetovanje i najavljeni programi podrške online i uživo.",
-    },
-    textFields: [
-      {
-        field: "h1",
-        value: "Roditeljsko savetovanje i programi",
-        limit: "pageH1",
-      },
-    ],
-    ctas: [
-      {
-        label: "Zakaži termin",
-        action: "BOOK_SERVICE",
-        targetId: "service:roditeljsko-savetovanje",
-      },
-    ],
-    widgets: [{ id: "booking", placement: "service", enabled: true }],
-    jsonLdKinds: noJsonLd,
-    requiredApprovals: requirements("clinical", "legal", "business"),
-  }),
-  staticPage({
-    id: "page:cene",
-    management: "system",
-    route: "/cene",
-    canonicalSlug: "cene",
-    indexingPolicy: "index",
-    template: "pricing_page",
-    slots: [
-      "service_prices",
-      "packages",
-      "notice",
-      "cta",
-      "program_references",
-    ],
-    h1: "Cene usluga i programa",
-    seo: {
-      title: "Cene",
-      description:
-        "Okvirne cene usluga, paketa i najavljenih programa Psihointegriteta.",
-    },
-    textFields: [
-      { field: "h1", value: "Cene usluga i programa", limit: "pageH1" },
-    ],
-    ctas: [
-      {
-        label: "Pošaljite zahtev",
-        action: "BOOK_SERVICE",
-        targetId: "service:individualna-psihoterapija",
-      },
-    ],
-    widgets: noWidgets,
-    jsonLdKinds: noJsonLd,
-    requiredApprovals: requirements("business"),
-  }),
-  staticPage({
-    id: "page:znanje",
-    management: "system",
-    route: "/znanje",
-    canonicalSlug: "znanje",
-    indexingPolicy: "index",
-    template: "static_information",
-    slots: ["hero", "intro", "prose"],
-    h1: "Znanje i resursi",
-    seo: {
-      title: "Znanje i resursi",
-      description:
-        "Stručni tekstovi, vodiči i edukativni materijali u pripremi.",
-    },
-    textFields: [{ field: "h1", value: "Znanje i resursi", limit: "pageH1" }],
-    ctas: noCtas,
-    widgets: noWidgets,
-    jsonLdKinds: noJsonLd,
-  }),
-  staticPage({
-    id: "page:rad-sa-kompanijama",
-    management: "system",
-    route: "/rad-sa-kompanijama",
-    canonicalSlug: "rad-sa-kompanijama",
-    indexingPolicy: "index",
-    template: "company_page",
-    slots: [
-      "hero",
-      "support_types",
-      "plans",
-      "privacy",
-      "configurator_cta",
-      "faq",
-    ],
-    h1: "Rad sa kompanijama",
-    seo: {
-      title: "Rad sa kompanijama",
-      description:
-        "Radionice, edukacije i programi podrške za timove i zaposlene.",
-    },
-    textFields: [
-      { field: "h1", value: "Rad sa kompanijama", limit: "pageH1" },
-      ...companyFaqItems.flatMap((item, index) => [
-        {
-          field: `faq.${index}.question`,
-          value: item.question,
-          limit: "faqQuestion" as const,
-        },
-        {
-          field: `faq.${index}.answer`,
-          value: item.answer,
-          limit: "faqAnswer" as const,
-        },
-      ]),
-    ],
-    ctas: [
-      { label: "Konfigurišite program", action: "OPEN_COMPANY_CONFIGURATOR" },
-    ],
-    widgets: [
-      { id: "company_configurator", placement: "company", enabled: true },
-    ],
-    jsonLdKinds: noJsonLd,
-    requiredApprovals: requirements("business"),
-  }),
-  staticPage({
-    id: "page:kontakt",
-    management: "system",
-    route: "/kontakt",
-    canonicalSlug: "kontakt",
-    indexingPolicy: "index",
-    template: "static_information",
-    slots: ["hero", "intro", "prose", "cta"],
-    h1: "Kako možemo pomoći?",
-    seo: {
-      title: "Kontakt",
-      description:
-        "Kontakt Psihointegriteta i jasni putevi za termin ili programe za kompanije.",
-    },
-    textFields: [
-      { field: "h1", value: "Kako možemo pomoći?", limit: "pageH1" },
-    ],
-    ctas: [
-      {
-        label: "Pošaljite zahtev",
-        action: "BOOK_SERVICE",
-        targetId: "service:individualna-psihoterapija",
-      },
-    ],
-    widgets: noWidgets,
-    jsonLdKinds: noJsonLd,
-  }),
-  // Four legal pages (0.7, D-046/D-047). `noindex`: these are placeholders
-  // pending legal confirmation (S5) until the registry publishes real text —
-  // see `LegalDocumentPage` for the actual body source (backend-fetched, not
-  // this static entity, which exists for metadata/discoverability only).
-  staticPage({
-    id: "page:privatnost",
-    management: "document",
-    route: "/privatnost",
-    canonicalSlug: "privatnost",
-    indexingPolicy: "noindex",
-    template: "legal_page",
-    slots: ["title", "legal_copy", "version"],
-    h1: "Politika privatnosti",
-    seo: {
-      title: "Politika privatnosti",
-      description: "Kako Psihointegritet obrađuje lične podatke.",
-    },
-    textFields: [
-      { field: "h1", value: "Politika privatnosti", limit: "pageH1" },
-    ],
-    ctas: noCtas,
-    widgets: noWidgets,
-    jsonLdKinds: noJsonLd,
-    requiredApprovals: requirements("legal", "business"),
-  }),
-  staticPage({
-    id: "page:uslovi",
-    management: "document",
-    route: "/uslovi",
-    canonicalSlug: "uslovi",
-    indexingPolicy: "noindex",
-    template: "legal_page",
-    slots: ["title", "legal_copy", "version"],
-    h1: "Uslovi korišćenja",
-    seo: {
-      title: "Uslovi korišćenja",
-      description: "Uslovi korišćenja Psihointegritet platforme.",
-    },
-    textFields: [{ field: "h1", value: "Uslovi korišćenja", limit: "pageH1" }],
-    ctas: noCtas,
-    widgets: noWidgets,
-    jsonLdKinds: noJsonLd,
-    requiredApprovals: requirements("legal", "business"),
-  }),
-  staticPage({
-    id: "page:kolacici",
-    management: "document",
-    route: "/kolacici",
-    canonicalSlug: "kolacici",
-    indexingPolicy: "noindex",
-    template: "legal_page",
-    slots: ["title", "legal_copy", "version"],
-    h1: "Politika kolačića",
-    seo: {
-      title: "Politika kolačića",
-      description: "Koje kolačiće Psihointegritet koristi i zašto.",
-    },
-    textFields: [{ field: "h1", value: "Politika kolačića", limit: "pageH1" }],
-    ctas: noCtas,
-    widgets: noWidgets,
-    jsonLdKinds: noJsonLd,
-    requiredApprovals: requirements("legal", "business"),
-  }),
-  staticPage({
-    id: "page:pravila-zakazivanja",
-    management: "document",
-    route: "/pravila-zakazivanja",
-    canonicalSlug: "pravila-zakazivanja",
-    indexingPolicy: "noindex",
-    template: "legal_page",
-    slots: ["title", "legal_copy", "version"],
-    h1: "Pravila zakazivanja",
-    seo: {
-      title: "Pravila zakazivanja",
-      description: "Pravila otkazivanja, kašnjenja i nedolaska na termin.",
-    },
-    textFields: [
-      { field: "h1", value: "Pravila zakazivanja", limit: "pageH1" },
-    ],
-    ctas: noCtas,
-    widgets: noWidgets,
-    jsonLdKinds: noJsonLd,
-    requiredApprovals: requirements("legal", "business"),
-  }),
-  staticPage({
-    id: "page:pronadji-podrsku",
-    management: "system",
-    route: "/pronadji-podrsku",
-    canonicalSlug: "pronadji-podrsku",
-    indexingPolicy: "noindex",
-    template: "static_information",
-    slots: ["hero", "intro", "cta"],
-    h1: "Pronađi podršku",
-    seo: {
-      title: "Pronađi podršku",
-      description:
-        "Kroz kratka pitanja dobijte objašnjiv predlog podrške i terapeuta.",
-    },
-    textFields: [{ field: "h1", value: "Pronađi podršku", limit: "pageH1" }],
-    ctas: noCtas,
-    widgets: matchingWidget,
-    jsonLdKinds: noJsonLd,
-  }),
-  staticPage({
-    id: "page:kompas",
-    // `internal`, not `system`: the backend `SYSTEM_CONTENT_TEMPLATES`
-    // allowlist has no `/kompas` row yet, so registering it as system content
-    // would show it in the panel's „Sadržaj" tab and fail on first open. It
-    // becomes `system` in the pass that adds the backend registration.
-    management: "internal",
-    route: "/kompas",
-    canonicalSlug: "kompas",
-    // Kompas is an interactive discovery surface whose result is personal to
-    // the current selection; only the canonical area/topic pages are indexable
-    // (D-054).
-    indexingPolicy: "noindex",
-    template: "static_information",
-    slots: ["hero", "intro", "cta"],
-    h1: "Vaš vodič do podrške koja ima smisla za vas",
-    seo: {
-      title: "Kompas mentalnog zdravlja",
-      description:
-        "Izaberite oblast koja vam je bliska i pogledajte sadržaje, vežbe i programe koji bi vam sada mogli biti korisni.",
-    },
-    textFields: [
-      {
-        field: "h1",
-        value: "Vaš vodič do podrške koja ima smisla za vas",
-        limit: "pageH1",
-      },
-    ],
-    ctas: noCtas,
-    widgets: noWidgets,
-    jsonLdKinds: noJsonLd,
-  }),
-  staticPage({
-    id: "page:zakazi",
-    management: "system",
-    route: "/zakazi",
-    canonicalSlug: "zakazi",
-    indexingPolicy: "noindex",
-    template: "static_information",
-    slots: ["hero", "intro", "cta"],
-    h1: "Pošaljite zahtev za termin",
-    seo: {
-      title: "Zakaži termin",
-      description:
-        "Pošaljite zahtev za termin; dostupnost proverava terapeut ili član tima.",
-    },
-    textFields: [
-      { field: "h1", value: "Pošaljite zahtev za termin", limit: "pageH1" },
-    ],
-    ctas: noCtas,
-    widgets: bookingWidget,
-    jsonLdKinds: noJsonLd,
-    requiredApprovals: requirements("legal", "business"),
-  }),
-];
+function buildStaticContent(locale: UiLocale) {
+  const {
+    homepage: { faqItems },
+    services: { serviceCatalog, sessionPackages },
+    therapists,
+  } = getFallbackContentForLocale(locale);
 
-const serviceEntities: readonly ContentEntity[] = serviceCatalog.map(
-  (service) => {
-    const therapistIds = therapists
-      .filter((therapist) =>
-        therapist.bookingServiceSlugs.includes(service.slug),
-      )
-      .map((therapist) => `therapist:${therapist.slug}`);
-    const entity = base({
-      id: `service:${service.slug}`,
-      type: "service",
+  const staticPages: readonly StaticPageEntity[] = [
+    staticPage({
+      id: "page:home",
       management: "system",
-      route: `/usluge/${service.slug}`,
-      canonicalSlug: service.slug,
+      route: "/",
+      canonicalSlug: "pocetna",
       indexingPolicy: "index",
-      availabilityStatus: "active",
-      template: "service_detail",
+      template: "static_information",
+      slots: ["hero", "intro", "prose", "cta", "faq"],
+      h1: siteSettings.name,
+      seo: {
+        title: "Psihointegritet",
+        description:
+          "Psihoterapija, savetovanje i programi podrške online i uživo u Chicagu, Milwaukeeju i Madisonu.",
+      },
+      textFields: [
+        { field: "h1", value: siteSettings.name, limit: "pageH1" },
+        {
+          field: "heroLead",
+          value:
+            "Psihoterapija, savetovanje i programi podrške online i uživo u Chicagu, Milwaukeeju i Madisonu.",
+          limit: "heroLead",
+        },
+        ...faqItems.flatMap((item) => [
+          {
+            field: `faq.${item.id}.question`,
+            value: item.question,
+            limit: "faqQuestion" as const,
+          },
+          {
+            field: `faq.${item.id}.answer`,
+            value: item.answer,
+            limit: "faqAnswer" as const,
+          },
+        ]),
+      ],
+      ctas: [
+        { label: "Pronađite podršku", action: "START_MATCHING" },
+        { label: "Rad sa kompanijama", action: "OPEN_COMPANY_CONFIGURATOR" },
+      ],
+      widgets: matchingWidget,
+      jsonLdKinds: ["organization", "website", "faq"],
+      faq: faqItems.map(({ question, answer }) => ({ question, answer })),
+    }),
+    staticPage({
+      id: "page:o-nama",
+      management: "system",
+      route: "/o-nama",
+      canonicalSlug: "o-nama",
+      indexingPolicy: "index",
+      template: "static_information",
+      slots: ["hero", "intro", "prose", "cta"],
+      h1: "Digitalni centar za mentalno zdravlje",
+      seo: {
+        title: "O nama",
+        description:
+          "Psihointegritet pruža podršku online i uživo u Chicagu, Milwaukeeju i Madisonu.",
+      },
+      textFields: [
+        {
+          field: "h1",
+          value: "Digitalni centar za mentalno zdravlje",
+          limit: "pageH1",
+        },
+      ],
+      ctas: [
+        {
+          label: "Upoznajte tim",
+          action: "VIEW_THERAPIST",
+          targetId: "therapist:maria-bullock",
+        },
+      ],
+      widgets: noWidgets,
+      jsonLdKinds: noJsonLd,
+    }),
+    staticPage({
+      id: "page:tim",
+      management: "system",
+      route: "/tim",
+      canonicalSlug: "tim",
+      indexingPolicy: "index",
+      template: "static_information",
+      slots: ["hero", "intro", "prose", "cta"],
+      h1: "Naš tim",
+      seo: {
+        title: "Naš tim",
+        description:
+          "Upoznajte terapeute Psihointegriteta, oblasti rada i dostupne formate.",
+      },
+      textFields: [{ field: "h1", value: "Naš tim", limit: "pageH1" }],
+      ctas: [{ label: "Pronađite podršku", action: "START_MATCHING" }],
+      widgets: matchingWidget,
+      jsonLdKinds: noJsonLd,
+    }),
+    staticPage({
+      id: "page:usluge",
+      management: "system",
+      route: "/usluge",
+      canonicalSlug: "usluge",
+      indexingPolicy: "index",
+      template: "static_information",
+      slots: ["hero", "intro", "prose", "cta"],
+      h1: "Usluge",
+      seo: {
+        title: "Usluge",
+        description:
+          "Individualna psihoterapija, bračno i roditeljsko savetovanje online i uživo.",
+      },
+      textFields: [{ field: "h1", value: "Usluge", limit: "pageH1" }],
+      ctas: [{ label: "Pogledajte cene", action: "VIEW_PRICING" }],
+      widgets: noWidgets,
+      jsonLdKinds: noJsonLd,
+    }),
+    staticPage({
+      id: "page:radionice",
+      management: "system",
+      route: "/radionice",
+      canonicalSlug: "radionice",
+      indexingPolicy: "index",
+      template: "static_information",
+      slots: ["hero", "intro", "prose"],
+      h1: "Radionice i programi",
+      seo: {
+        title: "Radionice i programi",
+        description: "Najavljeni grupni programi i radionice Psihointegriteta.",
+      },
+      textFields: [
+        { field: "h1", value: "Radionice i programi", limit: "pageH1" },
+      ],
+      ctas: noCtas,
+      widgets: noWidgets,
+      jsonLdKinds: noJsonLd,
+    }),
+    staticPage({
+      id: "page:podrska-roditeljima",
+      management: "system",
+      route: "/podrska-roditeljima",
+      canonicalSlug: "podrska-roditeljima",
+      indexingPolicy: "index",
+      template: "audience_page",
       slots: [
         "hero",
-        "facts",
-        "description",
+        "audience",
         "first_step",
         "related",
         "cta",
-        "packages",
-        "faq",
+        "program_cards",
       ],
-      requiredApprovals: requirements("clinical", "business"),
+      h1: "Roditeljsko savetovanje i programi",
       seo: {
-        title: service.name,
-        description: serviceSeoDescription(service),
+        title: "Podrška roditeljima",
+        description:
+          "Roditeljsko savetovanje i najavljeni programi podrške online i uživo.",
       },
       textFields: [
-        { field: "name", value: service.name, limit: "cardTitle" },
         {
-          field: "description",
-          value: service.description,
-          limit: "serviceDescription",
-        },
-        { field: "seo.title", value: service.name, limit: "seoTitle" },
-        {
-          field: "seo.description",
-          value: serviceSeoDescription(service),
-          limit: "seoDescription",
+          field: "h1",
+          value: "Roditeljsko savetovanje i programi",
+          limit: "pageH1",
         },
       ],
       ctas: [
         {
           label: "Zakaži termin",
           action: "BOOK_SERVICE",
-          targetId: `service:${service.slug}`,
+          targetId: "service:roditeljsko-savetovanje",
         },
       ],
       widgets: [{ id: "booking", placement: "service", enabled: true }],
-      jsonLdKinds: ["service", "breadcrumb"],
-      breadcrumbs: [
-        { label: "Početna", path: "/" },
-        { label: "Usluge", path: "/usluge" },
-        { label: service.name, path: `/usluge/${service.slug}` },
-      ],
-      bookingMode: "request",
-    });
-
-    return { ...entity, type: "service", source: service, therapistIds };
-  },
-);
-
-const therapistEntities: readonly ContentEntity[] = therapists.map(
-  (therapist) => {
-    const fullBio = therapist.bio.join(" ");
-    const entity = base({
-      id: `therapist:${therapist.slug}`,
-      type: "therapist",
+      jsonLdKinds: noJsonLd,
+      requiredApprovals: requirements("clinical", "legal", "business"),
+    }),
+    staticPage({
+      id: "page:cene",
       management: "system",
-      route: `/tim/${therapist.slug}`,
-      canonicalSlug: therapist.slug,
+      route: "/cene",
+      canonicalSlug: "cene",
       indexingPolicy: "index",
-      availabilityStatus: "active",
-      template: "therapist_profile",
-      slots: ["hero", "approach", "areas", "services", "bio", "cta"],
-      requiredApprovals: requirements("clinical", "business"),
+      template: "pricing_page",
+      slots: [
+        "service_prices",
+        "packages",
+        "notice",
+        "cta",
+        "program_references",
+      ],
+      h1: "Cene usluga i programa",
       seo: {
-        title: therapist.name,
-        description: therapist.cardExcerpt,
+        title: "Cene",
+        description:
+          "Okvirne cene usluga, paketa i najavljenih programa Psihointegriteta.",
       },
       textFields: [
-        { field: "name", value: therapist.name, limit: "cardTitle" },
-        {
-          field: "title",
-          value: therapist.title,
-          limit: "therapistPublicTitle",
-        },
-        {
-          field: "cardExcerpt",
-          value: therapist.cardExcerpt,
-          limit: "therapistCardExcerpt",
-        },
-        { field: "quote", value: therapist.quote, limit: "therapistQuote" },
-        ...therapist.bio.map((paragraph, index) => ({
-          field: `bio.${index}`,
-          value: paragraph,
-          limit: "therapistBioParagraph" as const,
-        })),
-        { field: "bio", value: fullBio, limit: "therapistFullBio" },
-        { field: "seo.title", value: therapist.name, limit: "seoTitle" },
-        {
-          field: "seo.description",
-          value: therapist.cardExcerpt,
-          limit: "seoDescription",
-        },
+        { field: "h1", value: "Cene usluga i programa", limit: "pageH1" },
       ],
       ctas: [
         {
-          label: "Zakaži termin",
-          action: "BOOK_THERAPIST",
-          targetId: `therapist:${therapist.slug}`,
+          label: "Pošaljite zahtev",
+          action: "BOOK_SERVICE",
+          targetId: "service:individualna-psihoterapija",
         },
       ],
-      widgets: [{ id: "booking", placement: "therapist", enabled: true }],
-      jsonLdKinds: ["person"],
-      asset: {
-        assetId: therapist.image,
-        alt: `Portret terapeuta ${therapist.name}`,
-      },
-      bookingMode: "request",
-    });
-
-    return { ...entity, type: "therapist", source: therapist };
-  },
-);
-
-const programEntities: readonly ContentEntity[] = groupPrograms.map(
-  (program) => {
-    const entity = base({
-      id: `program:${program.slug}`,
-      type: "program",
+      widgets: noWidgets,
+      jsonLdKinds: noJsonLd,
+      requiredApprovals: requirements("business"),
+    }),
+    staticPage({
+      id: "page:znanje",
       management: "system",
-      route: `/radionice/${program.slug}`,
-      canonicalSlug: program.slug,
+      route: "/znanje",
+      canonicalSlug: "znanje",
       indexingPolicy: "index",
-      availabilityStatus: "coming_soon",
-      template: "program_detail",
-      slots: ["hero", "facts", "audience", "format", "status"],
-      requiredApprovals: requirements("business", "clinical"),
+      template: "static_information",
+      slots: ["hero", "intro", "prose"],
+      h1: "Znanje i resursi",
       seo: {
-        title: program.title,
-        description: `${program.audience} ${program.sessions}`,
+        title: "Znanje i resursi",
+        description:
+          "Stručni tekstovi, vodiči i edukativni materijali u pripremi.",
       },
-      textFields: [
-        { field: "title", value: program.title, limit: "cardTitle" },
-        {
-          field: "audience",
-          value: program.audience,
-          limit: "cardDescription",
-        },
-        { field: "seo.title", value: program.title, limit: "seoTitle" },
-        {
-          field: "seo.description",
-          value: `${program.audience} ${program.sessions}`,
-          limit: "seoDescription",
-        },
-      ],
-      ctas: [{ label: "Postavite pitanje", action: "GENERAL_CONTACT" }],
-      widgets: [
-        { id: "program_interest", placement: "program", enabled: false },
-      ],
-      jsonLdKinds: ["breadcrumb"],
-      breadcrumbs: [
-        { label: "Početna", path: "/" },
-        { label: "Radionice", path: "/radionice" },
-        { label: program.title, path: `/radionice/${program.slug}` },
-      ],
-      bookingMode: "disabled",
-    });
-
-    return { ...entity, type: "program", source: program };
-  },
-);
-
-const companyPlanEntities: readonly ContentEntity[] = companyPlanCards.map(
-  (plan: CompanyPlanCard) => {
-    const entity = base({
-      id: `company_plan:${plan.slug}`,
-      type: "company_plan",
+      textFields: [{ field: "h1", value: "Znanje i resursi", limit: "pageH1" }],
+      ctas: noCtas,
+      widgets: noWidgets,
+      jsonLdKinds: noJsonLd,
+    }),
+    staticPage({
+      id: "page:rad-sa-kompanijama",
       management: "system",
       route: "/rad-sa-kompanijama",
-      canonicalSlug: plan.slug,
-      indexingPolicy: "noindex",
-      availabilityStatus: "coming_soon",
+      canonicalSlug: "rad-sa-kompanijama",
+      indexingPolicy: "index",
       template: "company_page",
-      slots: ["hero", "support_types", "plans", "privacy", "configurator_cta"],
-      requiredApprovals: requirements("business"),
-      seo: { title: plan.title, description: plan.description },
+      slots: [
+        "hero",
+        "support_types",
+        "plans",
+        "privacy",
+        "configurator_cta",
+        "faq",
+      ],
+      h1: "Rad sa kompanijama",
+      seo: {
+        title: "Rad sa kompanijama",
+        description:
+          "Radionice, edukacije i programi podrške za timove i zaposlene.",
+      },
       textFields: [
-        { field: "title", value: plan.title, limit: "cardTitle" },
-        {
-          field: "description",
-          value: plan.description,
-          limit: "cardDescription",
-        },
+        { field: "h1", value: "Rad sa kompanijama", limit: "pageH1" },
+        ...companyFaqItems.flatMap((item, index) => [
+          {
+            field: `faq.${index}.question`,
+            value: item.question,
+            limit: "faqQuestion" as const,
+          },
+          {
+            field: `faq.${index}.answer`,
+            value: item.answer,
+            limit: "faqAnswer" as const,
+          },
+        ]),
       ],
       ctas: [
-        {
-          label: "Konfigurišite program",
-          action: "OPEN_COMPANY_CONFIGURATOR",
-          targetId: `company_plan:${plan.slug}`,
-        },
+        { label: "Konfigurišite program", action: "OPEN_COMPANY_CONFIGURATOR" },
       ],
       widgets: [
         { id: "company_configurator", placement: "company", enabled: true },
       ],
       jsonLdKinds: noJsonLd,
-    });
-
-    return { ...entity, type: "company_plan", source: plan };
-  },
-);
-
-const packageEntities: readonly ContentEntity[] = sessionPackages.map(
-  (pack) => {
-    const entity = base({
-      id: `package_offer:${pack.sessions}`,
-      type: "package_offer",
-      management: "system",
-      route: "/cene",
-      canonicalSlug: `paket-${pack.sessions}`,
-      indexingPolicy: "noindex",
-      availabilityStatus: "coming_soon",
-      template: "pricing_page",
-      slots: ["service_prices", "packages", "notice", "cta"],
       requiredApprovals: requirements("business"),
+    }),
+    staticPage({
+      id: "page:kontakt",
+      management: "system",
+      route: "/kontakt",
+      canonicalSlug: "kontakt",
+      indexingPolicy: "index",
+      template: "static_information",
+      slots: ["hero", "intro", "prose", "cta"],
+      h1: "Kako možemo pomoći?",
       seo: {
-        title: `${pack.sessions} individualnih seansi`,
-        description: `Informativni paket od ${pack.sessions} individualnih seansi.`,
+        title: "Kontakt",
+        description:
+          "Kontakt Psihointegriteta i jasni putevi za termin ili programe za kompanije.",
+      },
+      textFields: [
+        { field: "h1", value: "Kako možemo pomoći?", limit: "pageH1" },
+      ],
+      ctas: [
+        {
+          label: "Pošaljite zahtev",
+          action: "BOOK_SERVICE",
+          targetId: "service:individualna-psihoterapija",
+        },
+      ],
+      widgets: noWidgets,
+      jsonLdKinds: noJsonLd,
+    }),
+    // Four legal pages (0.7, D-046/D-047). `noindex`: these are placeholders
+    // pending legal confirmation (S5) until the registry publishes real text —
+    // see `LegalDocumentPage` for the actual body source (backend-fetched, not
+    // this static entity, which exists for metadata/discoverability only).
+    staticPage({
+      id: "page:privatnost",
+      management: "document",
+      route: "/privatnost",
+      canonicalSlug: "privatnost",
+      indexingPolicy: "noindex",
+      template: "legal_page",
+      slots: ["title", "legal_copy", "version"],
+      h1: "Politika privatnosti",
+      seo: {
+        title: "Politika privatnosti",
+        description: "Kako Psihointegritet obrađuje lične podatke.",
+      },
+      textFields: [
+        { field: "h1", value: "Politika privatnosti", limit: "pageH1" },
+      ],
+      ctas: noCtas,
+      widgets: noWidgets,
+      jsonLdKinds: noJsonLd,
+      requiredApprovals: requirements("legal", "business"),
+    }),
+    staticPage({
+      id: "page:uslovi",
+      management: "document",
+      route: "/uslovi",
+      canonicalSlug: "uslovi",
+      indexingPolicy: "noindex",
+      template: "legal_page",
+      slots: ["title", "legal_copy", "version"],
+      h1: "Uslovi korišćenja",
+      seo: {
+        title: "Uslovi korišćenja",
+        description: "Uslovi korišćenja Psihointegritet platforme.",
+      },
+      textFields: [
+        { field: "h1", value: "Uslovi korišćenja", limit: "pageH1" },
+      ],
+      ctas: noCtas,
+      widgets: noWidgets,
+      jsonLdKinds: noJsonLd,
+      requiredApprovals: requirements("legal", "business"),
+    }),
+    staticPage({
+      id: "page:kolacici",
+      management: "document",
+      route: "/kolacici",
+      canonicalSlug: "kolacici",
+      indexingPolicy: "noindex",
+      template: "legal_page",
+      slots: ["title", "legal_copy", "version"],
+      h1: "Politika kolačića",
+      seo: {
+        title: "Politika kolačića",
+        description: "Koje kolačiće Psihointegritet koristi i zašto.",
+      },
+      textFields: [
+        { field: "h1", value: "Politika kolačića", limit: "pageH1" },
+      ],
+      ctas: noCtas,
+      widgets: noWidgets,
+      jsonLdKinds: noJsonLd,
+      requiredApprovals: requirements("legal", "business"),
+    }),
+    staticPage({
+      id: "page:pravila-zakazivanja",
+      management: "document",
+      route: "/pravila-zakazivanja",
+      canonicalSlug: "pravila-zakazivanja",
+      indexingPolicy: "noindex",
+      template: "legal_page",
+      slots: ["title", "legal_copy", "version"],
+      h1: "Pravila zakazivanja",
+      seo: {
+        title: "Pravila zakazivanja",
+        description: "Pravila otkazivanja, kašnjenja i nedolaska na termin.",
+      },
+      textFields: [
+        { field: "h1", value: "Pravila zakazivanja", limit: "pageH1" },
+      ],
+      ctas: noCtas,
+      widgets: noWidgets,
+      jsonLdKinds: noJsonLd,
+      requiredApprovals: requirements("legal", "business"),
+    }),
+    staticPage({
+      id: "page:pronadji-podrsku",
+      management: "system",
+      route: "/pronadji-podrsku",
+      canonicalSlug: "pronadji-podrsku",
+      indexingPolicy: "noindex",
+      template: "static_information",
+      slots: ["hero", "intro", "cta"],
+      h1: "Pronađi podršku",
+      seo: {
+        title: "Pronađi podršku",
+        description:
+          "Kroz kratka pitanja dobijte objašnjiv predlog podrške i terapeuta.",
+      },
+      textFields: [{ field: "h1", value: "Pronađi podršku", limit: "pageH1" }],
+      ctas: noCtas,
+      widgets: matchingWidget,
+      jsonLdKinds: noJsonLd,
+    }),
+    staticPage({
+      id: "page:kompas",
+      // `internal`, not `system`: the backend `SYSTEM_CONTENT_TEMPLATES`
+      // allowlist has no `/kompas` row yet, so registering it as system content
+      // would show it in the panel's „Sadržaj" tab and fail on first open. It
+      // becomes `system` in the pass that adds the backend registration.
+      management: "internal",
+      route: "/kompas",
+      canonicalSlug: "kompas",
+      // Kompas is an interactive discovery surface whose result is personal to
+      // the current selection; only the canonical area/topic pages are indexable
+      // (D-054).
+      indexingPolicy: "noindex",
+      template: "static_information",
+      slots: ["hero", "intro", "cta"],
+      h1: "Vaš vodič do podrške koja ima smisla za vas",
+      seo: {
+        title: "Kompas mentalnog zdravlja",
+        description:
+          "Izaberite oblast koja vam je bliska i pogledajte sadržaje, vežbe i programe koji bi vam sada mogli biti korisni.",
       },
       textFields: [
         {
-          field: "title",
-          value: `${pack.sessions} individualnih seansi`,
-          limit: "cardTitle",
+          field: "h1",
+          value: "Vaš vodič do podrške koja ima smisla za vas",
+          limit: "pageH1",
         },
-        { field: "deadline", value: pack.deadline, limit: "cardDescription" },
       ],
-      ctas: [{ label: "Pogledajte cene", action: "VIEW_PRICING" }],
+      ctas: noCtas,
       widgets: noWidgets,
       jsonLdKinds: noJsonLd,
-      bookingMode: "disabled",
-    });
+    }),
+    staticPage({
+      id: "page:zakazi",
+      management: "system",
+      route: "/zakazi",
+      canonicalSlug: "zakazi",
+      indexingPolicy: "noindex",
+      template: "static_information",
+      slots: ["hero", "intro", "cta"],
+      h1: "Pošaljite zahtev za termin",
+      seo: {
+        title: "Zakaži termin",
+        description:
+          "Pošaljite zahtev za termin; dostupnost proverava terapeut ili član tima.",
+      },
+      textFields: [
+        { field: "h1", value: "Pošaljite zahtev za termin", limit: "pageH1" },
+      ],
+      ctas: noCtas,
+      widgets: bookingWidget,
+      jsonLdKinds: noJsonLd,
+      requiredApprovals: requirements("legal", "business"),
+    }),
+  ];
 
-    return { ...entity, type: "package_offer", source: pack };
-  },
-);
+  const serviceEntities: readonly ContentEntity[] = serviceCatalog.map(
+    (service) => {
+      const therapistIds = therapists
+        .filter((therapist) =>
+          therapist.bookingServiceSlugs.includes(service.slug),
+        )
+        .map((therapist) => `therapist:${therapist.slug}`);
+      const entity = base({
+        id: `service:${service.slug}`,
+        type: "service",
+        management: "system",
+        route: `/usluge/${service.slug}`,
+        canonicalSlug: service.slug,
+        indexingPolicy: "index",
+        availabilityStatus: "active",
+        template: "service_detail",
+        slots: [
+          "hero",
+          "facts",
+          "description",
+          "first_step",
+          "related",
+          "cta",
+          "packages",
+          "faq",
+        ],
+        requiredApprovals: requirements("clinical", "business"),
+        seo: {
+          title: service.name,
+          description: serviceSeoDescription(service),
+        },
+        textFields: [
+          { field: "name", value: service.name, limit: "cardTitle" },
+          {
+            field: "description",
+            value: service.description,
+            limit: "serviceDescription",
+          },
+          { field: "seo.title", value: service.name, limit: "seoTitle" },
+          {
+            field: "seo.description",
+            value: serviceSeoDescription(service),
+            limit: "seoDescription",
+          },
+        ],
+        ctas: [
+          {
+            label: "Zakaži termin",
+            action: "BOOK_SERVICE",
+            targetId: `service:${service.slug}`,
+          },
+        ],
+        widgets: [{ id: "booking", placement: "service", enabled: true }],
+        jsonLdKinds: ["service", "breadcrumb"],
+        breadcrumbs: [
+          { label: "Početna", path: "/" },
+          { label: "Usluge", path: "/usluge" },
+          { label: service.name, path: `/usluge/${service.slug}` },
+        ],
+        bookingMode: "request",
+      });
+
+      return { ...entity, type: "service", source: service, therapistIds };
+    },
+  );
+
+  const therapistEntities: readonly ContentEntity[] = therapists.map(
+    (therapist) => {
+      const fullBio = therapist.bio.join(" ");
+      const entity = base({
+        id: `therapist:${therapist.slug}`,
+        type: "therapist",
+        management: "system",
+        route: `/tim/${therapist.slug}`,
+        canonicalSlug: therapist.slug,
+        indexingPolicy: "index",
+        availabilityStatus: "active",
+        template: "therapist_profile",
+        slots: ["hero", "approach", "areas", "services", "bio", "cta"],
+        requiredApprovals: requirements("clinical", "business"),
+        seo: {
+          title: therapist.name,
+          description: therapist.cardExcerpt,
+        },
+        textFields: [
+          { field: "name", value: therapist.name, limit: "cardTitle" },
+          {
+            field: "title",
+            value: therapist.title,
+            limit: "therapistPublicTitle",
+          },
+          {
+            field: "cardExcerpt",
+            value: therapist.cardExcerpt,
+            limit: "therapistCardExcerpt",
+          },
+          { field: "quote", value: therapist.quote, limit: "therapistQuote" },
+          ...therapist.bio.map((paragraph, index) => ({
+            field: `bio.${index}`,
+            value: paragraph,
+            limit: "therapistBioParagraph" as const,
+          })),
+          { field: "bio", value: fullBio, limit: "therapistFullBio" },
+          { field: "seo.title", value: therapist.name, limit: "seoTitle" },
+          {
+            field: "seo.description",
+            value: therapist.cardExcerpt,
+            limit: "seoDescription",
+          },
+        ],
+        ctas: [
+          {
+            label: "Zakaži termin",
+            action: "BOOK_THERAPIST",
+            targetId: `therapist:${therapist.slug}`,
+          },
+        ],
+        widgets: [{ id: "booking", placement: "therapist", enabled: true }],
+        jsonLdKinds: ["person"],
+        asset: {
+          assetId: therapist.image,
+          alt: `Portret terapeuta ${therapist.name}`,
+        },
+        bookingMode: "request",
+      });
+
+      return { ...entity, type: "therapist", source: therapist };
+    },
+  );
+
+  const programEntities: readonly ContentEntity[] = groupPrograms.map(
+    (program) => {
+      const entity = base({
+        id: `program:${program.slug}`,
+        type: "program",
+        management: "system",
+        route: `/radionice/${program.slug}`,
+        canonicalSlug: program.slug,
+        indexingPolicy: "index",
+        availabilityStatus: "coming_soon",
+        template: "program_detail",
+        slots: ["hero", "facts", "audience", "format", "status"],
+        requiredApprovals: requirements("business", "clinical"),
+        seo: {
+          title: program.title,
+          description: `${program.audience} ${program.sessions}`,
+        },
+        textFields: [
+          { field: "title", value: program.title, limit: "cardTitle" },
+          {
+            field: "audience",
+            value: program.audience,
+            limit: "cardDescription",
+          },
+          { field: "seo.title", value: program.title, limit: "seoTitle" },
+          {
+            field: "seo.description",
+            value: `${program.audience} ${program.sessions}`,
+            limit: "seoDescription",
+          },
+        ],
+        ctas: [{ label: "Postavite pitanje", action: "GENERAL_CONTACT" }],
+        widgets: [
+          { id: "program_interest", placement: "program", enabled: false },
+        ],
+        jsonLdKinds: ["breadcrumb"],
+        breadcrumbs: [
+          { label: "Početna", path: "/" },
+          { label: "Radionice", path: "/radionice" },
+          { label: program.title, path: `/radionice/${program.slug}` },
+        ],
+        bookingMode: "disabled",
+      });
+
+      return { ...entity, type: "program", source: program };
+    },
+  );
+
+  const companyPlanEntities: readonly ContentEntity[] = companyPlanCards.map(
+    (plan: CompanyPlanCard) => {
+      const entity = base({
+        id: `company_plan:${plan.slug}`,
+        type: "company_plan",
+        management: "system",
+        route: "/rad-sa-kompanijama",
+        canonicalSlug: plan.slug,
+        indexingPolicy: "noindex",
+        availabilityStatus: "coming_soon",
+        template: "company_page",
+        slots: [
+          "hero",
+          "support_types",
+          "plans",
+          "privacy",
+          "configurator_cta",
+        ],
+        requiredApprovals: requirements("business"),
+        seo: { title: plan.title, description: plan.description },
+        textFields: [
+          { field: "title", value: plan.title, limit: "cardTitle" },
+          {
+            field: "description",
+            value: plan.description,
+            limit: "cardDescription",
+          },
+        ],
+        ctas: [
+          {
+            label: "Konfigurišite program",
+            action: "OPEN_COMPANY_CONFIGURATOR",
+            targetId: `company_plan:${plan.slug}`,
+          },
+        ],
+        widgets: [
+          { id: "company_configurator", placement: "company", enabled: true },
+        ],
+        jsonLdKinds: noJsonLd,
+      });
+
+      return { ...entity, type: "company_plan", source: plan };
+    },
+  );
+
+  const packageEntities: readonly ContentEntity[] = sessionPackages.map(
+    (pack) => {
+      const entity = base({
+        id: `package_offer:${pack.sessions}`,
+        type: "package_offer",
+        management: "system",
+        route: "/cene",
+        canonicalSlug: `paket-${pack.sessions}`,
+        indexingPolicy: "noindex",
+        availabilityStatus: "coming_soon",
+        template: "pricing_page",
+        slots: ["service_prices", "packages", "notice", "cta"],
+        requiredApprovals: requirements("business"),
+        seo: {
+          title: `${pack.sessions} individualnih seansi`,
+          description: `Informativni paket od ${pack.sessions} individualnih seansi.`,
+        },
+        textFields: [
+          {
+            field: "title",
+            value: `${pack.sessions} individualnih seansi`,
+            limit: "cardTitle",
+          },
+          { field: "deadline", value: pack.deadline, limit: "cardDescription" },
+        ],
+        ctas: [{ label: "Pogledajte cene", action: "VIEW_PRICING" }],
+        widgets: noWidgets,
+        jsonLdKinds: noJsonLd,
+        bookingMode: "disabled",
+      });
+
+      return { ...entity, type: "package_offer", source: pack };
+    },
+  );
+
+  return {
+    staticPages,
+    staticContentEntities: [
+      ...staticPages,
+      ...serviceEntities,
+      ...therapistEntities,
+      ...programEntities,
+      ...companyPlanEntities,
+      ...packageEntities,
+    ] satisfies readonly ContentEntity[],
+  };
+}
 
 export const redirectRegistry: readonly RedirectRecord[] = [
   {
@@ -881,30 +909,29 @@ export const redirectRegistry: readonly RedirectRecord[] = [
   },
 ];
 
-export const staticContentEntities: readonly ContentEntity[] = [
-  ...staticPages,
-  ...serviceEntities,
-  ...therapistEntities,
-  ...programEntities,
-  ...companyPlanEntities,
-  ...packageEntities,
-];
-
 class StaticContentProvider implements ContentProvider {
-  private readonly entitiesById = new Map(
-    staticContentEntities.map((entity) => [entity.id, entity]),
-  );
+  private readonly entitiesById: Map<string, ContentEntity>;
 
   private readonly redirectsBySource = new Map(
     redirectRegistry.map((redirect) => [redirect.sourcePath, redirect]),
   );
 
+  constructor(
+    private readonly staticPages: readonly StaticPageEntity[],
+    private readonly staticContentEntities: readonly ContentEntity[],
+  ) {
+    this.entitiesById = new Map(
+      staticContentEntities.map((entity) => [entity.id, entity]),
+    );
+  }
+
   getPageByRoute(route: string): ContentEntity | null {
-    const staticPage = staticPages.find((page) => page.route === route);
+    const staticPage = this.staticPages.find((page) => page.route === route);
     if (staticPage) return staticPage;
 
     return (
-      staticContentEntities.find((entity) => entity.route === route) ?? null
+      this.staticContentEntities.find((entity) => entity.route === route) ??
+      null
     );
   }
 
@@ -921,7 +948,7 @@ class StaticContentProvider implements ContentProvider {
   }
 
   listPublished(input: { type?: ContentEntity["type"] } = {}): ContentEntity[] {
-    return staticContentEntities.filter(
+    return this.staticContentEntities.filter(
       (entity) =>
         entity.publicationStatus === "published" &&
         (input.type === undefined || entity.type === input.type),
@@ -929,7 +956,7 @@ class StaticContentProvider implements ContentProvider {
   }
 
   listAll(): ContentEntity[] {
-    return [...staticContentEntities];
+    return [...this.staticContentEntities];
   }
 
   getRedirect(sourcePath: string): RedirectRecord | null {
@@ -937,7 +964,43 @@ class StaticContentProvider implements ContentProvider {
   }
 }
 
-export const staticContentProvider: ContentProvider =
-  new StaticContentProvider();
+function createStaticContent(locale: UiLocale) {
+  const content = buildStaticContent(locale);
+  return {
+    entities: content.staticContentEntities,
+    provider: new StaticContentProvider(
+      content.staticPages,
+      content.staticContentEntities,
+    ) as ContentProvider,
+  };
+}
+
+const staticContentByLocale: Record<
+  UiLocale,
+  { entities: readonly ContentEntity[]; provider: ContentProvider }
+> = {
+  en: createStaticContent("en"),
+  "sr-Latn": createStaticContent("sr-Latn"),
+};
+
+export function staticContentProviderForLocale(
+  locale: UiLocale,
+): ContentProvider {
+  return staticContentByLocale[locale].provider;
+}
+
+export function staticContentEntitiesForLocale(
+  locale: UiLocale,
+): readonly ContentEntity[] {
+  return staticContentByLocale[locale].entities;
+}
+
+export const staticContentProvider = staticContentProviderForLocale(
+  PLATFORM_DEFAULT_LOCALE,
+);
+
+export const staticContentEntities = staticContentEntitiesForLocale(
+  PLATFORM_DEFAULT_LOCALE,
+);
 
 export { publicRoutePatterns };
