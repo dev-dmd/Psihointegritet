@@ -7,7 +7,7 @@
  * stored under a key no input renders while it cleared the banner on its way.
  *
  * The rule (D-062): say what is not finished, why it matters, and what to do
- * next. Technical codes stay available, but under "Detalji za podršku".
+ * next. Technical codes and identifiers are never rendered to tenant users.
  */
 
 import { TaxonomyApiError } from "../../taxonomy-api";
@@ -17,13 +17,8 @@ export interface TaxonomyErrorCopy {
   message: string;
   /** What they can do right now. Empty when the action is "try again". */
   nextAction: string;
-  /** Only rendered under a collapsed "Detalji za podršku". */
+  /** Reserved for superadmin-only diagnostics; null on tenant surfaces. */
   supportDetail: string | null;
-}
-
-/** Pydantic prefixes and other machine noise that must never reach a label. */
-function stripTechnicalPrefix(message: string): string {
-  return message.replace(/^Value error,\s*/i, "").trim();
 }
 
 const BY_CODE: Record<string, TaxonomyErrorCopy> = {
@@ -73,26 +68,19 @@ export function taxonomyErrorCopy(error: unknown): TaxonomyErrorCopy {
   if (!(error instanceof TaxonomyApiError)) return NETWORK_COPY;
 
   const known = error.problem?.code ? BY_CODE[error.problem.code] : undefined;
-  const supportDetail =
-    [error.problem?.code, error.problem?.correlationId]
-      .filter(Boolean)
-      .join(" · ") || null;
-  if (known) return { ...known, supportDetail };
+  if (known) return { ...known, supportDetail: null };
 
   if (error.status >= 500) {
     return {
       message: "Nešto nije uspelo na serveru.",
-      nextAction:
-        "Pokušajte ponovo. Ako se ponovi, pošaljite podršci prikazanu šifru greške.",
-      supportDetail,
+      nextAction: "Pokušajte ponovo za nekoliko minuta.",
+      supportDetail: null,
     };
   }
 
-  // A refusal we have not phrased yet: show the server's own sentence, cleaned
-  // of machine prefixes, rather than inventing a vaguer one.
   return {
-    message: stripTechnicalPrefix(error.message),
-    nextAction: "",
-    supportDetail,
+    message: "Izmena nije sačuvana.",
+    nextAction: "Proverite unos i pokušajte ponovo.",
+    supportDetail: null,
   };
 }

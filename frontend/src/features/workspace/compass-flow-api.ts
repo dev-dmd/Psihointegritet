@@ -15,7 +15,7 @@ async function parse<T>(response: Response): Promise<T> {
     // "Kompas zahtev nije uspeo (403)".
     const payload: unknown = await response.json().catch(() => null);
     const message = isApiProblem(payload)
-      ? (payload.detail ?? payload.title)
+      ? "Kompas zahtev nije završen. Pokušajte ponovo."
       : null;
     throw new Error(
       message ?? `Kompas zahtev nije uspeo (${response.status}).`,

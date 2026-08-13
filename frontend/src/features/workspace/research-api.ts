@@ -16,10 +16,12 @@ export class ResearchPanelError extends Error {
 async function parseOrThrow<T>(response: Response): Promise<T> {
   if (!response.ok) {
     const text = await response.text().catch(() => "");
-    let message = text || `Zahtev nije uspeo (${response.status}).`;
+    let message = "Podaci istraživanja nisu učitani. Pokušajte ponovo.";
     try {
       const parsed: unknown = text ? JSON.parse(text) : null;
-      if (isApiProblem(parsed)) message = parsed.detail ?? parsed.title;
+      if (isApiProblem(parsed)) {
+        message = "Podaci istraživanja nisu učitani. Pokušajte ponovo.";
+      }
     } catch {
       // Not JSON — keep the raw text.
     }

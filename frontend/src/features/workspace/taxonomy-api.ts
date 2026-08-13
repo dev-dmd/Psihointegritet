@@ -36,8 +36,7 @@ export class TaxonomyApiError extends Error {
     public readonly problem?: {
       code?: string;
       fieldPath?: string;
-      fieldErrors?: Record<string, string[]>;
-      correlationId?: string;
+      fieldErrors?: Record<string, Array<{ code: string }>>;
     },
   ) {
     super(message);
@@ -45,23 +44,15 @@ export class TaxonomyApiError extends Error {
   }
 }
 
-function serbianValidationMessage(message: string): string {
-  if (message === "Field required") return "Ovo polje je obavezno.";
-  if (message === "Input should be a valid integer") {
+function serbianValidationMessage(code: string): string {
+  if (code === "missing") return "Ovo polje je obavezno.";
+  if (code === "int_parsing") {
     return "Unesite ceo broj.";
   }
-  if (message === "Input should be a valid UUID") {
+  if (code === "uuid_parsing") {
     return "Izaberite postojeću vrednost iz liste.";
   }
-  const maximum = message.match(
-    /^String should have at most (\d+) characters$/,
-  );
-  if (maximum) return `Polje može imati najviše ${maximum[1]} karaktera.`;
-  const minimum = message.match(
-    /^String should have at least (\d+) characters$/,
-  );
-  if (minimum) return `Polje mora imati najmanje ${minimum[1]} karaktera.`;
-  return message;
+  return "Proverite vrednost ovog polja.";
 }
 
 function normalizedFieldPath(path: string): string {
@@ -81,7 +72,9 @@ export function taxonomyFieldErrors(error: unknown): Record<string, string> {
     error.problem?.fieldErrors ?? {},
   )) {
     if (messages[0]) {
-      fields[normalizedFieldPath(path)] = serbianValidationMessage(messages[0]);
+      fields[normalizedFieldPath(path)] = serbianValidationMessage(
+        messages[0].code,
+      );
     }
   }
   return fields;
@@ -90,24 +83,17 @@ export function taxonomyFieldErrors(error: unknown): Record<string, string> {
 async function parseOrThrow<T>(response: Response): Promise<T> {
   if (!response.ok) {
     const text = await response.text().catch(() => "");
-    let message = text || `Zahtev nije uspeo (${response.status}).`;
+    let message = "Kompas registar nije izmenjen. Pokušajte ponovo.";
     let parsed: unknown = null;
     try {
       parsed = text ? JSON.parse(text) : null;
       if (isApiProblem(parsed)) {
         message =
           parsed.status >= 500
-            ? `Kompas registar trenutno nije dostupan. Pokušajte ponovo. Ako se greška ponovi, pošaljite podršci ID greške: ${parsed.correlationId}.`
+            ? "Kompas registar trenutno nije dostupan. Pokušajte ponovo."
             : parsed.code === "validation_error"
               ? "Proverite označena polja i ispravite unos."
-              : (parsed.detail ?? parsed.title);
-      } else if (
-        typeof parsed === "object" &&
-        parsed !== null &&
-        "error" in parsed &&
-        typeof parsed.error === "string"
-      ) {
-        message = parsed.error;
+              : "Kompas registar nije izmenjen. Pokušajte ponovo.";
       }
     } catch {
       // Proxy/network responses need not use the API problem envelope.
@@ -118,7 +104,6 @@ async function parseOrThrow<T>(response: Response): Promise<T> {
             code: parsed.code,
             fieldPath: parsed.fieldPath,
             fieldErrors: parsed.fieldErrors,
-            correlationId: parsed.correlationId,
           }
         : {}),
     });

@@ -2045,6 +2045,15 @@ export interface components {
             /** Therapist Note */
             therapist_note?: string | null;
         };
+        /** ApiFieldError */
+        ApiFieldError: {
+            /** Code */
+            code: string;
+            /** Params */
+            params?: {
+                [key: string]: string | number | boolean;
+            } | null;
+        };
         /**
          * ApiProblem
          * @description Stable problem-details envelope; mirrored by the frontend contract.
@@ -2052,20 +2061,18 @@ export interface components {
         ApiProblem: {
             /** Code */
             code: string;
-            /** Correlationid */
-            correlationId: string;
-            /** Detail */
-            detail?: string | null;
             /** Fielderrors */
             fieldErrors?: {
-                [key: string]: string[];
+                [key: string]: components["schemas"]["ApiFieldError"][];
             } | null;
             /** Fieldpath */
             fieldPath?: string | null;
+            /** Params */
+            params?: {
+                [key: string]: string | number | boolean;
+            } | null;
             /** Status */
             status: number;
-            /** Title */
-            title: string;
             /**
              * Type
              * @default about:blank

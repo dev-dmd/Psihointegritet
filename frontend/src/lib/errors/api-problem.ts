@@ -4,13 +4,14 @@
  */
 export interface ApiProblem {
   type: string;
-  title: string;
   status: number;
   code: string;
-  detail?: string;
-  correlationId: string;
+  params?: Record<string, string | number | boolean>;
   fieldPath?: string;
-  fieldErrors?: Record<string, string[]>;
+  fieldErrors?: Record<
+    string,
+    Array<{ code: string; params?: Record<string, string | number | boolean> }>
+  >;
 }
 
 export function isApiProblem(value: unknown): value is ApiProblem {
@@ -20,9 +21,7 @@ export function isApiProblem(value: unknown): value is ApiProblem {
   const candidate = value as Record<string, unknown>;
   return (
     typeof candidate.type === "string" &&
-    typeof candidate.title === "string" &&
     typeof candidate.status === "number" &&
-    typeof candidate.code === "string" &&
-    typeof candidate.correlationId === "string"
+    typeof candidate.code === "string"
   );
 }

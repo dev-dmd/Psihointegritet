@@ -22,4 +22,8 @@ async def test_me_is_a_real_protected_route_not_a_404() -> None:
         response = await client.get("/api/v1/me")
 
     assert response.status_code == 401
-    assert response.json()["title"] == "Bearer token is required"
+    assert response.json() == {
+        "type": "about:blank",
+        "status": 401,
+        "code": "http_error",
+    }

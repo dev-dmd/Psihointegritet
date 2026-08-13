@@ -3,10 +3,8 @@ import { describe, expect, it, vi } from "vitest";
 import { fetchCompassFlows } from "./compass-flow-api";
 
 /**
- * A refused Kompas request must reach the panel with the reason the backend
- * gave. This client originally read `detail.message`, a shape this API never
- * sends, so every explained refusal arrived as "Kompas zahtev nije uspeo
- * (403)" and an operator could not tell a missing account from a missing role.
+ * A refused request must use controlled frontend copy. Backend prose and
+ * technical identifiers are never a user-facing message.
  */
 function problemResponse(status: number, body: unknown): Response {
   return {
@@ -17,7 +15,7 @@ function problemResponse(status: number, body: unknown): Response {
 }
 
 describe("compass flow admin client", () => {
-  it("surfaces the backend's explanation instead of the bare status", async () => {
+  it("does not surface backend prose or a correlation id", async () => {
     vi.stubGlobal(
       "fetch",
       vi.fn().mockResolvedValue(
@@ -33,7 +31,7 @@ describe("compass flow admin client", () => {
     );
 
     await expect(fetchCompassFlows()).rejects.toThrow(
-      /nije upisan u bazu koju server koristi/,
+      "Kompas zahtev nije završen. Pokušajte ponovo.",
     );
     vi.unstubAllGlobals();
   });

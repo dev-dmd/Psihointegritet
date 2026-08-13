@@ -108,23 +108,14 @@ export function toLegalDocument(
 async function parseOrThrow<T>(response: Response): Promise<T> {
   if (!response.ok) {
     const text = await response.text().catch(() => "");
-    let detail = text || `Zahtev nije uspeo (${response.status}).`;
+    let detail = "Dokument nije sačuvan. Pokušajte ponovo.";
     try {
       const parsed: unknown = text ? JSON.parse(text) : null;
       if (isApiProblem(parsed)) {
         detail =
           parsed.status >= 500
-            ? `Server trenutno ne može da obradi zahtev. Pokušajte ponovo. Ako se greška ponovi, pošaljite podršci ID greške: ${parsed.correlationId}.`
-            : (parsed.detail ?? parsed.title);
-        if (parsed.fieldErrors) {
-          const fieldDetails = Object.entries(parsed.fieldErrors).flatMap(
-            ([field, messages]) =>
-              messages.map((message) => `${field}: ${message}`),
-          );
-          if (fieldDetails.length > 0) {
-            detail = `${detail} — ${fieldDetails.join("; ")}`;
-          }
-        }
+            ? "Server trenutno ne može da obradi zahtev. Pokušajte ponovo."
+            : "Dokument nije sačuvan. Proverite unos i pokušajte ponovo.";
       }
     } catch {
       // Keep a non-JSON proxy/network response as-is.

@@ -118,14 +118,14 @@ async function parseOrThrow<T>(response: Response): Promise<T> {
     // directly here would show the user the whole JSON envelope instead of
     // the actual message. Server failures are deliberately translated below
     // while retaining their correlation ID for support.
-    let message = text || `Zahtev nije uspeo (${response.status}).`;
+    let message = "Izmena nije sačuvana. Pokušajte ponovo.";
     try {
       const parsed: unknown = text ? JSON.parse(text) : null;
       if (isApiProblem(parsed)) {
         message =
           parsed.status >= 500
-            ? `Server trenutno ne može da obradi zahtev. Pokušajte ponovo. Ako se greška ponovi, pošaljite podršci ID greške: ${parsed.correlationId}.`
-            : (parsed.detail ?? parsed.title);
+            ? "Server trenutno ne može da obradi zahtev. Pokušajte ponovo."
+            : "Izmena nije sačuvana. Proverite unos i pokušajte ponovo.";
       }
     } catch {
       // Not JSON (network failure, proxy error page…) — keep the raw text.
