@@ -1,4 +1,9 @@
-# I18N MULTI-TENANT PLAN v1.0
+# SUPERSEDED — I18N MULTI-TENANT PLAN v1.0
+
+> Istorijski zapis od 2026-08-11. Ne koristiti kao aktivni locale ugovor. Delovi koji javni
+> render vezuju za `default_content_locale` povučeni su D-077 Amandmanom 5, a content/CMS
+> granica je precizirana Amandmanom 6. Aktivni plan je
+> `documentations/i18n/03_I18N_DEMO_CONTENT_IMPLEMENTATION_PLAN_v1_0.md`.
 
 **Datum:** 2026-08-11 · **Vlasnik:** Milan Dražić (CTO) · **Status:** plan, isporuka po slice-ovima
 **Uvodi:** D-077 (+ Amandmani 1 i 2) · **ADR-026** `adr/ADR-026-organization-locale-and-route-registry.md` · radna evidencija u **TODO §5H-i18n**

@@ -50,7 +50,7 @@
 | `IZMENE_POSTOJECEG_PROJEKTA_v1_0.md`                          | Šta se menja u postojećem; redosled izvršenja §8                                  |
 | `ARCHITECTUAL/ARCHITECTURAL_RULES_NEXTJS_REACT_QUERY_v1.1.md` | Kvalitet koda, optimizacija, najbolja praksa, §24 completion report, §23/§41 gate |
 
-> **Verzija pravila (2026-08-01):** obavezujuća je **v1.1** u `documentations/ARCHITECTUAL/`. `ARCHITECTURAL_RULES_REVISED.md` u korenu `documentations/` je v1.0 — identičan Delovima A–D, ali bez **Part E** (Next.js 16 / React 19 frontend implementaciona pravila: smer zavisnosti, colocation, TanStack Query standard, hook pravila, Server/Client granice, render strategija, `next/image`/`next/link`, dekompozicija, DoD za refaktor). Gde v1.0 i v1.1 govore isto, svejedno je; gde v1.1 ima Part E, on važi. Prethodni naziv `ARCHITECTURAL_RULES_REVISED.md` ostaje samo kao istorijska referenca.
+> **Verzija pravila (2026-08-01):** obavezujuća je **v1.1** u `documentations/ARCHITECTUAL/`. Prethodna v1.0 kopija je uklonjena iz korena `documentations/`; njena istorija ostaje u Git-u. V1.1 sadrži i **Part E** (Next.js 16 / React 19 frontend implementaciona pravila: smer zavisnosti, colocation, TanStack Query standard, hook pravila, Server/Client granice, render strategija, `next/image`/`next/link`, dekompozicija, DoD za refaktor).
 
 ### Aktivni, ali podređeni
 
@@ -868,12 +868,10 @@ Provereno u kodu 2026-08-09.
 
 ## §5H-i18n · Višejezičnost i registar ruta (D-077, ADR-026)
 
-**Plan (temelj):** `documentations/I18N_MULTITENANT_PLAN_v1_0.md` · **Zaključano:** C2(a) —
-jedan deployment = jedna organizacija · **Ne dira:** ADR-023 granicu izolacije
-
-**Plan (dovršetak, 2026-08-12):** **`documentations/I18N_COMPLETION_PLAN_v1_0.md`** —
-osam faza do kraja, sa izmerenim obimom i odlukama vlasnika. Stanje se čita odatle i iz
-tabele faza ispod.
+**Aktivni plan (odobren 2026-08-13):**
+`documentations/i18n/03_I18N_DEMO_CONTENT_IMPLEMENTATION_PLAN_v1_0.md` · **Zaključano:**
+C2(a), jedan deployment = jedna organizacija · **Ne dira:** ADR-023 granicu izolacije.
+Raniji planovi su istorijski dokumenti u `documentations/i18n/archive/`.
 
 ### Izmereni obim — ratchet je merio manje nego što je izgledalo
 
@@ -890,14 +888,16 @@ Ispravka anchor-a ide uz Fazu A.
 
 | Faza | Šta | Obim | Status |
 |---|---|---|---|
-| **A** | Selektor progleda: `registry.ts` + `getFallbackContent`/`useFallbackContent`; `ui_locale` jedini locale renderovanja; ratchet dobija `.ts` | ~20 fajlova | ⚪ |
-| **B** | Preostalih 5 sadržajnih modula (`company`, `programs`, `homepage-offers`, `site-navigation`, `site-settings`) | ~144 | ⚪ |
-| **C** | Ostatak `features/workspace/data.ts` | ~145 | ⚪ |
-| **D** | Ekrani panela (`PageHeader`, tabovi, prazna stanja, 17 toast-ova) | 637 | ⚪ |
-| **E** | Javne stranice + 11 `metadata` export-a sa srpskim | 259 | ⚪ |
-| **F** | Kompas (`compass`, `kompas-sadrzaj`, `screen-kompas`, `guidance`) | 796 | ⚪ |
-| **G** | Booking i widget | ~170 | ⚪ |
-| **H** | Backend: greške → kôd, email i dijagnostika → backend katalog | 254 | ⚪ |
+| **1** | Dokumentacioni autoritet, content-source README i gap manifest | dokumentacija | ✅ 2026-08-13 |
+| **2** | Locale/content osnova + backend creation stamp + audit svih CMS write putanja | frontend/backend | ⚪ |
+| **3** | Backward-compatible CMS field `inherit/custom/hidden` resolver i validacija | CMS | ⚪ |
+| **4** | Centralni user-safe error contract i katalozi (D-079A) | frontend/backend | ⚪ |
+| **5** | `psihointegritet`, `mental-health-starter` i `blank` content paketi | content | ⚪ |
+| **6** | Javni UI, workspace/account i domeni bez promene poslovne semantike | frontend | ⚪ |
+| **7** | Backend email/notification katalozi + route helper | backend | ⚪ |
+| **8** | Lokalizacija postojeće dijagnostike (D-079A) | frontend/backend | ⚪ |
+| **9** | Zaseban D-079B Incident Registry plan, bez lažne persistence | dokumentacija | ⚪ |
+| **10** | Puni gate i vizuelni QA na oba jezika | QA | ⚪ |
 
 ### Isporučeno 2026-08-11 / 08-12
 
@@ -919,15 +919,13 @@ Ispravka anchor-a ide uz Fazu A.
 
 ### Otvoreno, i zašto
 
-**Javni sajt čita locale sadržaja iz build-a.** `content/locale.ts` razrešava
-`deploymentContentLocale()` iz **statičkog registra**, pa `<html lang="en">` stoji iznad
-srpskog fallback teksta. Radni prostor je popravljen (živi `ui_locale`, `no-store`),
-javna površina nije. **Rešava Faza A** — `await` je problem samo u sadašnjim modulskim
-konstantama, ne u Server Komponenti, pa se SSG ne gubi.
+**Javni sajt još bira fallback kroz pogrešan izvor.** `content/locale.ts` razrešava
+`deploymentContentLocale()` iz statičkog registra, dok `public-locale.ts` čita
+`default_content_locale`. Oba moraju preći na tagovano, SSG/ISR-safe čitanje živog
+`ui_locale`; workspace ostaje `no-store`. **Rešava Faza 2.**
 
-**Za QA:** `ui_locale = en`, `default_content_locale = sr-Latn` postavlja operator kroz
-`PATCH /organizations/me/locales` sa eksplicitnim `organization_id` — ekran to više ne
-nudi, po D-077 Amandmanu 4.
+`default_content_locale` se više ne podešava kao javni render jezik. Backend ga čita samo
+pri kreiranju novog CMS zapisa ako zahtev ne prosledi eksplicitan, podržan locale.
 
 ### Naučeno u isporuci (vredi zadržati)
 
@@ -946,8 +944,9 @@ nudi, po D-077 Amandmanu 4.
 4. Jedna Next.js stranica služi obe putanje — nikad druga komponenta po jeziku.
 5. `PROTECTED_ROUTE_PREFIXES` se **izvodi iz registra**, nikad ručno.
 6. Javni resolver **ne sme** čitati `headers()`/`cookies()` — sprovedeno statički.
-7. Tenant sadržaj se **nikad** ne prevodi; **fallback** se prevodi kao placeholder.
-8. `translation_group` se ne dodaje — nikad.
+7. Tenant sadržaj se **nikad** ne prevodi; **fallback** se potpuno prevodi kao placeholder.
+8. `default_locale`, `supported_locales` i `translation_group` se sada ne dodaju; traže novi
+   multilingual-public ugovor ako jedan tenant ikad objavljuje više jezika istovremeno.
 
 ### Otvoreno
 
@@ -963,6 +962,8 @@ nudi, po D-077 Amandmanu 4.
 | 5 | `TestAppointmentOverlapRace` | Flake pod punim opterećenjem; prolazi izolovano i ponovljeno. Nije uzrokovan i18n radom |
 | 6 | **Prazan panel posle prijave u dev modu** | Sidebar se vidi, sadržaj ne. Na QA radi. **Sužено 2026-08-12:** uloga se ispravno prikazuje („Administrator and therapist"), dakle `parseRoleMetadata` je pročitala metadata i `currentUser()` **jeste** vratio korisnika. Uzrok nije Clerk adapter |
 | 7 | `seoDescription` **170 → 200 privremeno** | Nije dizajnerska nego SEO granica (pretraživači seku na ~160). Steže samo jer `seo.description` deli izvor sa `cardExcerpt`; prava popravka je dati mu svoj izvor |
+| 8 | **Services CRUD & Booking Setup UX** | Nestalo dugme za unos usluga, unos termina/dostupnosti i Booking state machine ostaju zaseban slice; ne vraćaju se usput kroz prevod |
+| 9 | **D-079B Incident Registry** | Zaseban plan mora definisati persistence, lifecycle, retention, pristup i redaction; ovaj milestone ne uvodi lažni incident zapis |
 
 
 ## 9. Poznati defekti i tehnički dug
