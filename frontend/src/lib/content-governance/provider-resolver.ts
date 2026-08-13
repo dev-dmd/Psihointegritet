@@ -1,12 +1,13 @@
 import "server-only";
 
+import { resolvePublicLocale } from "@/lib/tenant/public-locale";
 import { serverEnv } from "@/lib/validation/env";
 
 import {
   CmsContentProvider,
   parsePublishedContentOverrides,
 } from "./cms-provider";
-import { PUBLIC_CONTENT_CACHE_TAG } from "./cache";
+import { publicContentCacheTag } from "./cache";
 import { staticContentProvider } from "./static-provider";
 import type { ContentProvider } from "./types";
 
@@ -17,12 +18,13 @@ import type { ContentProvider } from "./types";
  */
 export async function getContentProvider(): Promise<ContentProvider> {
   try {
+    const locale = await resolvePublicLocale();
     const response = await fetch(
-      `${serverEnv.NEXT_PUBLIC_API_URL}/api/v1/public/content/published?locale=sr-Latn`,
+      `${serverEnv.NEXT_PUBLIC_API_URL}/api/v1/public/content/published?locale=${encodeURIComponent(locale)}`,
       {
         next: {
           revalidate: 300,
-          tags: [PUBLIC_CONTENT_CACHE_TAG],
+          tags: [publicContentCacheTag(locale)],
         },
       },
     );
