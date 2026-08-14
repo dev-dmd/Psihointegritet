@@ -50,7 +50,7 @@ test("therapist profile renders the full bio, services and booking strip", async
   // T8/D-076: John works from Madison — the handoff hard-coded one city for
   // everyone, and the site's own copy has to name the therapist's own city.
   await expect(page.locator("#zakazivanje")).toContainText(
-    "Online ili uživo u Madisonu (Wisconsin)",
+    "Onlajn ili uživo u Madisonu (Wisconsin)",
   );
 
   await expect(page.getByRole("link", { name: /Elsa Browers/ })).toBeVisible();
