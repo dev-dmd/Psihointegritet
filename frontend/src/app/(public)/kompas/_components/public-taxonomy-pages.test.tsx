@@ -171,4 +171,33 @@ describe("public Compass page renderers", () => {
       screen.getByText("1 tema · sadržaji u pripremi"),
     ).toBeInTheDocument();
   });
+
+  it("renders English system copy and localized Compass routes", () => {
+    render(
+      withIntl(
+        <PublicTaxonomyListPage
+          routeKind="oblast"
+          terms={[area]}
+          topics={[topic]}
+        />,
+        "en",
+      ),
+    );
+
+    expect(
+      screen.getByRole("heading", { name: "Areas", level: 1 }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText("1 topic · content in preparation"),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("link", {
+        name: "Open area Stres i preopterećenost",
+      }),
+    ).toHaveAttribute("href", "/compass/area/stres");
+    expect(screen.getByRole("link", { name: "Find support" })).toHaveAttribute(
+      "href",
+      "/find-support",
+    );
+  });
 });

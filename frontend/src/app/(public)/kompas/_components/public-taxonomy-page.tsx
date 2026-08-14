@@ -1,5 +1,6 @@
 import type { Route } from "next";
 import { PublicLink as Link } from "@/components/ui/public-link";
+import { useLocale, useTranslations } from "next-intl";
 
 import { JsonLd } from "@/components/shared/json-ld";
 import { countSr } from "@/helpers/plural-sr";
@@ -59,6 +60,9 @@ export function PublicTaxonomyPage({
   routeKind,
   therapists,
 }: PublicTaxonomyPageProps) {
+  const locale = useLocale();
+  const t = useTranslations("public.compass.detail");
+  const lists = useTranslations("public.compass.lists");
   const record = compassPageDiscoverability(aggregate, routeKind);
   const term = routablePublicTerm(aggregate.term, routeKind);
   if (!term) throw new Error("Compass page received a non-routable term.");
@@ -75,28 +79,48 @@ export function PublicTaxonomyPage({
     const view = publicCompassContentCardView(card);
     return view ? [view] : [];
   });
+  const localizedRecord = {
+    ...record,
+    breadcrumbs: record.breadcrumbs.map((item) => ({
+      ...item,
+      label:
+        item.path === "/"
+          ? lists("home")
+          : item.path === "/kompas/oblasti"
+            ? t("allAreas")
+            : item.path === "/kompas/teme"
+              ? t("allTopics")
+              : item.label,
+    })),
+  };
 
   const meta = [
-    isArea ? countSr(children.length, "tema", "teme", "tema") : null,
-    countSr(
-      contentCards.length,
-      "objavljen sadržaj",
-      "objavljena sadržaja",
-      "objavljenih sadržaja",
-    ),
+    isArea
+      ? locale === "sr-Latn"
+        ? countSr(children.length, "tema", "teme", "tema")
+        : t("metaTopics", { count: String(children.length) })
+      : null,
+    locale === "sr-Latn"
+      ? countSr(
+          contentCards.length,
+          "objavljen sadržaj",
+          "objavljena sadržaja",
+          "objavljenih sadržaja",
+        )
+      : t("metaContent", { count: String(contentCards.length) }),
   ]
     .filter((part): part is string => part !== null)
     .join(" · ");
 
   return (
     <>
-      <JsonLd data={compassBreadcrumbJsonLd(record)} />
+      <JsonLd data={compassBreadcrumbJsonLd(localizedRecord)} />
 
       <section id="vrh" className="scroll-mt-24 pt-6">
         <div className="mx-auto max-w-[1536px] px-5 pb-[72px] md:px-8 md:pb-24">
           <CompassPageHero
-            breadcrumbs={record.breadcrumbs}
-            eyebrow={isArea ? "Oblast" : "Tema"}
+            breadcrumbs={localizedRecord.breadcrumbs}
+            eyebrow={isArea ? t("area") : t("topic")}
             title={term.publicLabel}
             lead={term.shortDescription}
             tone={isArea ? "meadow" : "surface"}
@@ -115,7 +139,7 @@ export function PublicTaxonomyPage({
                 id="kompas-children-title"
                 className="text-forest mb-4 font-serif text-[24px] font-normal"
               >
-                Teme u ovoj oblasti
+                {t("topicsHere")}
               </h2>
               <div className="grid [grid-template-columns:repeat(auto-fit,minmax(250px,1fr))] gap-2">
                 {children.map((child) => (
@@ -146,7 +170,7 @@ export function PublicTaxonomyPage({
               id="kompas-content-title"
               className="text-forest mb-4 font-serif text-[24px] font-normal"
             >
-              {isArea ? "Objavljeni sadržaji" : "Sadržaji uz ovu temu"}
+              {isArea ? t("areaContent") : t("topicContent")}
             </h2>
 
             {contentCards.length > 0 ? (
@@ -158,14 +182,10 @@ export function PublicTaxonomyPage({
             ) : (
               <div className="border-coffee/20 bg-coffee/3 rounded-[18px] border border-dashed p-[22px]">
                 <p className="text-forest mb-2 text-[14.5px]">
-                  {isArea
-                    ? "Za ovu oblast još nema objavljenih sadržaja."
-                    : "Za ovu temu još nema objavljenih sadržaja."}
+                  {isArea ? t("areaEmpty") : t("topicEmpty")}
                 </p>
                 <p className="text-coffee/60 text-[13px] leading-[1.6]">
-                  {isArea
-                    ? "Prikazuju se čim budu objavljeni u registru. U međuvremenu pogledajte srodne oblasti ili zatražite stručnu podršku."
-                    : "Pogledajte druge teme u oblasti ili zatražite stručnu podršku."}
+                  {isArea ? t("areaEmptyBody") : t("topicEmptyBody")}
                 </p>
               </div>
             )}
@@ -173,7 +193,7 @@ export function PublicTaxonomyPage({
 
           <section className="bg-surface/60 border-line mt-3 flex flex-wrap items-center gap-2.5 rounded-[22px] border p-5">
             <span className="text-coffee/68 w-full text-[11px] tracking-[0.14em] uppercase">
-              {isArea ? "Srodne oblasti" : "Druge teme u oblasti"}
+              {isArea ? t("relatedAreas") : t("relatedTopics")}
             </span>
 
             {related.map((item) => (
@@ -191,7 +211,7 @@ export function PublicTaxonomyPage({
                 href={parent.canonicalPath as Route}
                 className="border-coffee/12 bg-surface text-forest hover:border-coffee/30 inline-flex min-h-11 items-center rounded-full border px-4 text-[13.5px] transition-colors"
               >
-                Cela oblast: {parent.publicLabel}
+                {t("wholeArea", { name: parent.publicLabel })}
               </Link>
             ) : null}
 
@@ -199,14 +219,14 @@ export function PublicTaxonomyPage({
               href={(isArea ? "/kompas/oblasti" : "/kompas/teme") as Route}
               className="text-forest hover:text-forest-soft inline-flex min-h-11 items-center px-2 text-[13.5px] underline underline-offset-[3px]"
             >
-              {isArea ? "Sve oblasti" : "Sve teme"}
+              {isArea ? t("allAreas") : t("allTopics")}
             </Link>
 
             <Link
               href="/pronadji-podrsku"
               className="border-forest text-forest hover:bg-meadow/30 ml-auto inline-flex min-h-[46px] items-center rounded-full border px-[18px] text-[13.5px] transition-colors"
             >
-              Želim stručnu pomoć
+              {t("support")}
             </Link>
           </section>
 

@@ -284,6 +284,14 @@ lifecycle, taxonomy, availability ili Booking state machine.
   `source` query. Public provider sada eksplicitno prosleđuje `guidance` namespace.
   Pitanja, rezultat i production submission forma ostaju deo narednog kompletnog Intake
   presentation slice-a; scoring, safety i submission semantika nisu menjani.
+- **6A.8 Public Compass system UI — completed:** Kompas landing, početni prikaz,
+  oblasti/teme liste i detalji, pretraga, kartice, kviz chrome, rezultati, stručna podrška,
+  feedback i preview kontrola koriste `public.compass` katalog. Public link helper lokalizuje
+  `/compass`/`/kompas`, area/topic, `/find-support` i therapist putanje bez promene stabilnih
+  slugova. Engleski DOM test pokriva system copy i rute. Objavljeni taxonomy label/opis,
+  flow prompt/opcije i recommendation tekst ostaju tenant/stručni sadržaj i ne prevode se
+  automatski; za njih važi ranije zaključan approval/content-pack proces. Workspace Kompas
+  governance i authoring chrome ostaju otvoreni, zato kompletan Kompas slice još nije zatvoren.
 - Architecture baseline izuzeci uklonjeni su za šest pokrivenih workspace fajlova. DOM
   regresioni test potvrđuje trenutno `en → sr-Latn` osvežavanje naslova, tabova i sadržaja
   bez refresh-a, a catalog test čuva key/ICU parity.

@@ -1,5 +1,6 @@
 import { PublicLink as Link } from "@/components/ui/public-link";
 import { MonogramAvatar } from "@/components/ui/monogram-avatar";
+import { useTranslations } from "next-intl";
 import type { Therapist } from "@/types/therapist";
 
 /**
@@ -12,39 +13,30 @@ import type { Therapist } from "@/types/therapist";
  * therapists, so all three personal-access-path cards are always shown.
  */
 
-const COPY = {
-  label: "Stručna podrška",
-  heading: "Kada poželite razgovor",
-  lead: "Kompas ne bira terapeuta umesto vas. Ako želite, prenosimo samo ono što ste izabrali u obrazac za pronalaženje podrške — i pre toga vam pokažemo šta se tačno prenosi.",
-  ctaPrimary: "Želim stručnu pomoć",
-  ctaSecondary: "Završi istraživanje",
-  transferNote:
-    "Kontekst je prenet u Pronađi podršku. Tamo možete da ga izmenite ili uklonite pre nego što nastavite.",
-} as const;
-
 export function CompassSupportSection({
   therapists,
 }: {
   therapists: readonly Therapist[];
 }) {
+  const t = useTranslations("public.compass.support");
   return (
     <section
       aria-labelledby="kompas-support-title"
       className="bg-forest mt-3 rounded-[22px] px-5 py-[22px] md:px-8 md:py-7"
     >
       <p className="text-meadow/80 mb-1.5 text-[11px] font-semibold tracking-[0.16em] uppercase">
-        {COPY.label}
+        {t("label")}
       </p>
 
       <h2
         id="kompas-support-title"
         className="text-canvas font-serif text-[24px] leading-[1.2] font-normal"
       >
-        {COPY.heading}
+        {t("title")}
       </h2>
 
       <p className="text-canvas/78 mt-2.5 max-w-[60ch] text-[14px] leading-[1.7]">
-        {COPY.lead}
+        {t("body")}
       </p>
 
       {/* Therapist cards — stacked on mobile, side-by-side on desktop */}
@@ -81,20 +73,20 @@ export function CompassSupportSection({
           href="/pronadji-podrsku"
           className="bg-meadow text-kompas-on-meadow hover:bg-meadow-hover flex flex-1 items-center justify-center rounded-full px-2 py-2.5 text-[11px] font-semibold transition-colors md:flex-initial md:justify-start md:px-5 md:text-[14px]"
         >
-          {COPY.ctaPrimary}
+          {t("primary")}
         </Link>
 
         <Link
           href="/kompas"
           className="border-meadow/35 text-canvas hover:border-meadow/55 flex flex-1 items-center justify-center rounded-full border bg-transparent px-3 py-2.5 text-[11px] transition-colors md:flex-initial md:justify-start md:px-5 md:text-[14px]"
         >
-          {COPY.ctaSecondary}
+          {t("secondary")}
         </Link>
       </div>
 
       {/* Context transfer note */}
       <p className="bg-meadow/16 text-canvas mt-4 rounded-[12px] px-[14px] py-3 text-[13px] leading-[1.6]">
-        {COPY.transferNote}
+        {t("transfer")}
       </p>
     </section>
   );

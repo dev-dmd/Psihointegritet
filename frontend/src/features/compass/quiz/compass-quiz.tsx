@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { useTranslations } from "next-intl";
 import { useMemo, useReducer, useState } from "react";
 
 import { cn } from "@/helpers/cn";
@@ -35,6 +36,7 @@ export function CompassQuiz({
   onRequestSupport: () => void;
   onClose: () => void;
 }) {
+  const t = useTranslations("public.compass.quiz");
   const registryQuery = useCompassRegistry(true);
   const resultMutation = useCompassExperienceMutation();
   const [selection, dispatch] = useReducer(
@@ -178,22 +180,22 @@ export function CompassQuiz({
                   width={20}
                   height={20}
                 />
-                Kompas
+                {t("label")}
               </p>
               <h2
                 id={titleId}
                 className="text-forest mt-1.5 font-serif text-[22px] leading-[1.2] md:text-[26px]"
               >
-                {question?.prompt ?? "Kompas pitanja"}
+                {question?.prompt ?? t("fallbackTitle")}
               </h2>
               <p className="text-coffee/65 mt-1.5 text-[13px]">
-                {question?.helpText ?? "Pitanja su opciona."}
+                {question?.helpText ?? t("fallbackHelp")}
               </p>
             </div>
             <button
               type="button"
               onClick={onClose}
-              aria-label="Zatvori Kompas"
+              aria-label={t("close")}
               className="border-line-strong text-coffee/70 grid h-11 w-11 place-items-center rounded-full border"
             >
               ✕
@@ -219,18 +221,16 @@ export function CompassQuiz({
 
       <div className="min-h-0 flex-1 overflow-y-auto px-5 py-5 md:px-8">
         <div className="mx-auto grid max-w-[760px] gap-2.5">
-          {registryQuery.isLoading ? <p>Učitavanje Kompasa…</p> : null}
+          {registryQuery.isLoading ? <p>{t("loading")}</p> : null}
           {registryQuery.isError ? (
             <div className="rounded-tile border-line-strong border border-dashed px-5 py-6 text-center">
-              <p className="text-coffee font-semibold">
-                Kompas trenutno nije dostupan.
-              </p>
+              <p className="text-coffee font-semibold">{t("unavailable")}</p>
               <button
                 type="button"
                 onClick={() => registryQuery.refetch()}
                 className="text-forest mt-3 min-h-11 underline"
               >
-                Pokušajte ponovo
+                {t("retry")}
               </button>
             </div>
           ) : null}
@@ -265,7 +265,7 @@ export function CompassQuiz({
             onClick={() => move(selection)}
             className="border-forest text-forest min-h-11 rounded-full border px-4 text-[13.5px] font-semibold"
           >
-            Preskoči pitanje
+            {t("skip")}
           </button>
           {question?.inputMode === "multi_select" && selectedIds.length > 0 ? (
             <button
@@ -273,7 +273,7 @@ export function CompassQuiz({
               onClick={() => move(selection, selectedIds[0])}
               className="bg-forest text-canvas min-h-11 rounded-full px-5 text-[13.5px] font-semibold"
             >
-              Dalje
+              {t("next")}
             </button>
           ) : null}
           <button
@@ -286,7 +286,7 @@ export function CompassQuiz({
               setCurrentQuestionId(previous);
             }}
             className="border-line-strong ml-auto h-11 w-11 rounded-full border disabled:opacity-40"
-            aria-label="Nazad na prethodno pitanje"
+            aria-label={t("back")}
           >
             ←
           </button>
@@ -296,8 +296,8 @@ export function CompassQuiz({
             className="text-forest min-h-11 font-semibold underline underline-offset-4"
           >
             {hasCompassSelection(selection)
-              ? "Prikaži preporuke sada"
-              : "Prikaži polazni paket"}
+              ? t("recommendations")
+              : t("startingPackage")}
           </button>
         </div>
       </footer>
