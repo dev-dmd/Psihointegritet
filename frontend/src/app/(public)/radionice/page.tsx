@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { getTranslations } from "next-intl/server";
 
 import { PageHero } from "@/components/shared/page-hero";
 import { Chip } from "@/components/ui/chip";
@@ -10,6 +11,7 @@ export async function generateMetadata() {
 }
 
 export default async function WorkshopsPage() {
+  const t = await getTranslations("public.pages.workshops");
   const programs = (await getContentProvider())
     .listAll()
     .filter((entity) => entity.type === "program")
@@ -19,15 +21,13 @@ export default async function WorkshopsPage() {
       <PageHero id="radionice" tone="warm">
         <div className="max-w-[720px]">
           <p className="text-coffee/60 mb-4 text-[12px] font-semibold tracking-[0.14em] uppercase">
-            Grupni programi
+            {t("eyebrow")}
           </p>
           <h1 className="text-coffee mb-4 font-serif text-[clamp(32px,8.5vw,52px)] leading-[1.06] font-normal text-pretty">
-            Radionice i programi
+            {t("title")}
           </h1>
           <p className="text-coffee/75 text-[16.5px] leading-[1.65]">
-            Programi su najavljeni na osnovu postojećeg sadržaja. Datum,
-            voditelj, kapacitet i pravila prijave objavljuju se tek nakon
-            potvrde tima.
+            {t("intro")}
           </p>
         </div>
       </PageHero>
@@ -42,8 +42,8 @@ export default async function WorkshopsPage() {
                 <div>
                   <p className="text-sage text-[11px] font-semibold tracking-[0.13em] uppercase">
                     {program.status === "price-confirmed"
-                      ? "Cena potvrđena"
-                      : "U pripremi"}
+                      ? t("priceConfirmed")
+                      : t("preparing")}
                   </p>
                   <h2 className="text-forest mt-3 font-serif text-[25px] leading-[1.16] font-normal">
                     {program.title}
@@ -63,7 +63,7 @@ export default async function WorkshopsPage() {
                   href={`/radionice/${program.slug}`}
                   className="text-forest hover:text-sage mt-auto inline-flex min-h-11 items-end pt-6 text-[14px] font-semibold underline underline-offset-4"
                 >
-                  Pogledajte detalje
+                  {t("details")}
                 </Link>
               </article>
             ))}

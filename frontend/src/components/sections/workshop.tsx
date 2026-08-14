@@ -2,8 +2,10 @@ import { Reveal } from "@/components/motion/reveal";
 import { ButtonLink } from "@/components/ui/button-link";
 import { Eyebrow } from "@/components/ui/eyebrow";
 import { getFallbackContent } from "@/content/server";
+import { getTranslations } from "next-intl/server";
 
 export async function Workshop() {
+  const t = await getTranslations("public.home.workshop");
   const { workshopFacts } = (await getFallbackContent()).homepage;
   return (
     <section id="radionice" className="scroll-mt-24 pt-[72px] md:pt-32">
@@ -12,27 +14,23 @@ export async function Workshop() {
           <div className="bg-warm grid grid-cols-1 gap-9 rounded-[32px] px-[26px] py-11 lg:grid-cols-[7fr_4fr] lg:gap-[72px] lg:p-20">
             <div>
               <Eyebrow tone="coffee" className="mb-[18px]">
-                Radionice · Primer radionice
+                {t("eyebrow")}
               </Eyebrow>
               <h2 className="text-coffee mb-[22px] font-serif text-[clamp(30px,8.5vw,38px)] leading-[1.07] font-normal tracking-[-0.015em] text-pretty md:text-5xl">
-                Upoznaj sebe kroz geštalt iskustvo
+                {t("title")}
               </h2>
               <p className="text-coffee/82 mb-4 max-w-[560px] text-[16.5px] leading-[1.68]">
-                Iskustvena radionica namenjena svima koji žele razvijati
-                svesnost o sebi, svojim emocijama i obrascima ponašanja.
+                {t("descriptionOne")}
               </p>
               <p className="text-coffee/82 mb-9 max-w-[560px] text-[16.5px] leading-[1.68]">
-                Kroz grupni rad, iskustvene vežbe i geštalt eksperimente
-                učesnici imaju priliku bolje razumeti sebe, unaprediti kontakt
-                sa drugima i istražiti nove načine reagovanja u svakodnevnim
-                situacijama.
+                {t("descriptionTwo")}
               </p>
               <div className="flex flex-wrap items-center gap-3.5">
                 <ButtonLink href="/radionice" variant="coffee">
-                  Pogledajte radionice
+                  {t("action")}
                 </ButtonLink>
                 <span className="text-coffee/60 text-sm font-medium">
-                  Detalji uskoro
+                  {t("soon")}
                 </span>
               </div>
             </div>

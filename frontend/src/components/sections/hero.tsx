@@ -1,11 +1,13 @@
 import Image from "next/image";
 import type { Route } from "next";
 import Link from "next/link";
+import { getTranslations } from "next-intl/server";
 
 import { ButtonLink } from "@/components/ui/button-link";
 import { getFallbackContent } from "@/content/server";
 
 export async function Hero() {
+  const t = await getTranslations("public.home.hero");
   const { clientLink, companies } = (await getFallbackContent()).homepage;
   return (
     <section id="vrh" className="scroll-mt-24 pt-6">
@@ -25,31 +27,27 @@ export async function Hero() {
         <div className="bg-surface shadow-hero-card animate-fade-up relative z-[2] mx-2 -mt-[72px] grid grid-cols-1 items-center gap-6 rounded-[28px] px-6 py-7 md:mx-12 md:-mt-40 md:grid-cols-[7fr_5fr] md:gap-16 md:px-16 md:pt-14 md:pb-12">
           <div>
             <div className="text-sage mb-[18px] text-[12.5px] font-semibold tracking-[0.16em] uppercase">
-              Digitalni centar za mentalno zdravlje
+              {t("eyebrow")}
             </div>
             <h1 className="text-forest mb-[18px] font-serif text-[clamp(28px,8vw,36px)] leading-[1.08] font-normal tracking-[-0.015em] text-pretty md:text-[46px]">
-              Stručna podrška za bolje razumevanje sebe i svojih odnosa.
+              {t("title")}
             </h1>
             <p className="text-coffee/75 max-w-[560px] text-[16.5px] leading-[1.65]">
-              Psihointegritet je digitalni centar za mentalno zdravlje koji
-              povezuje stručnu podršku, edukaciju i lični razvoj. To nije samo
-              mesto za zakazivanje psihoterapije, već prostor u kojem možete
-              istraživati teme koje vas zanimaju, bolje razumeti sebe i, kada
-              budete spremni, povezati se sa stručnom osobom.
+              {t("description")}
             </p>
             <div className="mt-6 flex flex-wrap items-center gap-3 md:mt-8">
               <ButtonLink
                 href="/pronadji-podrsku"
                 className="w-full py-4 md:w-auto"
               >
-                Pomozi mi da pronađem podršku
+                {t("guidance")}
               </ButtonLink>
               <ButtonLink
                 href="/tim"
                 variant="outline"
                 className="w-full py-4 md:w-auto"
               >
-                Upoznaj terapeute
+                {t("therapists")}
               </ButtonLink>
             </div>
           </div>

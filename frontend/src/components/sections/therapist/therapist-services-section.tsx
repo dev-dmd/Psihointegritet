@@ -8,6 +8,7 @@ import { getFallbackContent } from "@/content/server";
 import { formatRsd } from "@/content/services";
 import { buildBookingHref } from "@/features/booking/booking-context";
 import type { Therapist } from "@/types/therapist";
+import { getTranslations } from "next-intl/server";
 
 /** Canonical service data is read from `services.ts`, never duplicated in a profile. */
 export async function TherapistServicesSection({
@@ -15,6 +16,7 @@ export async function TherapistServicesSection({
 }: {
   therapist: Therapist;
 }) {
+  const t = await getTranslations("public.pages.therapist");
   const { PRICE_NOTE, serviceCatalog } = (await getFallbackContent()).services;
   const services = serviceCatalog.filter((service) =>
     therapist.bookingServiceSlugs.includes(service.slug),
@@ -25,9 +27,9 @@ export async function TherapistServicesSection({
       <div className="mx-auto max-w-[1536px] px-5 md:px-8">
         <Reveal>
           <div className="mb-12 max-w-[640px]">
-            <Eyebrow className="mb-4">Usluge</Eyebrow>
+            <Eyebrow className="mb-4">{t("servicesAction")}</Eyebrow>
             <h2 className="text-forest font-serif text-[clamp(28px,7vw,32px)] leading-[1.08] font-normal tracking-[-0.01em] text-pretty md:text-[42px]">
-              Usluge koje pruža {therapist.firstName}
+              {t("servicesHeading", { name: therapist.firstName })}
             </h2>
           </div>
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
@@ -51,7 +53,7 @@ export async function TherapistServicesSection({
                     href={`/usluge/${service.slug}`}
                     className="text-forest hover:text-sage text-[14px] font-semibold underline underline-offset-4"
                   >
-                    Detalji
+                    {t("details")}
                   </Link>
                   <Link
                     href={
@@ -63,7 +65,7 @@ export async function TherapistServicesSection({
                     }
                     className="text-forest hover:text-sage text-[14px] font-semibold underline underline-offset-4"
                   >
-                    Zakaži termin
+                    {t("book")}
                   </Link>
                 </div>
               </article>
@@ -75,20 +77,20 @@ export async function TherapistServicesSection({
               >
                 <div>
                   <p className="text-sage text-[11px] font-semibold tracking-[0.14em] uppercase">
-                    Informacije u pripremi
+                    {t("preparing")}
                   </p>
                   <h3 className="text-forest mt-3 font-serif text-[22px] leading-[1.2] font-normal">
                     {service.title}
                   </h3>
                   <p className="text-coffee/65 mt-4 text-[14px] leading-[1.55]">
-                    Cena, trajanje i pravila rada se potvrđuju pre objave.
+                    {t("preparingBody")}
                   </p>
                 </div>
                 <Link
                   href="/pronadji-podrsku"
                   className="text-forest hover:text-sage text-[14px] font-semibold underline underline-offset-4"
                 >
-                  Pronađi podršku
+                  {t("findSupport")}
                 </Link>
               </article>
             ))}

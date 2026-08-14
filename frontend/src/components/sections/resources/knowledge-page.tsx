@@ -3,6 +3,7 @@ import { PageHero } from "@/components/shared/page-hero";
 import { Chip } from "@/components/ui/chip";
 import { Eyebrow } from "@/components/ui/eyebrow";
 import { getFallbackContent } from "@/content/server";
+import { getTranslations } from "next-intl/server";
 
 /**
  * /znanje — resource listing. The three planned articles are shown as „u
@@ -10,19 +11,18 @@ import { getFallbackContent } from "@/content/server";
  * R1.1). Real articles ship with the R3 Content Engine.
  */
 export async function KnowledgePage() {
+  const t = await getTranslations("public.pages.knowledge");
   const { resources } = (await getFallbackContent()).homepage;
   return (
     <>
       <PageHero id="resursi">
         <div className="max-w-[680px]">
-          <Eyebrow className="mb-4">Znanje i resursi</Eyebrow>
+          <Eyebrow className="mb-4">{t("eyebrow")}</Eyebrow>
           <h1 className="text-forest mb-[18px] font-serif text-[clamp(30px,8.5vw,40px)] leading-[1.06] font-normal tracking-[-0.015em] text-pretty md:text-[52px]">
-            Razumevanje može biti prvi korak.
+            {t("title")}
           </h1>
           <p className="text-coffee/72 text-[16.5px] leading-[1.65]">
-            Pripremamo stručne tekstove, vodiče i edukativne materijale koji
-            mogu pomoći da bolje razumete ono kroz šta prolazite. Prvi sadržaji
-            su u pripremi — objavljivaćemo ih postepeno.
+            {t("intro")}
           </p>
         </div>
       </PageHero>
@@ -39,7 +39,7 @@ export async function KnowledgePage() {
                   <div className="flex items-center justify-between gap-3">
                     <Chip variant="labelWarm">{article.category}</Chip>
                     <span className="text-coffee/45 text-[11.5px] font-semibold tracking-[0.12em] uppercase">
-                      U pripremi
+                      {t("preparing")}
                     </span>
                   </div>
                   <h2 className="text-forest font-serif text-[26px] leading-[1.2] font-normal text-pretty">
@@ -52,8 +52,7 @@ export async function KnowledgePage() {
               ))}
             </div>
             <p className="text-coffee/45 my-8 max-w-[560px] text-[12.5px] leading-[1.6]">
-              Sadržaji imaju edukativnu svrhu i ne predstavljaju dijagnozu niti
-              zamenu za individualni razgovor sa stručnom osobom.
+              {t("disclaimer")}
             </p>
           </Reveal>
         </div>

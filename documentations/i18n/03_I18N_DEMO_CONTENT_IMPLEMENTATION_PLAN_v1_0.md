@@ -247,13 +247,18 @@ lifecycle, taxonomy, availability ili Booking state machine.
 
 - **6A.1 public chrome — completed:** header, desktop/mobile navigacija i footer koriste
   `public` katalog za `en` i `sr-Latn`; route ID-jevi i feature-flag filtriranje ostaju
-  stabilni. Javni page/section copy koji još postoji van content paketa ostaje otvoren u
-  ovom slice-u.
+  stabilni.
 - **6A.2 frequent workspace screens — completed:** Termini, Klijenti, Kompanije, Usluge i
   cene, Terapeuti i Moj profil koriste `screens` katalog za sav sistemski chrome. Intake
   datum koristi aktivni locale. Profile tabovi zadržavaju stabilne ID-jeve `public`,
   `matching` i `availability`; ispravljeni su zastareli render uslovi koji nisu odgovarali
   tim ID-jevima.
+- **6A.3 core public pages — completed:** naslovna, Cene, Usluge i detalj usluge, Radionice
+  i detalj programa, Znanje, Tim i profil terapeuta, Kontakt, O nama, roditeljska podrška,
+  Zakazivanje i pravni fallback koriste `public` katalog. Pravna verzija/datum koriste
+  aktivni locale formatter, kao i liste lokacija na detalju usluge. Javni B2B companies
+  page ostaje otvoren zajedno sa svojim legacy strukturiranim izvorom; Kompas, Intake,
+  Research i Booking widget namerno ostaju naredni domenski slice-ovi.
 - Architecture baseline izuzeci uklonjeni su za šest pokrivenih workspace fajlova. DOM
   regresioni test potvrđuje trenutno `en → sr-Latn` osvežavanje naslova, tabova i sadržaja
   bez refresh-a, a catalog test čuva key/ICU parity.
@@ -261,7 +266,7 @@ lifecycle, taxonomy, availability ili Booking state machine.
 **Status sadržaja:** sistemski prevodi su produkcijski kod. Workspace poslovni primeri
 ostaju jasno označen `showcase` sadržaj; ovim slice-om nisu menjani tenant CMS copy,
 stručna semantika ni provisioning. Oba jezika su automatski renderovana u testu, ali nisu
-ručno vizuelno proverena; Faza 10 ostaje otvorena. Gate za 6A.2: 86 test fajlova, 737 pass /
+ručno vizuelno proverena; Faza 10 ostaje otvorena. Gate kroz 6A.3: 86 test fajlova, 737 pass /
 1 skip; typecheck, lint, format, architecture i production build (106 stranica) prolaze.
 
 **Gate:** kompletna `en` i `sr-Latn` key/ICU parity; bez novih inline korisničkih rečenica.

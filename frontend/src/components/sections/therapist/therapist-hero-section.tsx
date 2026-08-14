@@ -1,20 +1,26 @@
 import Image from "next/image";
 import type { Route } from "next";
 import Link from "next/link";
+import { getTranslations } from "next-intl/server";
 
 import { PageHero } from "@/components/shared/page-hero";
 import { Chip } from "@/components/ui/chip";
 import { buildBookingHref } from "@/features/booking/booking-context";
 import type { Therapist } from "@/types/therapist";
 
-export function TherapistHeroSection({ therapist }: { therapist: Therapist }) {
+export async function TherapistHeroSection({
+  therapist,
+}: {
+  therapist: Therapist;
+}) {
+  const t = await getTranslations("public.pages.therapist");
   return (
     <PageHero id="profil" tone="meadow">
       <Link
         href="/tim"
         className="text-coffee/60 hover:text-forest mb-11 inline-flex items-center gap-2 text-sm font-semibold transition-colors"
       >
-        <span aria-hidden="true">←</span> Svi terapeuti
+        <span aria-hidden="true">←</span> {t("all")}
       </Link>
       <div className="grid grid-cols-1 items-center gap-9 md:grid-cols-[5fr_7fr] md:gap-[72px]">
         <div className="bg-meadow/30 relative aspect-4/5 overflow-hidden rounded-[28px]">
@@ -47,7 +53,7 @@ export function TherapistHeroSection({ therapist }: { therapist: Therapist }) {
           {therapist.formats ? (
             <div className="mb-8">
               <div className="text-sage mb-2 text-[11.5px] font-semibold tracking-[0.14em] uppercase">
-                Formati rada
+                {t("formats")}
               </div>
               <div className="text-coffee/75 text-[15px] leading-[1.6]">
                 {therapist.formats}
@@ -64,13 +70,13 @@ export function TherapistHeroSection({ therapist }: { therapist: Therapist }) {
               }
               className="bg-forest text-canvas hover:bg-forest-hover rounded-full px-7 py-[15px] text-[15px] font-semibold transition-colors"
             >
-              Zakaži termin
+              {t("book")}
             </Link>
             <Link
               href="#usluge-terapeuta"
               className="border-coffee/25 text-coffee hover:border-sage hover:bg-meadow/15 rounded-full border-[1.5px] px-[26px] py-[13.5px] text-[15px] font-semibold transition-colors"
             >
-              Pogledaj usluge
+              {t("servicesAction")}
             </Link>
           </div>
         </div>
