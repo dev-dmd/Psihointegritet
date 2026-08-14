@@ -7,13 +7,12 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const mocks = vi.hoisted(() => ({
   pathname: "/workspace/settings",
   refresh: vi.fn(),
-  replace: vi.fn(),
   updateOrganizationLocales: vi.fn(),
 }));
 
 vi.mock("next/navigation", () => ({
   usePathname: () => mocks.pathname,
-  useRouter: () => ({ refresh: mocks.refresh, replace: mocks.replace }),
+  useRouter: () => ({ refresh: mocks.refresh }),
 }));
 
 vi.mock("../organization-api", () => ({
@@ -39,11 +38,11 @@ describe("organization locale switching", () => {
   beforeEach(() => {
     mocks.pathname = "/workspace/settings";
     mocks.refresh.mockReset();
-    mocks.replace.mockReset();
     mocks.updateOrganizationLocales.mockReset();
+    window.history.replaceState(null, "", "/workspace/settings");
   });
 
-  it("navigates en → sr-Latn → en after saving without a manual refresh", async () => {
+  it("switches en → sr-Latn → en with history replacement and one server refresh", async () => {
     const onSaved = vi.fn();
     const onFailed = vi.fn();
     mocks.updateOrganizationLocales.mockResolvedValueOnce({
@@ -65,10 +64,8 @@ describe("organization locale switching", () => {
       }),
     );
 
-    expect(mocks.replace).toHaveBeenLastCalledWith(
-      "/radni-prostor/podesavanja",
-    );
-    expect(mocks.refresh).not.toHaveBeenCalled();
+    expect(window.location.pathname).toBe("/radni-prostor/podesavanja");
+    expect(mocks.refresh).toHaveBeenCalledTimes(1);
     english.unmount();
 
     mocks.pathname = "/radni-prostor/podesavanja";
@@ -90,9 +87,75 @@ describe("organization locale switching", () => {
       }),
     );
 
-    expect(mocks.replace).toHaveBeenLastCalledWith("/workspace/settings");
-    expect(mocks.refresh).not.toHaveBeenCalled();
+    expect(window.location.pathname).toBe("/workspace/settings");
+    expect(mocks.refresh).toHaveBeenCalledTimes(2);
     expect(onSaved).toHaveBeenCalledTimes(2);
     expect(onFailed).not.toHaveBeenCalled();
+  });
+
+  it("preserves the query string and hash while localizing the pathname", async () => {
+    window.history.replaceState(
+      { workspace: true },
+      "",
+      "/workspace/settings?tab=language&from=profile#locale",
+    );
+    mocks.updateOrganizationLocales.mockResolvedValueOnce({
+      id: "organization-1",
+      slug: "psihointegritet",
+      displayName: "Psihointegritet",
+      uiLocale: "sr-Latn",
+      defaultContentLocale: "sr-Latn",
+    });
+
+    const hook = renderHook(
+      () =>
+        useOrganizationLocalesMutation({
+          onSaved: vi.fn(),
+          onFailed: vi.fn(),
+        }),
+      { wrapper },
+    );
+    await act(() =>
+      hook.result.current.mutateAsync({
+        uiLocale: "sr-Latn",
+        defaultContentLocale: "sr-Latn",
+      }),
+    );
+
+    expect(window.location.pathname).toBe("/radni-prostor/podesavanja");
+    expect(window.location.search).toBe("?tab=language&from=profile");
+    expect(window.location.hash).toBe("#locale");
+    expect(window.history.state).toEqual({ workspace: true });
+    expect(mocks.refresh).toHaveBeenCalledTimes(1);
+  });
+
+  it("refreshes exactly once when the localized pathname is already current", async () => {
+    mocks.updateOrganizationLocales.mockResolvedValueOnce({
+      id: "organization-1",
+      slug: "psihointegritet",
+      displayName: "Psihointegritet",
+      uiLocale: "en",
+      defaultContentLocale: "en",
+    });
+    const replaceState = vi.spyOn(window.history, "replaceState");
+    const hook = renderHook(
+      () =>
+        useOrganizationLocalesMutation({
+          onSaved: vi.fn(),
+          onFailed: vi.fn(),
+        }),
+      { wrapper },
+    );
+
+    await act(() =>
+      hook.result.current.mutateAsync({
+        uiLocale: "en",
+        defaultContentLocale: "en",
+      }),
+    );
+
+    expect(replaceState).not.toHaveBeenCalled();
+    expect(mocks.refresh).toHaveBeenCalledTimes(1);
+    replaceState.mockRestore();
   });
 });

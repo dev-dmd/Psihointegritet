@@ -1,5 +1,7 @@
 "use client";
 
+import { startTransition } from "react";
+
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { usePathname, useRouter } from "next/navigation";
 
@@ -47,17 +49,15 @@ export function useOrganizationLocalesMutation(callbacks: {
     }) => updateOrganizationLocales(input),
     onSuccess: (settings) => {
       queryClient.setQueryData(ORGANIZATION_SETTINGS_QUERY_KEY, settings);
+      callbacks.onSaved(settings);
       // The language lives in the *server* tree — nav labels, the html lang
       // attribute and every href built by `localizedPath`. Updating the query
       // cache alone leaves all of that rendered in the previous language until
       // the user reloads by hand, which is exactly what it did.
-      // One navigation operation, not two.
-      //
-      // `refresh()` re-renders the tree in place; `replace()` re-renders it at
-      // the new path. Calling both raced the old path against the new one, and
-      // `refresh()` does not invalidate the server cache anyway — it could hand
-      // back the very value we just changed. So: move if the path changed,
-      // refresh only if it did not.
+      // Native history changes only the address and synchronizes Next's
+      // pathname. One refresh then asks the server for the new layout locale
+      // and messages. Two router operations race; one replace without refresh
+      // preserves the shared layout and leaves its provider in the old locale.
       const here = matchPlatformPath(pathname);
       const target =
         here === null
@@ -68,12 +68,17 @@ export function useOrganizationLocalesMutation(callbacks: {
             } as never);
 
       if (target !== null && target !== pathname) {
-        router.replace(target);
-      } else {
-        router.refresh();
+        const suffix = `${window.location.search}${window.location.hash}`;
+        window.history.replaceState(
+          window.history.state,
+          "",
+          `${target}${suffix}`,
+        );
       }
 
-      callbacks.onSaved(settings);
+      startTransition(() => {
+        router.refresh();
+      });
     },
     onError: callbacks.onFailed,
   });
