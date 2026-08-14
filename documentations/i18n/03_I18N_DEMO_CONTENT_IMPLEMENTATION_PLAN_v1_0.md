@@ -230,6 +230,13 @@ prvi render i pending Content katalog. Autentifikovani Playwright tok nema Clerk
 token u projektu, zato prava ručna/browser vizuelna provera nije lažno proglašena i ostaje
 Faza 10.
 
+**Ručni funkcionalni smoke — prošao 2026-08-14.** Potvrđeni su `en ↔ sr-Latn`, trenutno
+osvežavanje layouta bez ručnog refresh-a, sinhronizovani URL i sadržaj, Settings bez početnog
+loadera i progresivno učitavanje CMS statusa uz odmah vidljivih 12 stranica. Ovo nije
+kompletan vizuelni QA iz Faze 10, pa ona ostaje otvorena. Clerk Playwright token nije blocker
+za nastavak i18n rada, ali autentifikovani E2E locale-switch tok mora biti uveden pre
+produkcijskog launch gate-a da se regresija ne vrati.
+
 ## Faza 6 — platformski UI i domeni
 
 Prevesti javni UI, workspace, account, metadata/aria/empty/loading state, zatim Intake,
