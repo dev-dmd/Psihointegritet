@@ -61,6 +61,7 @@ export default async function WorkspaceLayout({
           isAdmin={isAdmin}
           isTherapist={isTherapist}
           displayName={identity.displayName ?? identity.email}
+          initialOrganization={organization}
         >
           <PanelErrorsProvider>
             <div className="bg-panel-canvas flex min-h-screen">

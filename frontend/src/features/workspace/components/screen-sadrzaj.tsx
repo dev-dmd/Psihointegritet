@@ -35,7 +35,6 @@ const ROUTE_ID = "workspace.content.list" satisfies PlatformRouteId;
  */
 export function ScreenSadrzaj() {
   const t = useTranslations("content");
-  const tc = useTranslations("common");
   const safeError = useUserSafeError();
   const { reportError, errorsFor, clearError } = usePanelErrors();
 
@@ -109,37 +108,34 @@ export function ScreenSadrzaj() {
         </div>
       ) : null}
 
-      {entriesQuery.isLoading ? (
-        <p className="text-ink-55 text-[13.5px]">{tc("state.loading")}</p>
-      ) : (
-        <>
-          <ContentEntryList
-            entries={entries}
-            catalogue={systemContentCatalog}
-            activeType={activeType}
-            onTypeChange={(type) => {
-              setActiveType(type);
-              setSelectedEntryId(null);
-              openEntry.reset();
-            }}
-            selectedEntryId={selectedEntryId}
-            onSelect={setSelectedEntryId}
-            openingIdentity={openingIdentity}
-            openError={openError}
-            onOpen={handleOpen}
-          />
+      <ContentEntryList
+        entries={entries}
+        catalogue={systemContentCatalog}
+        activeType={activeType}
+        onTypeChange={(type) => {
+          setActiveType(type);
+          setSelectedEntryId(null);
+          openEntry.reset();
+        }}
+        selectedEntryId={selectedEntryId}
+        onSelect={setSelectedEntryId}
+        openingIdentity={openingIdentity}
+        openError={openError}
+        isInitialSync={
+          entriesQuery.isPending && entriesQuery.data === undefined
+        }
+        onOpen={handleOpen}
+      />
 
-          {selectedEntry && selectedDefinition ? (
-            <ContentRevisionEditor
-              key={selectedEntry.revisionId}
-              entry={selectedEntry}
-              displayTitle={selectedDefinition.title}
-              publicRoute={selectedDefinition.publicRoute}
-              onDeleted={() => setSelectedEntryId(null)}
-            />
-          ) : null}
-        </>
-      )}
+      {selectedEntry && selectedDefinition ? (
+        <ContentRevisionEditor
+          key={selectedEntry.revisionId}
+          entry={selectedEntry}
+          displayTitle={selectedDefinition.title}
+          publicRoute={selectedDefinition.publicRoute}
+          onDeleted={() => setSelectedEntryId(null)}
+        />
+      ) : null}
     </section>
   );
 }

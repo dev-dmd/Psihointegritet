@@ -17,6 +17,7 @@ export const content = {
   systemNotice:
     "Protected system content. An item without a CMS revision uses the existing text from the code; editing starts from empty fields and saves only what you enter.",
   wrongTemplate: "Wrong template",
+  checkingStatus: "Checking status…",
   counted: "{label} ({count})",
   fieldOverride: {
     statusLabel: "Content source for {field}",

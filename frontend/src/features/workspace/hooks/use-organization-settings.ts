@@ -2,7 +2,7 @@
 
 import { startTransition } from "react";
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { usePathname, useRouter } from "next/navigation";
 
 import type { UiLocale } from "@/i18n/locales";
@@ -10,7 +10,6 @@ import { localizedPath } from "@/lib/routes/localized-path";
 import { matchPlatformPath } from "@/lib/routes/match";
 
 import {
-  fetchOrganizationSettings,
   updateOrganizationLocales,
   type OrganizationSettings,
 } from "../organization-api";
@@ -19,13 +18,6 @@ export const ORGANIZATION_SETTINGS_QUERY_KEY = [
   "organization",
   "settings",
 ] as const;
-
-export function useOrganizationSettingsQuery() {
-  return useQuery({
-    queryKey: ORGANIZATION_SETTINGS_QUERY_KEY,
-    queryFn: fetchOrganizationSettings,
-  });
-}
 
 /**
  * Changing the organization's render language.

@@ -2,6 +2,13 @@
 
 import { createContext, useContext, useMemo, useState } from "react";
 import type { ReactNode } from "react";
+import type { UiLocale } from "@/i18n/locales";
+
+export interface WorkspaceOrganizationLocales {
+  slug: string;
+  uiLocale: UiLocale;
+  defaultContentLocale: UiLocale;
+}
 
 /**
  * Workspace role state. The role flags are computed server-side in the layout
@@ -15,6 +22,8 @@ interface WorkspaceContextValue {
   isTherapist: boolean;
   /** How to address the signed-in person; null when the provider holds no name. */
   displayName: string | null;
+  organization: WorkspaceOrganizationLocales;
+  setOrganizationLocales: (settings: WorkspaceOrganizationLocales) => void;
   /** Key into `workspace.roles`; the component renders it. */
   roleLabelKey: ReturnType<typeof roleLabelKeyFor>;
   /** Slug of the therapist the admin is filtering by, or null for all. */
@@ -44,13 +53,17 @@ export function WorkspaceProvider({
   isAdmin,
   isTherapist,
   displayName,
+  initialOrganization,
   children,
 }: {
   isAdmin: boolean;
   isTherapist: boolean;
   displayName: string | null;
+  initialOrganization: WorkspaceOrganizationLocales;
   children: ReactNode;
 }) {
+  const [organization, setOrganizationLocales] =
+    useState<WorkspaceOrganizationLocales>(initialOrganization);
   const [selectedTherapistSlug, setSelectedTherapistSlug] = useState<
     string | null
   >(null);
@@ -60,11 +73,13 @@ export function WorkspaceProvider({
       isAdmin,
       isTherapist,
       displayName,
+      organization,
+      setOrganizationLocales,
       roleLabelKey: roleLabelKeyFor(isAdmin, isTherapist),
       selectedTherapistSlug,
       setSelectedTherapistSlug,
     }),
-    [isAdmin, isTherapist, displayName, selectedTherapistSlug],
+    [isAdmin, isTherapist, displayName, organization, selectedTherapistSlug],
   );
 
   return (

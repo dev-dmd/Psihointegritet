@@ -12,10 +12,8 @@ import {
   type UiLocale,
 } from "@/i18n/locales";
 
-import {
-  useOrganizationLocalesMutation,
-  useOrganizationSettingsQuery,
-} from "../hooks/use-organization-settings";
+import { useOrganizationLocalesMutation } from "../hooks/use-organization-settings";
+import { useWorkspace } from "../workspace-context";
 
 /**
  * Language and regional settings (D-077 §20).
@@ -32,7 +30,7 @@ export function LanguageSettingsSection() {
   // Loading and saving states are shared chrome, not settings copy.
   const tc = useTranslations("common");
   const safeError = useUserSafeError();
-  const { data, isPending, isError } = useOrganizationSettingsQuery();
+  const { organization, setOrganizationLocales } = useWorkspace();
 
   /**
    * Only the *edits* are state; the saved values stay where they are, in the
@@ -43,7 +41,12 @@ export function LanguageSettingsSection() {
   const [draft, setDraft] = useState<UiLocale | null>(null);
 
   const save = useOrganizationLocalesMutation({
-    onSaved: () => {
+    onSaved: (settings) => {
+      setOrganizationLocales({
+        slug: settings.slug,
+        uiLocale: settings.uiLocale,
+        defaultContentLocale: settings.defaultContentLocale,
+      });
       setDraft(null);
       toast.success(t("settings.saved"));
     },
@@ -51,14 +54,7 @@ export function LanguageSettingsSection() {
       toast.error(safeError.text(error, "organization", "change")),
   });
 
-  if (isError) {
-    return <p className="text-danger text-sm">{t("settings.loadFailed")}</p>;
-  }
-  if (isPending || !data) {
-    return <p className="text-coffee/60 text-sm">{tc("state.loading")}</p>;
-  }
-
-  const uiLocale = draft ?? data.uiLocale;
+  const uiLocale = draft ?? organization.uiLocale;
 
   return (
     <section className="rounded-card border-line bg-surface border p-6">
@@ -101,7 +97,7 @@ export function LanguageSettingsSection() {
             {t("settings.contentLanguage")}
           </span>
           <span className="text-forest mt-2 block text-[15px]">
-            {LOCALE_ENDONYMS[data.defaultContentLocale]}
+            {LOCALE_ENDONYMS[organization.defaultContentLocale]}
           </span>
           <span className="text-coffee/55 mt-1.5 block text-[13px]">
             {t("settings.contentLanguageManaged")}
@@ -121,7 +117,7 @@ export function LanguageSettingsSection() {
             uiLocale,
             // Sent unchanged: the contract still carries both, and this screen is
             // no longer allowed to move the second one.
-            defaultContentLocale: data.defaultContentLocale,
+            defaultContentLocale: organization.defaultContentLocale,
           })
         }
         className="bg-forest text-canvas hover:bg-forest-hover mt-5 inline-flex min-h-11 items-center rounded-full px-6 text-[14px] font-semibold disabled:opacity-60"
