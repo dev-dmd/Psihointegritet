@@ -193,9 +193,9 @@ describe("registry integrity", () => {
     );
   });
 
-  it("records public routes without activating them", () => {
-    // Public paths move canonical URLs, the sitemap and redirect history, so
-    // they are a separate SEO slice. Serbian values must stay the live ones.
+  it("maps every public route to an existing physical Serbian page", () => {
+    // The proxy activates both public spellings while the Serbian path remains
+    // the single physical page until the separate SEO migration.
     expect(PUBLIC_ROUTES["public.team.list"]["sr-Latn"]).toBe("/tim");
     expect(PUBLIC_ROUTES["public.book"]["sr-Latn"]).toBe("/zakazi");
     for (const template of Object.values(PUBLIC_ROUTES)) {

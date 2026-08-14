@@ -212,6 +212,233 @@ export const publicUi: Widen<EnPublicUi> = {
       preparingBody: "Cena, trajanje i pravila rada se potvrđuju pre objave.",
       findSupport: "Pronađi podršku",
     },
+    companies: {
+      eyebrow: "Za organizacije",
+      title: "Rad sa kompanijama",
+      intro:
+        "Radionice, edukacije i psihološka podrška za timove i zaposlene — osmišljene tako da podrže mentalno zdravlje u radnom okruženju, sa istim principima poverljivosti i stručnosti kao i naš rad sa klijentima.",
+      configure: "Konfigurišite program",
+      offerings: {
+        workshops: {
+          title: "Radionice za timove",
+          description:
+            "Iskustvene radionice o stresu, sagorevanju i komunikaciji, prilagođene vašem timu i tempu rada.",
+        },
+        education: {
+          title: "Edukacije i predavanja",
+          description:
+            "Teme iz mentalnog zdravlja, emocionalne pismenosti i prevencije burnout-a, u formatu koji odgovara organizaciji.",
+        },
+        support: {
+          title: "Psihološka podrška zaposlenima",
+          description:
+            "Individualne konsultacije i savetovanje kao benefit koji zaposlenima olakšava svakodnevni rad.",
+        },
+      },
+      modelsEyebrow: "Modeli saradnje",
+      modelsTitle: "Početni modeli za razgovor",
+      modelsNote:
+        "Ovo nisu konačne javne ponude. Cena, obim, kapacitet i način plaćanja potvrđuju se nakon razgovora.",
+      status: { draft: "Nacrt modela", pending: "Čeka potvrdu" },
+      plans: {
+        individual: {
+          title: "Pojedinačni pristup",
+          description:
+            "Za organizacije koje žele fleksibilan početak podrške zaposlenima.",
+        },
+        teamFlex: {
+          title: "Team Flex",
+          description:
+            "Za timove kojima je potreban prilagodljiv spoj radionica i podrške.",
+        },
+        reserved: {
+          title: "Rezervisani kapacitet",
+          description:
+            "Za organizacije koje žele da unapred razgovaraju o kontinuitetu podrške.",
+        },
+        custom: {
+          title: "Program po meri",
+          description:
+            "Za kombinovane potrebe koje se definišu kroz konsultativni razgovor.",
+        },
+      },
+      delivery: {
+        flexible: {
+          title: "Fleksibilni termini",
+          description:
+            "Format i termini se dogovaraju prema potrebama organizacije.",
+        },
+        reserved: {
+          title: "Rezervisani kapacitet",
+          description:
+            "Mogućnost rezervisanog kapaciteta razmatra se kroz ponudu; broj termina i trajanje nisu javno potvrđeni.",
+        },
+        payment: {
+          title: "Način plaćanja",
+          description:
+            "Način plaćanja definiše se u ponudi, nakon dogovora o obimu programa.",
+        },
+        privacy: {
+          title: "Privatnost zaposlenih",
+          description:
+            "Konfigurator ne prikuplja zdravstvene podatke zaposlenih.",
+        },
+      },
+      faqEyebrow: "Najčešća pitanja",
+      faq: {
+        prices: {
+          question: "Da li su cene javno objavljene?",
+          answer:
+            "Ne. Cena, obim, kapacitet i način plaćanja potvrđuju se nakon razgovora i kroz ponudu.",
+        },
+        capacity: {
+          question: "Da li rezervisani kapacitet važi odmah?",
+          answer:
+            "Ne. Rezervisani kapacitet može biti deo dogovora, ali se potvrđuje tek kroz konkretnu ponudu.",
+        },
+        next: {
+          question: "Šta se dešava nakon konfiguratora?",
+          answer:
+            "Nakon kratkog upitnika tim predlaže sledeći razgovor kako bi precizirao teme, format i okvir saradnje.",
+        },
+      },
+      processEyebrow: "Kako počinje saradnja",
+      processTitle: "Tri koraka do prve radionice",
+      steps: {
+        contact: "Javite nam se sa kratkim opisom vašeg tima i potreba.",
+        proposal: "Predlažemo format, teme i okvirni obim saradnje.",
+        schedule: "Dogovaramo termine i način rada — onlajn ili uživo.",
+      },
+      closingTitle: "Zainteresovani za saradnju?",
+      closingBody:
+        "Javite nam se i predložićemo format koji odgovara vašem timu. Konkretan upitnik i ponuda stižu nakon prvog razgovora.",
+    },
+    companyConfigurator: {
+      dialog: "Rad sa kompanijama",
+      close: "Zatvori",
+      back: "Nazad",
+      next: "Dalje",
+      progress: {
+        sent: "Upit poslat",
+        contact: "Kontakt",
+        recommendation: "Naš predlog",
+        step: "Korak {current} od {total}",
+        intro: "Rad sa kompanijama",
+      },
+      intro: {
+        title: "Kako možemo pomoći vašoj organizaciji?",
+        description:
+          "Kroz nekoliko kratkih pitanja predložićemo model saradnje koji odgovara veličini vašeg tima i temama koje su vam važne.",
+        offer: {
+          workshops: "radionice",
+          talks: "predavanja i vebinari",
+          counselling: "individualno savetovanje zaposlenih",
+          managers: "podrška menadžerima",
+          burnout: "burnout programi",
+          teamBuilding: "team building radionice",
+        },
+        selected:
+          "Izabrali ste početni model: {plan}. Kratak upitnik će pomoći da preciziramo potrebe.",
+        cta: "Konfigurišite program",
+      },
+      questions: {
+        employees: "Koliko zaposlenih imate?",
+        goals: "Šta želite da organizujete?",
+        topics: "Koje teme vas najviše zanimaju?",
+        format: "Koji format vam odgovara?",
+      },
+      options: {
+        size: {
+          upTo20: "Do 20",
+          between20And50: "20–50",
+          between50And200: "50–200",
+          over200: "Više od 200",
+        },
+        goal: {
+          lecture: "Predavanje ili vebinar",
+          workshop: "Radionicu",
+          longTerm: "Dugoročnu saradnju",
+          individualSupport: "Individualnu podršku zaposlenima",
+          needsAssessment: "Procenu potreba",
+        },
+        topic: {
+          burnout: "Burnout",
+          stress: "Stres",
+          communication: "Komunikacija",
+          leadership: "Liderstvo",
+          mentalHealth: "Mentalno zdravlje",
+          psychSafety: "Psihološka sigurnost",
+        },
+        format: {
+          online: "Onlajn",
+          inPerson: "Uživo",
+          combined: "Kombinovano",
+          unsure: "Nismo sigurni",
+        },
+      },
+      recommendation: {
+        eyebrow: "Na osnovu vaših odgovora preporučujemo",
+        teamSize: "Veličina tima:",
+        employees: "{count} zaposlenih",
+        topics: "Teme:",
+        format: "Način rada:",
+        price: "Cena",
+        priceOnRequest: "Cena po ponudi",
+        note: "Konačnu ponudu, obim i uslove saradnje definišemo u razgovoru, prema potrebama vaše organizacije.",
+        request: "Zatražite ponudu",
+      },
+      models: {
+        lecture: {
+          name: "Predavanje ili vebinar po meri",
+          description:
+            "Stručno predavanje ili vebinar prilagođen vašem timu — tema, trajanje i termin po dogovoru.",
+        },
+        workshop: {
+          name: "Interaktivna radionica za tim",
+          description:
+            "Iskustvena radionica prilagođena vašem timu, sa praktičnim vežbama i prostorom za razgovor.",
+        },
+        support: {
+          name: "Program podrške zaposlenima",
+          description:
+            "Dugoročna saradnja koja kombinuje poverljivo individualno savetovanje zaposlenih sa edukativnim aktivnostima za tim.",
+        },
+        flexible: {
+          name: "Fleksibilni fond individualnih termina",
+          description:
+            "Zaposleni poverljivo koriste individualne razgovore kada im podrška zatreba — bez uvida kompanije u sadržaj.",
+        },
+        assessment: {
+          name: "Uvodna procena potreba organizacije",
+          description:
+            "Kratka procena potreba tima kao osnova za predlog daljih koraka i odgovarajućeg oblika podrške.",
+        },
+        custom: {
+          name: "Program po meri",
+          description:
+            "Za veće organizacije i kombinovane potrebe program definišemo zajedno, nakon kratkog konsultativnog razgovora.",
+        },
+      },
+      contact: {
+        title: "Kontakt za ponudu",
+        companyName: "Naziv kompanije *",
+        contactName: "Ime i prezime kontakt osobe *",
+        email: "Poslovni email *",
+        phone: "Telefon",
+        message: "Dodatna poruka",
+        consent:
+          "Saglasan/na sam da me Psihointegritet kontaktira povodom ovog upita.",
+        sending: "Šaljemo…",
+        submit: "Pošaljite upit za program",
+        error:
+          "Slanje trenutno nije uspelo. Pokušajte ponovo za koji trenutak.",
+      },
+      done: {
+        title: "Hvala na interesovanju",
+        body: "Primili smo vaš upit i okvirne zahteve. Član tima Psihointegriteta će vas kontaktirati radi potvrde potreba i pripreme konačne ponude.",
+        close: "Zatvori",
+      },
+    },
   },
   home: {
     hero: {

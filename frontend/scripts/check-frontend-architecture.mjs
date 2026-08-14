@@ -13,7 +13,8 @@ const sourceRoot = path.join(projectRoot, "src");
  * Counts re-anchored 2026-08-01 against Prettier-formatted sources. The
  * original numbers were recorded while `.prettierrc.json`/`.prettierignore`
  * were missing from the repo, so they measured unformatted line breaks:
- * `guidance-flow.tsx` 967 -> 963, `company-configurator-drawer.tsx` 515 -> 517.
+ * `guidance-flow.tsx` 967 -> 963. The configurator baseline was later reduced
+ * from 517 to 508 when its localization adapter and field moved out.
  * No responsibility moved in or out of either file.
  *
  * Reduced 2026-08-01 by the workspace refactor: `screen-kompas.tsx` (1843) and
@@ -49,7 +50,7 @@ const sourceRoot = path.join(projectRoot, "src");
  */
 const largeFileBaseline = new Map([
   ["src/features/booking/booking-request-form.tsx", 659],
-  ["src/features/company/company-configurator-drawer.tsx", 517],
+  ["src/features/company/company-configurator-drawer.tsx", 508],
   ["src/features/guidance/guidance-flow.tsx", 950],
   ["src/features/workspace/components/content-revision-editor.tsx", 592],
   [
@@ -277,11 +278,11 @@ const inlineSerbianBaseline = new Map([
   ["src/app/not-found.tsx", 5],
   ["src/components/content/rich-text-editor.tsx", 5],
   ["src/components/panel/error-banner.tsx", 2],
-  ["src/components/sections/companies/companies-page.tsx", 33],
+  ["src/components/sections/companies/companies-page.tsx", 0],
   ["src/features/booking-widget/booking-widget.fixtures.tsx", 4],
   ["src/features/booking-widget/components/BookingWidgetDemo.tsx", 1],
   ["src/features/booking/booking-request-form.tsx", 46],
-  ["src/features/company/company-configurator-drawer.tsx", 18],
+  ["src/features/company/company-configurator-drawer.tsx", 0],
   ["src/features/compass/cta/cta-preview-control.tsx", 3],
   ["src/features/compass/feedback/compass-feedback-banner.tsx", 4],
   ["src/features/compass/quiz/compass-quiz.tsx", 5],

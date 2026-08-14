@@ -397,13 +397,11 @@ export const PLANNED_ROUTES = {
 export type PlannedRouteId = keyof typeof PLANNED_ROUTES;
 
 /**
- * Public marketing routes — **recorded, not activated**.
+ * Locale-aware public marketing routes.
  *
- * Serbian paths are the live canonical URLs and must not change here. The
- * English column is the agreed target for the separate public SEO slice, which
- * additionally owns the route inventory, redirect matrix, canonical check,
- * sitemap migration and SEO acceptance test. Nothing reads this constant yet;
- * it exists so the naming is decided once, in the open, before any of that.
+ * Both columns are active presentation URLs and the proxy rewrites them to the
+ * existing Serbian physical pages. Canonical, hreflang, redirect history and
+ * sitemap migration remain owned by the separate public SEO slice.
  *
  * `/[documentSlug]` is deliberately absent: it is a CMS-authored slug belonging
  * to the organization's content locale, not a platform route segment.
@@ -436,6 +434,13 @@ export const PUBLIC_ROUTES = {
   },
   "public.knowledge": { en: "/knowledge", "sr-Latn": "/znanje" },
   "public.contact": { en: "/contact", "sr-Latn": "/kontakt" },
+  "public.privacy": { en: "/privacy", "sr-Latn": "/privatnost" },
+  "public.bookingRules": {
+    en: "/booking-rules",
+    "sr-Latn": "/pravila-zakazivanja",
+  },
+  "public.terms": { en: "/terms", "sr-Latn": "/uslovi" },
+  "public.cookies": { en: "/cookies", "sr-Latn": "/kolacici" },
   "public.compass.home": { en: "/compass", "sr-Latn": "/kompas" },
   "public.compass.areas": {
     en: "/compass/areas",

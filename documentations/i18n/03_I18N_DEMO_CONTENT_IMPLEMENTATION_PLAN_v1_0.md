@@ -256,8 +256,7 @@ lifecycle, taxonomy, availability ili Booking state machine.
 - **6A.3 core public pages — completed:** naslovna, Cene, Usluge i detalj usluge, Radionice
   i detalj programa, Znanje, Tim i profil terapeuta, Kontakt, O nama, roditeljska podrška,
   Zakazivanje i pravni fallback koriste `public` katalog. Pravna verzija/datum koriste
-  aktivni locale formatter, kao i liste lokacija na detalju usluge. Javni B2B companies
-  page ostaje otvoren zajedno sa svojim legacy strukturiranim izvorom; kompletni Kompas,
+  aktivni locale formatter, kao i liste lokacija na detalju usluge. Kompletni Kompas,
   Intake i Research ostaju naredni domenski slice-ovi.
 - **6A.4 locale-aware public CTA routes — completed:** registrovane javne rute sada imaju
   aktivne `en` i `sr-Latn` spoljne putanje. Proxy obe putanje renderuje kroz postojeću jednu
@@ -272,19 +271,27 @@ lifecycle, taxonomy, availability ili Booking state machine.
   `public.bookingWidget` katalog i aktivni locale. Compass CTA varijante A/B/C, pristupačni
   naziv, CTA i meta copy koriste `public.compassBanner`. Booking state machine, availability,
   Kompas quiz/lifecycle i stručna semantika nisu menjani.
+- **6A.6 B2B & account/client panel — completed:** javna companies stranica i ceo
+  konfigurator koriste `public.pages.companies` i `public.pages.companyConfigurator`
+  kataloge. Preporučivač, stabilne vrednosti odgovora i inquiry payload ostali su
+  backward-compatible; preveden je samo presentation sloj. Klijentski panel sada koristi
+  locale-aware `/book`/`/zakazi`, `/privacy`/`/privatnost`, `/booking-rules`/
+  `/pravila-zakazivanja` i `/terms`/`/uslovi` putanje, kao i lokalizovane metadata naslove.
+  DOM testovi pokrivaju oba jezika i interaktivni engleski ulazak u B2B konfigurator.
 - Architecture baseline izuzeci uklonjeni su za šest pokrivenih workspace fajlova. DOM
   regresioni test potvrđuje trenutno `en → sr-Latn` osvežavanje naslova, tabova i sadržaja
   bez refresh-a, a catalog test čuva key/ICU parity.
 
 **Status sadržaja:** sistemski prevodi, locale-aware public route/link sloj, Booking
-prezentacija i Compass banner su produkcijski kod. Workspace poslovni primeri
-ostaju jasno označen `showcase` sadržaj; ovim slice-om nisu menjani tenant CMS copy,
-stručna semantika ni provisioning. Oba jezika su automatski renderovana u testu, ali nisu
-ručno vizuelno proverena; Faza 10 ostaje otvorena. Gate kroz 6A.5: 89 test fajlova,
-748 pass / 1 skip; typecheck, lint, format i architecture prolaze. Next production Webpack
-build generiše 106 stranica; podrazumevani Turbopack build u Codex okruženju ne može da
-pokrene loader jer sandbox zabranjuje interno vezivanje porta (`Operation not permitted`),
-pa taj environment-specific gate nije proglašen prolazom.
+prezentacija, Compass banner, B2B presentation i account panel su produkcijski kod.
+B2B modeli i konfigurator ostaju jasno označen `showcase`/draft sadržaj i ne predstavljaju
+potvrđenu javnu ponudu; recommendation pravila i wire payload nisu menjani. Workspace
+poslovni primeri ostaju `showcase`; ovim slice-om nisu menjani tenant CMS copy, stručna
+semantika ni provisioning. Oba jezika su automatski renderovana u testu, ali nisu ručno
+vizuelno proverena; Faza 10 ostaje otvorena. Kompletni Kompas, Intake i Research su naredni
+domenski slice-ovi, pa I18N-6A ostaje u toku. Gate kroz 6A.6: 90 test fajlova,
+752 pass / 1 skip; typecheck, lint, format, architecture i production Webpack build sa
+106 generisanih stranica prolaze.
 
 **Gate:** kompletna `en` i `sr-Latn` key/ICU parity; bez novih inline korisničkih rečenica.
 

@@ -6,6 +6,8 @@ import Link from "next/link";
 import { useTranslations } from "next-intl";
 
 import { Toggle } from "@/components/panel/toggle";
+import { useUiLocale } from "@/i18n/use-ui-locale";
+import { localizedPublicPath } from "@/lib/routes/public-path";
 import { ChevronRightIcon } from "./icons";
 
 /**
@@ -24,9 +26,9 @@ import { ChevronRightIcon } from "./icons";
  */
 
 const DOCUMENT_LINKS = [
-  { href: "/privatnost", labelKey: "privacyPolicy" },
-  { href: "/pravila-zakazivanja", labelKey: "bookingRules" },
-  { href: "/uslovi", labelKey: "terms" },
+  { routeId: "public.privacy", labelKey: "privacyPolicy" },
+  { routeId: "public.bookingRules", labelKey: "bookingRules" },
+  { routeId: "public.terms", labelKey: "terms" },
 ] as const;
 
 const NOTIFICATION_ROWS = [
@@ -49,6 +51,7 @@ export function ScreenProfil({
 }: ScreenProfilProps) {
   const t = useTranslations("account.profile");
   const common = useTranslations("common");
+  const locale = useUiLocale();
   const { user } = useUser();
   const { signOut } = useClerk();
 
@@ -113,8 +116,8 @@ export function ScreenProfil({
         </h2>
         {DOCUMENT_LINKS.map((link) => (
           <Link
-            key={link.href}
-            href={link.href}
+            key={link.routeId}
+            href={localizedPublicPath(link.routeId, { locale })}
             className="border-line text-coffee flex items-center justify-between gap-3 border-b py-3.5 text-sm font-semibold no-underline last:border-b-0"
           >
             {t(link.labelKey)}

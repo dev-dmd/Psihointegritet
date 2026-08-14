@@ -13,10 +13,17 @@ import { resolveWorkspaceLocale } from "@/lib/tenant/workspace-locale";
 import { getPlatformMessages } from "@/messages";
 import { QueryProvider } from "@/providers/query-provider";
 
-export const metadata: Metadata = {
-  title: { default: "Moj panel", template: "%s · Psihointegritet" },
-  robots: { index: false, follow: false },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const locale = await resolveWorkspaceLocale();
+  const messages = getPlatformMessages(locale);
+  return {
+    title: {
+      default: messages.account.metadata.panel,
+      template: "%s · Psihointegritet",
+    },
+    robots: { index: false, follow: false },
+  };
+}
 
 /**
  * Client panel shell, in two shapes.

@@ -7,7 +7,7 @@ import { useUiLocale } from "@/i18n/use-ui-locale";
 import { localizedPath } from "@/lib/routes/localized-path";
 
 import { nextRequest } from "../appointment-view";
-import { BOOKING_PATH } from "../booking-entry";
+import { accountBookingPath } from "../booking-entry";
 import { useMyAppointmentRequests } from "../hooks/use-my-appointment-requests";
 import { BookIcon, PlusIcon } from "./icons";
 import { NextAppointmentCard } from "./next-appointment-card";
@@ -65,7 +65,7 @@ export function ScreenPocetna({ firstName }: { firstName: string | null }) {
 
       <div className="grid grid-cols-2 gap-3">
         <Link
-          href={BOOKING_PATH}
+          href={accountBookingPath(locale)}
           className="border-sage/30 bg-meadow/32 hover:bg-meadow/45 flex min-h-[108px] flex-col justify-between gap-2.5 rounded-[20px] border p-[18px] no-underline transition-colors"
         >
           <span className="bg-surface text-forest flex h-9 w-9 items-center justify-center rounded-xl">

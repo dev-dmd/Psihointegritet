@@ -6,7 +6,7 @@ import { useTranslations } from "next-intl";
 import { cn } from "@/helpers/cn";
 import { useUiLocale } from "@/i18n/use-ui-locale";
 import { localizedPath } from "@/lib/routes/localized-path";
-import { BOOKING_PATH } from "@/features/account/booking-entry";
+import { accountBookingPath } from "@/features/account/booking-entry";
 
 import type { AppointmentRequestView } from "../appointment-view";
 import { useRequestFormatting } from "../use-request-formatting";
@@ -84,7 +84,7 @@ export function NextAppointmentCard({
           {t("emptyNote")}
         </p>
         <Link
-          href={BOOKING_PATH}
+          href={accountBookingPath(locale)}
           className="bg-meadow text-forest hover:bg-meadow-hover mt-4 flex min-h-[46px] w-full items-center justify-center rounded-full px-4 text-[13.5px] font-semibold no-underline transition-colors"
         >
           {t("book")}

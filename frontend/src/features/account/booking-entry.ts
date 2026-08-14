@@ -1,4 +1,5 @@
-import type { Route } from "next";
+import type { UiLocale } from "@/i18n/locales";
+import { localizedPublicPath } from "@/lib/routes/public-path";
 
 /**
  * Where „Zakaži termin" sends a signed-in client.
@@ -8,10 +9,10 @@ import type { Route } from "next";
  * does not expose yet — so every booking action leaves for the public request
  * form, which is the one flow that really submits to the Booking Engine.
  *
- * Public marketing paths are not in the platform route registry: they are
- * recorded in `PUBLIC_ROUTES` as inventory for the SEO slice and are the same
- * in every locale until that slice activates them. Naming the path once here
- * keeps the panel from repeating it in four components and gives that slice a
- * single line to change.
+ * The public booking route is localized, while its service/source query codes
+ * remain stable. Keeping the route id here prevents account screens from
+ * falling back to a Serbian literal when the organization UI is English.
  */
-export const BOOKING_PATH = "/zakazi" as Route;
+export function accountBookingPath(locale: UiLocale) {
+  return localizedPublicPath("public.book", { locale });
+}
