@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { useTranslations } from "next-intl";
 
 import { ProgressBar } from "@/components/panel/progress-bar";
 import { StatusBadge } from "@/components/panel/status-badge";
@@ -11,13 +12,11 @@ import { WorkspaceDataNotice } from "./workspace-data-notice";
 
 /** Terapeuti — team cards with load and „prima nove" status (admin only). */
 export function ScreenTerapeuti() {
+  const t = useTranslations("screens.therapists");
   const { therapistCards } = useFallbackContent().workspaceDemo;
   return (
     <section className="animate-fade-up">
-      <PageHeader
-        title="Terapeuti"
-        description="Tim, popunjenost i dostupnost za nove klijente."
-      />
+      <PageHeader title={t("title")} description={t("description")} />
       <WorkspaceDataNotice />
       <div className="grid grid-cols-1 gap-3.5 md:grid-cols-2 lg:grid-cols-3">
         {therapistCards.map((therapist) => (
@@ -44,16 +43,14 @@ export function ScreenTerapeuti() {
             </div>
             <div className="mt-4">
               <div className="text-ink-55 mb-1.5 flex justify-between text-[12.5px]">
-                <span>{therapist.clients} klijenata</span>
-                <span>Popunjenost {therapist.occupancy}%</span>
+                <span>{t("clients", { count: therapist.clients })}</span>
+                <span>{t("occupancy", { percent: therapist.occupancy })}</span>
               </div>
               <ProgressBar value={therapist.occupancy} />
             </div>
             <div className="mt-4">
               <StatusBadge tone={therapist.acceptingNew ? "ok" : "wait"}>
-                {therapist.acceptingNew
-                  ? "Prima nove klijente"
-                  : "Ne prima nove"}
+                {therapist.acceptingNew ? t("accepting") : t("notAccepting")}
               </StatusBadge>
             </div>
           </div>

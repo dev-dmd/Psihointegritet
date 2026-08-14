@@ -1,5 +1,7 @@
 "use client";
 
+import { useTranslations } from "next-intl";
+
 import { StatusBadge } from "@/components/panel/status-badge";
 import { Chip } from "@/components/ui/chip";
 import { useFallbackContent } from "@/content/use-content";
@@ -11,14 +13,12 @@ import { WorkspaceDataNotice } from "./workspace-data-notice";
 
 /** Usluge i cene — service catalog with internal codes, variants, rules. */
 export function ScreenUsluge() {
+  const t = useTranslations("screens.services");
   const statusLabel = useStatusLabel();
   const { serviceCatalog } = useFallbackContent().workspaceDemo;
   return (
     <section className="animate-fade-up">
-      <PageHeader
-        title="Usluge i cene"
-        description="Centralni katalog iz kojeg Booking i Matching engine čitaju podatke."
-      />
+      <PageHeader title={t("title")} description={t("description")} />
       <WorkspaceDataNotice />
       <div className="grid grid-cols-1 gap-3.5 lg:grid-cols-2">
         {serviceCatalog.map((service) => {
@@ -49,7 +49,7 @@ export function ScreenUsluge() {
                 <span>{service.format}</span>
               </div>
               <div className="text-ink-55 mt-1 text-[12.5px]">
-                Terapeuti: {service.therapists}
+                {t("therapists", { therapists: service.therapists })}
               </div>
               <div className="mt-3 flex flex-wrap gap-2">
                 {service.variants.map((variant) => (
@@ -59,18 +59,17 @@ export function ScreenUsluge() {
                 ))}
               </div>
               <div className="border-line text-ink-55 mt-3.5 flex flex-wrap gap-x-4 gap-y-1 border-t pt-3 text-[12px]">
-                <span>Ručna potvrda: {service.manual}</span>
-                <span>Buffer: {service.buffer}</span>
-                <span>Otkazivanje: {service.cancel}</span>
+                <span>
+                  {t("manualConfirmation", { value: service.manual })}
+                </span>
+                <span>{t("buffer", { value: service.buffer })}</span>
+                <span>{t("cancellation", { value: service.cancel })}</span>
               </div>
             </div>
           );
         })}
       </div>
-      <p className="text-ink-45 mt-4 text-[12.5px] italic">
-        Cene su okvirne i prate katalog sa javnog sajta. Izmena kataloga stiže
-        sa Booking engine-om.
-      </p>
+      <p className="text-ink-45 mt-4 text-[12.5px] italic">{t("note")}</p>
     </section>
   );
 }

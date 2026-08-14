@@ -643,6 +643,7 @@ Dokazuje `SlotSpec` registar koji pravni tok ne dokazuje (`legal_page` ima samo 
 | Content paketi                                                | ✅ 2026-08-14 | Tri dvojezična paketa iza centralnog registry-ja; C2(a) slug mapping bez DB `packId`, source statusi, staff-only blank help i odvojeni showcase/real Research tok; 729 pass / 1 skip, build 106                                    |
 | I18N-STAB-1 — Workspace Locale Switch & Loading Stabilization | ✅ 2026-08-14 | History replace + 1 server refresh uz očuvan query/hash; identity `/api/v1/me` do 3→1 po renderu; `currentUser` 3→0/1; Settings dodatni GET 1→0; Content 12 kartica odmah; 735 pass / 1 skip, backend 540 pass / 1 skip, build 106 |
 | I18N-STAB-1 ručni funkcionalni smoke | ✅ 2026-08-14 | `en ↔ sr-Latn`, trenutni layout refresh, URL/content sync, Settings bez loadera i progresivni CMS status potvrđeni; nije Faza 10 vizuelni QA. Authenticated Clerk E2E obavezan pre production launch gate-a |
+| I18N-6A — Public & Workspace Visible UI Completion | 🟡 u toku 2026-08-14 | Public header/mobile/footer i šest najčešćih workspace ekrana imaju `en`/`sr-Latn` kataloge; 737 pass / 1 skip, build 106. Preostali javni page/section chrome ostaje u 6A; oba jezika automatski renderovana, ručni vizuelni QA ostaje Faza 10 |
 
 ---
 

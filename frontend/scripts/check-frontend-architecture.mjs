@@ -455,8 +455,6 @@ const inlineSerbianBaseline = new Map([
     10,
   ],
   ["src/features/workspace/components/screen-istrazivanja.tsx", 13],
-  ["src/features/workspace/components/screen-klijenti.tsx", 6],
-  ["src/features/workspace/components/screen-kompanije.tsx", 1],
   ["src/features/workspace/components/screen-kompas/approval-controls.tsx", 1],
   [
     "src/features/workspace/components/screen-kompas/compass-admin-workspace.tsx",
@@ -487,9 +485,6 @@ const inlineSerbianBaseline = new Map([
   ],
   ["src/features/workspace/components/screen-kompas/term-list.tsx", 2],
   ["src/features/workspace/components/screen-pregled.tsx", 0],
-  ["src/features/workspace/components/screen-profil.tsx", 0],
-  ["src/features/workspace/components/screen-termini.tsx", 0],
-  ["src/features/workspace/components/screen-usluge.tsx", 3],
   ["src/features/workspace/components/seo-preview-panel.tsx", 3],
   ["src/features/workspace/components/slot-editor.tsx", 5],
   ["src/features/workspace/components/slot-field-editor.tsx", 1],

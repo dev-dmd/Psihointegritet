@@ -243,6 +243,27 @@ Prevesti javni UI, workspace, account, metadata/aria/empty/loading state, zatim 
 Research, Kompas i Booking prezentacioni copy. Ne menjati stable ID-jeve, scoring, safety,
 lifecycle, taxonomy, availability ili Booking state machine.
 
+### I18N-6A — Public & Workspace Visible UI Completion — in progress 2026-08-14
+
+- **6A.1 public chrome — completed:** header, desktop/mobile navigacija i footer koriste
+  `public` katalog za `en` i `sr-Latn`; route ID-jevi i feature-flag filtriranje ostaju
+  stabilni. Javni page/section copy koji još postoji van content paketa ostaje otvoren u
+  ovom slice-u.
+- **6A.2 frequent workspace screens — completed:** Termini, Klijenti, Kompanije, Usluge i
+  cene, Terapeuti i Moj profil koriste `screens` katalog za sav sistemski chrome. Intake
+  datum koristi aktivni locale. Profile tabovi zadržavaju stabilne ID-jeve `public`,
+  `matching` i `availability`; ispravljeni su zastareli render uslovi koji nisu odgovarali
+  tim ID-jevima.
+- Architecture baseline izuzeci uklonjeni su za šest pokrivenih workspace fajlova. DOM
+  regresioni test potvrđuje trenutno `en → sr-Latn` osvežavanje naslova, tabova i sadržaja
+  bez refresh-a, a catalog test čuva key/ICU parity.
+
+**Status sadržaja:** sistemski prevodi su produkcijski kod. Workspace poslovni primeri
+ostaju jasno označen `showcase` sadržaj; ovim slice-om nisu menjani tenant CMS copy,
+stručna semantika ni provisioning. Oba jezika su automatski renderovana u testu, ali nisu
+ručno vizuelno proverena; Faza 10 ostaje otvorena. Gate za 6A.2: 86 test fajlova, 737 pass /
+1 skip; typecheck, lint, format, architecture i production build (106 stranica) prolaze.
+
 **Gate:** kompletna `en` i `sr-Latn` key/ICU parity; bez novih inline korisničkih rečenica.
 
 ## Faza 7 — backend email i notifications

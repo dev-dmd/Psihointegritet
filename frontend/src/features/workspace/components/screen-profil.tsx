@@ -19,14 +19,13 @@ import { PageHeader } from "./page-header";
 import { WorkspaceDataNotice } from "./workspace-data-notice";
 
 // Stable codes — query values are never translated (D-077 Amendment §2).
-const tabs = [
-  { id: "public", label: "Javni profil" },
-  { id: "matching", label: "Matching preferencije" },
-  { id: "availability", label: "Dostupnost" },
-];
-
 export function ScreenProfil() {
   const t = useTranslations("screens.profile");
+  const tabs = [
+    { id: "public", label: t("tabs.public") },
+    { id: "matching", label: t("tabs.matching") },
+    { id: "availability", label: t("tabs.availability") },
+  ];
   const [tab, setTab] = useState("public");
   const fallback = useFallbackContent();
   const { matchingPreferences } = fallback.workspaceDemo;
@@ -36,10 +35,7 @@ export function ScreenProfil() {
   if (!therapist) {
     return (
       <section className="animate-fade-up">
-        <PageHeader
-          title="Moj profil"
-          description="Javni profil, interne matching preferencije i slojevi dostupnosti."
-        />
+        <PageHeader title={t("title")} description={t("description")} />
         <WorkspaceDataNotice />
       </section>
     );
@@ -58,14 +54,11 @@ export function ScreenProfil() {
 
   return (
     <section className="animate-fade-up">
-      <PageHeader
-        title="Moj profil"
-        description="Javni profil, interne matching preferencije i slojevi dostupnosti."
-      />
+      <PageHeader title={t("title")} description={t("description")} />
       <WorkspaceDataNotice />
       <TabPills tabs={tabs} activeId={tab} onChange={setTab} className="mb-5" />
 
-      {tab === "javni" ? (
+      {tab === "public" ? (
         <div className="grid grid-cols-1 gap-3.5 lg:grid-cols-2">
           <div className="rounded-card border-line bg-surface border px-6 py-6">
             <div className="mb-4 flex items-center gap-4">
@@ -89,15 +82,15 @@ export function ScreenProfil() {
               {`„${therapist.quote}“`}
             </p>
             <div className="grid grid-cols-2 gap-3.5">
-              <KV label="Grad i format">
-                {therapist.city}, {therapist.cityRegionCode} · online
+              <KV label={t("cityAndFormat")}>
+                {therapist.city}, {therapist.cityRegionCode} · {t("online")}
               </KV>
-              <KV label="Formati">{therapist.formats}</KV>
+              <KV label={t("formats")}>{therapist.formats}</KV>
             </div>
           </div>
           <div className="rounded-card border-line bg-surface border px-6 py-6">
             <div className="text-sage mb-3 text-[11.5px] font-semibold tracking-[0.14em] uppercase">
-              Oblasti rada — javno
+              {t("publicAreas")}
             </div>
             <div className="mb-5 flex flex-wrap gap-2">
               {therapist.areas.map((area) => (
@@ -107,7 +100,7 @@ export function ScreenProfil() {
               ))}
             </div>
             <div className="text-sage mb-2.5 text-[11.5px] font-semibold tracking-[0.14em] uppercase">
-              Usluge
+              {t("services")}
             </div>
             <div className="flex flex-col gap-1.5">
               {publicServices.map((service) => (
@@ -125,7 +118,7 @@ export function ScreenProfil() {
         </div>
       ) : null}
 
-      {tab === "match" ? (
+      {tab === "matching" ? (
         <div className="flex flex-col gap-3.5">
           <div className="bg-warm/16 border-warm/45 rounded-tile text-coffee flex items-center gap-2.5 border px-4 py-3 text-[13px]">
             <LockIcon />
@@ -140,18 +133,18 @@ export function ScreenProfil() {
                 {t("acceptsHeading")}
               </div>
               <div className="grid grid-cols-2 gap-3.5">
-                <KV label="Starosne grupe">{matchingPreferences.ageGroups}</KV>
+                <KV label={t("ageGroups")}>{matchingPreferences.ageGroups}</KV>
                 <KV label={t("maxNewMonthly")} serif>
                   {matchingPreferences.maxNewMonthly}
                 </KV>
-                <KV label="Prioritet pri preporuci">
+                <KV label={t("recommendationPriority")}>
                   {matchingPreferences.priority}
                 </KV>
-                <KV label="Gradovi">{matchingPreferences.cities}</KV>
+                <KV label={t("cities")}>{matchingPreferences.cities}</KV>
               </div>
               <div className="border-line mt-4 border-t pt-3.5">
                 <div className="text-ink-45 mb-2 text-[11px] font-semibold tracking-[0.12em] uppercase">
-                  Trenutno ne prima
+                  {t("notAccepting")}
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {matchingPreferences.notAccepting.map((item) => (
@@ -167,7 +160,7 @@ export function ScreenProfil() {
             </div>
             <div className="rounded-card border-line bg-surface border px-6 py-6">
               <div className="text-sage mb-2 text-[11.5px] font-semibold tracking-[0.14em] uppercase">
-                Dostupnost za formate
+                {t("formatAvailability")}
               </div>
               <div className="flex flex-col">
                 {matchingPreferences.toggles.map((toggle) => (
@@ -200,7 +193,7 @@ export function ScreenProfil() {
         </div>
       ) : null}
 
-      {tab === "dostupnost" ? <AvailabilityOverviewCards /> : null}
+      {tab === "availability" ? <AvailabilityOverviewCards /> : null}
     </section>
   );
 }

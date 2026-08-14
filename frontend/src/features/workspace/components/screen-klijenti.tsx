@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { toast } from "sonner";
+import { useFormatter, useTranslations } from "next-intl";
 
 import { StatusBadge } from "@/components/panel/status-badge";
 import { TabPills } from "@/components/panel/tab-pills";
@@ -21,6 +22,7 @@ import { PageHeader } from "./page-header";
 import { WorkspaceDataNotice } from "./workspace-data-notice";
 
 export function ScreenKlijenti() {
+  const t = useTranslations("screens.clients");
   const fallback = useFallbackContent();
   const { clients, unassignedRequests } = fallback.workspaceDemo;
   const statusLabel = useStatusLabel();
@@ -44,19 +46,18 @@ export function ScreenKlijenti() {
     : clients;
 
   const tabs = [
-    { id: "svi", label: "Svi" },
+    { id: "svi", label: t("tabs.all") },
     {
       id: "nedodeljeni",
-      label: `Nedodeljeni · ${teamQueueEnabled ? teamQueue.length : unassignedRequests.length}`,
+      label: t("tabs.unassigned", {
+        count: teamQueueEnabled ? teamQueue.length : unassignedRequests.length,
+      }),
     },
   ];
 
   return (
     <section className="animate-fade-up">
-      <PageHeader
-        title="Klijenti"
-        description="Aktivan rad, dodele i Intake zahtevi bez terapeuta."
-      />
+      <PageHeader title={t("title")} description={t("description")} />
       <WorkspaceDataNotice />
       <TabPills tabs={tabs} activeId={tab} onChange={setTab} className="mb-5" />
 
@@ -88,7 +89,7 @@ export function ScreenKlijenti() {
                   </StatusBadge>
                 </div>
                 <div className="border-line text-ink-55 mt-3.5 flex flex-wrap gap-x-4 gap-y-1 border-t pt-3 text-[12.5px]">
-                  <span>Sledeći: {client.next}</span>
+                  <span>{t("next", { value: client.next })}</span>
                   <span>
                     {client.format} · {client.service}
                   </span>
@@ -137,20 +138,20 @@ function ProductionIntakeQueue({
   claimingCaseId: string | null;
   onClaim: (caseId: string) => void;
 }) {
+  const t = useTranslations("screens.clients");
+  const format = useFormatter();
   if (state === "loading") {
-    return <p className="text-ink-55 text-[14px]">Učitavanje zahteva...</p>;
+    return <p className="text-ink-55 text-[14px]">{t("loading")}</p>;
   }
   if (state === "error") {
     return (
       <p className="text-danger text-[14px]" role="alert">
-        Nedodeljeni zahtevi trenutno nisu dostupni.
+        {t("unavailable")}
       </p>
     );
   }
   if (queue.length === 0) {
-    return (
-      <p className="text-ink-55 text-[14px]">Nema nedodeljenih zahteva.</p>
-    );
+    return <p className="text-ink-55 text-[14px]">{t("empty")}</p>;
   }
 
   return (
@@ -175,15 +176,24 @@ function ProductionIntakeQueue({
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
                 <div className="text-coffee text-[15px] font-semibold">
-                  Intake zahtev · {formatQueueDate(request.createdAt)}
+                  {t("intakeRequest", {
+                    date: format.dateTime(new Date(request.createdAt), {
+                      day: "2-digit",
+                      month: "2-digit",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    }),
+                  })}
                 </div>
                 <div className="text-ink-55 mt-1 text-[12.5px]">
-                  {request.format ?? "Format nije naveden"} · uzrast{" "}
-                  {formatSubjectAgeBand(request.subjectAgeBand)} · podnosilac{" "}
-                  {formatRequesterRole(request.requesterRole)}
+                  {t("requestDetails", {
+                    format: request.format ?? t("formatMissing"),
+                    age: ageBandLabel(t, request.subjectAgeBand),
+                    requester: requesterRoleLabel(t, request.requesterRole),
+                  })}
                 </div>
               </div>
-              <StatusBadge tone="wait">Nedodeljen</StatusBadge>
+              <StatusBadge tone="wait">{t("unassigned")}</StatusBadge>
             </div>
             <div className="mt-3.5 flex flex-wrap gap-2">
               {service ? (
@@ -193,30 +203,30 @@ function ProductionIntakeQueue({
               ) : null}
               {preferredTherapist ? (
                 <Chip variant="tagOutlined" className="text-[12.5px]">
-                  Izbor korisnika: {preferredTherapist.name}
+                  {t("userChoice", { name: preferredTherapist.name })}
                 </Chip>
               ) : null}
               {request.requiresHumanReview ? (
                 <Chip variant="tagOutlined" className="text-[12.5px]">
-                  Pregled tima
+                  {t("teamReview")}
                 </Chip>
               ) : null}
               {request.reviewPriority === "priority" ? (
                 <Chip variant="tagOutlined" className="text-[12.5px]">
-                  Prioritetni pregled
+                  {t("priorityReview")}
                 </Chip>
               ) : null}
               {request.hasFreeText ? (
                 <Chip variant="tagOutlined" className="text-[12.5px]">
-                  Dodatna poruka postoji
+                  {t("extraMessage")}
                 </Chip>
               ) : null}
             </div>
             <div className="text-ink-55 mt-3 text-[13px]">
-              <span className="font-semibold">Preporuka:</span>{" "}
+              <span className="font-semibold">{t("recommendation")}</span>{" "}
               {recommendations.length > 0
                 ? recommendations.join(" · ")
-                : "Tim određuje sledeći korak"}
+                : t("teamDecides")}
             </div>
             {isTherapist ? (
               <div className="mt-4">
@@ -227,8 +237,8 @@ function ProductionIntakeQueue({
                   className="bg-forest text-canvas hover:bg-forest-hover disabled:bg-forest/45 cursor-pointer rounded-full border-0 px-5 py-2.5 text-[13px] font-semibold transition-colors disabled:cursor-not-allowed"
                 >
                   {claimingCaseId === request.caseId
-                    ? "Preuzimanje..."
-                    : "Preuzmi"}
+                    ? t("claiming")
+                    : t("claim")}
                 </button>
               </div>
             ) : null}
@@ -244,12 +254,11 @@ function DemoIntakeQueue({
 }: {
   requests: readonly UnassignedRequest[];
 }) {
+  const t = useTranslations("screens.clients");
   return (
     <div className="flex flex-col gap-3">
       <div className="bg-meadow/22 border-sage/30 text-coffee rounded-tile border px-5 py-3.5 text-[13px] leading-[1.5]">
-        Deo Intake &amp; Matching engine-a — zahtevi kojima sistem nije
-        automatski dodelio terapeuta. Kada terapeut preuzme klijenta, ostalima
-        je vidljivo samo ko ga je preuzeo.
+        {t("demoNotice")}
       </div>
       {requests.map((request) => (
         <div
@@ -263,14 +272,15 @@ function DemoIntakeQueue({
               </span>
               <div>
                 <div className="text-coffee text-[15px] font-semibold">
-                  Intake zahtev · {request.date}
+                  {t("intakeRequest", { date: request.date })}
                 </div>
                 <div className="text-ink-55 text-[12.5px]">
-                  {request.ago} · {request.format} · uzrast {request.ageGroup}
+                  {request.ago} · {request.format} ·{" "}
+                  {t("age", { value: request.ageGroup })}
                 </div>
               </div>
             </div>
-            <StatusBadge tone="wait">Nedodeljen</StatusBadge>
+            <StatusBadge tone="wait">{t("unassigned")}</StatusBadge>
           </div>
           <div className="mt-3.5 flex flex-wrap gap-2">
             {request.areas.map((area) => (
@@ -280,29 +290,23 @@ function DemoIntakeQueue({
             ))}
           </div>
           <div className="text-ink-55 mt-3 text-[13px]">
-            <span className="font-semibold">Preporuka:</span>{" "}
+            <span className="font-semibold">{t("recommendation")}</span>{" "}
             {request.recommended} — {request.reason}
           </div>
           <div className="mt-4 flex flex-wrap gap-2.5">
             <button
               type="button"
-              onClick={() =>
-                toast.success(
-                  "Preuzeto — ostalima je vidljivo samo ko je preuzeo.",
-                )
-              }
+              onClick={() => toast.success(t("claimedToast"))}
               className="bg-forest text-canvas hover:bg-forest-hover cursor-pointer rounded-full border-0 px-5 py-2.5 text-[13px] font-semibold transition-colors"
             >
-              Preuzmi
+              {t("claim")}
             </button>
             <button
               type="button"
-              onClick={() =>
-                toast("Dodela terapeutu stiže sa Booking engine-om.")
-              }
+              onClick={() => toast(t("assignSoon"))}
               className="border-coffee/22 text-coffee hover:border-sage cursor-pointer rounded-full border-[1.5px] bg-transparent px-5 py-2.5 text-[13px] font-semibold transition-colors"
             >
-              Dodeli terapeutu
+              {t("assign")}
             </button>
           </div>
         </div>
@@ -311,31 +315,30 @@ function DemoIntakeQueue({
   );
 }
 
-function formatQueueDate(value: string): string {
-  return new Intl.DateTimeFormat("sr-RS", {
-    day: "2-digit",
-    month: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(new Date(value));
+function ageBandLabel(
+  t: ReturnType<typeof useTranslations<"screens.clients">>,
+  value: string,
+): string {
+  const keys = {
+    under_12: "under12",
+    "12_15": "from12To15",
+    "16_17": "from16To17",
+    adult: "adult",
+  } as const;
+  const key = keys[value as keyof typeof keys];
+  return key ? t(`ageBands.${key}`) : t("unknown");
 }
 
-function formatSubjectAgeBand(value: string): string {
-  const labels: Record<string, string> = {
-    under_12: "mlađe od 12",
-    "12_15": "12–15",
-    "16_17": "16–17",
-    adult: "18+",
-  };
-  return labels[value] ?? "nije navedeno";
-}
-
-function formatRequesterRole(value: string): string {
-  const labels: Record<string, string> = {
-    self_adult: "punoletna osoba",
-    guardian: "roditelj/staratelj",
+function requesterRoleLabel(
+  t: ReturnType<typeof useTranslations<"screens.clients">>,
+  value: string,
+): string {
+  const keys = {
+    self_adult: "selfAdult",
+    guardian: "guardian",
     adolescent_16_17: "adolescent",
-    information_only: "informativni put",
-  };
-  return labels[value] ?? "nije navedeno";
+    information_only: "informationOnly",
+  } as const;
+  const key = keys[value as keyof typeof keys];
+  return key ? t(`requesterRoles.${key}`) : t("unknown");
 }

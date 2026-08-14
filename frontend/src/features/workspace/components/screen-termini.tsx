@@ -57,10 +57,7 @@ export function ScreenTermini() {
 
   return (
     <section className="animate-fade-up">
-      <PageHeader
-        title="Termini"
-        description="Booking kontrola — jedan status sistem kroz celu platformu."
-      />
+      <PageHeader title={t("title")} description={t("description")} />
       <WorkspaceDataNotice />
       <TabPills tabs={tabs} activeId={tab} onChange={setTab} className="mb-5" />
 
@@ -140,8 +137,8 @@ export function ScreenTermini() {
                   <span>
                     {t("requested", { preferred: request.preferred })}
                   </span>
-                  <span>Izvor: {request.source}</span>
-                  <span>Poslato {request.ago}</span>
+                  <span>{t("source", { source: request.source })}</span>
+                  <span>{t("submitted", { ago: request.ago })}</span>
                 </div>
               </div>
             );
