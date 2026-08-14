@@ -56,7 +56,13 @@ export async function getClerkServerIdentity(): Promise<Identity | null> {
     isSuperadmin: boolean;
     memberships: Identity["memberships"];
   };
-  const user = await currentUser();
+  // `/api/v1/me` is authoritative. Clerk's user profile is a fallback only;
+  // avoid a second provider request when the backend already returned both
+  // presentation fields.
+  const user =
+    backend.email === null || backend.displayName === null
+      ? await currentUser()
+      : null;
 
   return {
     userId: backend.userId,

@@ -108,6 +108,30 @@ describe("getClerkServerIdentity", () => {
     ]);
   });
 
+  it("skips Clerk user lookup when backend presentation fields are complete", async () => {
+    authMock.mockResolvedValue({
+      userId: "user_complete",
+      getToken: vi.fn().mockResolvedValue("token"),
+    });
+    fetchMock.mockResolvedValue(
+      new Response(
+        JSON.stringify(
+          backendIdentity({
+            userId: "user_complete",
+            email: "complete@example.test",
+            displayName: "Complete Person",
+          }),
+        ),
+      ),
+    );
+
+    await expect(getClerkServerIdentity()).resolves.toMatchObject({
+      email: "complete@example.test",
+      displayName: "Complete Person",
+    });
+    expect(currentUserMock).not.toHaveBeenCalled();
+  });
+
   it("tolerates a missing user record", async () => {
     authMock.mockResolvedValue({
       userId: "user_4",
