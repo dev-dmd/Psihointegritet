@@ -67,6 +67,7 @@ export function ContentEntryList({
   onOpen,
   openingIdentity,
   openError,
+  isInitialSync,
 }: {
   entries: ApiContentRevision[];
   catalogue: readonly SystemContentDefinition[];
@@ -80,6 +81,7 @@ export function ContentEntryList({
   ) => void | Promise<void>;
   openingIdentity: string | null;
   openError: string | null;
+  isInitialSync: boolean;
 }) {
   const t = useTranslations("content");
   const shown = catalogue.filter(
@@ -131,7 +133,9 @@ export function ContentEntryList({
             <button
               key={identity}
               type="button"
-              disabled={openingIdentity !== null || templateMismatch}
+              disabled={
+                isInitialSync || openingIdentity !== null || templateMismatch
+              }
               onClick={() => {
                 if (isSelected) {
                   onSelect(null);
@@ -160,6 +164,13 @@ export function ContentEntryList({
                 <StatusBadge tone={STATUS_TONES[entry.status] ?? "neutral"}>
                   {STATUS_LABELS[entry.status] ?? entry.status}
                 </StatusBadge>
+              ) : isInitialSync ? (
+                <span
+                  role="status"
+                  className="bg-coffee/8 text-ink-55 inline-flex animate-pulse rounded-full px-2.5 py-1 text-[11.5px]"
+                >
+                  {t("checkingStatus")}
+                </span>
               ) : (
                 <StatusBadge tone="soft">
                   {isOpening ? "Otvaranje…" : "Fallback iz koda"}
