@@ -107,13 +107,13 @@ export function BookingWidgetSummary({
                   alt=""
                   width={48}
                   height={48}
-                  className="h-11 w-11 rounded-full border border-current/20 object-cover sm:h-12 sm:w-12"
+                  className="h-11 w-11 min-w-11 rounded-full border border-current/20 object-cover sm:h-12 sm:w-12 sm:min-w-12"
                 />
               ) : (
                 <div
                   aria-hidden
                   className={cn(
-                    "flex h-11 w-11 items-center justify-center rounded-full border border-current/20 font-serif text-lg sm:h-12 sm:w-12",
+                    "flex h-11 w-11 items-center justify-center rounded-full border border-current/20 font-serif text-lg sm:h-12 sm:w-12 sm:min-w-12",
                     theme.heading,
                   )}
                 >
