@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { PublicLink as Link } from "@/components/ui/public-link";
 import type { Route } from "next";
 import { getTranslations } from "next-intl/server";
 

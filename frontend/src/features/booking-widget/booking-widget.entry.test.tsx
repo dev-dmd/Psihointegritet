@@ -26,6 +26,16 @@ describe("direct booking", () => {
       screen.getByRole("heading", { name: "Individualna psihoterapija" }),
     ).toBeInTheDocument();
   });
+
+  it("uses English widget chrome when the active locale is English", () => {
+    renderWidget(editable, {}, "en");
+
+    expect(
+      screen.getByRole("heading", { name: "Book an appointment" }),
+    ).toBeInTheDocument();
+    expect(screen.getByText("Other therapists")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Book" })).toBeInTheDocument();
+  });
 });
 
 // ── Therapist profile entry ─────────────────────────────────────────────────

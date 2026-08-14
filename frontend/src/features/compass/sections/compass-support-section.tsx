@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { PublicLink as Link } from "@/components/ui/public-link";
 import { MonogramAvatar } from "@/components/ui/monogram-avatar";
 import type { Therapist } from "@/types/therapist";
 

@@ -8,7 +8,7 @@ import { useTranslations } from "next-intl";
 
 import { cn } from "@/helpers/cn";
 import { MobileDrawerCloseContext } from "@/components/sections/mobile-menu-context";
-import { headerBookingHref, type SiteNavLink } from "@/content/site-navigation";
+import type { SiteNavLink } from "@/content/site-navigation";
 
 interface MobileMenuProps {
   links: SiteNavLink[];
@@ -22,6 +22,7 @@ interface MobileMenuProps {
    */
   authSlot?: ReactNode;
   bookLabel: string;
+  bookingHref: string;
 }
 
 /** Burger trigger + slide-in navigation drawer, visible below the lg breakpoint. */
@@ -30,6 +31,7 @@ export function MobileMenu({
   variant = "glass",
   authSlot,
   bookLabel,
+  bookingHref,
 }: MobileMenuProps) {
   const t = useTranslations("public.navigation");
   const [open, setOpen] = useState(false);
@@ -127,7 +129,7 @@ export function MobileMenu({
                 </nav>
                 <div className="border-coffee/10 border-t px-6 pt-5 pb-7">
                   <Link
-                    href={headerBookingHref as Route}
+                    href={bookingHref as Route}
                     onClick={() => setOpen(false)}
                     className="bg-forest text-canvas flex min-h-11 items-center justify-center gap-2.5 rounded-full px-6 text-[15px] font-semibold no-underline"
                   >

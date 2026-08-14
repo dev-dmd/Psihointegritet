@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { PublicLink as Link } from "@/components/ui/public-link";
 import type { Route } from "next";
 import { useEffect, useMemo, useRef, useState } from "react";
 

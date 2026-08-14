@@ -2,6 +2,7 @@
 
 import { ChevronLeftIcon } from "@heroicons/react/24/outline";
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 
 import { cn } from "@/helpers/cn";
 import type { BookingWidgetTheme } from "../booking-widget.types";
@@ -43,6 +44,7 @@ export function BookingWidgetContactForm({
   initialName,
   initialEmail,
 }: BookingWidgetContactFormProps) {
+  const t = useTranslations("public.bookingWidget");
   const [name, setName] = useState(initialName ?? "");
   const [email, setEmail] = useState(initialEmail ?? "");
   const [phone, setPhone] = useState("");
@@ -78,7 +80,7 @@ export function BookingWidgetContactForm({
         )}
       >
         <ChevronLeftIcon className="size-4" />
-        Nazad na izbor termina
+        {t("contactBack")}
       </button>
 
       <div className="space-y-4">
@@ -87,7 +89,7 @@ export function BookingWidgetContactForm({
             htmlFor="bcf-name"
             className={cn("mb-1.5 block text-[13px] font-medium", theme.body)}
           >
-            Ime i prezime
+            {t("name")}
           </label>
           <input
             id="bcf-name"
@@ -95,7 +97,7 @@ export function BookingWidgetContactForm({
             required
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="Vaše ime i prezime"
+            placeholder={t("namePlaceholder")}
             className={cn(
               "w-full rounded-xl border px-4 py-2.5 text-[15px] transition-colors outline-none",
               theme.border,
@@ -110,7 +112,7 @@ export function BookingWidgetContactForm({
             htmlFor="bcf-email"
             className={cn("mb-1.5 block text-[13px] font-medium", theme.body)}
           >
-            Email
+            {t("email")}
           </label>
           <input
             id="bcf-email"
@@ -118,7 +120,7 @@ export function BookingWidgetContactForm({
             required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            placeholder="vasa@adresa.com"
+            placeholder={t("emailPlaceholder")}
             className={cn(
               "w-full rounded-xl border px-4 py-2.5 text-[15px] transition-colors outline-none",
               theme.border,
@@ -133,7 +135,7 @@ export function BookingWidgetContactForm({
             htmlFor="bcf-phone"
             className={cn("mb-1.5 block text-[13px] font-medium", theme.body)}
           >
-            Telefon <span className={theme.muted}>(opciono)</span>
+            {t("phone")} <span className={theme.muted}>({t("optional")})</span>
           </label>
           <input
             id="bcf-phone"
@@ -166,8 +168,7 @@ export function BookingWidgetContactForm({
             className="accent-sage mt-0.5 size-4 cursor-pointer"
           />
           <span className={cn("text-[13px] leading-[1.55]", theme.body)}>
-            Upoznat/a sam sa pravilima zakazivanja i razumem da slanje zahteva
-            ne predstavlja konačnu potvrdu termina.
+            {t("rules")}
           </span>
         </label>
       </div>
@@ -190,10 +191,10 @@ export function BookingWidgetContactForm({
         {isSubmitting ? (
           <span className="inline-flex items-center gap-2">
             <span className="size-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-            Šaljem…
+            {t("sending")}
           </span>
         ) : (
-          "Pošalji zahtev za termin"
+          t("sendRequest")
         )}
       </button>
     </form>

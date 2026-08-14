@@ -3,7 +3,10 @@ import Link from "next/link";
 
 import { Chip } from "@/components/ui/chip";
 import { cn } from "@/helpers/cn";
+import type { UiLocale } from "@/i18n/locales";
+import { localizedPublicPath } from "@/lib/routes/public-path";
 import type { Therapist } from "@/types/therapist";
+import { getLocale, getTranslations } from "next-intl/server";
 
 interface TherapistRowProps {
   therapist: Therapist;
@@ -13,11 +16,13 @@ interface TherapistRowProps {
   preload?: boolean;
 }
 
-export function TherapistRow({
+export async function TherapistRow({
   therapist,
   flipped,
   preload = false,
 }: TherapistRowProps) {
+  const t = await getTranslations("public.pages.therapist");
+  const locale = (await getLocale()) as UiLocale;
   return (
     <div className="border-coffee/10 grid grid-cols-1 items-center gap-8 border-t py-16 md:grid-cols-2 md:gap-[72px]">
       <div className={cn(flipped && "md:order-2")}>
@@ -62,10 +67,14 @@ export function TherapistRow({
           ))}
         </div>
         <Link
-          href={`/tim/${therapist.slug}`}
+          href={localizedPublicPath("public.team.detail", {
+            locale,
+            params: { slug: therapist.slug },
+          })}
           className="bg-forest text-canvas hover:bg-forest-hover inline-flex items-center gap-2.5 rounded-full px-[26px] py-3.5 text-[15px] font-semibold transition-colors"
         >
-          Upoznaj {therapist.nameAccusative} <span aria-hidden="true">→</span>
+          {t("meetNamed", { name: therapist.nameAccusative })}{" "}
+          <span aria-hidden="true">→</span>
         </Link>
       </div>
     </div>

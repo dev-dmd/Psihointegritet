@@ -29,9 +29,11 @@ import type { UiLocale } from "@/i18n/locales";
  * - **A planned route is not created until its screen exists.** Planned ids
  *   live in `PLANNED_ROUTES` below — an inventory with no `internal` path, so
  *   `localizedPath` cannot be called with one and cannot mint a link to a 404.
- * - **Public routes are recorded, not activated.** Changing a public path moves
- *   canonical URLs, the sitemap, redirect history and CMS slugs, so it is its
- *   own SEO slice. `PUBLIC_ROUTES` is inventory only.
+ * - **Registered public routes are locale-aware.** Public links render the
+ *   locale's external path and the proxy rewrites both spellings onto the
+ *   existing Serbian physical page. Dynamic content slugs and query values
+ *   remain stable. Canonical/hreflang/sitemap policy remains a separate SEO
+ *   concern; route activation does not invent translated CMS slugs.
  *
  * # Zero behaviour change
  *

@@ -4,13 +4,19 @@ import { getTranslations } from "next-intl/server";
 
 import { footerNavigationGroups } from "@/content/site-navigation";
 import { locationsShortLabel, siteSettings } from "@/content/site-settings";
+import { resolvePublicLocale } from "@/lib/tenant/public-locale";
 
 export async function SiteFooter() {
   const t = await getTranslations("public");
-  const groups = footerNavigationGroups((key) => t(`navigation.links.${key}`), {
-    support: t("footer.supportGroup"),
-    organization: t("footer.organizationGroup"),
-  });
+  const locale = await resolvePublicLocale();
+  const groups = footerNavigationGroups(
+    (key) => t(`navigation.links.${key}`),
+    {
+      support: t("footer.supportGroup"),
+      organization: t("footer.organizationGroup"),
+    },
+    locale,
+  );
   return (
     <footer id="kontakt" className="bg-forest scroll-mt-24">
       <div className="mx-auto max-w-[1536px] px-5 pt-[72px] pb-10 md:px-8">

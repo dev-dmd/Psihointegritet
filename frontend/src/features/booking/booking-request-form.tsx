@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { PublicLink as Link } from "@/components/ui/public-link";
 import { useMemo, useState } from "react";
 
 import { formatRsd } from "@/content/services";

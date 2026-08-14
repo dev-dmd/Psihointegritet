@@ -1,8 +1,10 @@
 "use client";
 
 import { useCallback, useRef } from "react";
+import { useLocale } from "next-intl";
 
 import { cn } from "@/helpers/cn";
+import type { UiLocale } from "@/i18n/locales";
 
 import {
   formatBookingCopy,
@@ -147,6 +149,7 @@ function OfferingCard({
   grow,
   onSelect,
 }: OfferingCardProps) {
+  const locale = useLocale() as UiLocale;
   const formatLabel =
     offering.format === "online" ? copy.onlineLabel : copy.inPersonLabel;
 
@@ -178,7 +181,7 @@ function OfferingCard({
         <span aria-hidden className="mx-1.5">
           ·
         </span>
-        {formatBookingPrice(offering.priceAmount, offering.currency)}
+        {formatBookingPrice(offering.priceAmount, offering.currency, locale)}
       </span>
       {/* Active state is never carried by colour alone (§12). */}
       {isActive ? <span className="sr-only">✓</span> : null}

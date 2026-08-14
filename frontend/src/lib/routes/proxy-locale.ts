@@ -5,6 +5,7 @@ import {
   type PlatformRouteId,
 } from "@/lib/routes/platform-routes";
 import { matchPlatformPath, normalizePathname } from "@/lib/routes/match";
+import { internalPublicPath, matchPublicPath } from "@/lib/routes/public-path";
 import {
   FALLBACK_ORGANIZATION_LOCALE_SETTINGS,
   findOrganizationLocaleSettings,
@@ -90,12 +91,11 @@ function aliasTarget(pathname: string): PlatformRouteId | undefined {
  * rendered — an English workspace whose every URL bounced back to Serbian.
  *
  * Accepting both spellings costs nothing that was actually being bought. The
- * canonical-URL argument for a 308 is an SEO argument, and these are routes
- * behind authentication that carry `noindex`; the URL a user sees is now simply
- * the link they clicked, and a bookmark in the other spelling still resolves,
- * silently, instead of jumping. Public marketing routes are not localized at
- * all yet — when they are, canonicalization is theirs to solve, in the layer
- * that can read the live value.
+ * canonical-URL argument for a 308 is an SEO argument, and workspace routes
+ * carry `noindex`; the URL a user sees is the link they clicked. Registered
+ * public marketing routes follow the same one-page rewrite rule, while their
+ * links choose the active locale's spelling. Canonical/hreflang/sitemap policy
+ * stays in the SEO layer rather than relying on the proxy's build-time locale.
  *
  * Step 3 cannot re-enter: Next runs the proxy once per incoming request, and a
  * rewrite to an internal path does not re-dispatch it.
@@ -117,7 +117,17 @@ export function decideProxyRoute(
   }
 
   const match = matchPlatformPath(normalized);
-  if (match === null) return { kind: "pass" };
+  if (match === null) {
+    const publicMatch = matchPublicPath(normalized);
+    if (publicMatch === null) return { kind: "pass" };
+    const internal = internalPublicPath(
+      publicMatch.routeId,
+      publicMatch.params,
+    );
+    return internal === normalized
+      ? { kind: "pass" }
+      : { kind: "rewrite", internal: internal + search };
+  }
 
   // Rewrite whenever the external path differs from the physical one — not
   // "whenever the locale is not English". The workspace moved to English

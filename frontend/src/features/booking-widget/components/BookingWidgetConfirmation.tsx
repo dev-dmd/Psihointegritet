@@ -1,7 +1,8 @@
 "use client";
 
 import { cn } from "@/helpers/cn";
-import { formatDateSr, formatSlotRangeSr } from "@/helpers/format-date";
+import { useFormatter, useLocale, useTranslations } from "next-intl";
+import type { UiLocale } from "@/i18n/locales";
 import { formatBookingPrice } from "../booking-widget.config";
 import type {
   BookingFormat,
@@ -40,25 +41,30 @@ interface BookingWidgetConfirmationProps {
  * The time half is dropped when no slot time reached us, so the line reads as
  * a date rather than showing a dangling „–" where the hours should be.
  */
-function formatAppointmentLine(details: ConfirmationDetails): string {
-  const when =
-    details.startTime && details.endTime
-      ? formatSlotRangeSr(details.date, details.startTime, details.endTime)
-      : formatDateSr(details.date);
-  const format = details.format === "online" ? "Online" : "Uživo";
-  return `${when} · ${format}`;
-}
-
 // ── Component ───────────────────────────────────────────────────────────────
 
 export function BookingWidgetConfirmation({
   theme,
   details,
 }: BookingWidgetConfirmationProps) {
+  const t = useTranslations("public.bookingWidget");
+  const locale = useLocale() as UiLocale;
+  const format = useFormatter();
   if (!details) return null;
+  const date = format.dateTime(new Date(`${details.date}T12:00:00`), {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  });
+  const time =
+    details.startTime && details.endTime
+      ? ` · ${details.startTime} – ${details.endTime}`
+      : "";
+  const appointmentFormat =
+    details.format === "online" ? t("online") : t("inPerson");
 
   return (
-    <section aria-label="Potvrda zahteva za termin" className="space-y-5">
+    <section aria-label={t("confirmationLabel")} className="space-y-5">
       {/* Treatment name — uppercase, large */}
       <div>
         <h3
@@ -70,11 +76,11 @@ export function BookingWidgetConfirmation({
           {details.treatmentName}
         </h3>
         <p className={cn("mt-3 text-base sm:text-lg", theme.serviceMeta)}>
-          {details.durationMinutes} minuta
+          {t("duration", { count: details.durationMinutes })}
           <span aria-hidden className="text-warm mx-2">
             ·
           </span>
-          {formatBookingPrice(details.price, details.currency)}
+          {formatBookingPrice(details.price, details.currency, locale)}
         </p>
       </div>
 
@@ -86,10 +92,11 @@ export function BookingWidgetConfirmation({
             theme.muted,
           )}
         >
-          Termin
+          {t("appointment")}
         </p>
         <p className={cn("text-[15px] font-medium", theme.body)}>
-          {formatAppointmentLine(details)}
+          {date}
+          {time} · {appointmentFormat}
         </p>
         {details.therapistName ? (
           <p className={cn("text-[13px]", theme.muted)}>
@@ -106,7 +113,7 @@ export function BookingWidgetConfirmation({
             theme.muted,
           )}
         >
-          Podaci
+          {t("details")}
         </p>
         <p className={cn("text-[15px] font-medium", theme.body)}>
           {details.clientName}
@@ -122,10 +129,11 @@ export function BookingWidgetConfirmation({
       {/* Notice */}
       <div className={cn("rounded-xl border p-4", theme.border, theme.muted)}>
         <p className="text-[13px] leading-[1.6]">
-          <strong className={theme.body}>Napomena:</strong> Ovo još nije konačna
-          potvrda termina. Terapeut ili član tima će proveriti dostupnost i
-          poslati potvrdu ili predlog druge mogućnosti na adresu{" "}
-          <span className={theme.body}>{details.clientEmail}</span>.
+          <strong className={theme.body}>{t("noteLabel")}</strong>{" "}
+          {t.rich("note", {
+            address: details.clientEmail,
+            email: (chunks) => <span className={theme.body}>{chunks}</span>,
+          })}
         </p>
       </div>
     </section>

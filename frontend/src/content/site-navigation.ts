@@ -1,3 +1,7 @@
+import type { UiLocale } from "@/i18n/locales";
+import { localizedPublicPath } from "@/lib/routes/public-path";
+import type { PublicRouteId } from "@/lib/routes/platform-routes";
+
 export interface SiteNavLink {
   label: string;
   href: string;
@@ -21,28 +25,37 @@ type LabelResolver = (key: SiteNavigationLabelKey) => string;
 
 const HEADER_NAV_ITEMS: ReadonlyArray<{
   key: SiteNavigationLabelKey;
-  href: string;
+  routeId: PublicRouteId;
 }> = [
-  { key: "support", href: "/pronadji-podrsku" },
-  { key: "therapists", href: "/tim" },
-  { key: "services", href: "/usluge" },
-  { key: "workshops", href: "/radionice" },
-  { key: "knowledge", href: "/znanje" },
-  { key: "compass", href: "/kompas" },
-  { key: "about", href: "/o-nama" },
+  { key: "support", routeId: "public.findSupport" },
+  { key: "therapists", routeId: "public.team.list" },
+  { key: "services", routeId: "public.services.list" },
+  { key: "workshops", routeId: "public.workshops.list" },
+  { key: "knowledge", routeId: "public.knowledge" },
+  { key: "compass", routeId: "public.compass.home" },
+  { key: "about", routeId: "public.about" },
 ];
 
 /** System navigation wording comes from the active UI locale catalogue. */
 export function visibleHeaderNavLinks(
   compassEnabled: boolean,
   label: LabelResolver,
+  locale: UiLocale,
 ): SiteNavLink[] {
   return HEADER_NAV_ITEMS.filter(
     (item) => compassEnabled || item.key !== "compass",
-  ).map((item) => ({ label: label(item.key), href: item.href }));
+  ).map((item) => ({
+    label: label(item.key),
+    href: localizedPublicPath(item.routeId, { locale } as never),
+  }));
 }
 
-export const headerBookingHref = "/zakazi?source=header";
+export function headerBookingHref(locale: UiLocale): string {
+  return localizedPublicPath("public.book", {
+    locale,
+    query: { source: "header" },
+  });
+}
 
 export interface FooterNavigationGroup {
   title: string;
@@ -52,26 +65,31 @@ export interface FooterNavigationGroup {
 export function footerNavigationGroups(
   label: LabelResolver,
   groupTitles: { support: string; organization: string },
+  locale: UiLocale,
 ): FooterNavigationGroup[] {
+  const link = (key: SiteNavigationLabelKey, routeId: PublicRouteId) => ({
+    label: label(key),
+    href: localizedPublicPath(routeId, { locale } as never),
+  });
   return [
     {
       title: groupTitles.support,
       links: [
-        { label: label("support"), href: "/pronadji-podrsku" },
-        { label: label("services"), href: "/usluge" },
-        { label: label("parents"), href: "/podrska-roditeljima" },
-        { label: label("workshops"), href: "/radionice" },
-        { label: label("prices"), href: "/cene" },
+        link("support", "public.findSupport"),
+        link("services", "public.services.list"),
+        link("parents", "public.parentSupport"),
+        link("workshops", "public.workshops.list"),
+        link("prices", "public.pricing"),
       ],
     },
     {
       title: groupTitles.organization,
       links: [
-        { label: label("team"), href: "/tim" },
-        { label: label("about"), href: "/o-nama" },
-        { label: label("knowledge"), href: "/znanje" },
-        { label: label("companies"), href: "/rad-sa-kompanijama" },
-        { label: label("contact"), href: "/kontakt" },
+        link("team", "public.team.list"),
+        link("about", "public.about"),
+        link("knowledge", "public.knowledge"),
+        link("companies", "public.forCompanies"),
+        link("contact", "public.contact"),
       ],
     },
   ];

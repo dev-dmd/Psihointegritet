@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { PublicLink as Link } from "@/components/ui/public-link";
 
 import { JsonLd } from "@/components/shared/json-ld";
 import { CompassStartQuestionsButton } from "@/features/compass/sections/compass-start-questions-button";

@@ -12,6 +12,8 @@ import {
 import { isCompassPublicEnabled } from "@/lib/compass/flags";
 import { AuthMenu } from "@/lib/auth/clerk/auth-menu";
 import { MobileAuthSection } from "@/lib/auth/clerk/mobile-auth-section";
+import { resolvePublicLocale } from "@/lib/tenant/public-locale";
+import { localizedPublicPath } from "@/lib/routes/public-path";
 
 /**
  * Transparent header over the hero plus the scroll-activated sticky pill.
@@ -22,16 +24,20 @@ import { MobileAuthSection } from "@/lib/auth/clerk/mobile-auth-section";
  */
 export async function SiteHeader() {
   const t = await getTranslations("public");
-  const navLinks = visibleHeaderNavLinks(isCompassPublicEnabled(), (key) =>
-    t(`navigation.links.${key}`),
+  const locale = await resolvePublicLocale();
+  const navLinks = visibleHeaderNavLinks(
+    isCompassPublicEnabled(),
+    (key) => t(`navigation.links.${key}`),
+    locale,
   );
+  const bookingHref = headerBookingHref(locale);
 
   return (
     <>
       <header className="absolute inset-x-0 top-0 z-[60] px-4 pt-10 md:pt-[42px]">
         <div className="mx-auto grid max-w-[1536px] grid-cols-[1fr_auto_1fr] items-center gap-6 px-5 md:px-20">
           <Link
-            href="/"
+            href={localizedPublicPath("public.home", { locale })}
             className="col-start-1 flex items-baseline justify-self-start no-underline"
           >
             <span className="text-forest flex max-h-[48px] flex-col items-start gap-[1px] font-serif text-xl leading-none font-bold tracking-[-0.01em] md:text-[32px]">
@@ -62,12 +68,13 @@ export async function SiteHeader() {
           <div className="col-start-3 flex items-center gap-2.5 justify-self-end">
             <AuthMenu />
             <AnimatedCtaLink
-              href={headerBookingHref}
+              href={bookingHref}
               label={t("navigation.book")}
               className="max-[480px]:hidden"
             />
             <MobileMenu
               links={navLinks}
+              bookingHref={bookingHref}
               bookLabel={t("navigation.book")}
               authSlot={<MobileAuthSection />}
             />
@@ -76,7 +83,10 @@ export async function SiteHeader() {
       </header>
 
       <StickyBar>
-        <Link href="/" className="flex items-baseline no-underline">
+        <Link
+          href={localizedPublicPath("public.home", { locale })}
+          className="flex items-baseline no-underline"
+        >
           <span className="text-forest font-serif text-[19px] font-medium tracking-[0.01em]">
             P
           </span>
@@ -101,12 +111,13 @@ export async function SiteHeader() {
         </nav>
         <AuthMenu size="sm" />
         <AnimatedCtaLink
-          href={headerBookingHref}
+          href={bookingHref}
           label={t("navigation.book")}
           size="sm"
         />
         <MobileMenu
           links={navLinks}
+          bookingHref={bookingHref}
           bookLabel={t("navigation.book")}
           variant="solid"
           authSlot={<MobileAuthSection />}

@@ -1,34 +1,9 @@
 import type {
   BookingFormat,
   BookingSlot,
-  BookingWidgetCopy,
   BookingWidgetSearchContext,
 } from "./booking-widget.types";
-
-export const defaultBookingWidgetCopy: BookingWidgetCopy = {
-  title: "Zakažite termin",
-  requestNotice: "Izbor termina je zahtev; terapeut ga potvrđuje.",
-  nextAvailableLabel: "Sledeći dostupni termini",
-  cancelLabel: "Otkaži",
-  notifyLabel: "Obavesti me",
-  bookLabel: "Zakaži",
-  onlineLabel: "Online",
-  inPersonLabel: "Uživo",
-  offeringsHeadingTemplate: "Usluge kod {name}",
-  otherTherapistsLabel: "Ostali terapeuti",
-  yourSelectionLabel: "Vaš izbor",
-  backLabel: "Nazad",
-  backAriaLabel: "Nazad na preporuke",
-  previousOfferingLabel: "Prethodna usluga",
-  nextOfferingLabel: "Sledeća usluga",
-  previousTherapistsLabel: "Prethodni terapeuti",
-  nextTherapistsLabel: "Sledeći terapeuti",
-  loadingOfferingsLabel: "Učitavanje usluga…",
-  noOfferingsMessage:
-    "Za izabranog terapeuta trenutno nema dostupnih usluga. Izaberite drugog terapeuta.",
-  availabilityErrorMessage:
-    "Termini trenutno nisu mogli da se učitaju. Pokušajte ponovo.",
-};
+import type { UiLocale } from "@/i18n/locales";
 
 /** Fills a single `{name}` placeholder without touching the rest of the copy. */
 export function formatBookingCopy(
@@ -39,31 +14,6 @@ export function formatBookingCopy(
     key in values ? (values[key] ?? match) : match,
   );
 }
-
-export const bookingWeekdayLabels = [
-  "Pon",
-  "Uto",
-  "Sre",
-  "Čet",
-  "Pet",
-  "Sub",
-  "Ned",
-] as const;
-
-export const bookingMonthLabels = [
-  "Januar",
-  "Februar",
-  "Mart",
-  "April",
-  "Maj",
-  "Jun",
-  "Jul",
-  "Avgust",
-  "Septembar",
-  "Oktobar",
-  "Novembar",
-  "Decembar",
-] as const;
 
 export function parseBookingWidgetSearchParams(
   searchParams: Pick<URLSearchParams, "get">,
@@ -82,8 +32,12 @@ export function isBookingFormat(value: string | null): value is BookingFormat {
   return value === "online" || value === "uzivo";
 }
 
-export function formatBookingPrice(price: number, currency: string): string {
-  return new Intl.NumberFormat("sr-Latn-RS", {
+export function formatBookingPrice(
+  price: number,
+  currency: string,
+  locale: UiLocale = "sr-Latn",
+): string {
+  return new Intl.NumberFormat(locale === "en" ? "en-US" : "sr-Latn-RS", {
     maximumFractionDigits: 0,
   })
     .format(price)

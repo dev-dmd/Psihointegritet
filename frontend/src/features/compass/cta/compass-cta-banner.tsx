@@ -1,22 +1,27 @@
+"use client";
+
 import Image from "next/image";
+import { useTranslations } from "next-intl";
 
 import { cn } from "@/helpers/cn";
 
 import type { CompassCtaScheme, CompassCtaVariantId } from "./cta-schemes";
 
-const CTA_LABEL = "Pokreni Kompas";
-
-/** Fixed copy from the handoff — deliberately free of diagnostic language. */
-const LEAD_FULL =
-  "Odgovorite na nekoliko kratkih pitanja kako bismo vam predložili sadržaje koji bi vam trenutno mogli biti korisni. Kompas nije dijagnostički alat.";
-const LEAD_CENTERED =
-  "Nekoliko kratkih pitanja, pa vam predlažemo sadržaje i alate koji bi vam sada mogli pomoći. Bez testa, bez dijagnoze.";
-const LEAD_STRIP =
-  "Kratka pitanja koja vas usmeravaju ka sadržaju i alatima. Bez dijagnoze.";
-const ASIDE =
-  "Pomaže vam da razumete svoju situaciju i usmerava vas ka edukativnom sadržaju i alatima.";
-
 const LOGO = "/images/kompas-logo.png";
+
+interface CompassBannerCopy {
+  titleSuffix: string;
+  logoAlt: string;
+  action: string;
+  leadFull: string;
+  leadCentered: string;
+  leadStrip: string;
+  aside: string;
+  durationLong: string;
+  durationShort: string;
+  skippable: string;
+  anonymous: string;
+}
 
 /**
  * Band decoration: three blurred aurora blobs, up to three rings and a corner
@@ -93,10 +98,12 @@ function BandDecoration({
 function CtaButton({
   scheme,
   onStart,
+  label,
   className,
 }: {
   scheme: CompassCtaScheme;
   onStart: () => void;
+  label: string;
   className?: string;
 }) {
   return (
@@ -109,7 +116,7 @@ function CtaButton({
         className,
       )}
     >
-      {CTA_LABEL}
+      {label}
       <span aria-hidden className="text-[15px]">
         →
       </span>
@@ -119,9 +126,11 @@ function CtaButton({
 
 function Title({
   scheme,
+  suffix,
   className,
 }: {
   scheme: CompassCtaScheme;
+  suffix: string;
   className?: string;
 }) {
   return (
@@ -133,7 +142,7 @@ function Title({
       )}
     >
       <em className={cn("font-medium not-italic", scheme.accent)}>Kompas</em>{" "}
-      mentalnog zdravlja
+      {suffix}
     </h3>
   );
 }
@@ -141,13 +150,14 @@ function Title({
 interface VariantProps {
   scheme: CompassCtaScheme;
   onStart: () => void;
+  copy: CompassBannerCopy;
 }
 
 /**
  * Variant A — split panel: the logo sits inside two frosted circles on the
  * left, the bordered panel on the right splits again into copy and aside.
  */
-function VariantA({ scheme, onStart }: VariantProps) {
+function VariantA({ scheme, onStart, copy }: VariantProps) {
   return (
     <div className="relative mx-auto grid max-w-[1536px] items-center gap-2.5 px-[18px] py-[26px] md:grid-cols-[minmax(180px,1fr)_2fr] md:items-stretch md:gap-[26px] md:px-[30px] md:py-[38px]">
       <div className="flex items-center justify-center p-1.5">
@@ -170,7 +180,7 @@ function VariantA({ scheme, onStart }: VariantProps) {
           />
           <Image
             src={LOGO}
-            alt="Kompas mentalnog zdravlja"
+            alt={copy.logoAlt}
             width={512}
             height={512}
             sizes="(min-width: 768px) 288px, 200px"
@@ -190,6 +200,7 @@ function VariantA({ scheme, onStart }: VariantProps) {
           <div>
             <Title
               scheme={scheme}
+              suffix={copy.titleSuffix}
               className="text-[24px] md:text-[30px] lg:text-[36px]"
             />
             <p
@@ -198,7 +209,7 @@ function VariantA({ scheme, onStart }: VariantProps) {
                 scheme.body,
               )}
             >
-              {LEAD_FULL}
+              {copy.leadFull}
             </p>
           </div>
 
@@ -209,11 +220,12 @@ function VariantA({ scheme, onStart }: VariantProps) {
             )}
           >
             <p className={cn("text-[14px] leading-[1.6]", scheme.body)}>
-              {ASIDE}
+              {copy.aside}
             </p>
             <CtaButton
               scheme={scheme}
               onStart={onStart}
+              label={copy.action}
               className="mt-0.5 self-center md:mt-2.5"
             />
           </div>
@@ -224,7 +236,7 @@ function VariantA({ scheme, onStart }: VariantProps) {
 }
 
 /** Variant B — centred block with the logo on top and a meta row underneath. */
-function VariantB({ scheme, onStart }: VariantProps) {
+function VariantB({ scheme, onStart, copy }: VariantProps) {
   return (
     <div className="relative mx-auto flex max-w-[720px] flex-col items-center gap-4 px-[22px] pt-[34px] pb-[30px] text-center">
       <Image
@@ -235,11 +247,20 @@ function VariantB({ scheme, onStart }: VariantProps) {
         sizes="192px"
         className="h-auto w-[192px] drop-shadow-[0_14px_26px_rgba(0,0,0,0.3)]"
       />
-      <Title scheme={scheme} className="text-[24px] md:text-[36px]" />
+      <Title
+        scheme={scheme}
+        suffix={copy.titleSuffix}
+        className="text-[24px] md:text-[36px]"
+      />
       <p className={cn("text-[14px] leading-[1.65] text-pretty", scheme.body)}>
-        {LEAD_CENTERED}
+        {copy.leadCentered}
       </p>
-      <CtaButton scheme={scheme} onStart={onStart} className="self-center" />
+      <CtaButton
+        scheme={scheme}
+        onStart={onStart}
+        label={copy.action}
+        className="self-center"
+      />
 
       <div
         className={cn(
@@ -248,16 +269,16 @@ function VariantB({ scheme, onStart }: VariantProps) {
           scheme.body,
         )}
       >
-        <span>≈ 2 minuta</span>
-        <span>Pitanja možete preskočiti</span>
-        <span>Anonimno</span>
+        <span>{copy.durationLong}</span>
+        <span>{copy.skippable}</span>
+        <span>{copy.anonymous}</span>
       </div>
     </div>
   );
 }
 
 /** Variant C — compact strip: circular badge, two-line copy, meta and CTA. */
-function VariantC({ scheme, onStart }: VariantProps) {
+function VariantC({ scheme, onStart, copy }: VariantProps) {
   return (
     <div className="relative mx-auto flex max-w-[1536px] flex-wrap items-center gap-x-5 gap-y-4 px-5 py-[18px]">
       <div
@@ -278,9 +299,13 @@ function VariantC({ scheme, onStart }: VariantProps) {
       </div>
 
       <div className="min-w-[200px] flex-[1_1_240px]">
-        <Title scheme={scheme} className="text-[20px] md:text-[26px]" />
+        <Title
+          scheme={scheme}
+          suffix={copy.titleSuffix}
+          className="text-[20px] md:text-[26px]"
+        />
         <p className={cn("mt-1.5 text-[13.5px] leading-[1.55]", scheme.body)}>
-          {LEAD_STRIP}
+          {copy.leadStrip}
         </p>
         <p
           className={cn(
@@ -288,7 +313,7 @@ function VariantC({ scheme, onStart }: VariantProps) {
             scheme.body,
           )}
         >
-          ≈ 2 min · možete preskočiti
+          {copy.durationShort} · {copy.skippable}
         </p>
       </div>
 
@@ -296,6 +321,7 @@ function VariantC({ scheme, onStart }: VariantProps) {
         <CtaButton
           scheme={scheme}
           onStart={onStart}
+          label={copy.action}
           className="w-full justify-center self-stretch md:w-auto md:justify-start md:self-start"
         />
       </div>
@@ -319,6 +345,21 @@ export function CompassCtaBanner({
   scheme: CompassCtaScheme;
   onStart: () => void;
 }) {
+  const t = useTranslations("public.compassBanner");
+  const copy: CompassBannerCopy = {
+    titleSuffix: t("titleSuffix"),
+    logoAlt: t("logoAlt"),
+    action: t("action"),
+    leadFull: t("leadFull"),
+    leadCentered: t("leadCentered"),
+    leadStrip: t("leadStrip"),
+    aside: t("aside"),
+    durationLong: t("durationLong"),
+    durationShort: t("durationShort"),
+    skippable: t("skippable"),
+    anonymous: t("anonymous"),
+  };
+
   return (
     <div
       className={cn(
@@ -329,19 +370,19 @@ export function CompassCtaBanner({
       {variant === "A" ? (
         <>
           <BandDecoration scheme={scheme} withAurora3 withRing2 />
-          <VariantA scheme={scheme} onStart={onStart} />
+          <VariantA scheme={scheme} onStart={onStart} copy={copy} />
         </>
       ) : null}
       {variant === "B" ? (
         <>
           <BandDecoration scheme={scheme} />
-          <VariantB scheme={scheme} onStart={onStart} />
+          <VariantB scheme={scheme} onStart={onStart} copy={copy} />
         </>
       ) : null}
       {variant === "C" ? (
         <>
           <BandDecoration scheme={scheme} withAurora3 />
-          <VariantC scheme={scheme} onStart={onStart} />
+          <VariantC scheme={scheme} onStart={onStart} copy={copy} />
         </>
       ) : null}
     </div>

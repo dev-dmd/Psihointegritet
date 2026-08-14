@@ -44,7 +44,7 @@ describe("decideProxyRoute", () => {
     }
   });
 
-  it("passes public and unregistered paths through", () => {
+  it("passes physical public and unregistered paths through", () => {
     for (const path of [
       "/",
       "/tim/maria-bullock",
@@ -53,6 +53,19 @@ describe("decideProxyRoute", () => {
     ]) {
       expect(decideProxyRoute(path, "", SR)).toEqual({ kind: "pass" });
     }
+  });
+
+  it("rewrites English public paths onto the existing public pages", () => {
+    expect(
+      decideProxyRoute("/team/maria-bullock", "?source=profile", "en"),
+    ).toEqual({
+      kind: "rewrite",
+      internal: "/tim/maria-bullock?source=profile",
+    });
+    expect(decideProxyRoute("/book", "?source=header", "en")).toEqual({
+      kind: "rewrite",
+      internal: "/zakazi?source=header",
+    });
   });
 
   it("rewrites a Serbian workspace path onto the English physical route", () => {

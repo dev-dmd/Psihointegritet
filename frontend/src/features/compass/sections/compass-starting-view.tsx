@@ -1,5 +1,5 @@
 import type { Route } from "next";
-import Link from "next/link";
+import { PublicLink as Link } from "@/components/ui/public-link";
 
 import type { RoutablePublicTaxonomyTerm } from "@/lib/compass/types";
 

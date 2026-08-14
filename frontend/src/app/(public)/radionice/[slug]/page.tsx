@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import { PublicLink as Link } from "@/components/ui/public-link";
 import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 

@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { PublicLink as Link } from "@/components/ui/public-link";
 
 import { CompassQuizLauncher } from "../quiz/compass-quiz-launcher";
 

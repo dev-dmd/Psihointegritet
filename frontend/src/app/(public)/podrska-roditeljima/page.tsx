@@ -1,5 +1,5 @@
 import type { Route } from "next";
-import Link from "next/link";
+import { PublicLink as Link } from "@/components/ui/public-link";
 import { getTranslations } from "next-intl/server";
 
 import { PageHero } from "@/components/shared/page-hero";

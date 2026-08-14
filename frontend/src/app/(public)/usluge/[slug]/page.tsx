@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import type { Route } from "next";
-import Link from "next/link";
+import { PublicLink as Link } from "@/components/ui/public-link";
 import { notFound } from "next/navigation";
 import { getFormatter, getTranslations } from "next-intl/server";
 

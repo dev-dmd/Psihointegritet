@@ -1,6 +1,9 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
+import { withIntl } from "@/test-support/intl";
+import type { UiLocale } from "@/i18n/locales";
+
 import { bookingWidgetThemes } from "./booking-widget.variants";
 import {
   BookingWidgetConfirmation,
@@ -27,12 +30,18 @@ function details(
   };
 }
 
-function renderConfirmation(overrides: Partial<ConfirmationDetails> = {}) {
+function renderConfirmation(
+  overrides: Partial<ConfirmationDetails> = {},
+  locale: UiLocale = "sr-Latn",
+) {
   render(
-    <BookingWidgetConfirmation
-      theme={bookingWidgetThemes.glass}
-      details={details(overrides)}
-    />,
+    withIntl(
+      <BookingWidgetConfirmation
+        theme={bookingWidgetThemes.glass}
+        details={details(overrides)}
+      />,
+      locale,
+    ),
   );
 }
 
@@ -40,7 +49,7 @@ describe("booking confirmation preview", () => {
   it("states the format next to the date and time", () => {
     renderConfirmation();
     expect(
-      screen.getByText("11.08.2026 · 09:00 – 10:00 · Online"),
+      screen.getByText("11.08.2026. · 09:00 – 10:00 · Onlajn"),
     ).toBeInTheDocument();
   });
 
@@ -53,7 +62,20 @@ describe("booking confirmation preview", () => {
     // Reproduces the „11.08.2026 · –" line: no slot time ever reached us.
     renderConfirmation({ startTime: "", endTime: "" });
 
-    expect(screen.getByText("11.08.2026 · Online")).toBeInTheDocument();
+    expect(screen.getByText("11.08.2026. · Onlajn")).toBeInTheDocument();
     expect(screen.queryByText(/–/)).not.toBeInTheDocument();
+  });
+
+  it("uses the English catalog and locale formatting", () => {
+    renderConfirmation({ format: "uzivo" }, "en");
+
+    expect(
+      screen.getByRole("region", {
+        name: "Appointment request confirmation",
+      }),
+    ).toBeInTheDocument();
+    expect(screen.getByText("Appointment")).toBeInTheDocument();
+    expect(screen.getByText(/· In person$/)).toBeInTheDocument();
+    expect(screen.getByText(/4,000 RSD/)).toBeInTheDocument();
   });
 });
