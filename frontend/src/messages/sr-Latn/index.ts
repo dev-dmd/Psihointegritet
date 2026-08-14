@@ -5,6 +5,7 @@ import { common } from "./common";
 import { content } from "./content";
 import { errors } from "./errors";
 import { guidance } from "./guidance";
+import { publicUi } from "./public";
 import { screens } from "./screens";
 import { superadmin } from "./superadmin";
 import { workspace } from "./workspace";
@@ -22,6 +23,7 @@ export const srLatnMessages: PlatformMessages = {
   content,
   errors,
   guidance,
+  public: publicUi,
   screens,
   superadmin,
   workspace,

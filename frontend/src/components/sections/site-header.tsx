@@ -1,5 +1,6 @@
 import type { Route } from "next";
 import Link from "next/link";
+import { getTranslations } from "next-intl/server";
 
 import { StickyBar } from "@/components/motion/sticky-bar";
 import { MobileMenu } from "@/components/sections/mobile-menu";
@@ -19,8 +20,11 @@ import { MobileAuthSection } from "@/lib/auth/clerk/mobile-auth-section";
  * page (app/(public)/layout.tsx), so hrefs are absolute and go through
  * next/link — no full page loads.
  */
-export function SiteHeader() {
-  const navLinks = visibleHeaderNavLinks(isCompassPublicEnabled());
+export async function SiteHeader() {
+  const t = await getTranslations("public");
+  const navLinks = visibleHeaderNavLinks(isCompassPublicEnabled(), (key) =>
+    t(`navigation.links.${key}`),
+  );
 
   return (
     <>
@@ -33,7 +37,7 @@ export function SiteHeader() {
             <span className="text-forest flex max-h-[48px] flex-col items-start gap-[1px] font-serif text-xl leading-none font-bold tracking-[-0.01em] md:text-[32px]">
               <span>Psihointegritet</span>
               <small className="text-forest-lift hidden text-[13px] leading-none font-normal tracking-[0.01em] md:block">
-                Digitalni centar za mentalno zdravlje
+                {t("brand.tagline")}
               </small>
             </span>
             <span
@@ -42,7 +46,7 @@ export function SiteHeader() {
             />
           </Link>
           <nav
-            aria-label="Glavna navigacija"
+            aria-label={t("navigation.mainLabel")}
             className="col-start-2 hidden items-center gap-[clamp(12px,1.4vw,26px)] justify-self-center rounded-full bg-gray-300/32 px-[clamp(18px,1.8vw,28px)] py-[13px] whitespace-nowrap backdrop-blur-[14px] lg:flex"
           >
             {navLinks.map((link) => (
@@ -59,10 +63,14 @@ export function SiteHeader() {
             <AuthMenu />
             <AnimatedCtaLink
               href={headerBookingHref}
-              label="Zakaži termin"
+              label={t("navigation.book")}
               className="max-[480px]:hidden"
             />
-            <MobileMenu links={navLinks} authSlot={<MobileAuthSection />} />
+            <MobileMenu
+              links={navLinks}
+              bookLabel={t("navigation.book")}
+              authSlot={<MobileAuthSection />}
+            />
           </div>
         </div>
       </header>
@@ -78,7 +86,7 @@ export function SiteHeader() {
           />
         </Link>
         <nav
-          aria-label="Brza navigacija"
+          aria-label={t("navigation.quickLabel")}
           className="hidden items-center gap-[clamp(12px,1.2vw,22px)] lg:flex"
         >
           {navLinks.map((link) => (
@@ -94,11 +102,12 @@ export function SiteHeader() {
         <AuthMenu size="sm" />
         <AnimatedCtaLink
           href={headerBookingHref}
-          label="Zakaži termin"
+          label={t("navigation.book")}
           size="sm"
         />
         <MobileMenu
           links={navLinks}
+          bookLabel={t("navigation.book")}
           variant="solid"
           authSlot={<MobileAuthSection />}
         />

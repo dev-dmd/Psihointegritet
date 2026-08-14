@@ -74,6 +74,7 @@ describe("catalogue parity", () => {
    */
   const PROPER_NOUNS = new Set([
     "workspace.brand.name", // the centre's own name
+    "public.footer.organizationGroup", // the centre's own name
     "workspace.brand.panel", // "Control Center" — product name, used as-is in Serbian
     "workspace.superadmin.panel", // ditto
     "workspace.superadmin.nav.features", // "Feature Gates" — platform term, not translated

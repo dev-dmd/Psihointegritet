@@ -1,5 +1,3 @@
-import { headerNavLinks, type SiteNavLink } from "@/content/site-navigation";
-
 /**
  * Typed staging content for the public homepage, extracted from the Claude
  * Design handoff. Ekavica is the site-wide default (T9), now without exception:
@@ -9,7 +7,10 @@ import { headerNavLinks, type SiteNavLink } from "@/content/site-navigation";
  * CMS/backend data replaces the fallback in a later milestone.
  */
 
-export type NavLink = SiteNavLink;
+export interface NavLink {
+  label: string;
+  href: string;
+}
 
 export type TrustIcon = "screen" | "pin" | "people" | "shield";
 
@@ -66,4 +67,3 @@ export interface FaqItem {
  * public page (see app/(public)/layout.tsx), so „#usluge" alone would be dead
  * everywhere except the homepage.
  */
-export const navLinks: NavLink[] = headerNavLinks;

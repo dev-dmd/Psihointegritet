@@ -3,26 +3,43 @@ export interface SiteNavLink {
   href: string;
 }
 
-/** The sticky-header destinations remain deliberately compact. */
-export const headerNavLinks: SiteNavLink[] = [
-  { label: "Pronađi podršku", href: "/pronadji-podrsku" },
-  { label: "Terapeuti", href: "/tim" },
-  { label: "Usluge", href: "/usluge" },
-  { label: "Radionice", href: "/radionice" },
-  { label: "Znanje i resursi", href: "/znanje" },
-  { label: "Kompas", href: "/kompas" },
-  { label: "O nama", href: "/o-nama" },
+export type SiteNavigationLabelKey =
+  | "support"
+  | "therapists"
+  | "services"
+  | "workshops"
+  | "knowledge"
+  | "compass"
+  | "about"
+  | "parents"
+  | "prices"
+  | "team"
+  | "companies"
+  | "contact";
+
+type LabelResolver = (key: SiteNavigationLabelKey) => string;
+
+const HEADER_NAV_ITEMS: ReadonlyArray<{
+  key: SiteNavigationLabelKey;
+  href: string;
+}> = [
+  { key: "support", href: "/pronadji-podrsku" },
+  { key: "therapists", href: "/tim" },
+  { key: "services", href: "/usluge" },
+  { key: "workshops", href: "/radionice" },
+  { key: "knowledge", href: "/znanje" },
+  { key: "compass", href: "/kompas" },
+  { key: "about", href: "/o-nama" },
 ];
 
-/**
- * Header links minus destinations that are switched off for this environment.
- * The Kompas entry follows D-059: it disappears wherever `/kompas` answers 404,
- * so the navigation never advertises a route that is not activated.
- */
-export function visibleHeaderNavLinks(compassEnabled: boolean): SiteNavLink[] {
-  return compassEnabled
-    ? headerNavLinks
-    : headerNavLinks.filter((link) => link.href !== "/kompas");
+/** System navigation wording comes from the active UI locale catalogue. */
+export function visibleHeaderNavLinks(
+  compassEnabled: boolean,
+  label: LabelResolver,
+): SiteNavLink[] {
+  return HEADER_NAV_ITEMS.filter(
+    (item) => compassEnabled || item.key !== "compass",
+  ).map((item) => ({ label: label(item.key), href: item.href }));
 }
 
 export const headerBookingHref = "/zakazi?source=header";
@@ -32,26 +49,30 @@ export interface FooterNavigationGroup {
   links: SiteNavLink[];
 }
 
-/** Every link below has a public route in this R1 slice. */
-export const footerNavigationGroups: FooterNavigationGroup[] = [
-  {
-    title: "Podrška",
-    links: [
-      { label: "Pronađi podršku", href: "/pronadji-podrsku" },
-      { label: "Usluge", href: "/usluge" },
-      { label: "Roditeljska podrška", href: "/podrska-roditeljima" },
-      { label: "Radionice", href: "/radionice" },
-      { label: "Cene", href: "/cene" },
-    ],
-  },
-  {
-    title: "Psihointegritet",
-    links: [
-      { label: "Tim", href: "/tim" },
-      { label: "O nama", href: "/o-nama" },
-      { label: "Znanje i resursi", href: "/znanje" },
-      { label: "Rad sa kompanijama", href: "/rad-sa-kompanijama" },
-      { label: "Kontakt", href: "/kontakt" },
-    ],
-  },
-];
+export function footerNavigationGroups(
+  label: LabelResolver,
+  groupTitles: { support: string; organization: string },
+): FooterNavigationGroup[] {
+  return [
+    {
+      title: groupTitles.support,
+      links: [
+        { label: label("support"), href: "/pronadji-podrsku" },
+        { label: label("services"), href: "/usluge" },
+        { label: label("parents"), href: "/podrska-roditeljima" },
+        { label: label("workshops"), href: "/radionice" },
+        { label: label("prices"), href: "/cene" },
+      ],
+    },
+    {
+      title: groupTitles.organization,
+      links: [
+        { label: label("team"), href: "/tim" },
+        { label: label("about"), href: "/o-nama" },
+        { label: label("knowledge"), href: "/znanje" },
+        { label: label("companies"), href: "/rad-sa-kompanijama" },
+        { label: label("contact"), href: "/kontakt" },
+      ],
+    },
+  ];
+}

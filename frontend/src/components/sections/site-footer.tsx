@@ -1,10 +1,16 @@
 import type { Route } from "next";
 import Link from "next/link";
+import { getTranslations } from "next-intl/server";
 
 import { footerNavigationGroups } from "@/content/site-navigation";
 import { locationsShortLabel, siteSettings } from "@/content/site-settings";
 
-export function SiteFooter() {
+export async function SiteFooter() {
+  const t = await getTranslations("public");
+  const groups = footerNavigationGroups((key) => t(`navigation.links.${key}`), {
+    support: t("footer.supportGroup"),
+    organization: t("footer.organizationGroup"),
+  });
   return (
     <footer id="kontakt" className="bg-forest scroll-mt-24">
       <div className="mx-auto max-w-[1536px] px-5 pt-[72px] pb-10 md:px-8">
@@ -20,11 +26,10 @@ export function SiteFooter() {
               />
             </div>
             <p className="text-canvas/62 mb-6 max-w-[340px] text-[15px] leading-[1.65]">
-              Digitalni centar za mentalno zdravlje. Psihoterapija, savetovanje,
-              radionice i edukativni sadržaji — na jednom mestu.
+              {t("footer.description")}
             </p>
             <div className="text-canvas/55 text-sm leading-[1.9]">
-              {locationsShortLabel} · online i uživo
+              {t("footer.formats", { locations: locationsShortLabel })}
               <br />
               <a
                 href={`mailto:${siteSettings.contactEmail}`}
@@ -34,7 +39,7 @@ export function SiteFooter() {
               </a>
             </div>
           </div>
-          {footerNavigationGroups.map((group) => (
+          {groups.map((group) => (
             <div key={group.title}>
               <div className="text-sage mb-[18px] text-[11.5px] font-semibold tracking-[0.14em] uppercase">
                 {group.title}
@@ -54,12 +59,9 @@ export function SiteFooter() {
           ))}
         </div>
         <div className="flex flex-wrap items-center justify-between gap-6 pt-7">
-          <div className="text-canvas/45 text-[13px]">
-            © 2026 Psihointegritet. Sva prava zadržana.
-          </div>
+          <div className="text-canvas/45 text-[13px]">{t("footer.rights")}</div>
           <div className="text-canvas/40 max-w-[520px] text-[12.5px]">
-            Sadržaji na ovoj stranici imaju edukativnu svrhu i ne predstavljaju
-            zamenu za individualni razgovor sa stručnom osobom.
+            {t("footer.disclaimer")}
           </div>
         </div>
       </div>

@@ -25,8 +25,9 @@ describe("public Kompas activation (D-059)", () => {
   });
 
   it("drops the header link when Kompas is off and keeps every other one", () => {
-    const enabled = visibleHeaderNavLinks(true);
-    const disabled = visibleHeaderNavLinks(false);
+    const label = (key: string) => key;
+    const enabled = visibleHeaderNavLinks(true, label);
+    const disabled = visibleHeaderNavLinks(false, label);
 
     expect(enabled.some((link) => link.href === "/kompas")).toBe(true);
     expect(disabled.some((link) => link.href === "/kompas")).toBe(false);
