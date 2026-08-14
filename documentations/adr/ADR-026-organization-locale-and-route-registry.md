@@ -1,6 +1,6 @@
 # ADR-026 — Jezik organizacije, rendering ugovor i registar ruta
 
-**Status:** Accepted · **Datum:** 2026-08-11 · **Poslednja izmena:** 2026-08-13
+**Status:** Accepted · **Datum:** 2026-08-11 · **Poslednja izmena:** 2026-08-14
 **Odluke:** D-077 (+ Amandmani 1–6)
 **Menja:** D-067, O-27, T9 · **Ne dira:** D-055, ADR-023 granicu izolacije
 **Aktivni plan isporuke:** `documentations/i18n/03_I18N_DEMO_CONTENT_IMPLEMENTATION_PLAN_v1_0.md`
@@ -28,12 +28,12 @@ ide isključivo iz verifikovane organizacije; **`Accept-Language` se ne koristi 
 
 ### 2.1 Ko bira jezik (Amandman 2)
 
-| Uloga | Bira |
-|---|---|
-| superadmin | **svoj** jezik — lična platformska preferenca |
-| org_admin | `ui_locale` organizacije; javni sajt ga takođe prati |
-| terapeut | ne bira, prati organizaciju |
-| klijent | ne bira |
+| Uloga      | Bira                                                 |
+| ---------- | ---------------------------------------------------- |
+| superadmin | **svoj** jezik — lična platformska preferenca        |
+| org_admin  | `ui_locale` organizacije; javni sajt ga takođe prati |
+| terapeut   | ne bira, prati organizaciju                          |
+| klijent    | ne bira                                              |
 
 Superadmin uz to **sme da podesi jezik bilo koje organizacije** — kao ispravka kad
 org_admin ne zna kako ili je pogrešio. Operatorska intervencija, ne svakodnevna radnja:
@@ -55,12 +55,12 @@ fallback. Ovaj milestone ne uvodi user migraciju i ne širi superadmin i18n scop
 Prava odluka nije „SSG ili SSR za sve", nego **koji tip stranice sme da zavisi od request
 host/header konteksta**.
 
-| Površina | Rendering | Sme zavisiti od request-a |
-|---|---|---|
-| Javne informativne stranice | SSG | **Ne** |
-| CMS sadržaj, Kompas taksonomija | ISR + on-demand revalidation | **Ne** |
-| Booking / Intake | statički shell + dinamički deo | Ne za shell |
-| Workspace, klijentski panel, superadmin | SSR/dynamic | Da |
+| Površina                                | Rendering                      | Sme zavisiti od request-a |
+| --------------------------------------- | ------------------------------ | ------------------------- |
+| Javne informativne stranice             | SSG                            | **Ne**                    |
+| CMS sadržaj, Kompas taksonomija         | ISR + on-demand revalidation   | **Ne**                    |
+| Booking / Intake                        | statički shell + dinamički deo | Ne za shell               |
+| Workspace, klijentski panel, superadmin | SSR/dynamic                    | Da                        |
 
 **Dva imenovana načina čitanja organizacije ostaju odvojena** (`lib/tenant/`), da javna
 površina zadrži SSG/ISR, a autentifikovana površina read-your-own-writes ponašanje:
@@ -116,11 +116,11 @@ Superadmin rute ostaju locale-neutralne. Javne marketing rute, public language s
 
 ## 6. Sadržaj vs poruke — granica
 
-| | Ide u | Prevodi se |
-|---|---|---|
-| Sistemski UI (nav, statusi, validacije, email) | `src/messages/` | da |
-| Tenant-authored sadržaj | CMS | **nikad** |
-| **Fallback** sadržaj (`src/content/`) | `src/content/<locale>/` | **da — kao placeholder** |
+|                                                | Ide u                   | Prevodi se               |
+| ---------------------------------------------- | ----------------------- | ------------------------ |
+| Sistemski UI (nav, statusi, validacije, email) | `src/messages/`         | da                       |
+| Tenant-authored sadržaj                        | CMS                     | **nikad**                |
+| **Fallback** sadržaj (`src/content/`)          | `src/content/<locale>/` | **da — kao placeholder** |
 
 Fallback se prevodi jer nije tenantov: pokazuje adminu čemu polje služi i na **kojoj dužini**,
 što je važno jer CMS ograničava broj znakova po sistemskom polju da se dizajn ne naruši.
@@ -173,9 +173,18 @@ auditiraju. Endpoint postoji jer frontend mora da zna jezik pri SSG/ISR renderu,
 stranica i inače bi padao kad god API nije gore — što se već desilo jednom, na
 `/kompas/oblasti`.
 
-**Posle čuvanja ide `router.refresh()`.** Jezik živi u server stablu — labele navigacije,
-`<html lang>` i svaki href iz `localizedPath` — pa ažuriranje samo query keša ostavlja sve
-to renderovano na starom jeziku dok korisnik ručno ne osveži.
+**Posle čuvanja menja se history pa ide tačno jedan `router.refresh()`.** Jezik živi u
+server stablu — labele navigacije, `<html lang>` i svaki href iz `localizedPath` — pa
+ažuriranje samo query keša ostavlja sve to renderovano na starom jeziku. Ako se lokalizovani
+pathname menja, klijent prvo poziva
+`window.history.replaceState(window.history.state, "", target + search + hash)`, čime čuva
+query parametre i sinhronizuje `usePathname`, a zatim u jednom transition-u poziva
+`router.refresh()` da dobije novo Server Component stablo i `NextIntlClientProvider`.
+
+`router.replace()` bez refresh-a nije dovoljan jer App Router čuva shared layout. Kombinacija
+`router.replace()` + `router.refresh()` je zabranjena jer uvodi dve konkurentne router
+operacije. `window.location.reload/replace`, timeout i `requestAnimationFrame` nisu deo
+ugovora.
 
 ## 6.3 Zašto proxy ne preusmerava na locale (Amandman 3, 2026-08-12)
 
@@ -210,11 +219,11 @@ manje ne sme da nadjačava sloj koji vidi više.
 
 ## 6.4 Dve vrednosti, različite odgovornosti (Amandmani 4 i 5)
 
-| Podešavanje | Vlasnik | Primena |
-| --- | --- | --- |
-| `ui_locale` | org_admin | Jedini organization-scoped render locale; odmah, bez deploy-a |
-| `default_content_locale` | organization konfiguracija | Creation stamp novog tenant CMS zapisa; ne bira render |
-| Postojeći sadržaj | CMS zapis | **Nikada** se ne prevodi automatski |
+| Podešavanje              | Vlasnik                    | Primena                                                       |
+| ------------------------ | -------------------------- | ------------------------------------------------------------- |
+| `ui_locale`              | org_admin                  | Jedini organization-scoped render locale; odmah, bez deploy-a |
+| `default_content_locale` | organization konfiguracija | Creation stamp novog tenant CMS zapisa; ne bira render        |
+| Postojeći sadržaj        | CMS zapis                  | **Nikada** se ne prevodi automatski                           |
 
 Iz toga slede dva odvojena čitanja iste vrednosti:
 
@@ -257,8 +266,9 @@ prihvatljivo, pa mutacija koristi `{ expire: 0 }`. (Čisto rešenje je Server Ac
 - **D-079B Incident Registry** je poseban pod-slice sa persistence/lifecycle/retention i
   verovatnom migracijom. Do tada neočekivane greške idu u strukturisane server logove, a UI
   ne tvrdi da je incident evidentiran.
-- **Prazan panel posle prijave u dev modu** (QA radi) — nije dijagnostikovano; verovatno isti
-  koren kao „učita se tek posle refresh-a", u `currentUser()` koji vrati `null` na prvom
-  zahtevu posle Clerk handshake-a.
+- **Prazan/spor panel posle prijave** korigovan je u I18N-STAB-1: server identity koristi
+  isključivo React request-scoped `cache()`, organization i identity bootstrap počinju
+  paralelno, a `currentUser()` je samo fallback kada `/api/v1/me` nema email ili displayName.
+  Persistent auth cache nije uveden; Faza 10 ručni/browser QA i dalje ostaje otvoren.
 - **Klijentski panel** je premešten na `/account`, ali njegovi ekrani po dizajnu još nisu
   izgrađeni; `account.programs` je nova ruta koju tabela nije imala.

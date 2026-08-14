@@ -98,9 +98,7 @@ Postojeći slot-level `inherit | override | hidden` ostaje. Field ugovor je komp
 
 ```ts
 type ContentFieldOverride<T> =
-  | { mode: "inherit" }
-  | { mode: "custom"; value: T }
-  | { mode: "hidden" };
+  { mode: "inherit" } | { mode: "custom"; value: T } | { mode: "hidden" };
 ```
 
 - postojeća primitivna vrednost je `custom`;
@@ -193,6 +191,44 @@ materijalizacija su budući provisioning posao opisan u
 parity/DOM testove; ručna vizuelna provera ostaje otvorena za Fazu 10. Puni frontend gate:
 82 test fajla, 729 testova prošlo i 1 preskočen; typecheck, lint, format, architecture i
 content health prolaze; production build generiše 106 stranica.
+
+## I18N-STAB-1 — Workspace Locale Switch & Loading Stabilization — completed 2026-08-14
+
+Post-Phase-5 korektivni slice; nije Faza 6–10 i nije proširio prevod ili poslovnu semantiku.
+
+- Locale save ažurira lokalni/query state, lokalizuje trenutni route ID native
+  `history.replaceState` pozivom uz očuvan query/hash, pa pokreće tačno jedan
+  `router.refresh()`. Shared workspace layout zato dobija nov `ui_locale`, poruke i href-ove
+  bez ručnog refresh-a i bez dva konkurentna router poziva.
+- `getServerIdentity()` je React request-scoped memoizovan. Layout bootstrap paralelno
+  pokreće staff guard i live organization read; page guardovi ostaju autorizacioni autoritet,
+  ali koriste isti underlying identity rezultat. Persistent/cross-user auth cache ne postoji.
+- Clerk `currentUser()` se poziva samo kao fallback kada backend `/api/v1/me` nije vratio
+  email ili displayName.
+- Settings odmah koristi `uiLocale` i `defaultContentLocale` iz server workspace bootstrapa;
+  uklonjen je početni client `GET /api/organizations/me` i blocking loader. PATCH ostaje
+  backend autoritet i uspešan odgovor prvo ažurira context/query state.
+- Content odmah prikazuje 12 statičkih sistemskih stranica. Dok se CMS revizije učitavaju,
+  status je neutralno „Checking status/Proveravam status“, nikada netačan code fallback;
+  revision-dependent akcije su privremeno zaključane. Postojeći 30s Query cache i
+  background refetch ostaju nepromenjeni.
+
+**Pozivi po jednom workspace server renderu:** pre korekcije tri nezavisne identity putanje
+(layout, locale resolver, page guard) mogle su napraviti do 3× Clerk `auth/getToken`, 3×
+`/api/v1/me` i 3× `currentUser`. Posle korekcije postoje layout/page call-siteovi, ali React
+request cache izvršava tačno 1× underlying `auth/getToken` i 1× `/api/v1/me`; `currentUser`
+je 0× kada je backend odgovor kompletan, najviše 1× kao fallback. Live organization locale
+read ostaje 1× u workspace bootstrapu; odvojeni cached public/root read ostaje sopstveni
+SSG/ISR ugovor. Otvaranje Settings ekrana smanjeno je sa 1× dodatnog client organization
+GET-a na 0×.
+
+**Gate:** frontend 85 test fajlova, 735 pass / 1 skip; typecheck, lint, format, architecture,
+content health i production build (106 stranica) prolaze. Backend Ruff/format/Pyright i
+540 pass / 1 skip prolaze. Automatski testovi pokrivaju history zamenu, query/hash,
+`en -> sr-Latn -> en` bez `page.reload()`, jedan refresh, identity deduplikaciju, Settings
+prvi render i pending Content katalog. Autentifikovani Playwright tok nema Clerk testing
+token u projektu, zato prava ručna/browser vizuelna provera nije lažno proglašena i ostaje
+Faza 10.
 
 ## Faza 6 — platformski UI i domeni
 
