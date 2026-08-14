@@ -278,6 +278,12 @@ lifecycle, taxonomy, availability ili Booking state machine.
   locale-aware `/book`/`/zakazi`, `/privacy`/`/privatnost`, `/booking-rules`/
   `/pravila-zakazivanja` i `/terms`/`/uslovi` putanje, kao i lokalizovane metadata naslove.
   DOM testovi pokrivaju oba jezika i interaktivni engleski ulazak u B2B konfigurator.
+- **6A.7 Find-support landing — completed:** `/find-support`/`/pronadji-podrsku`
+  početni ekran, opis i sva tri ulazna CTA-a koriste `guidance.flow.intro` katalog;
+  `/team`/`/tim` i `/book`/`/zakazi` biraju se prema aktivnom locale-u uz stabilan
+  `source` query. Public provider sada eksplicitno prosleđuje `guidance` namespace.
+  Pitanja, rezultat i production submission forma ostaju deo narednog kompletnog Intake
+  presentation slice-a; scoring, safety i submission semantika nisu menjani.
 - Architecture baseline izuzeci uklonjeni su za šest pokrivenih workspace fajlova. DOM
   regresioni test potvrđuje trenutno `en → sr-Latn` osvežavanje naslova, tabova i sadržaja
   bez refresh-a, a catalog test čuva key/ICU parity.

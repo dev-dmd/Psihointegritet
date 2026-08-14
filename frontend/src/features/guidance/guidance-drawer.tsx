@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { createPortal } from "react-dom";
+import { useTranslations } from "next-intl";
 
 import type { GuidanceEntry } from "./guidance-context";
 import { GuidanceFlow } from "./guidance-flow";
@@ -13,6 +14,7 @@ interface GuidanceDrawerProps {
 
 /** Transitional wrapper around the shared route-level GuidanceFlow. */
 export function GuidanceDrawer({ entry, onClose }: GuidanceDrawerProps) {
+  const t = useTranslations("guidance.flow");
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") onClose();
@@ -35,7 +37,7 @@ export function GuidanceDrawer({ entry, onClose }: GuidanceDrawerProps) {
       <div
         role="dialog"
         aria-modal="true"
-        aria-label="Vođeni izbor podrške"
+        aria-label={t("dialogLabel")}
         className="bg-canvas shadow-drawer animate-drawer-in fixed top-0 right-0 bottom-0 z-[81] w-[min(560px,100vw)]"
       >
         <GuidanceFlow entry={entry} surface="drawer" onClose={onClose} />

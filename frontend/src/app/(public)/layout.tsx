@@ -19,12 +19,16 @@ export default async function PublicLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   const locale = await resolvePublicLocale();
-  const { public: publicMessages, common } = getPlatformMessages(locale);
+  const {
+    public: publicMessages,
+    common,
+    guidance,
+  } = getPlatformMessages(locale);
 
   return (
     <NextIntlClientProvider
       locale={locale}
-      messages={{ public: publicMessages, common }}
+      messages={{ public: publicMessages, common, guidance }}
     >
       <QueryProvider>
         <CompanyProvider>
