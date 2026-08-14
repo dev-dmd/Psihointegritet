@@ -1,4 +1,7 @@
-import { isApiProblem } from "@/lib/errors/api-problem";
+import {
+  JsonRequestError,
+  parseJsonResponse as parseOrThrow,
+} from "@/lib/api/request-json";
 import type { components } from "@/types/api.generated";
 
 export type TaxonomyTerm = components["schemas"]["TaxonomyTermOut"];
@@ -29,103 +32,7 @@ export interface TaxonomyRegistrySnapshot {
   intakeLinks: TaxonomyIntakeLink[];
 }
 
-export class TaxonomyApiError extends Error {
-  constructor(
-    message: string,
-    public readonly status: number,
-    public readonly problem?: {
-      code?: string;
-      fieldPath?: string;
-      fieldErrors?: Record<string, string[]>;
-      correlationId?: string;
-    },
-  ) {
-    super(message);
-    this.name = "TaxonomyApiError";
-  }
-}
-
-function serbianValidationMessage(message: string): string {
-  if (message === "Field required") return "Ovo polje je obavezno.";
-  if (message === "Input should be a valid integer") {
-    return "Unesite ceo broj.";
-  }
-  if (message === "Input should be a valid UUID") {
-    return "Izaberite postojeću vrednost iz liste.";
-  }
-  const maximum = message.match(
-    /^String should have at most (\d+) characters$/,
-  );
-  if (maximum) return `Polje može imati najviše ${maximum[1]} karaktera.`;
-  const minimum = message.match(
-    /^String should have at least (\d+) characters$/,
-  );
-  if (minimum) return `Polje mora imati najmanje ${minimum[1]} karaktera.`;
-  return message;
-}
-
-function normalizedFieldPath(path: string): string {
-  const withoutBody = path.replace(/^body\./, "");
-  return withoutBody.replace(/_([a-z])/g, (_, letter: string) =>
-    letter.toUpperCase(),
-  );
-}
-
-export function taxonomyFieldErrors(error: unknown): Record<string, string> {
-  if (!(error instanceof TaxonomyApiError)) return {};
-  const fields: Record<string, string> = {};
-  if (error.problem?.fieldPath) {
-    fields[normalizedFieldPath(error.problem.fieldPath)] = error.message;
-  }
-  for (const [path, messages] of Object.entries(
-    error.problem?.fieldErrors ?? {},
-  )) {
-    if (messages[0]) {
-      fields[normalizedFieldPath(path)] = serbianValidationMessage(messages[0]);
-    }
-  }
-  return fields;
-}
-
-async function parseOrThrow<T>(response: Response): Promise<T> {
-  if (!response.ok) {
-    const text = await response.text().catch(() => "");
-    let message = text || `Zahtev nije uspeo (${response.status}).`;
-    let parsed: unknown = null;
-    try {
-      parsed = text ? JSON.parse(text) : null;
-      if (isApiProblem(parsed)) {
-        message =
-          parsed.status >= 500
-            ? `Kompas registar trenutno nije dostupan. Pokušajte ponovo. Ako se greška ponovi, pošaljite podršci ID greške: ${parsed.correlationId}.`
-            : parsed.code === "validation_error"
-              ? "Proverite označena polja i ispravite unos."
-              : (parsed.detail ?? parsed.title);
-      } else if (
-        typeof parsed === "object" &&
-        parsed !== null &&
-        "error" in parsed &&
-        typeof parsed.error === "string"
-      ) {
-        message = parsed.error;
-      }
-    } catch {
-      // Proxy/network responses need not use the API problem envelope.
-    }
-    throw new TaxonomyApiError(message, response.status, {
-      ...(isApiProblem(parsed)
-        ? {
-            code: parsed.code,
-            fieldPath: parsed.fieldPath,
-            fieldErrors: parsed.fieldErrors,
-            correlationId: parsed.correlationId,
-          }
-        : {}),
-    });
-  }
-  if (response.status === 204) return undefined as T;
-  return (await response.json()) as T;
-}
+export { JsonRequestError as TaxonomyApiError };
 
 export async function fetchTaxonomyRegistry(
   locale = "sr-Latn",

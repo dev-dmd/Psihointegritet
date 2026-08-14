@@ -7,11 +7,7 @@ import { TherapistBioSection } from "@/components/sections/therapist/therapist-b
 import { TherapistContactSection } from "@/components/sections/therapist/therapist-contact-section";
 import { TherapistHeroSection } from "@/components/sections/therapist/therapist-hero-section";
 import { TherapistServicesSection } from "@/components/sections/therapist/therapist-services-section";
-import {
-  findTherapist,
-  otherTherapists,
-  therapists,
-} from "@/content/therapists";
+import { getFallbackContent } from "@/content/server";
 import {
   jsonLdForEntity,
   metadataForEntity,
@@ -22,7 +18,8 @@ interface TherapistPageProps {
   params: Promise<{ slug: string }>;
 }
 
-export function generateStaticParams(): { slug: string }[] {
+export async function generateStaticParams(): Promise<{ slug: string }[]> {
+  const { therapists } = await getFallbackContent();
   return therapists.map((therapist) => ({ slug: therapist.slug }));
 }
 
@@ -30,7 +27,8 @@ export async function generateMetadata({
   params,
 }: TherapistPageProps): Promise<Metadata> {
   const { slug } = await params;
-  const therapist = findTherapist(slug);
+  const { therapists } = await getFallbackContent();
+  const therapist = therapists.find((candidate) => candidate.slug === slug);
 
   if (!therapist) {
     return {};
@@ -44,9 +42,12 @@ export async function generateMetadata({
 
 export default async function TherapistPage({ params }: TherapistPageProps) {
   const { slug } = await params;
+  const { therapists } = await getFallbackContent();
   const provider = await getContentProvider();
   const contentEntity = provider.getEntity("therapist", `therapist:${slug}`);
-  const therapist = contentEntity?.source ?? findTherapist(slug);
+  const therapist =
+    contentEntity?.source ??
+    therapists.find((candidate) => candidate.slug === slug);
 
   if (!therapist) {
     notFound();
@@ -58,7 +59,9 @@ export default async function TherapistPage({ params }: TherapistPageProps) {
       <TherapistBioSection therapist={therapist} />
       <TherapistServicesSection therapist={therapist} />
       <TherapistContactSection therapist={therapist} />
-      <OtherTherapistsSection others={otherTherapists(slug)} />
+      <OtherTherapistsSection
+        others={therapists.filter((candidate) => candidate.slug !== slug)}
+      />
     </>
   );
 }

@@ -3,7 +3,6 @@ import type { ReactNode } from "react";
 
 import { NextIntlClientProvider } from "next-intl";
 
-import { resolveWorkspaceLocale } from "@/lib/tenant/workspace-locale";
 import { getPlatformMessages } from "@/messages";
 
 import { WorkspaceBottomNav } from "@/features/workspace/components/bottom-nav";
@@ -11,11 +10,8 @@ import { WorkspaceSidebar } from "@/features/workspace/components/sidebar";
 import { WorkspaceTopbar } from "@/features/workspace/components/topbar";
 import { PanelErrorsProvider } from "@/features/workspace/panel-errors";
 import { WorkspaceProvider } from "@/features/workspace/workspace-context";
-import {
-  requireStaff,
-  isWorkspaceAdmin,
-  isWorkspaceTherapist,
-} from "@/lib/auth/guards";
+import { getWorkspaceBootstrap } from "@/features/workspace/workspace-bootstrap";
+import { isWorkspaceAdmin, isWorkspaceTherapist } from "@/lib/auth/guards";
 import { QueryProvider } from "@/providers/query-provider";
 
 export const metadata: Metadata = {
@@ -37,7 +33,7 @@ export default async function WorkspaceLayout({
 }: {
   children: ReactNode;
 }) {
-  const identity = await requireStaff();
+  const { identity, organization } = await getWorkspaceBootstrap();
   const isAdmin = isWorkspaceAdmin(identity);
   const isTherapist = isWorkspaceTherapist(identity);
 
@@ -46,10 +42,10 @@ export default async function WorkspaceLayout({
   // catalogue to the browser.
   // `resolveWorkspaceLocale`, not `getUiLocale`: the latter asks next-intl what
   // it rendered with, and `i18n/request.ts` deliberately resolves the *public*
-  // `default_content_locale` so the marketing pages stay static. The workspace
+  // cached `ui_locale` so the marketing pages stay static. The workspace
   // is the surface `ui_locale` was created for (D-077), and reading the wrong
   // one is why the panel kept its old language while the URL changed.
-  const locale = await resolveWorkspaceLocale();
+  const locale = organization.uiLocale;
   const { workspace, content, common, screens } = getPlatformMessages(locale);
 
   return (
@@ -65,6 +61,7 @@ export default async function WorkspaceLayout({
           isAdmin={isAdmin}
           isTherapist={isTherapist}
           displayName={identity.displayName ?? identity.email}
+          initialOrganization={organization}
         >
           <PanelErrorsProvider>
             <div className="bg-panel-canvas flex min-h-screen">

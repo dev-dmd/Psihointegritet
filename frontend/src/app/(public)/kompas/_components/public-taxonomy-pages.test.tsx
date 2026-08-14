@@ -12,6 +12,8 @@ import type {
   PublicTaxonomyPageAggregate,
   RoutablePublicTaxonomyTerm,
 } from "@/lib/compass/types";
+import { getFallbackContentForLocale } from "@/content/registry";
+import { withIntl } from "@/test-support/intl";
 
 import { PublicTaxonomyListPage } from "./public-taxonomy-list-page";
 import { PublicTaxonomyPage } from "./public-taxonomy-page";
@@ -65,11 +67,18 @@ const aggregate: PublicTaxonomyPageAggregate = {
     },
   ],
 };
+const therapists = getFallbackContentForLocale("sr-Latn").therapists;
 
 describe("public Compass page renderers", () => {
   it("renders an aggregate through registry-controlled taxonomy and content links", () => {
     const { container } = render(
-      <PublicTaxonomyPage aggregate={aggregate} routeKind="oblast" />,
+      withIntl(
+        <PublicTaxonomyPage
+          aggregate={aggregate}
+          routeKind="oblast"
+          therapists={therapists}
+        />,
+      ),
     );
 
     expect(
@@ -108,11 +117,13 @@ describe("public Compass page renderers", () => {
 
   it("renders the topic collection with local-search input and parent label", () => {
     render(
-      <PublicTaxonomyListPage
-        routeKind="tema"
-        terms={[topic]}
-        areas={[area]}
-      />,
+      withIntl(
+        <PublicTaxonomyListPage
+          routeKind="tema"
+          terms={[topic]}
+          areas={[area]}
+        />,
+      ),
     );
 
     expect(
@@ -132,11 +143,13 @@ describe("public Compass page renderers", () => {
 
   it("lists areas with an ordinal, their topics and a content-count meta line", () => {
     render(
-      <PublicTaxonomyListPage
-        routeKind="oblast"
-        terms={[area]}
-        topics={[topic]}
-      />,
+      withIntl(
+        <PublicTaxonomyListPage
+          routeKind="oblast"
+          terms={[area]}
+          topics={[topic]}
+        />,
+      ),
     );
 
     expect(

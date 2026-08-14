@@ -1,6 +1,7 @@
 "use client";
 
 import type { ApiReviewQueueItem } from "../content-api";
+import { useUserSafeError } from "@/lib/errors/use-user-safe-error";
 import { useReviewQueueQuery } from "../hooks/use-review-queue";
 import { PageHeader } from "../components/page-header";
 
@@ -11,6 +12,7 @@ const CAPABILITY_LABELS: Record<string, string> = {
 };
 
 export function ReviewQueueScreen() {
+  const safeError = useUserSafeError();
   const queue = useReviewQueueQuery();
 
   if (queue.isLoading) {
@@ -24,9 +26,7 @@ export function ReviewQueueScreen() {
           Pregledi se ne mogu učitati
         </p>
         <p className="text-ink-70 mt-1 text-[13px] leading-[1.5]">
-          {queue.error instanceof Error
-            ? queue.error.message
-            : "Osvežite stranicu; ako se ponovi, javite tehničkom timu."}
+          {safeError.text(queue.error, "content", "load")}
         </p>
       </div>
     );

@@ -5,17 +5,16 @@ import { useState } from "react";
 import { ProgressBar } from "@/components/panel/progress-bar";
 import { StatusBadge } from "@/components/panel/status-badge";
 import { TabPills } from "@/components/panel/tab-pills";
+import { useFallbackContent } from "@/content/use-content";
 
 import { useTranslations } from "next-intl";
 
-import { useUiLocale } from "@/i18n/use-ui-locale";
-
-import { appointmentRequests, waitlist, workspaceDemo } from "../data";
 import { STATUS_META, isFreeSlot } from "../types";
 import { useStatusLabel } from "../use-status-label";
 import { useWorkspace } from "../workspace-context";
 import { AgendaRow } from "./agenda-row";
 import { PageHeader } from "./page-header";
+import { WorkspaceDataNotice } from "./workspace-data-notice";
 
 /**
  * Tab ids are stable and Serbian; only the labels are translated. The id is
@@ -39,13 +38,13 @@ const TAB_KEYS = {
 
 export function ScreenTermini() {
   const statusLabel = useStatusLabel();
-  const locale = useUiLocale();
   const t = useTranslations("screens.appointments");
+  const { appointmentRequests, todayAgenda, waitlist, weekBars } =
+    useFallbackContent().workspaceDemo;
   const tabs = TAB_IDS.map((id) => ({
     id,
     label: t(`tabs.${TAB_KEYS[id]}`, { count: appointmentRequests.length }),
   }));
-  const { todayAgenda, weekBars } = workspaceDemo(locale);
   const [tab, setTab] = useState("danas");
   const { selectedTherapistSlug } = useWorkspace();
 
@@ -58,10 +57,8 @@ export function ScreenTermini() {
 
   return (
     <section className="animate-fade-up">
-      <PageHeader
-        title="Termini"
-        description="Booking kontrola — jedan status sistem kroz celu platformu."
-      />
+      <PageHeader title={t("title")} description={t("description")} />
+      <WorkspaceDataNotice />
       <TabPills tabs={tabs} activeId={tab} onChange={setTab} className="mb-5" />
 
       {tab === "danas" ? (
@@ -84,7 +81,11 @@ export function ScreenTermini() {
                   {bar.day}
                 </span>
                 <ProgressBar
-                  value={Math.round((bar.booked / bar.total) * 100)}
+                  value={
+                    bar.total === 0
+                      ? 0
+                      : Math.round((bar.booked / bar.total) * 100)
+                  }
                 />
                 <span className="text-ink-55 text-right text-[13px]">
                   {bar.booked}/{bar.total}
@@ -136,8 +137,8 @@ export function ScreenTermini() {
                   <span>
                     {t("requested", { preferred: request.preferred })}
                   </span>
-                  <span>Izvor: {request.source}</span>
-                  <span>Poslato {request.ago}</span>
+                  <span>{t("source", { source: request.source })}</span>
+                  <span>{t("submitted", { ago: request.ago })}</span>
                 </div>
               </div>
             );

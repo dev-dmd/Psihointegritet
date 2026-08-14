@@ -29,6 +29,15 @@ export const superadmin = {
     enabled: "Enabled feature gate — {gate}",
     disabled: "Disabled feature gate — {gate}",
   },
+  tenantUsers: {
+    loading: "Loading users…",
+    loadError: "Users could not be loaded.",
+    saveError: "The role could not be saved.",
+    description:
+      "A user appears here after their first verified sign-in. Roles are stored by the platform, not in Clerk.",
+    adminRole: "Organization admin",
+    therapistRole: "Therapist",
+  },
 } as const;
 
 export type EnSuperadmin = typeof superadmin;

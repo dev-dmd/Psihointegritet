@@ -2,13 +2,11 @@
 
 import Link from "next/link";
 
-import {
-  contentErrorMessage,
-  useContentEntriesQuery,
-} from "../../hooks/use-content-entries";
+import { useContentEntriesQuery } from "../../hooks/use-content-entries";
 import { KompasArticleEditor } from "./kompas-article-editor";
 import { localizedPath } from "@/lib/routes/localized-path";
 import { useUiLocale } from "@/i18n/use-ui-locale";
+import { useUserSafeError } from "@/lib/errors/use-user-safe-error";
 
 /**
  * Resolves the article the route names, then hands it to the editor.
@@ -19,6 +17,7 @@ import { useUiLocale } from "@/i18n/use-ui-locale";
  */
 export function KompasArticleScreen({ entryId }: { entryId: string }) {
   const locale = useUiLocale();
+  const safeError = useUserSafeError();
   const entriesQuery = useContentEntriesQuery();
   const entry = (entriesQuery.data ?? []).find(
     (item) => item.entryId === entryId,
@@ -35,10 +34,7 @@ export function KompasArticleScreen({ entryId }: { entryId: string }) {
           Tekst se ne može učitati
         </p>
         <p className="text-ink-70 mt-1 text-[13px] leading-[1.5]">
-          {contentErrorMessage(
-            entriesQuery.error,
-            "Osvežite stranicu; ako se ponovi, javite tehničkom timu.",
-          )}
+          {safeError.text(entriesQuery.error, "content", "load")}
         </p>
       </div>
     );

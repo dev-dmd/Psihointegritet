@@ -2,8 +2,8 @@
 
 import { cn } from "@/helpers/cn";
 
-import { defaultBookingWidgetCopy } from "../booking-widget.config";
 import { bookingWidgetThemes } from "../booking-widget.variants";
+import { useBookingWidgetCopy } from "../hooks/use-booking-widget-copy";
 import { BookingWidgetProvider } from "../providers/booking-widget-provider";
 import type { BookingWidgetProps } from "../booking-widget.types";
 import { BookingWidgetActions } from "./BookingWidgetActions";
@@ -43,7 +43,7 @@ export function BookingWidget({
   className,
 }: BookingWidgetProps) {
   const theme = bookingWidgetThemes[variant];
-  const copy = { ...defaultBookingWidgetCopy, ...copyOverrides };
+  const copy = { ...useBookingWidgetCopy(), ...copyOverrides };
 
   return (
     <BookingWidgetProvider

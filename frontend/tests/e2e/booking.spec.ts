@@ -116,7 +116,7 @@ test("booking request submits through the endpoint and remains a request", async
 
   await page.getByLabel("Ime i prezime").fill("Petar Petrović");
   await page
-    .getByRole("textbox", { name: "Email", exact: true })
+    .getByLabel("Email adresa", { exact: true })
     .fill("petar@example.com");
   await page.getByRole("checkbox").check();
   await page.getByRole("button", { name: "Pošalji zahtev za termin" }).click();

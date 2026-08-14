@@ -12,6 +12,7 @@ import { ActorBadge } from "@/components/panel/actor-badge";
 import { templateRegistry } from "@/lib/content-governance/limits";
 import { slotSpecRegistry } from "@/lib/content-governance/slot-schema";
 import type { PlatformRouteId } from "@/lib/routes/platform-routes";
+import { useUserSafeError } from "@/lib/errors/use-user-safe-error";
 
 import type {
   ApiContentPublishBlock,
@@ -22,7 +23,6 @@ import {
   requiredContentApprovals,
 } from "../content-approval-policy";
 import { validateContentDraft } from "../content-editor-validation";
-import { contentErrorMessage } from "../hooks/use-content-entries";
 import {
   useContentEntriesCache,
   useContentReviewMutation,
@@ -46,8 +46,7 @@ const STATUS_TONES: Record<string, StatusBadgeTone> = {
 
 const ROUTE_ID = "workspace.content.list" satisfies PlatformRouteId;
 const TAB_LABEL = "Sadržaj";
-/** Single-tenant seed org; the backend membership check owns the real value
- * (same pattern as `screen-dokumenti.tsx`'s `ORGANIZATION_ID`). */
+/** Single-tenant seed org; the backend membership check owns the real value. */
 const ORGANIZATION_ID = "psihointegritet";
 const RESOURCE_TYPE = "content_entry";
 
@@ -89,6 +88,7 @@ export function ContentRevisionEditor({
   onDeleted: () => void;
 }) {
   const { reportError, clearErrorsForResource } = usePanelErrors();
+  const safeError = useUserSafeError();
   const { replaceEntry: replaceInCache, removeEntry } =
     useContentEntriesCache();
   const [slotData, setSlotData] = useState<Record<string, unknown>>(() =>
@@ -120,16 +120,14 @@ export function ContentRevisionEditor({
     JSON.stringify(seo) !== JSON.stringify(entry.seo) ||
     JSON.stringify(discovery) !== JSON.stringify(entry.discovery);
 
-  const reportApiError = (title: string, error: unknown) => {
+  const reportApiError = (operation: "change" | "publish", error: unknown) => {
+    const presentation = safeError.present(error, "content", operation);
     reportError({
       routeId: ROUTE_ID,
       tabLabel: TAB_LABEL,
       resource: resourceFor(entry),
-      title,
-      description: contentErrorMessage(
-        error,
-        "Zahtev nije uspeo. Pokušajte ponovo.",
-      ),
+      title: presentation.message,
+      description: presentation.nextAction,
       details: [],
     });
   };
@@ -179,8 +177,7 @@ export function ContentRevisionEditor({
 
   const saveMutation = useSaveContentRevisionMutation(entry, {
     onSaved: replaceEntry,
-    onFailed: (error) =>
-      reportApiError(`Izmena nije sačuvana za „${publicRoute}”`, error),
+    onFailed: (error) => reportApiError("change", error),
   });
 
   const transitionMutation = useContentTransitionMutation(entry, {
@@ -191,14 +188,12 @@ export function ContentRevisionEditor({
       }
       replaceEntry(outcome.entry);
     },
-    onFailed: (error) =>
-      reportApiError(`Promena statusa za „${publicRoute}” nije uspela`, error),
+    onFailed: (error) => reportApiError("publish", error),
   });
 
   const reviewMutation = useContentReviewMutation(entry, {
     onRecorded: replaceEntry,
-    onFailed: (error) =>
-      reportApiError(`Odobrenje za „${publicRoute}” nije sačuvano`, error),
+    onFailed: (error) => reportApiError("publish", error),
   });
 
   const lifecyclePending =
@@ -212,7 +207,7 @@ export function ContentRevisionEditor({
     },
     onFailed: (error) => {
       setPendingDelete(false);
-      reportApiError(`CMS verzija za „${publicRoute}” nije uklonjena`, error);
+      reportApiError("change", error);
     },
   });
 
@@ -404,6 +399,7 @@ export function ContentRevisionEditor({
           return (
             <SlotEditor
               key={slotName}
+              template={entry.template}
               slotName={slotName}
               spec={spec}
               value={slotData[slotName]}

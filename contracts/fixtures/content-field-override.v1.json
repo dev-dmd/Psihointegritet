@@ -1,0 +1,38 @@
+{
+  "version": 1,
+  "hideableFieldPaths": [
+    "article_detail.body_outro.body",
+    "article_detail.hero.lead",
+    "article_detail.practice.title",
+    "article_detail.questions.intro",
+    "company_page.configurator_cta.bannerBody",
+    "company_page.configurator_cta.bannerHeading",
+    "company_page.hero.lead",
+    "company_page.privacy.description",
+    "company_page.privacy.title",
+    "pricing_page.notice.body",
+    "program_detail.facts.details",
+    "program_detail.facts.note",
+    "service_detail.hero.eyebrow",
+    "service_detail.hero.lead",
+    "static_information.hero.heroLead",
+    "therapist_profile.approach.intro",
+    "therapist_profile.bio.cardExcerpt",
+    "therapist_profile.hero.badge",
+    "therapist_profile.hero.formats",
+    "therapist_profile.hero.quote"
+  ],
+  "cases": [
+    { "name": "missing", "inputKind": "missing", "mode": "inherit", "valid": true },
+    { "name": "null", "input": null, "mode": "inherit", "valid": true },
+    { "name": "legacy empty", "input": "   ", "mode": "inherit", "valid": true },
+    { "name": "legacy text", "input": "Naslov", "mode": "custom", "valid": true },
+    { "name": "legacy false", "input": false, "mode": "custom", "valid": true },
+    { "name": "legacy object", "input": { "label": "Dalje" }, "mode": "custom", "valid": true },
+    { "name": "explicit inherit", "input": { "mode": "inherit" }, "mode": "inherit", "valid": true },
+    { "name": "explicit custom", "input": { "mode": "custom", "value": "Novi naslov" }, "mode": "custom", "valid": true },
+    { "name": "explicit hidden", "input": { "mode": "hidden" }, "mode": "hidden", "valid": true },
+    { "name": "custom without value", "input": { "mode": "custom" }, "mode": "inherit", "valid": false },
+    { "name": "unknown mode", "input": { "mode": "translated", "value": "Tekst" }, "mode": "inherit", "valid": false }
+  ]
+}

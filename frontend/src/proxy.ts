@@ -13,10 +13,10 @@ import {
  *
  * Two jobs, in this order:
  *
- * 1. **Locale routing.** The physical routes are English (`/workspace/...`).
- *    A Serbian organization's URLs (`/radni-prostor/...`) are rewritten onto
- *    them, so the browser keeps the Serbian path while one page renders. A path
- *    in the wrong locale for this organization gets a 308 to the equivalent.
+ * 1. **Locale routing.** Workspace paths rewrite onto their physical English
+ *    routes; registered public paths rewrite onto their existing physical
+ *    Serbian routes. Both locale spellings resolve to one page while the
+ *    browser keeps the URL selected by the rendered link.
  * 2. **Authentication gate.** Coarse only — it redirects unauthenticated
  *    visitors on protected routes to sign-in. It is never the final
  *    authorization layer; role and ownership checks live in FastAPI per use
@@ -24,9 +24,7 @@ import {
  *
  * Locale first, auth second, deliberately. `redirect_url` must carry the
  * **external, pre-rewrite** path so the visitor returns to their own URL after
- * signing in, and running the locale step first means that path is already
- * canonical — otherwise a bookmark in the wrong locale would sign in, land,
- * and only then bounce through a 308.
+ * signing in instead of receiving the filesystem route.
  */
 function isProtectedPath(pathname: string): boolean {
   return PROTECTED_ROUTE_PREFIXES.some(

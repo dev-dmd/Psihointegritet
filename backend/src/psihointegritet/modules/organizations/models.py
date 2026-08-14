@@ -51,9 +51,8 @@ class Organization(Base):
     ui_locale: Mapped[str] = mapped_column(
         String(16), nullable=False, server_default=PLATFORM_DEFAULT_LOCALE
     )
-    #: Locale stamped on newly created tenant-authored content, and the language
-    #: the public site renders in. Separate from `ui_locale` on purpose: an
-    #: organization whose team works in English may publish for Serbian clients.
+    #: Locale stamped on newly created tenant-authored content. It never chooses
+    #: the render locale; public and authenticated surfaces both use `ui_locale`.
     default_content_locale: Mapped[str] = mapped_column(
         String(16), nullable=False, server_default=PLATFORM_DEFAULT_LOCALE
     )

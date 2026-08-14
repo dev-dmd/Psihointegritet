@@ -1,15 +1,19 @@
-import Link from "next/link";
+import { PublicLink as Link } from "@/components/ui/public-link";
+import { getTranslations } from "next-intl/server";
 
 import { PageHero } from "@/components/shared/page-hero";
+import { getFallbackContent } from "@/content/server";
+import { formatRsd } from "@/content/services";
 import { metadataForRoute } from "@/lib/content-governance/discoverability";
 import { getContentProvider } from "@/lib/content-governance/provider-resolver";
-import { formatRsd, PRICE_NOTE } from "@/content/services";
 
 export async function generateMetadata() {
   return metadataForRoute("/cene", await getContentProvider());
 }
 
 export default async function PricesPage() {
+  const t = await getTranslations("public.pages.prices");
+  const { PRICE_NOTE } = (await getFallbackContent()).services;
   const entities = (await getContentProvider()).listAll();
   const services = entities
     .filter((entity) => entity.type === "service")
@@ -25,10 +29,10 @@ export default async function PricesPage() {
       <PageHero id="cene">
         <div className="max-w-[720px]">
           <p className="text-sage mb-4 text-[12px] font-semibold tracking-[0.14em] uppercase">
-            Transparentne informacije
+            {t("eyebrow")}
           </p>
           <h1 className="text-forest mb-4 font-serif text-[clamp(32px,8.5vw,52px)] leading-[1.06] font-normal">
-            Cene usluga i programa
+            {t("title")}
           </h1>
           <p className="text-coffee/75 text-[16.5px] leading-[1.65]">
             {PRICE_NOTE}
@@ -38,7 +42,7 @@ export default async function PricesPage() {
       <div className="mx-auto max-w-[1120px] px-5 pt-[64px] pb-[72px] md:px-8 md:pt-24 md:pb-24">
         <section>
           <h2 className="text-forest font-serif text-[30px] font-normal">
-            Individualne usluge
+            {t("individualServices")}
           </h2>
           <div className="mt-6 grid gap-4 md:grid-cols-3">
             {services.map((service) => (
@@ -63,7 +67,7 @@ export default async function PricesPage() {
         </section>
         <section className="mt-14">
           <h2 className="text-forest font-serif text-[30px] font-normal">
-            Paketi
+            {t("packages")}
           </h2>
           <div className="mt-6 grid gap-4 sm:grid-cols-2">
             {packages.map((pack) => (
@@ -72,7 +76,7 @@ export default async function PricesPage() {
                 className="bg-meadow/22 rounded-[20px] p-6"
               >
                 <h3 className="text-forest font-serif text-[23px] font-normal">
-                  {pack.sessions} individualnih seansi
+                  {t("sessionPackage", { sessions: pack.sessions })}
                 </h3>
                 <p className="text-coffee/65 mt-2 text-sm">{pack.deadline}</p>
                 <p className="text-forest mt-4 text-[20px] font-semibold">
@@ -85,7 +89,7 @@ export default async function PricesPage() {
         </section>
         <section className="mt-14">
           <h2 className="text-forest font-serif text-[30px] font-normal">
-            Grupni programi
+            {t("groupPrograms")}
           </h2>
           <div className="mt-6 grid gap-3">
             {programs.map((program) => (
@@ -104,11 +108,10 @@ export default async function PricesPage() {
         </section>
         <section className="bg-warm/18 mt-14 rounded-[22px] p-6">
           <h2 className="text-coffee font-serif text-[27px] font-normal">
-            Plaćanje i pomeranje termina
+            {t("paymentHeading")}
           </h2>
           <p className="text-coffee/75 mt-3 max-w-[720px] text-[14.5px] leading-[1.65]">
-            Način plaćanja i pravila otkazivanja nisu javno potvrđeni. Tačan
-            dogovor o terminu i uslovima pravite direktno sa terapeutom.
+            {t("paymentBody")}
           </p>
         </section>
       </div>

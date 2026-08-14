@@ -1,20 +1,18 @@
 "use client";
 
-import Link from "next/link";
+import { PublicLink as Link } from "@/components/ui/public-link";
 import type { Route } from "next";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { MonogramAvatar } from "@/components/ui/monogram-avatar";
-import { findService, formatRsd, serviceSlugForName } from "@/content/services";
-import { therapists } from "@/content/therapists";
-import {
-  buildBookingHref,
-  type BookingFormat,
-} from "@/features/booking/booking-context";
+import { formatRsd, type ServiceCatalogItem } from "@/content/services";
+import { useFallbackContent } from "@/content/use-content";
+import { type BookingFormat } from "@/features/booking/booking-context";
 import { storeBookingSummary } from "@/features/booking/booking-summary-storage";
 import type { BookingSummary } from "@/features/booking/booking-types";
 import { cn } from "@/helpers/cn";
 import { QueryProvider } from "@/providers/query-provider";
+import type { Therapist } from "@/types/therapist";
 
 import {
   ADULT_SUBJECT_AGE_BAND,
@@ -40,6 +38,8 @@ import {
   usePublicIntakeCapabilities,
 } from "./hooks/use-public-intake-queries";
 import type { PublicIntakeSubmissionKind } from "./public-intake-api";
+import { resultBookingHref } from "./result-booking";
+import { ChooserScreen } from "./chooser-screen";
 
 export type GuidanceFlowEntry = "chooser" | "quiz" | "page";
 type Screen =
@@ -73,6 +73,9 @@ export function GuidanceFlow(props: GuidanceFlowProps) {
 }
 
 function GuidanceFlowContent({ entry, surface, onClose }: GuidanceFlowProps) {
+  const fallback = useFallbackContent();
+  const serviceCatalog = fallback.services.serviceCatalog;
+  const { therapists } = fallback;
   const [screen, setScreen] = useState<Screen>(
     entry === "page" ? "intro" : entry === "chooser" ? "chooser" : "questions",
   );
@@ -98,8 +101,8 @@ function GuidanceFlowContent({ entry, surface, onClose }: GuidanceFlowProps) {
   const safeIndex = Math.min(stepIndex, steps.length - 1);
   const currentStep = steps[safeIndex];
   const localResult = useMemo(
-    () => (screen === "result" ? evaluateIntake(answers) : null),
-    [screen, answers],
+    () => (screen === "result" ? evaluateIntake(answers, therapists) : null),
+    [screen, answers, therapists],
   );
   const productionIntakeEnabled =
     intakeFeatureFlags.matchingEnabled &&
@@ -112,6 +115,7 @@ function GuidanceFlowContent({ entry, surface, onClose }: GuidanceFlowProps) {
     answers,
     productionIntakeEnabled && screen === "result",
     matchAttempt,
+    therapists,
   );
   const result = productionIntakeEnabled
     ? (authoritativeMatchQuery.data ?? null)
@@ -267,6 +271,7 @@ function GuidanceFlowContent({ entry, surface, onClose }: GuidanceFlowProps) {
 
           {screen === "chooser" ? (
             <ChooserScreen
+              therapists={therapists}
               headingRef={headingRef}
               onQuiz={() => {
                 setStepIndex(0);
@@ -307,6 +312,8 @@ function GuidanceFlowContent({ entry, surface, onClose }: GuidanceFlowProps) {
               headingRef={headingRef}
               result={result}
               answers={answers}
+              serviceCatalog={serviceCatalog}
+              therapists={therapists}
               useProductionIntake={productionIntakeEnabled}
               onStartSubmission={(intent) => {
                 setSubmissionIntent(intent);
@@ -533,6 +540,8 @@ function ResultScreen({
   headingRef,
   result,
   answers,
+  serviceCatalog,
+  therapists,
   useProductionIntake,
   onStartSubmission,
   onClose,
@@ -540,6 +549,8 @@ function ResultScreen({
   headingRef: React.RefObject<HTMLHeadingElement | null>;
   result: IntakeMatchResult;
   answers: IntakeAnswers;
+  serviceCatalog: readonly ServiceCatalogItem[];
+  therapists: readonly Therapist[];
   useProductionIntake: boolean;
   onStartSubmission: (intent: SubmissionIntent) => void;
   onClose?: (() => void) | undefined;
@@ -555,18 +566,24 @@ function ResultScreen({
       ? [primary]
       : [];
   const controlledMinorFlow = result.controlledMinorFlow;
-  const serviceSlug = serviceSlugForName(result.recommendedService);
+  const bookingCatalogs = { services: serviceCatalog, therapists };
+  const serviceSlug = serviceCatalog.find(
+    (candidate) => candidate.name === result.recommendedService,
+  )?.slug;
   const format = bookingFormatForAnswer(answers.format);
   const service =
-    !controlledMinorFlow && serviceSlug ? findService(serviceSlug) : undefined;
+    !controlledMinorFlow && serviceSlug
+      ? serviceCatalog.find((candidate) => candidate.slug === serviceSlug)
+      : undefined;
 
   const summaryFor = (match: TherapistMatch | null): BookingSummary =>
     buildSummary(answers, result, match);
-  const teamHref = buildBookingHref({
-    service: controlledMinorFlow ? undefined : serviceSlug,
+  const teamHref = resultBookingHref(
+    bookingCatalogs,
+    controlledMinorFlow ? undefined : serviceSlug,
+    undefined,
     format,
-    source: "matching",
-  });
+  );
 
   return (
     <>
@@ -617,12 +634,12 @@ function ResultScreen({
             href={
               useProductionIntake || controlledMinorFlow
                 ? undefined
-                : buildBookingHref({
-                    service: serviceSlug,
-                    therapist: match.therapist.slug,
+                : resultBookingHref(
+                    bookingCatalogs,
+                    serviceSlug,
+                    match.therapist.slug,
                     format,
-                    source: "matching",
-                  })
+                  )
             }
             summary={
               useProductionIntake || controlledMinorFlow
@@ -657,12 +674,12 @@ function ResultScreen({
               href={
                 useProductionIntake || controlledMinorFlow
                   ? undefined
-                  : buildBookingHref({
-                      service: serviceSlug,
-                      therapist: alternative.therapist.slug,
+                  : resultBookingHref(
+                      bookingCatalogs,
+                      serviceSlug,
+                      alternative.therapist.slug,
                       format,
-                      source: "matching",
-                    })
+                    )
               }
               summary={
                 useProductionIntake || controlledMinorFlow
@@ -810,100 +827,6 @@ function TherapistResultCard({
         </Link>
       </div>
     </div>
-  );
-}
-
-function ChooserScreen({
-  headingRef,
-  onQuiz,
-  onChooseTherapist,
-  onClose,
-}: {
-  headingRef: React.RefObject<HTMLHeadingElement | null>;
-  onQuiz: () => void;
-  onChooseTherapist?: ((therapistSlug: string) => void) | undefined;
-  onClose?: (() => void) | undefined;
-}) {
-  return (
-    <>
-      <h2
-        ref={headingRef}
-        tabIndex={-1}
-        className="text-forest mb-2 font-serif text-[28px] leading-[1.12] font-normal text-pretty outline-none md:text-[32px]"
-      >
-        Kako želite da pronađete termin?
-      </h2>
-      <p className="text-coffee/70 mb-7 text-[15px] leading-[1.6]">
-        Izaberite način koji vam više odgovara.
-      </p>
-      <button
-        type="button"
-        onClick={onQuiz}
-        className="border-coffee/12 bg-surface hover:border-sage mb-3 flex min-h-11 w-full cursor-pointer flex-col gap-1.5 rounded-2xl border-[1.5px] px-[22px] py-[18px] text-left transition-colors duration-200"
-      >
-        <span className="text-forest font-serif text-xl">
-          Pomozite mi da pronađem terapeuta
-        </span>
-        <span className="text-coffee/65 text-[14px] leading-[1.5]">
-          Odgovorite na nekoliko kratkih pitanja i odmah dobijte predlog.
-        </span>
-      </button>
-      <div className="text-sage mt-6 mb-3 text-[12.5px] font-semibold tracking-[0.14em] uppercase">
-        Znam kog terapeuta želim
-      </div>
-      <div className="flex flex-col gap-2.5">
-        {therapists.map((therapist) => {
-          const content = (
-            <>
-              <MonogramAvatar
-                initials={therapist.initials}
-                name={therapist.name}
-                imageSrc={therapist.image}
-                size="sm"
-              />
-              <span className="min-w-0 flex-1">
-                <span className="text-forest block font-serif text-lg">
-                  {therapist.name}
-                </span>
-                <span className="text-coffee/60 block truncate text-[13px]">
-                  {therapist.title}
-                </span>
-              </span>
-              <span aria-hidden className="text-forest text-[15px]">
-                →
-              </span>
-            </>
-          );
-          const className =
-            "bg-surface border-coffee/8 hover:shadow-row-hover flex items-center gap-4 rounded-[18px] border px-5 py-3.5 text-left no-underline transition-shadow duration-200";
-
-          return onChooseTherapist ? (
-            <button
-              key={therapist.slug}
-              type="button"
-              onClick={() => onChooseTherapist(therapist.slug)}
-              className={`${className} w-full cursor-pointer`}
-            >
-              {content}
-            </button>
-          ) : (
-            <Link
-              key={therapist.slug}
-              href={
-                buildBookingHref({
-                  therapist: therapist.slug,
-                  source: "therapist",
-                }) as Route
-              }
-              onClick={() => onClose?.()}
-              className={className}
-            >
-              {content}
-            </Link>
-          );
-        })}
-      </div>
-    </>
   );
 }
 

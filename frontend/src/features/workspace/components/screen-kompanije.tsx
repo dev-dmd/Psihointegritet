@@ -2,24 +2,24 @@
 
 import { ProgressBar } from "@/components/panel/progress-bar";
 import { StatusBadge } from "@/components/panel/status-badge";
+import { useFallbackContent } from "@/content/use-content";
 
-import { companies, companyPipeline } from "../data";
 import { STATUS_META } from "../types";
 import { useTranslations } from "next-intl";
 
 import { useStatusLabel } from "../use-status-label";
 import { PageHeader } from "./page-header";
+import { WorkspaceDataNotice } from "./workspace-data-notice";
 
 /** Kompanije — B2B pipeline + fund cards (admin only). */
 export function ScreenKompanije() {
   const statusLabel = useStatusLabel();
   const t = useTranslations("screens.companies");
+  const { companies, companyPipeline } = useFallbackContent().workspaceDemo;
   return (
     <section className="animate-fade-up">
-      <PageHeader
-        title="Kompanije"
-        description="Kompanijski programi, fondovi termina i tok saradnje."
-      />
+      <PageHeader title={t("title")} description={t("description")} />
+      <WorkspaceDataNotice />
       <div className="mb-5 flex flex-wrap gap-2">
         {companyPipeline.map((stage, index) => (
           <span
@@ -62,16 +62,22 @@ export function ScreenKompanije() {
                 <div className="text-ink-55 flex flex-wrap justify-between gap-2 text-[12.5px]">
                   <span>{company.model}</span>
                   <span>
-                    {company.employees} zaposlenih · {company.location}
+                    {t("employees", {
+                      count: company.employees,
+                      location: company.location,
+                    })}
                   </span>
                 </div>
                 {company.bought ? (
                   <div className="mt-2.5">
                     <div className="text-ink-55 mb-1.5 flex justify-between text-[12px]">
                       <span>
-                        {company.used} / {company.bought} termina
+                        {t("appointments", {
+                          used: company.used,
+                          bought: company.bought,
+                        })}
                       </span>
-                      <span>ističe {company.expires}</span>
+                      <span>{t("expires", { date: company.expires })}</span>
                     </div>
                     <ProgressBar value={pct} />
                   </div>

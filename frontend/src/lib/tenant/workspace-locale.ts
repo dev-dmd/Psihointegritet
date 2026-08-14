@@ -1,8 +1,12 @@
 import "server-only";
 
 import type { UiLocale } from "@/i18n/locales";
+import type { Identity } from "@/lib/auth/identity";
 import { getServerIdentity } from "@/lib/auth/identity-server";
-import { getDeploymentOrganization } from "@/lib/tenant/org-context";
+import {
+  getDeploymentOrganization,
+  type OrganizationContext,
+} from "@/lib/tenant/org-context";
 
 /**
  * Locale for the **authenticated** surfaces — staff workspace, client panel,
@@ -53,24 +57,33 @@ export class OrganizationMismatchError extends Error {
   }
 }
 
+export function assertWorkspaceOrganization(
+  identity: Identity | null,
+  organization: OrganizationContext,
+): void {
+  const membership = identity?.memberships[0];
+  if (membership && membership.organizationId !== organization.slug) {
+    throw new OrganizationMismatchError(
+      membership.organizationId,
+      organization.slug,
+    );
+  }
+}
+
 export const activeWorkspaceLocaleResolver: ActiveWorkspaceLocaleResolver = {
   async resolve(): Promise<UiLocale> {
     // "live": the workspace is request-time rendered, and an administrator
     // who just changed the language must not be shown the old one while the
     // tagged read catches up.
-    const organization = await getDeploymentOrganization("live");
-    const identity = await getServerIdentity();
+    const [organization, identity] = await Promise.all([
+      getDeploymentOrganization("live"),
+      getServerIdentity(),
+    ]);
 
     // `memberships` is empty until the backend identity slice lands (see
     // `lib/auth/identity.ts`), and superadmins legitimately hold none. Both are
     // normal states, not mismatches — fall through to the deployment locale.
-    const membership = identity?.memberships[0];
-    if (membership && membership.organizationId !== organization.slug) {
-      throw new OrganizationMismatchError(
-        membership.organizationId,
-        organization.slug,
-      );
-    }
+    assertWorkspaceOrganization(identity, organization);
 
     return organization.uiLocale;
   },

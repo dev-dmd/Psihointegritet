@@ -11,10 +11,10 @@ import {
 } from "@/lib/content-governance/system-content-catalog";
 import type { ContentType } from "@/lib/content-governance/types";
 import type { PlatformRouteId } from "@/lib/routes/platform-routes";
+import { useUserSafeError } from "@/lib/errors/use-user-safe-error";
 
 import type { ApiContentRevision } from "../content-api";
 import {
-  contentErrorMessage,
   useContentEntriesQuery,
   useOpenSystemContentEntryMutation,
 } from "../hooks/use-content-entries";
@@ -35,7 +35,7 @@ const ROUTE_ID = "workspace.content.list" satisfies PlatformRouteId;
  */
 export function ScreenSadrzaj() {
   const t = useTranslations("content");
-  const tc = useTranslations("common");
+  const safeError = useUserSafeError();
   const { reportError, errorsFor, clearError } = usePanelErrors();
 
   const entriesQuery = useContentEntriesQuery();
@@ -43,7 +43,7 @@ export function ScreenSadrzaj() {
 
   const entries = entriesQuery.data ?? [];
   const loadError = entriesQuery.isError
-    ? contentErrorMessage(entriesQuery.error, t("reloadHint"))
+    ? safeError.text(entriesQuery.error, "content", "load")
     : null;
 
   const [activeType, setActiveType] = useState<ContentType>("static_page");
@@ -63,7 +63,7 @@ export function ScreenSadrzaj() {
       ? systemContentIdentity(openEntry.variables)
       : null;
   const openError = openEntry.isError
-    ? contentErrorMessage(openEntry.error, t("requestFailed"))
+    ? safeError.text(openEntry.error, "content", "change")
     : null;
 
   const handleOpen = (
@@ -79,12 +79,12 @@ export function ScreenSadrzaj() {
     openEntry.mutate(definition, {
       onSuccess: (entry) => setSelectedEntryId(entry.entryId),
       onError: (error) => {
-        const message = contentErrorMessage(error, t("requestFailed"));
+        const presentation = safeError.present(error, "content", "change");
         reportError({
           routeId: ROUTE_ID,
           tabLabel: t("title"),
-          title: "Sistemska stranica nije otvorena",
-          description: message,
+          title: presentation.message,
+          description: presentation.nextAction,
           details: [],
         });
       },
@@ -108,37 +108,34 @@ export function ScreenSadrzaj() {
         </div>
       ) : null}
 
-      {entriesQuery.isLoading ? (
-        <p className="text-ink-55 text-[13.5px]">{tc("state.loading")}</p>
-      ) : (
-        <>
-          <ContentEntryList
-            entries={entries}
-            catalogue={systemContentCatalog}
-            activeType={activeType}
-            onTypeChange={(type) => {
-              setActiveType(type);
-              setSelectedEntryId(null);
-              openEntry.reset();
-            }}
-            selectedEntryId={selectedEntryId}
-            onSelect={setSelectedEntryId}
-            openingIdentity={openingIdentity}
-            openError={openError}
-            onOpen={handleOpen}
-          />
+      <ContentEntryList
+        entries={entries}
+        catalogue={systemContentCatalog}
+        activeType={activeType}
+        onTypeChange={(type) => {
+          setActiveType(type);
+          setSelectedEntryId(null);
+          openEntry.reset();
+        }}
+        selectedEntryId={selectedEntryId}
+        onSelect={setSelectedEntryId}
+        openingIdentity={openingIdentity}
+        openError={openError}
+        isInitialSync={
+          entriesQuery.isPending && entriesQuery.data === undefined
+        }
+        onOpen={handleOpen}
+      />
 
-          {selectedEntry && selectedDefinition ? (
-            <ContentRevisionEditor
-              key={selectedEntry.revisionId}
-              entry={selectedEntry}
-              displayTitle={selectedDefinition.title}
-              publicRoute={selectedDefinition.publicRoute}
-              onDeleted={() => setSelectedEntryId(null)}
-            />
-          ) : null}
-        </>
-      )}
+      {selectedEntry && selectedDefinition ? (
+        <ContentRevisionEditor
+          key={selectedEntry.revisionId}
+          entry={selectedEntry}
+          displayTitle={selectedDefinition.title}
+          publicRoute={selectedDefinition.publicRoute}
+          onDeleted={() => setSelectedEntryId(null)}
+        />
+      ) : null}
     </section>
   );
 }

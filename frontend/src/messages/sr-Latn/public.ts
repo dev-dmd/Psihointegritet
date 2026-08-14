@@ -1,0 +1,379 @@
+import type { EnPublicUi } from "@/messages/en/public";
+import type { Widen } from "@/messages/types";
+
+export const publicUi: Widen<EnPublicUi> = {
+  brand: { tagline: "Digitalni centar za mentalno zdravlje" },
+  navigation: {
+    mainLabel: "Glavna navigacija",
+    quickLabel: "Brza navigacija",
+    mobileLabel: "Mobilna navigacija",
+    menuLabel: "Meni",
+    openMenu: "Otvori meni",
+    closeMenu: "Zatvori meni",
+    book: "Zakaži termin",
+    links: {
+      support: "Pronađi podršku",
+      therapists: "Terapeuti",
+      services: "Usluge",
+      workshops: "Radionice",
+      knowledge: "Znanje i resursi",
+      compass: "Kompas",
+      about: "O nama",
+      parents: "Roditeljska podrška",
+      prices: "Cene",
+      team: "Tim",
+      companies: "Rad sa kompanijama",
+      contact: "Kontakt",
+    },
+  },
+  footer: {
+    description:
+      "Digitalni centar za mentalno zdravlje. Psihoterapija, savetovanje, radionice i edukativni sadržaji — na jednom mestu.",
+    formats: "{locations} · online i uživo",
+    supportGroup: "Podrška",
+    organizationGroup: "Psihointegritet",
+    rights: "© 2026 Psihointegritet. Sva prava zadržana.",
+    disclaimer:
+      "Sadržaji na ovoj stranici imaju edukativnu svrhu i ne predstavljaju zamenu za individualni razgovor sa stručnom osobom.",
+  },
+  pages: {
+    prices: {
+      eyebrow: "Transparentne informacije",
+      title: "Cene usluga i programa",
+      individualServices: "Individualne usluge",
+      packages: "Paketi",
+      sessionPackage: "Paket od {sessions, number} individualnih seansi",
+      groupPrograms: "Grupni programi",
+      paymentHeading: "Plaćanje i pomeranje termina",
+      paymentBody:
+        "Način plaćanja i pravila otkazivanja nisu javno potvrđeni. Tačan dogovor o terminu i uslovima pravite direktno sa terapeutom.",
+    },
+    contact: {
+      eyebrow: "Kontakt",
+      title: "Kako možemo pomoći?",
+      intro:
+        "Za opšta i poslovna pitanja pišite nam na {email}. Za termin, vođeni izbor i programe za kompanije koristite odgovarajući put ispod.",
+      appointmentTitle: "Želite termin?",
+      appointmentBody: "Pošaljite zahtev za termin.",
+      guidanceTitle: "Niste sigurni?",
+      guidanceBody: "Pronađite podršku kroz vođeni izbor.",
+      companyTitle: "Predstavljate kompaniju?",
+      companyBody: "Pogledajte programe za organizacije.",
+      detailsHeading: "Kontakt podaci",
+      detailsBody:
+        "Za opšte pitanje možete nam pisati na ovu adresu. Za zahtev za termin koristite posebnu formu za zakazivanje.",
+      formats: "onlajn i uživo",
+    },
+    about: {
+      title: "Digitalni centar za mentalno zdravlje",
+      intro:
+        "Psihointegritet povezuje psihoterapiju, savetovanje, edukativne sadržaje, radionice i programe ličnog razvoja — onlajn i uživo.",
+      approachHeading: "Pristup",
+      approachBody:
+        "Rad polazi od poverljivog razgovora, tempa osobe koja se javlja i jasnih informacija o uslugama, formatu i sledećem koraku.",
+      locationsHeading: "Gde radimo",
+      locationsBody:
+        "Onlajn rad je dostupan, a susreti uživo se dogovaraju u Chicagu (Illinois), Milwaukeeju i Madisonu (Wisconsin).",
+      book: "Zakaži termin",
+      teamHeading: "Tim",
+      teamBody:
+        "Detaljne biografije, oblasti rada i dostupni formati nalaze se na profilima svakog terapeuta.",
+      meetTeam: "Upoznajte tim",
+    },
+    parentSupport: {
+      eyebrow: "Podrška roditeljima",
+      title: "Roditeljsko savetovanje i programi",
+      book: "Zakaži termin",
+      duration: "Trajanje",
+      price: "Cena",
+      format: "Način rada",
+      programsHeading: "Programi prema uzrastu deteta",
+      therapistsHeading: "Terapeuti",
+    },
+    workshops: {
+      eyebrow: "Grupni programi",
+      title: "Radionice i programi",
+      intro:
+        "Programi su najavljeni na osnovu postojećeg sadržaja. Datum, voditelj, kapacitet i pravila prijave objavljuju se tek nakon potvrde tima.",
+      priceConfirmed: "Cena potvrđena",
+      preparing: "U pripremi",
+      details: "Pogledajte detalje",
+    },
+    legal: {
+      eyebrow: "Pravni tekst",
+      cookieTitle: "Politika kolačića",
+      termsTitle: "Uslovi korišćenja",
+    },
+    booking: {
+      eyebrow: "Zakazivanje",
+      title: "Pošaljite zahtev za termin",
+      intro:
+        "Izaberite uslugu, terapeuta i željeni termin. Dostupnost proverava terapeut ili član tima pre konačne potvrde.",
+    },
+    serviceDetail: {
+      breadcrumbLabel: "Putanja",
+      home: "Početna",
+      services: "Usluge",
+      eyebrow: "Usluga",
+      book: "Zakaži termin",
+      audienceHeading: "Kome je namenjena",
+      firstStepHeading: "Kako izgleda prvi korak",
+      packagesHeading: "Paketi individualnog rada",
+      sessionPackage: "Paket od {sessions, number} individualnih seansi",
+      questionsHeading: "Česta pitanja",
+      therapistsHeading: "Terapeuti koji pružaju uslugu",
+      availabilityHeading: "Dostupnost",
+      availabilityBody:
+        "Rad je moguć {format}. Za rad uživo dostupne su lokacije: {locations}.",
+    },
+    workshopDetail: {
+      breadcrumbLabel: "Putanja",
+      home: "Početna",
+      workshops: "Radionice",
+      priceConfirmed: "Cena potvrđena",
+      preparing: "Program u pripremi",
+      aboutHeading: "O programu",
+      aboutBody:
+        "Trenutno su potvrđeni tema, ciljna grupa i broj susreta. Dodatni sadržaj programa objavljuje se nakon potvrde tima.",
+      registrationHeading: "Status prijava",
+      registrationBody:
+        "Prijave još nisu otvorene. Datum, voditelj, kapacitet i pravila prijave biće objavljeni nakon potvrde tima.",
+      askQuestion: "Postavite opšte pitanje",
+    },
+    legalDocument: {
+      version: "Verzija {version}",
+      published: "Verzija {version} · objavljeno {date}",
+      pendingTitle: "Ovaj dokument je u pripremi.",
+      pendingBody:
+        "Tekst čeka pravnu potvrdu pre objave. Za pitanja u međuvremenu pišite nam na <email>{address}</email>.",
+    },
+    knowledge: {
+      eyebrow: "Znanje i resursi",
+      title: "Razumevanje može biti prvi korak.",
+      intro:
+        "Pripremamo stručne tekstove, vodiče i edukativne materijale koji mogu pomoći da bolje razumete ono kroz šta prolazite. Prvi sadržaji su u pripremi — objavljivaćemo ih postepeno.",
+      preparing: "U pripremi",
+      disclaimer:
+        "Sadržaji imaju edukativnu svrhu i ne predstavljaju dijagnozu niti zamenu za individualni razgovor sa stručnom osobom.",
+    },
+    servicesListing: {
+      eyebrow: "Usluge",
+      title: "Podrška prilagođena vašoj situaciji",
+      intro:
+        "Svaka usluga jasno definiše šta uključuje, koliko traje i kome odgovara. Rad je moguć onlajn i uživo, u Chicagu, Milwaukeeju i Madisonu, u tempu koji vama odgovara.",
+      details: "Detalji usluge",
+      book: "Zakaži termin",
+      packagesHeading: "Paketi individualnog rada",
+      packagesBody:
+        "Za klijente koji žele kontinuitet u radu dostupni su paketi individualnih seansi.",
+      sessionPackage: "Paket od {sessions, number} individualnih seansi",
+      programsHeading: "Grupni programi",
+      programsBody:
+        "Grupni programi namenjeni su osobama koje žele da kroz strukturisan proces, uz podršku terapeuta i grupe, rade na određenoj temi. Svaki program ima jasno definisan cilj, trajanje i broj susreta.",
+      programDetails: "Pogledajte detalje",
+      otherAreas: "Ostale oblasti podrške",
+      guidanceTitle: "Niste sigurni koja usluga vam odgovara?",
+      guidanceBody:
+        "Kroz nekoliko kratkih pitanja predložićemo terapeuta i način rada koji najbliže odgovaraju onome što tražite.",
+      guidanceAction: "Pomozi mi da izaberem",
+    },
+    team: {
+      eyebrow: "Naš tim",
+      title: "Ljudi s kojima ćete raditi.",
+      intro:
+        "Psihointegritet čine stručnjaci sa različitim iskustvima i pristupima, ujedinjeni istim principima geštalt psihoterapije — poverljivost, prisutnost i poštovanje vašeg tempa. Pogledajte pristup i oblasti rada svakog terapeuta i izaberite osobu koja vam uliva poverenje.",
+      guidanceTitle: "Niste sigurni koga da izaberete?",
+      guidanceBody:
+        "Kroz pet kratkih pitanja predložićemo terapeuta koji najbliže odgovara onome što tražite.",
+      guidanceAction: "Pomozi mi da izaberem",
+    },
+    therapist: {
+      all: "Svi terapeuti",
+      formats: "Formati rada",
+      mainAreas: "Glavne oblasti",
+      meet: "Upoznaj terapeuta",
+      meetNamed: "Upoznaj {name}",
+      otherEyebrow: "Ostali terapeuti",
+      otherTitle: "Upoznajte i ostatak tima",
+      book: "Zakaži termin",
+      servicesAction: "Pogledaj usluge",
+      approach: "Pristup i oblasti rada",
+      bookWith: "Zakažite prvi razgovor sa {name}",
+      firstConversation:
+        "Prvi razgovor nije obaveza da nastavite terapiju. Pošaljite zahtev, a dostupnost se potvrđuje nakon provere.",
+      unsure: "Nisam siguran/na",
+      format: "Način rada",
+      formatValue: "Onlajn ili uživo u {city} ({region})",
+      contact: "Kontakt",
+      generalContact: "Opšti kontakt",
+      servicesHeading: "Usluge koje pruža {name}",
+      details: "Detalji",
+      preparing: "Informacije u pripremi",
+      preparingBody: "Cena, trajanje i pravila rada se potvrđuju pre objave.",
+      findSupport: "Pronađi podršku",
+    },
+  },
+  home: {
+    hero: {
+      eyebrow: "Digitalni centar za mentalno zdravlje",
+      title: "Stručna podrška za bolje razumevanje sebe i svojih odnosa.",
+      description:
+        "Psihointegritet je digitalni centar za mentalno zdravlje koji povezuje stručnu podršku, edukaciju i lični razvoj. To nije samo mesto za zakazivanje psihoterapije, već prostor u kojem možete istraživati teme koje vas zanimaju, bolje razumeti sebe i, kada budete spremni, povezati se sa stručnom osobom.",
+      guidance: "Pomozi mi da pronađem podršku",
+      therapists: "Upoznaj terapeute",
+    },
+    reasons: {
+      eyebrow: "Razlozi dolaska",
+      title: "Od čega želite da počnete?",
+      description:
+        "Ne postoji „dovoljno velik“ razlog za dolazak. Izaberite temu koja vam je najbliža — to je dovoljno za početak razgovora.",
+    },
+    supportPaths: {
+      guidedEyebrow: "Vođeni izbor",
+      guidedTitle: "Pomozite mi da suzim izbor",
+      guidedDescription:
+        "Kroz pet kratkih pitanja dolazite do terapeuta i formata rada koji odgovaraju upravo vama. Bez obaveze, bez unošenja ličnih podataka.",
+      guidedAction: "Započni kratki upitnik",
+      selfEyebrow: "Samostalni izbor",
+      selfTitle: "Želim samostalno da upoznam terapeute",
+      selfDescription:
+        "Pregledajte profile, pristupe i oblasti rada — pa izaberite osobu koja vam uliva poverenje.",
+      selfAction: "Pregledaj terapeute",
+    },
+    services: {
+      eyebrow: "Usluge",
+      title: "Podrška prilagođena vašoj situaciji",
+      description:
+        "Svaka usluga jasno definiše šta uključuje, kome odgovara i koji je sledeći korak.",
+      firstConversation: "Zakaži prvi razgovor",
+      forParents: "Za roditelje",
+      preparing: "U pripremi",
+      learnMore: "Saznaj više",
+      book: "Zakaži termin",
+    },
+    therapists: {
+      eyebrow: "Naš tim",
+      title: "Upoznajte terapeute Psihointegriteta",
+      description: "Pronađite osobu i način rada koji vam ulivaju poverenje.",
+      all: "Pogledajte ceo tim",
+    },
+    firstSession: {
+      eyebrow: "Prvi razgovor",
+      title: "Prvi razgovor nije obaveza da nastavite terapiju.",
+      description:
+        "To je prilika da procenite da li vam terapeut i način rada odgovaraju — u svom tempu, bez pritiska.",
+      action: "Pošaljite zahtev za termin",
+    },
+    workshop: {
+      eyebrow: "Radionice · Primer radionice",
+      title: "Upoznaj sebe kroz geštalt iskustvo",
+      descriptionOne:
+        "Iskustvena radionica namenjena svima koji žele razvijati svesnost o sebi, svojim emocijama i obrascima ponašanja.",
+      descriptionTwo:
+        "Kroz grupni rad, iskustvene vežbe i geštalt eksperimente učesnici imaju priliku bolje razumeti sebe, unaprediti kontakt sa drugima i istražiti nove načine reagovanja u svakodnevnim situacijama.",
+      action: "Pogledajte radionice",
+      soon: "Detalji uskoro",
+    },
+    resources: {
+      eyebrow: "Znanje i resursi",
+      title: "Razumevanje može biti prvi korak.",
+      description:
+        "Ne morate odmah imati sve odgovore niti biti spremni za psihoterapiju. Stručni tekstovi i vodiči mogu vam pomoći da bolje razumete ono kroz šta prolazite, prepoznate svoje potrebe i odlučite koji naredni korak vam najviše odgovara.",
+      all: "Pogledaj sve sadržaje",
+      upcoming:
+        "Novi tekstovi, vodiči, audio sadržaji i edukativni materijali biće dodavani postepeno.",
+      disclaimer:
+        "Sadržaji imaju edukativnu svrhu i ne predstavljaju dijagnozu niti zamenu za individualni razgovor sa stručnom osobom.",
+      read: "Pročitaj tekst",
+    },
+    faq: {
+      eyebrow: "Poverenje i privatnost",
+      title: "Najčešća pitanja",
+      description:
+        "Sve što razgovarate sa terapeutom ostaje poverljivo. Ako imate pitanje koje ovde ne vidite, slobodno nam pišite.",
+      contact: "Kontaktirajte nas",
+    },
+    finalCta: {
+      title: "Ne morate unapred znati odakle da počnete.",
+      description:
+        "Dovoljan je jedan korak — a mi ćemo vam pomoći da pronađete pravi.",
+      support: "Pronađi podršku",
+      therapists: "Pregledaj terapeute",
+    },
+  },
+  bookingWidget: {
+    brandSubtitle: "Digitalni centar za mentalno zdravlje",
+    title: "Zakažite termin",
+    requestNotice: "Izbor termina je zahtev; terapeut ga potvrđuje.",
+    nextAvailable: "Sledeći dostupni termini",
+    cancel: "Otkaži",
+    notify: "Obavesti me",
+    book: "Zakaži",
+    online: "Onlajn",
+    inPerson: "Uživo",
+    formatLabel: "Način rada",
+    offeringsHeading: "Usluge kod {name}",
+    otherTherapists: "Ostali terapeuti",
+    yourSelection: "Vaš izbor",
+    back: "Nazad",
+    backToRecommendations: "Nazad na preporuke",
+    previousOffering: "Prethodna usluga",
+    nextOffering: "Sledeća usluga",
+    previousTherapists: "Prethodni terapeuti",
+    nextTherapists: "Sledeći terapeuti",
+    loadingOfferings: "Učitavanje usluga…",
+    noOfferings:
+      "Za izabranog terapeuta trenutno nema dostupnih usluga. Izaberite drugog terapeuta.",
+    availabilityError:
+      "Termini trenutno nisu mogli da se učitaju. Pokušajte ponovo.",
+    noSlots:
+      "Za izabrani dan trenutno nema slobodnih termina. Izaberite drugi datum ili zatražite obaveštenje.",
+    duration: "{count, plural, one {# minut} few {# minuta} other {# minuta}}",
+    calendarLabel: "Izbor datuma",
+    previousMonth: "Prethodni mesec",
+    nextMonth: "Sledeći mesec",
+    chooseMonth: "Izaberite mesec",
+    notifyEyebrow: "Raniji termin",
+    notifyTitle: "Obavestite me kada se termin oslobodi",
+    close: "Zatvori",
+    notifyBody:
+      "Izaberite popunjen budući termin. Ako se oslobodi, dobićete privatnu ponudu; kasniji zakazani termin možete zadržati.",
+    noNotifySlots: "Trenutno nema popunjenih budućih termina za izbor.",
+    saveNotification: "Sačuvaj obaveštenje",
+    contactBack: "Nazad na izbor termina",
+    name: "Ime i prezime",
+    namePlaceholder: "Vaše ime i prezime",
+    email: "Email adresa",
+    emailPlaceholder: "vasa@adresa.com",
+    phone: "Telefon",
+    optional: "opciono",
+    rules:
+      "Upoznat/a sam sa pravilima zakazivanja i razumem da slanje zahteva ne predstavlja konačnu potvrdu termina.",
+    sending: "Šaljem…",
+    sendRequest: "Pošalji zahtev za termin",
+    success: "Zahtev za termin je uspešno poslat",
+    successDescription: "Potvrdu ćete dobiti na {email}",
+    confirmationLabel: "Potvrda zahteva za termin",
+    appointment: "Termin",
+    details: "Podaci",
+    noteLabel: "Napomena:",
+    note: "Ovo još nije konačna potvrda termina. Terapeut ili član tima će proveriti dostupnost i poslati potvrdu ili predlog druge mogućnosti na adresu <email>{address}</email>.",
+  },
+  compassBanner: {
+    titleSuffix: "mentalnog zdravlja",
+    logoAlt: "Kompas mentalnog zdravlja",
+    action: "Pokreni Kompas",
+    leadFull:
+      "Odgovorite na nekoliko kratkih pitanja kako bismo vam predložili sadržaje koji bi vam trenutno mogli biti korisni. Kompas nije dijagnostički alat.",
+    leadCentered:
+      "Nekoliko kratkih pitanja, pa vam predlažemo sadržaje i alate koji bi vam sada mogli pomoći. Bez testa, bez dijagnoze.",
+    leadStrip:
+      "Kratka pitanja koja vas usmeravaju ka sadržaju i alatima. Bez dijagnoze.",
+    aside:
+      "Pomaže vam da razumete svoju situaciju i usmerava vas ka edukativnom sadržaju i alatima.",
+    durationLong: "≈ 2 minuta",
+    durationShort: "oko 2 min",
+    skippable: "Pitanja možete preskočiti",
+    anonymous: "Anonimno",
+  },
+};

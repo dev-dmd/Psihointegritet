@@ -7,10 +7,10 @@ import { StatCard } from "@/components/panel/stat-card";
 import { TabPills } from "@/components/panel/tab-pills";
 import { localizedPath } from "@/lib/routes/localized-path";
 import { useUiLocale } from "@/i18n/use-ui-locale";
+import { useUserSafeError } from "@/lib/errors/use-user-safe-error";
 
 import { useCompassFlowAdmin } from "../../hooks/use-compass-flow-admin";
 import {
-  taxonomyErrorMessage,
   useTaxonomyRegistryCache,
   useTaxonomyRegistryQuery,
 } from "../../hooks/use-taxonomy-registry";
@@ -130,6 +130,7 @@ function CompassRegistryPanel() {
   // (D-063) rather than a tab in this one.
   const router = useRouter();
   const locale = useUiLocale();
+  const safeError = useUserSafeError();
   const [activeTab, setActiveTab] = useState<KompasTab>("areas");
   const [editorState, setEditorState] = useState<{
     axis: ManagedTaxonomyAxis;
@@ -152,10 +153,7 @@ function CompassRegistryPanel() {
     (term) => term.status === "published",
   ).length;
   const loadError = registryQuery.isError
-    ? taxonomyErrorMessage(
-        registryQuery.error,
-        "Kompas registar se trenutno ne može učitati. Osvežite stranicu.",
-      )
+    ? safeError.text(registryQuery.error, "taxonomy", "load")
     : null;
 
   const activeAxis = AXIS_BY_TAB[activeTab];

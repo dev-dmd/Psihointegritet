@@ -1,4 +1,9 @@
-# Jedan jezik, jedan ishod — plan dovršetka dvojezičnosti
+# SUPERSEDED — Jedan jezik, jedan ishod — plan dovršetka dvojezičnosti
+
+> Istorijski zapis od 2026-08-12. D-077 Amandman 5 ostaje važeći, ali detaljni redosled,
+> CMS field ugovor i D-079 zamenjuje aktivni plan
+> `documentations/i18n/03_I18N_DEMO_CONTENT_IMPLEMENTATION_PLAN_v1_0.md` i zaključane odluke
+> od 2026-08-13. Ovaj dokument ne koristiti za novi rad.
 
 **Verzija:** 1.0 · **Datum:** 2026-08-12 · **Vlasnik:** Milan Dražić (CTO)
 **Odnos prema drugim dokumentima:** nastavak `I18N_MULTITENANT_PLAN_v1_0.md` (temelj,

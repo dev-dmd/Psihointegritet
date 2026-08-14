@@ -1,5 +1,5 @@
 import type { Route } from "next";
-import Link from "next/link";
+import { PublicLink as Link } from "@/components/ui/public-link";
 
 import type { CompassBreadcrumb } from "@/lib/compass/discoverability";
 

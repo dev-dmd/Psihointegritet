@@ -1,6 +1,7 @@
 "use client";
 
 import { XMarkIcon } from "@heroicons/react/24/outline";
+import { useTranslations } from "next-intl";
 
 import { BookingWidgetConfirmation } from "./BookingWidgetConfirmation";
 import type { ConfirmationDetails } from "./BookingWidgetConfirmation";
@@ -21,6 +22,8 @@ export function BookingWidgetConfirmationOverlay({
   details,
   onClose,
 }: BookingWidgetConfirmationOverlayProps) {
+  const t = useTranslations("public.bookingWidget");
+
   return (
     <div className="animate-slide-up fixed inset-0 z-50 flex items-end justify-center p-4 sm:items-center">
       <div
@@ -42,7 +45,7 @@ export function BookingWidgetConfirmationOverlay({
             type="button"
             onClick={onClose}
             className="text-coffee/50 hover:text-coffee cursor-pointer rounded-full p-1.5 transition-colors"
-            aria-label="Zatvori"
+            aria-label={t("close")}
           >
             <XMarkIcon className="size-5" />
           </button>

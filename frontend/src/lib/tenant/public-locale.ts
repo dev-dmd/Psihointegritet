@@ -27,19 +27,14 @@ import { getDeploymentOrganization } from "@/lib/tenant/org-context";
  * `Host` header · any `X-Organization-*` header · a browser cookie as tenant
  * identity · `Accept-Language` as the authority for organization locale.
  *
- * # Why `default_content_locale` and not `ui_locale`
+ * # Why `ui_locale`
  *
- * The public site is overwhelmingly tenant-authored content, and its audience
- * is the tenant's clients — not the tenant's staff. The configuration this
- * matters for is real: an organization whose team works in English while it
- * publishes for Serbian clients sets `ui_locale = "en"` and
- * `default_content_locale = "sr-Latn"`. Rendering the public chrome from
- * `ui_locale` there would produce English buttons around Serbian articles, and
- * an `<html lang>` that contradicts the text underneath it.
- *
- * The whole public surface therefore renders in one language — the content's.
- * `ui_locale` governs the surfaces whose audience is the staff: the workspace,
- * the client panel, system validations, statuses, and system email.
+ * D-077 A5 makes this the only organization-scoped render locale. It governs
+ * public platform chrome and fallback content as well as authenticated
+ * surfaces, messages, email and errors. Tenant-authored CMS fields remain
+ * exactly as entered and may therefore be mixed by author choice.
+ * `default_content_locale` is read only when a new CMS entry is created; it is
+ * never a render selector.
  *
  * # Tier 2 seam
  *
@@ -55,7 +50,7 @@ export interface PublicDeploymentLocaleResolver {
 
 export const publicDeploymentLocaleResolver: PublicDeploymentLocaleResolver = {
   async resolve(): Promise<UiLocale> {
-    return (await getDeploymentOrganization()).defaultContentLocale;
+    return (await getDeploymentOrganization()).uiLocale;
   },
 };
 

@@ -16,7 +16,6 @@ import {
   deleteLegalDocumentRevision,
   fetchLegalDocuments,
   importLegalDocumentDocx,
-  LegalDocumentsApiError,
   recordLegalDocumentApproval,
   removeLegalDocumentApproval,
   transitionLegalDocumentRevision,
@@ -26,10 +25,6 @@ import {
 } from "../legal-documents-api";
 
 export const LEGAL_DOCUMENTS_QUERY_KEY = ["legal-documents"] as const;
-
-export function legalErrorMessage(error: unknown, fallback: string): string {
-  return error instanceof LegalDocumentsApiError ? error.message : fallback;
-}
 
 /**
  * Shares the QueryProvider already mounted in the Control Center layout, so

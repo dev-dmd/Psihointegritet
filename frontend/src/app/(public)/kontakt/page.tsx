@@ -1,4 +1,5 @@
-import Link from "next/link";
+import { PublicLink as Link } from "@/components/ui/public-link";
+import { getTranslations } from "next-intl/server";
 
 import { PageHero } from "@/components/shared/page-hero";
 import { locationsShortLabel, siteSettings } from "@/content/site-settings";
@@ -9,21 +10,20 @@ export async function generateMetadata() {
   return metadataForRoute("/kontakt", await getContentProvider());
 }
 
-export default function ContactPage() {
+export default async function ContactPage() {
+  const t = await getTranslations("public.pages.contact");
   return (
     <>
       <PageHero id="kontakt" tone="warm">
         <div className="max-w-[720px]">
           <p className="text-coffee/60 mb-4 text-[12px] font-semibold tracking-[0.14em] uppercase">
-            Kontakt
+            {t("eyebrow")}
           </p>
           <h1 className="text-coffee mb-4 font-serif text-[clamp(32px,8.5vw,52px)] leading-[1.06] font-normal">
-            Kako možemo pomoći?
+            {t("title")}
           </h1>
           <p className="text-coffee/75 text-[16.5px] leading-[1.65]">
-            Za opšta i poslovna pitanja pišite nam na{" "}
-            {siteSettings.contactEmail}. Za termin, vođeni izbor i programe za
-            kompanije koristite odgovarajući put ispod.
+            {t("intro", { email: siteSettings.contactEmail })}
           </p>
         </div>
       </PageHero>
@@ -34,10 +34,10 @@ export default function ContactPage() {
             className="bg-surface border-coffee/8 hover:border-sage rounded-[20px] border p-6 no-underline transition-colors"
           >
             <h2 className="text-forest font-serif text-[23px] font-normal">
-              Želite termin?
+              {t("appointmentTitle")}
             </h2>
             <p className="text-coffee/68 mt-3 text-sm leading-[1.55]">
-              Pošaljite zahtev za termin.
+              {t("appointmentBody")}
             </p>
           </Link>
           <Link
@@ -45,10 +45,10 @@ export default function ContactPage() {
             className="bg-surface border-coffee/8 hover:border-sage rounded-[20px] border p-6 no-underline transition-colors"
           >
             <h2 className="text-forest font-serif text-[23px] font-normal">
-              Niste sigurni?
+              {t("guidanceTitle")}
             </h2>
             <p className="text-coffee/68 mt-3 text-sm leading-[1.55]">
-              Pronađite podršku kroz vođeni izbor.
+              {t("guidanceBody")}
             </p>
           </Link>
           <Link
@@ -56,16 +56,16 @@ export default function ContactPage() {
             className="bg-surface border-coffee/8 hover:border-sage rounded-[20px] border p-6 no-underline transition-colors"
           >
             <h2 className="text-forest font-serif text-[23px] font-normal">
-              Predstavljate kompaniju?
+              {t("companyTitle")}
             </h2>
             <p className="text-coffee/68 mt-3 text-sm leading-[1.55]">
-              Pogledajte programe za organizacije.
+              {t("companyBody")}
             </p>
           </Link>
         </div>
         <section className="bg-meadow/22 mt-10 max-w-[620px] rounded-[22px] p-7">
           <h2 className="text-forest font-serif text-[26px] font-normal">
-            Kontakt podaci
+            {t("detailsHeading")}
           </h2>
           <a
             href={`mailto:${siteSettings.contactEmail}`}
@@ -74,13 +74,12 @@ export default function ContactPage() {
             {siteSettings.contactEmail}
           </a>
           <p className="text-coffee/72 mt-5 text-[15px] leading-[1.65]">
-            Za opšte pitanje možete nam pisati na ovu adresu. Za zahtev za
-            termin koristite posebnu formu za zakazivanje.
+            {t("detailsBody")}
           </p>
           <p className="text-coffee/72 mt-5 text-[15px] leading-[1.65]">
             {locationsShortLabel}
             <br />
-            online i uživo
+            {t("formats")}
           </p>
         </section>
       </div>

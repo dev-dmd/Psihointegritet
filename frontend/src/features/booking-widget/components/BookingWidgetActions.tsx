@@ -12,6 +12,7 @@ import {
   DialogTitle,
 } from "@headlessui/react";
 import { useMemo, useState } from "react";
+import { useFormatter, useTranslations } from "next-intl";
 
 import { cn } from "@/helpers/cn";
 
@@ -42,13 +43,6 @@ interface BookingWidgetActionsProps {
   theme: BookingWidgetTheme;
 }
 
-function formatNotifyDate(date: string): string {
-  return new Intl.DateTimeFormat("sr-Latn-RS", {
-    day: "numeric",
-    month: "long",
-  }).format(toLocalDate(date));
-}
-
 export function BookingWidgetActions({
   copy,
   slots,
@@ -60,6 +54,8 @@ export function BookingWidgetActions({
   onSubmit,
   theme,
 }: BookingWidgetActionsProps) {
+  const t = useTranslations("public.bookingWidget");
+  const format = useFormatter();
   const {
     buildSubmitPayload,
     notifyOpen,
@@ -187,7 +183,7 @@ export function BookingWidgetActions({
                     "text-warm text-xs font-semibold tracking-[0.14em] uppercase",
                   )}
                 >
-                  Raniji termin
+                  {t("notifyEyebrow")}
                 </p>
                 <DialogTitle
                   className={cn(
@@ -195,12 +191,12 @@ export function BookingWidgetActions({
                     theme.heading,
                   )}
                 >
-                  Obavestite me kada se termin oslobodi
+                  {t("notifyTitle")}
                 </DialogTitle>
               </div>
               <button
                 type="button"
-                aria-label="Zatvori"
+                aria-label={t("close")}
                 onClick={() => setNotifyOpen(false)}
                 className={cn(
                   "focus-visible:ring-meadow inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-full outline-none focus-visible:ring-2",
@@ -211,8 +207,7 @@ export function BookingWidgetActions({
               </button>
             </div>
             <p className={cn("mt-3 text-sm leading-[1.55]", theme.muted)}>
-              Izaberite popunjen budući termin. Ako se oslobodi, dobićete
-              privatnu ponudu; kasniji zakazani termin možete zadržati.
+              {t("notifyBody")}
             </p>
 
             {notifyCandidates.length > 0 ? (
@@ -231,7 +226,10 @@ export function BookingWidgetActions({
                       )}
                     >
                       <span className="block font-semibold">
-                        {formatNotifyDate(slot.date)}
+                        {format.dateTime(toLocalDate(slot.date), {
+                          day: "numeric",
+                          month: "long",
+                        })}
                       </span>
                       <span className="mt-0.5 block text-xs opacity-75">
                         {slot.startTime}–{slot.endTime}
@@ -248,7 +246,7 @@ export function BookingWidgetActions({
                   theme.muted,
                 )}
               >
-                Trenutno nema popunjenih budućih termina za izbor.
+                {t("noNotifySlots")}
               </p>
             )}
 
@@ -261,7 +259,7 @@ export function BookingWidgetActions({
                   theme.secondaryButton,
                 )}
               >
-                Nazad
+                {t("back")}
               </button>
               <button
                 type="button"
@@ -272,7 +270,7 @@ export function BookingWidgetActions({
                   theme.primaryButton,
                 )}
               >
-                Sačuvaj obaveštenje
+                {t("saveNotification")}
               </button>
             </div>
           </DialogPanel>

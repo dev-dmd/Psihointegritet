@@ -3,9 +3,9 @@
 import { useMemo, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
+import { useLocale, useTranslations } from "next-intl";
 
-import { serviceCatalog } from "@/content/services";
-import { therapists as therapistCatalog } from "@/content/therapists";
+import { useFallbackContent } from "@/content/use-content";
 import type {
   BookingFormat,
   BookingSelectionPolicy,
@@ -29,6 +29,9 @@ import { BookingWidgetConfirmationOverlay } from "@/features/booking-widget/comp
 import type { ConfirmationDetails } from "@/features/booking-widget/components/BookingWidgetConfirmation";
 import type { BookingWidgetSubmitPayload } from "@/features/booking-widget/booking-widget.types";
 import { bookingWidgetThemes } from "@/features/booking-widget/booking-widget.variants";
+import { useUserSafeError } from "@/lib/errors/use-user-safe-error";
+import type { UiLocale } from "@/i18n/locales";
+import { localizedPublicPath } from "@/lib/routes/public-path";
 
 const glassTheme = bookingWidgetThemes.glass;
 
@@ -73,14 +76,23 @@ export function TherapistBookingWidget({
   selectionPolicy,
 }: TherapistBookingWidgetProps) {
   const router = useRouter();
-
+  const locale = useLocale() as UiLocale;
+  const t = useTranslations("public.bookingWidget");
+  const safeError = useUserSafeError();
+  const fallback = useFallbackContent();
+  const serviceCatalog = fallback.services.serviceCatalog;
+  const therapistCatalog = fallback.therapists;
   const { offerings, therapists } = useMemo(() => {
+    const catalogs = {
+      services: serviceCatalog,
+      therapists: therapistCatalog,
+    };
     // One offering per therapist × service × format — same grain as the
     // backend `service_booking_configs` row this projects.
-    const built: BookingWidgetOffering[] = buildBookingOfferings().map(
+    const built: BookingWidgetOffering[] = buildBookingOfferings(catalogs).map(
       (offering) => ({
         ...offering,
-        serviceName: offeringServiceName(offering),
+        serviceName: offeringServiceName(offering, catalogs),
       }),
     );
 
@@ -96,13 +108,13 @@ export function TherapistBookingWidget({
     }));
 
     return { offerings: built, therapists: thr };
-  }, []);
+  }, [serviceCatalog, therapistCatalog]);
 
   // Locked selections came from the guided flow, so "back" returns there
   // rather than unwinding arbitrary history.
   const backToRecommendations = useCallback(() => {
-    router.push("/pronadji-podrsku");
-  }, [router]);
+    router.push(localizedPublicPath("public.findSupport", { locale }));
+  }, [locale, router]);
 
   // ── Flow overlay state ──────────────────────────────────────────────────
 
@@ -175,8 +187,8 @@ export function TherapistBookingWidget({
         });
 
         const { toast } = await import("sonner");
-        toast.success("Zahtev za termin je uspešno poslat", {
-          description: `Potvrdu ćete dobiti na ${data.email}`,
+        toast.success(t("success"), {
+          description: t("successDescription", { email: data.email }),
         });
 
         const durationMinutes = svc ? parseInt(svc.duration, 10) || 60 : 0;
@@ -198,16 +210,12 @@ export function TherapistBookingWidget({
         });
         setFlowState("confirming");
       } catch (err: unknown) {
-        setSubmitError(
-          err instanceof Error
-            ? err.message
-            : "Slanje zahteva nije uspelo. Pokušajte ponovo.",
-        );
+        setSubmitError(safeError.text(err, "booking", "submit"));
       } finally {
         setIsSubmitting(false);
       }
     },
-    [selectedPayload],
+    [safeError, selectedPayload, serviceCatalog, t, therapistCatalog],
   );
 
   return (
@@ -217,7 +225,7 @@ export function TherapistBookingWidget({
     >
       <BookingWidget
         variant="glass"
-        brand={mockBrand}
+        brand={{ ...mockBrand, subtitle: t("brandSubtitle") }}
         offerings={offerings}
         therapists={therapists}
         selectionPolicy={selectionPolicy}

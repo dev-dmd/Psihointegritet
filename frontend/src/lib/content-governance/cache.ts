@@ -1,8 +1,12 @@
+import type { UiLocale } from "@/i18n/locales";
+
 import { staticContentProvider } from "./static-provider";
 import type { ContentType } from "./types";
 
-/** One tag for the public CMS read-model consumed by pages, metadata and sitemap. */
-export const PUBLIC_CONTENT_CACHE_TAG = "content:published:sr-Latn";
+/** One tag per locale for the public CMS read-model. */
+export function publicContentCacheTag(locale: UiLocale): string {
+  return `content:published:${locale}`;
+}
 
 const COLLECTION_ROUTES: Partial<Record<ContentType, string>> = {
   service: "/usluge",

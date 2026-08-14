@@ -3,6 +3,7 @@
 import type { UseQueryResult } from "@tanstack/react-query";
 
 import { StatCard } from "@/components/panel/stat-card";
+import { useUserSafeError } from "@/lib/errors/use-user-safe-error";
 
 import {
   type CompassFlowDefinition,
@@ -69,6 +70,7 @@ export function CompassAdminWorkspace({
   registry: UseQueryResult<TaxonomyRegistrySnapshot>;
   flowAdmin: ReturnType<typeof useCompassFlowAdmin>;
 }) {
+  const safeError = useUserSafeError();
   const {
     flows,
     createMutation,
@@ -98,9 +100,7 @@ export function CompassAdminWorkspace({
           Flow verzije se trenutno ne mogu učitati
         </p>
         <p className="text-ink-70 mt-1 text-[13px] leading-[1.5]">
-          {flows.error instanceof Error
-            ? flows.error.message
-            : "Osvežite stranicu; ako se ponovi, javite tehničkom timu."}
+          {safeError.text(flows.error, "compass", "load")}
         </p>
       </div>
     );
@@ -313,7 +313,9 @@ export function CompassAdminWorkspace({
           </pre>
         ) : null}
         {previewMutation.isError ? (
-          <p className="text-danger mt-3">{previewMutation.error.message}</p>
+          <p className="text-danger mt-3">
+            {safeError.text(previewMutation.error, "compass", "change")}
+          </p>
         ) : null}
       </div>
     );
@@ -371,7 +373,11 @@ export function CompassAdminWorkspace({
       ) : null}
       {transitionMutation.isError || reviewMutation.isError ? (
         <p className="text-danger mt-3">
-          {(transitionMutation.error ?? reviewMutation.error)?.message}
+          {safeError.text(
+            transitionMutation.error ?? reviewMutation.error,
+            "compass",
+            "publish",
+          )}
         </p>
       ) : null}
       <details className="mt-6 text-[12px]">

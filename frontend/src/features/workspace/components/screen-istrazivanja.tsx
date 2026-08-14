@@ -5,6 +5,7 @@ import { useState } from "react";
 import { ProgressBar } from "@/components/panel/progress-bar";
 import { StatCard } from "@/components/panel/stat-card";
 import { TabPills } from "@/components/panel/tab-pills";
+import { useUserSafeError } from "@/lib/errors/use-user-safe-error";
 
 import { useResearchOverviewQuery } from "../hooks/use-research-results";
 import type { SurveyResults } from "../research-api";
@@ -119,6 +120,7 @@ function SurveyCard({ survey }: { survey: SurveyResults }) {
  * measurement, and averaging the two would report a number nobody measured.
  */
 export function ScreenIstrazivanja() {
+  const safeError = useUserSafeError();
   const [tab, setTab] = useState<TabId>("overview");
   const query = useResearchOverviewQuery();
   const surveys = query.data ?? [];
@@ -170,7 +172,7 @@ export function ScreenIstrazivanja() {
             Rezultati se ne mogu učitati
           </p>
           <p className="text-ink-70 mt-1 text-[13px]">
-            Osvežite stranicu ili pokušajte kasnije.
+            {safeError.text(query.error, "research", "load")}
           </p>
         </div>
       ) : null}

@@ -10,7 +10,10 @@
  */
 
 import type { ActorSummary } from "@/components/panel/actor-badge";
-import { isApiProblem } from "@/lib/errors/api-problem";
+import {
+  JsonRequestError,
+  parseJsonResponse as parseOrThrow,
+} from "@/lib/api/request-json";
 import type {
   ApprovalCapability,
   ContentTemplate,
@@ -98,43 +101,7 @@ export interface ApiContentHealth {
   missingApprovals: ApprovalCapability[];
 }
 
-export class ContentApiError extends Error {
-  constructor(
-    message: string,
-    public readonly status: number,
-  ) {
-    super(message);
-    this.name = "ContentApiError";
-  }
-}
-
-async function parseOrThrow<T>(response: Response): Promise<T> {
-  if (!response.ok) {
-    const text = await response.text().catch(() => "");
-    // The backend wraps every HTTPException in an RFC 7807 `ApiProblem`
-    // envelope (`api/errors.py::_handle_http_exception`) — `HTTPException
-    // (detail=X)` becomes `title: X`, not `detail` (that field is only set
-    // by the 500 handler's generic message). Reading raw response text
-    // directly here would show the user the whole JSON envelope instead of
-    // the actual message. Server failures are deliberately translated below
-    // while retaining their correlation ID for support.
-    let message = text || `Zahtev nije uspeo (${response.status}).`;
-    try {
-      const parsed: unknown = text ? JSON.parse(text) : null;
-      if (isApiProblem(parsed)) {
-        message =
-          parsed.status >= 500
-            ? `Server trenutno ne može da obradi zahtev. Pokušajte ponovo. Ako se greška ponovi, pošaljite podršci ID greške: ${parsed.correlationId}.`
-            : (parsed.detail ?? parsed.title);
-      }
-    } catch {
-      // Not JSON (network failure, proxy error page…) — keep the raw text.
-    }
-    throw new ContentApiError(message, response.status);
-  }
-  if (response.status === 204) return undefined as T;
-  return (await response.json()) as T;
-}
+export { JsonRequestError as ContentApiError };
 
 /**
  * Converts a `.docx` into RichDoc for a staff editor. Nothing is stored: the
@@ -145,10 +112,7 @@ export async function importRichDocDocx(
   file: File,
 ): Promise<RichDocNormalizationResult> {
   if (!file.name.toLowerCase().endsWith(".docx")) {
-    throw new ContentApiError(
-      "Izabrani fajl nije .docx. Sačuvajte Word dokument kao .docx i pokušajte ponovo.",
-      422,
-    );
+    throw new JsonRequestError(422, "Request failed", "file_type_invalid");
   }
   const formData = new FormData();
   formData.set("file", file);

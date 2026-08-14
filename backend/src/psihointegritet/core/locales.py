@@ -6,7 +6,9 @@ refuses is an organization that cannot be saved, which is the failure this
 duplication is allowed to have — loud, at write time, not silent at render.
 """
 
-from typing import Final
+from typing import Final, Literal
+
+type UiLocale = Literal["en", "sr-Latn"]
 
 #: What a new organization gets when nothing else is specified.
 PLATFORM_DEFAULT_LOCALE: Final[str] = "en"

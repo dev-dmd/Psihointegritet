@@ -9,7 +9,7 @@
  * A locale is a **platform UI locale** — the language of navigation, system
  * messages, validations, statuses and system emails. It is NOT:
  * - the language a tenant writes its content in (that is
- *   `organization.default_content_locale`, resolved separately);
+ *   `organization.ui_locale`, resolved through the SSG/ISR-safe public seam);
  * - a timezone, a currency or a business location — those travel on their own
  *   fields precisely so `en` cannot silently imply "USD" or "America/Chicago";
  * - an orthographic variant. Ekavica and ijekavica are both content inside

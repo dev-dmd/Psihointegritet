@@ -3,7 +3,10 @@ import Link from "next/link";
 
 import { Chip } from "@/components/ui/chip";
 import { cn } from "@/helpers/cn";
+import type { UiLocale } from "@/i18n/locales";
+import { localizedPublicPath } from "@/lib/routes/public-path";
 import type { Therapist } from "@/types/therapist";
+import { getLocale, getTranslations } from "next-intl/server";
 
 interface TherapistRowProps {
   therapist: Therapist;
@@ -13,11 +16,13 @@ interface TherapistRowProps {
   preload?: boolean;
 }
 
-export function TherapistRow({
+export async function TherapistRow({
   therapist,
   flipped,
   preload = false,
 }: TherapistRowProps) {
+  const t = await getTranslations("public.pages.therapist");
+  const locale = (await getLocale()) as UiLocale;
   return (
     <div className="border-coffee/10 grid grid-cols-1 items-center gap-8 border-t py-16 md:grid-cols-2 md:gap-[72px]">
       <div className={cn(flipped && "md:order-2")}>
@@ -33,21 +38,27 @@ export function TherapistRow({
         </div>
       </div>
       <div className={cn(flipped && "md:order-1")}>
-        <Chip variant="label" className="mb-[22px]">
-          {therapist.badge}
-        </Chip>
+        {therapist.badge ? (
+          <Chip variant="label" className="mb-[22px]">
+            {therapist.badge}
+          </Chip>
+        ) : null}
         <h3 className="text-forest mb-2 font-serif text-[32px] leading-[1.1] font-normal md:text-[40px]">
           {therapist.name}
         </h3>
         <div className="text-coffee/60 mb-5 text-sm font-semibold">
           {therapist.title}
         </div>
-        <p className="text-coffee/82 mb-5 font-serif text-[19px] leading-[1.5] italic">
-          „{therapist.quote}“
-        </p>
-        <p className="text-coffee/72 mb-6 max-w-[520px] text-[15.5px] leading-[1.65]">
-          {therapist.cardExcerpt}
-        </p>
+        {therapist.quote ? (
+          <p className="text-coffee/82 mb-5 font-serif text-[19px] leading-[1.5] italic">
+            „{therapist.quote}“
+          </p>
+        ) : null}
+        {therapist.cardExcerpt ? (
+          <p className="text-coffee/72 mb-6 max-w-[520px] text-[15.5px] leading-[1.65]">
+            {therapist.cardExcerpt}
+          </p>
+        ) : null}
         <div className="mb-7 flex flex-wrap gap-2">
           {therapist.areas.map((area) => (
             <Chip key={area} variant="tagOutlined">
@@ -56,10 +67,14 @@ export function TherapistRow({
           ))}
         </div>
         <Link
-          href={`/tim/${therapist.slug}`}
+          href={localizedPublicPath("public.team.detail", {
+            locale,
+            params: { slug: therapist.slug },
+          })}
           className="bg-forest text-canvas hover:bg-forest-hover inline-flex items-center gap-2.5 rounded-full px-[26px] py-3.5 text-[15px] font-semibold transition-colors"
         >
-          Upoznaj {therapist.nameAccusative} <span aria-hidden="true">→</span>
+          {t("meetNamed", { name: therapist.nameAccusative })}{" "}
+          <span aria-hidden="true">→</span>
         </Link>
       </div>
     </div>

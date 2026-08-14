@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useCallback, useSyncExternalStore } from "react";
 
 import { Reveal } from "@/components/motion/reveal";
@@ -91,6 +92,7 @@ export function CompassCtaSection({
 }: {
   previewEnabled?: boolean;
 }) {
+  const t = useTranslations("public.compassBanner");
   const raw = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
   const stored = parseChoice(previewEnabled ? raw : null);
 
@@ -112,7 +114,7 @@ export function CompassCtaSection({
       className="scroll-mt-24 pt-[72px] md:pt-32"
     >
       <h2 id="kompas-cta-title" className="sr-only">
-        Kompas mentalnog zdravlja
+        {t("logoAlt")}
       </h2>
 
       <div className="mx-auto max-w-[1536px] px-5 md:px-8">

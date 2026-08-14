@@ -1,5 +1,5 @@
 import type { Route } from "next";
-import Link from "next/link";
+import { PublicLink as Link } from "@/components/ui/public-link";
 
 import { JsonLd } from "@/components/shared/json-ld";
 import { countSr } from "@/helpers/plural-sr";
@@ -16,6 +16,7 @@ import type {
   PublicTaxonomyPageAggregate,
   RoutablePublicTaxonomyTerm,
 } from "@/lib/compass/types";
+import type { Therapist } from "@/types/therapist";
 
 import { CompassSupportSection } from "@/features/compass/sections/compass-support-section";
 
@@ -25,6 +26,7 @@ import { CompassContentCard } from "./content-card";
 interface PublicTaxonomyPageProps {
   aggregate: PublicTaxonomyPageAggregate;
   routeKind: CompassRouteKind;
+  therapists: readonly Therapist[];
 }
 
 function uniqueRoutableTopics(
@@ -55,6 +57,7 @@ function uniqueRoutableTopics(
 export function PublicTaxonomyPage({
   aggregate,
   routeKind,
+  therapists,
 }: PublicTaxonomyPageProps) {
   const record = compassPageDiscoverability(aggregate, routeKind);
   const term = routablePublicTerm(aggregate.term, routeKind);
@@ -207,7 +210,7 @@ export function PublicTaxonomyPage({
             </Link>
           </section>
 
-          <CompassSupportSection />
+          <CompassSupportSection therapists={therapists} />
         </div>
       </section>
     </>

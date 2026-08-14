@@ -3,6 +3,8 @@ import type userEvent from "@testing-library/user-event";
 import { expect } from "vitest";
 
 import type { BookingSelectionPolicy } from "@/features/booking/booking-context";
+import { withIntl } from "@/test-support/intl";
+import type { UiLocale } from "@/i18n/locales";
 
 import { mockBrand } from "./booking-widget.mock-data";
 import type {
@@ -85,18 +87,22 @@ export const locked: BookingSelectionPolicy = {
 export function renderWidget(
   policy: BookingSelectionPolicy,
   extra: Partial<Parameters<typeof BookingWidget>[0]> = {},
+  locale: UiLocale = "sr-Latn",
 ) {
   return render(
-    <BookingWidget
-      variant="glass"
-      brand={mockBrand}
-      offerings={offerings}
-      therapists={therapists}
-      selectionPolicy={policy}
-      slots={slots}
-      initialFormat="online"
-      {...extra}
-    />,
+    withIntl(
+      <BookingWidget
+        variant="glass"
+        brand={mockBrand}
+        offerings={offerings}
+        therapists={therapists}
+        selectionPolicy={policy}
+        slots={slots}
+        initialFormat="online"
+        {...extra}
+      />,
+      locale,
+    ),
   );
 }
 

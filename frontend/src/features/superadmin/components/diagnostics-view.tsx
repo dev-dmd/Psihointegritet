@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import { KV } from "@/components/panel/kv";
+import { useUserSafeError } from "@/lib/errors/use-user-safe-error";
 import {
   StatusBadge,
   type StatusBadgeTone,
@@ -93,6 +94,7 @@ function DiagnosticResultRow({ result }: { result: DiagnosticResult }) {
  * cached per scope. Platform health cards stay demo until R6.
  */
 export function DiagnosticsView() {
+  const safeError = useUserSafeError();
   const [lastCheck, setLastCheck] = useState<string | null>(null);
 
   const registryQuery = useDiagnosticsRegistryQuery();
@@ -109,11 +111,8 @@ export function DiagnosticsView() {
           setLastCheck(`danas · ${hh}:${mm}`);
           toast.success("Provera završena.");
         },
-        onError: (error) => {
-          const message =
-            error instanceof Error ? error.message : "Provera nije uspela.";
-          toast.error(message);
-        },
+        onError: (error) =>
+          toast.error(safeError.text(error, "diagnostics", "run")),
       },
     );
   };

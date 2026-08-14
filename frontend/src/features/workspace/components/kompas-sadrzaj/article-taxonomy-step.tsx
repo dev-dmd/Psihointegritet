@@ -1,10 +1,10 @@
 "use client";
 
 import { type ChangeEvent, useCallback, useMemo, useState } from "react";
+import { useUserSafeError } from "@/lib/errors/use-user-safe-error";
 
 import type { ApiContentDiscovery } from "../../content-api";
 import {
-  taxonomyErrorMessage,
   useSaveTaxonomyTermMutation,
   useTaxonomyRegistryLookupQuery,
   useTaxonomyRegistryCache,
@@ -28,6 +28,7 @@ export function ArticleTaxonomyStep({
   discovery: ApiContentDiscovery;
   onChange: (next: ApiContentDiscovery) => void;
 }) {
+  const safeError = useUserSafeError();
   // ── Registry ─────────────────────────────────────────────────────────
   const registry = useTaxonomyRegistryLookupQuery();
   const cache = useTaxonomyRegistryCache();
@@ -186,10 +187,7 @@ export function ArticleTaxonomyStep({
 
   const isSaving = saveTerm.isPending;
   const saveError = saveTerm.isError
-    ? taxonomyErrorMessage(
-        saveTerm.error,
-        "Nije uspelo kreiranje novog termina.",
-      )
+    ? safeError.text(saveTerm.error, "taxonomy", "change")
     : null;
 
   return (

@@ -1,7 +1,8 @@
 "use client";
 
+import { useUserSafeError } from "@/lib/errors/use-user-safe-error";
+
 import {
-  firstTaxonomyError,
   useTaxonomyTermReviewMutation,
   useTaxonomyTermTransitionMutation,
 } from "../../hooks/use-taxonomy-registry";
@@ -31,6 +32,7 @@ export function TermGovernanceControls({
   term: TaxonomyTerm;
   onChanged: (term: TaxonomyTerm) => void;
 }) {
+  const safeError = useUserSafeError();
   const transitionMutation = useTaxonomyTermTransitionMutation(term, onChanged);
   const reviewMutation = useTaxonomyTermReviewMutation(term, onChanged);
 
@@ -43,18 +45,12 @@ export function TermGovernanceControls({
     approvedCapabilities.has(capability),
   );
   const busy = transitionMutation.isPending || reviewMutation.isPending;
-  const error = firstTaxonomyError([
-    {
-      isError: transitionMutation.isError,
-      error: transitionMutation.error,
-      fallback: "Promena statusa nije sačuvana. Pokušajte ponovo.",
-    },
-    {
-      isError: reviewMutation.isError,
-      error: reviewMutation.error,
-      fallback: "Odluka nije sačuvana. Pokušajte ponovo.",
-    },
-  ]);
+  const cause = transitionMutation.isError
+    ? transitionMutation.error
+    : reviewMutation.isError
+      ? reviewMutation.error
+      : null;
+  const error = cause ? safeError.text(cause, "taxonomy", "publish") : null;
 
   const button = (target: TaxonomyStatus, label: string, disabled = false) => (
     <LifecycleButton

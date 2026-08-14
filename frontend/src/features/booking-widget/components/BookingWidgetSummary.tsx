@@ -1,8 +1,10 @@
 "use client";
 
 import Image from "next/image";
+import { useLocale, useTranslations } from "next-intl";
 
 import { cn } from "@/helpers/cn";
+import type { UiLocale } from "@/i18n/locales";
 
 import { formatBookingPrice } from "../booking-widget.config";
 import { useBookingWidget } from "../hooks/use-booking-widget";
@@ -30,6 +32,8 @@ export function BookingWidgetSummary({
   copy,
   theme,
 }: BookingWidgetSummaryProps) {
+  const t = useTranslations("public.bookingWidget");
+  const locale = useLocale() as UiLocale;
   const { activeOffering, selectedTherapistId } = useBookingWidget();
 
   const selectedTherapist =
@@ -73,7 +77,7 @@ export function BookingWidgetSummary({
         </h3>
         {activeOffering ? (
           <p className={cn("mt-3 text-base sm:text-lg", theme.serviceMeta)}>
-            {activeOffering.durationMinutes} minuta
+            {t("duration", { count: activeOffering.durationMinutes })}
             <span aria-hidden className="text-warm mx-2">
               ·
             </span>
@@ -84,6 +88,7 @@ export function BookingWidgetSummary({
             {formatBookingPrice(
               activeOffering.priceAmount,
               activeOffering.currency,
+              locale,
             )}
           </p>
         ) : null}

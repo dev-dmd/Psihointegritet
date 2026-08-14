@@ -1,4 +1,5 @@
 import { cn } from "@/helpers/cn";
+import { useTranslations } from "next-intl";
 
 import { BookingWidgetMobileBrand } from "./BookingWidgetBrandPanel";
 import { useBookingWidget } from "../hooks/use-booking-widget";
@@ -21,6 +22,7 @@ export function BookingWidgetHeader({
   theme,
 }: BookingWidgetHeaderProps) {
   const { selectedFormat, setSelectedFormat } = useBookingWidget();
+  const t = useTranslations("public.bookingWidget");
   const formats: Array<{ value: BookingFormat; label: string }> = [
     { value: "online", label: copy.onlineLabel },
     { value: "uzivo", label: copy.inPersonLabel },
@@ -55,7 +57,7 @@ export function BookingWidgetHeader({
         </div>
         <div
           role="radiogroup"
-          aria-label="Način rada"
+          aria-label={t("formatLabel")}
           className={cn(
             "grid min-h-10 grid-cols-2 rounded-full border p-1 lg:w-[214px]",
             theme.switchTrack,

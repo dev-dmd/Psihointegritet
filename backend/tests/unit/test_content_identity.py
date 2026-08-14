@@ -89,10 +89,26 @@ def test_publicly_routable_covers_both_registries_and_nothing_else() -> None:
     )
 
 
-def test_a_foreign_locale_is_not_an_article_identity() -> None:
-    assert not is_article_identity(
+def test_every_supported_locale_can_own_article_and_system_content() -> None:
+    assert is_article_identity(
         ContentType.ARTICLE, ARTICLE_SLUG, ContentTemplate.ARTICLE_DETAIL, "en"
     )
+    assert (
+        require_content_identity(
+            ContentType.STATIC_PAGE, "o-nama", ContentTemplate.STATIC_INFORMATION, "en"
+        )
+        is ContentManagement.SYSTEM
+    )
+
+
+def test_an_unsupported_locale_is_not_a_content_identity() -> None:
+    assert not is_article_identity(
+        ContentType.ARTICLE, ARTICLE_SLUG, ContentTemplate.ARTICLE_DETAIL, "de"
+    )
+    with pytest.raises(ValueError, match="Unsupported content locale"):
+        require_content_identity(
+            ContentType.STATIC_PAGE, "o-nama", ContentTemplate.STATIC_INFORMATION, "de"
+        )
 
 
 def test_reserved_slugs_match_the_shared_fixture() -> None:

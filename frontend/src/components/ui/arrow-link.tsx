@@ -1,8 +1,13 @@
+"use client";
+
 import type { Route } from "next";
 import Link from "next/link";
+import { useLocale } from "next-intl";
 import type { ReactNode } from "react";
 
 import { cn } from "@/helpers/cn";
+import type { UiLocale } from "@/i18n/locales";
+import { localizePublicHref } from "@/lib/routes/public-path";
 
 const toneClasses = {
   /** Plain forest link with sage hover. */
@@ -31,6 +36,7 @@ export function ArrowLink({
   circled = false,
   className,
 }: ArrowLinkProps) {
+  const locale = useLocale() as UiLocale;
   const linkClassName = cn(
     "inline-flex items-center gap-2.5 text-[15px] font-semibold no-underline transition-colors duration-200",
     toneClasses[tone],
@@ -64,7 +70,10 @@ export function ArrowLink({
   }
 
   return (
-    <Link href={href as Route} className={linkClassName}>
+    <Link
+      href={localizePublicHref(href, locale) as Route}
+      className={linkClassName}
+    >
       {content}
     </Link>
   );

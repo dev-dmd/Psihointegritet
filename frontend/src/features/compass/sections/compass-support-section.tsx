@@ -1,6 +1,6 @@
-import Link from "next/link";
+import { PublicLink as Link } from "@/components/ui/public-link";
 import { MonogramAvatar } from "@/components/ui/monogram-avatar";
-import { therapists } from "@/content/therapists";
+import type { Therapist } from "@/types/therapist";
 
 /**
  * Stručna podrška — the evergreen professional-support block that closes every
@@ -22,7 +22,11 @@ const COPY = {
     "Kontekst je prenet u Pronađi podršku. Tamo možete da ga izmenite ili uklonite pre nego što nastavite.",
 } as const;
 
-export function CompassSupportSection() {
+export function CompassSupportSection({
+  therapists,
+}: {
+  therapists: readonly Therapist[];
+}) {
   return (
     <section
       aria-labelledby="kompas-support-title"

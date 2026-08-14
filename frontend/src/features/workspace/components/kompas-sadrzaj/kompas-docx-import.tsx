@@ -3,8 +3,8 @@
 import { useRef, useState } from "react";
 
 import type { RichDoc } from "@/lib/content-governance/rich-doc";
+import { useUserSafeError } from "@/lib/errors/use-user-safe-error";
 
-import { contentErrorMessage } from "../../hooks/use-content-entries";
 import { useArticleImportMutation } from "../../hooks/use-article-import";
 
 /**
@@ -25,6 +25,7 @@ export function KompasDocxImport({
   onImported: (body: RichDoc) => void;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
+  const safeError = useUserSafeError();
   const [findings, setFindings] = useState<string[]>([]);
   const [pendingBody, setPendingBody] = useState<RichDoc | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -41,12 +42,7 @@ export function KompasDocxImport({
     },
     onFailed: (cause) => {
       setPendingBody(null);
-      setError(
-        contentErrorMessage(
-          cause,
-          "Dokument nije uvezen. Pokušajte ponovo ili nalepite tekst.",
-        ),
-      );
+      setError(safeError.text(cause, "content", "import"));
     },
   });
 

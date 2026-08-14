@@ -1,13 +1,11 @@
+import { parseJsonResponse } from "@/lib/api/request-json";
 import type { components } from "@/types/api.generated";
 
 export type IntakeTeamQueueItem = components["schemas"]["TeamQueueItem"];
 
 export async function fetchIntakeTeamQueue(): Promise<IntakeTeamQueueItem[]> {
   const response = await fetch("/api/intake/team-queue", { cache: "no-store" });
-  if (!response.ok) {
-    throw new Error("Unable to load Intake queue");
-  }
-  return (await response.json()) as IntakeTeamQueueItem[];
+  return parseJsonResponse<IntakeTeamQueueItem[]>(response);
 }
 
 export async function claimIntakeCase(caseId: string): Promise<void> {
@@ -15,9 +13,7 @@ export async function claimIntakeCase(caseId: string): Promise<void> {
     `/api/intake/team-queue/${encodeURIComponent(caseId)}/claim`,
     { method: "POST" },
   );
-  if (!response.ok) {
-    throw new Error("Unable to claim IntakeCase");
-  }
+  await parseJsonResponse<void>(response);
 }
 
 export async function reassignIntakeCase(
@@ -33,7 +29,5 @@ export async function reassignIntakeCase(
       body: JSON.stringify({ therapistProfileId, reasonCode }),
     },
   );
-  if (!response.ok) {
-    throw new Error("Unable to reassign IntakeCase");
-  }
+  await parseJsonResponse<void>(response);
 }

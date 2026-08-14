@@ -2,25 +2,28 @@ import { Reveal } from "@/components/motion/reveal";
 import { TherapistCard } from "@/components/shared/therapist-card";
 import { ArrowLink } from "@/components/ui/arrow-link";
 import { SectionHeading } from "@/components/ui/section-heading";
-import { therapists } from "@/content/therapists";
+import { getFallbackContent } from "@/content/server";
+import { getTranslations } from "next-intl/server";
 
-export function Therapists() {
+export async function Therapists() {
+  const t = await getTranslations("public.home.therapists");
+  const { therapists } = await getFallbackContent();
   return (
     <section id="terapeuti" className="scroll-mt-24 pt-[72px] md:pt-32">
       <div className="mx-auto max-w-[1536px] px-5 md:px-8">
         <Reveal>
           <div className="mb-14 flex flex-wrap items-end justify-between gap-10">
             <SectionHeading
-              eyebrow="Naš tim"
-              title="Upoznajte terapeute Psihointegriteta"
-              description="Pronađite osobu i način rada koji vam ulivaju poverenje."
+              eyebrow={t("eyebrow")}
+              title={t("title")}
+              description={t("description")}
             />
             <ArrowLink
               href="/tim"
               tone="underline"
               className="whitespace-nowrap"
             >
-              Pogledajte ceo tim
+              {t("all")}
             </ArrowLink>
           </div>
           <div className="grid grid-cols-1 items-stretch gap-5 md:grid-cols-2 lg:grid-cols-3">

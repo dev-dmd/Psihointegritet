@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
 import { PublicTaxonomyPage } from "@/app/(public)/kompas/_components/public-taxonomy-page";
+import { getFallbackContent } from "@/content/server";
 import { isCompassPublicEnabled } from "@/lib/compass/flags";
 import {
   compassPageDiscoverability,
@@ -35,5 +36,12 @@ export default async function CompassTopicPage({
   const aggregate = await loadPublicTaxonomyPage("tema", slug, () =>
     fallbackTaxonomyPage("tema", slug),
   );
-  return <PublicTaxonomyPage aggregate={aggregate} routeKind="tema" />;
+  const { therapists } = await getFallbackContent();
+  return (
+    <PublicTaxonomyPage
+      aggregate={aggregate}
+      routeKind="tema"
+      therapists={therapists}
+    />
+  );
 }

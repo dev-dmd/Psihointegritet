@@ -11,11 +11,6 @@
 
 export { formatRsd } from "@/content/currency";
 
-import { pickContent } from "@/content/locale";
-
-import * as en from "./en/services";
-import * as srLatn from "./sr-Latn/services";
-
 export interface ServiceCatalogItem {
   slug: string;
   name: string;
@@ -52,28 +47,6 @@ export interface SupportArea {
 }
 
 /** Additional support pathways without a fixed per-session price. */
-
-/**
- * The catalogue in the deployment's content locale.
- *
- * Every consumer keeps importing `@/content/services`; only this file knows
- * there are two. The two are not translations of each other — Serbian is the
- * tenant's own text, English a placeholder showing what each field is for.
- */
-const catalogue = pickContent({ en, "sr-Latn": srLatn });
-
-export const serviceCatalog = catalogue.serviceCatalog;
-export const PRICE_NOTE = catalogue.PRICE_NOTE;
-export const sessionPackages = catalogue.sessionPackages;
-export const supportAreas = catalogue.supportAreas;
-
-export function findService(slug: string): ServiceCatalogItem | undefined {
-  return serviceCatalog.find((service) => service.slug === slug);
-}
-
-export function serviceSlugForName(name: string): string | undefined {
-  return serviceCatalog.find((service) => service.name === name)?.slug;
-}
 
 /** Backwards-compatible export while consumers move to `content/programs`. */
 export {

@@ -48,6 +48,17 @@ export const workspace: Widen<EnWorkspace> = {
     quickActionSoon: "Brza akcija stiže sa Booking engine-om.",
     moreSoon: "Još opcija stiže uskoro.",
   },
+  demoData: {
+    showcaseTitle: "Showcase podaci",
+    showcaseDescription:
+      "Ovi primeri prikazuju radni prostor i odvojeni su od zapisa organizacije i agregata istraživanja.",
+    emptyTitle: "Početni radni prostor",
+    emptyDescription:
+      "Primeri zapisa nisu učitani. Povežite ili unesite podatke organizacije da biste koristili ovaj ekran.",
+    blankTitle: "Nema podataka radnog prostora",
+    blankDescription:
+      "Ova prazna postavka nema javni sadržaj, osobe, usluge ni odgovore istraživanja.",
+  },
   settings: {
     page: {
       title: "Podešavanja",
@@ -71,16 +82,16 @@ export const workspace: Widen<EnWorkspace> = {
       "Jezik pripada organizaciji, ne osobi — izmena ovde važi za svakoga ko u njoj radi.",
     systemLanguage: "Sistemski jezik",
     systemLanguageHelp:
-      "Navigacija, sistemske poruke, statusi i sistemski email. Primenjuje se na sledećem ekranu koji otvorite.",
-    contentLanguage: "Jezik javnog sajta i novog sadržaja",
+      "Kontrole javnog sajta, navigacija, sistemske poruke, statusi, greške i sistemski email. Primenjuje se kada sačuvate.",
+    contentLanguage: "Podrazumevani jezik novog CMS sadržaja",
     contentLanguageHelp:
-      "Pomera javni sajt, njegove adrese i sitemap. Postojeći tekstovi se ne prevode.",
+      "Upisuje se na svaki novi CMS zapis kada locale nije eksplicitno zadat. Postojeći sadržaj se ne menja niti prevodi.",
     contentLanguageManaged:
-      "Vodi se kao izdanje sadržaja: pravna dokumenta, kanonski URL-ovi i sitemap se pomeraju zajedno sa njim. Za promenu se obratite operatoru.",
+      "Trenutno ga podešava operator. Ne bira jezik na kom se renderuje javni sajt.",
     notice:
       "Ovo menja navigaciju platforme, sistemske poruke i buduće sistemske emailove. Postojeći sadržaj neće biti preveden niti izmenjen.",
-    save: "Sačuvaj jezike",
-    saved: "Jezici su sačuvani.",
+    save: "Sačuvaj jezik",
+    saved: "Jezik je sačuvan.",
     onlyAdmin: "Samo administrator organizacije može da menja ova podešavanja.",
     loadFailed: "Podešavanja nisu učitana.",
   },

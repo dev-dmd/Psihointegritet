@@ -4,7 +4,7 @@
  * intentionally absent until the team confirms them.
  *
  * Locations follow D-076: Chicago (IL), Milwaukee (WI) and Madison (WI). They
- * must stay in step with `city` in `content/therapists.ts` — the booking
+ * must stay in step with `city` in the locale therapist catalogues — booking
  * location picker and the guided-selection in-person filter both compare a
  * visitor's answer against the therapist's city, so a value that appears here
  * but nowhere in the team silently returns no therapists.

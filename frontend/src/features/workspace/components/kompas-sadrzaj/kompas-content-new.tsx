@@ -3,15 +3,13 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
-import {
-  contentErrorMessage,
-  useContentEntriesQuery,
-} from "../../hooks/use-content-entries";
+import { useContentEntriesQuery } from "../../hooks/use-content-entries";
 import { useCreateArticleMutation } from "../../hooks/use-compass-content";
 import { PageHeader } from "../page-header";
 import { KompasContentCreate } from "./kompas-content-create";
 import { localizedPath } from "@/lib/routes/localized-path";
 import { useUiLocale } from "@/i18n/use-ui-locale";
+import { useUserSafeError } from "@/lib/errors/use-user-safe-error";
 
 /**
  * „Novi sadržaj" as its own page (D-063).
@@ -24,6 +22,7 @@ import { useUiLocale } from "@/i18n/use-ui-locale";
 export function KompasContentNew() {
   const router = useRouter();
   const locale = useUiLocale();
+  const safeError = useUserSafeError();
   const entriesQuery = useContentEntriesQuery();
   const createArticle = useCreateArticleMutation();
 
@@ -53,10 +52,7 @@ export function KompasContentNew() {
         takenSlugs={takenSlugs}
         serverError={
           createArticle.isError
-            ? contentErrorMessage(
-                createArticle.error,
-                "Tekst nije napravljen. Pokušajte ponovo.",
-              )
+            ? safeError.text(createArticle.error, "content", "change")
             : null
         }
         onCreate={(slug) =>

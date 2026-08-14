@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { PublicLink as Link } from "@/components/ui/public-link";
 import type { Route } from "next";
 
 import { buildBookingHref } from "@/features/booking/booking-context";

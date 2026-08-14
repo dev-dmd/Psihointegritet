@@ -17,7 +17,16 @@ export const content = {
   systemNotice:
     "Protected system content. An item without a CMS revision uses the existing text from the code; editing starts from empty fields and saves only what you enter.",
   wrongTemplate: "Wrong template",
+  checkingStatus: "Checking status…",
   counted: "{label} ({count})",
+  fieldOverride: {
+    statusLabel: "Content source for {field}",
+    inherit: "Default content",
+    custom: "Customized",
+    hidden: "Hidden",
+    inheritHelp: "The platform's default content is shown.",
+    hiddenHelp: "This optional field is not shown publicly.",
+  },
 } as const;
 
 export type EnContent = typeof content;

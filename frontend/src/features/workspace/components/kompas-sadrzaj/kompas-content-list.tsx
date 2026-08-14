@@ -6,16 +6,14 @@ import { useState } from "react";
 import { cn } from "@/helpers/cn";
 import { localizedPath } from "@/lib/routes/localized-path";
 import { useUiLocale } from "@/i18n/use-ui-locale";
+import { useUserSafeError } from "@/lib/errors/use-user-safe-error";
 
 import {
   KOMPAS_CONTENT_FILTERS,
   kompasArticleRows,
   type KompasContentFilter,
 } from "../../kompas-content-list-view";
-import {
-  contentErrorMessage,
-  useContentEntriesQuery,
-} from "../../hooks/use-content-entries";
+import { useContentEntriesQuery } from "../../hooks/use-content-entries";
 import { useTaxonomyRegistryQuery } from "../../hooks/use-taxonomy-registry";
 import { KompasContentRow } from "./kompas-content-row";
 
@@ -29,6 +27,7 @@ import { KompasContentRow } from "./kompas-content-row";
  */
 export function KompasContentList() {
   const locale = useUiLocale();
+  const safeError = useUserSafeError();
   const entriesQuery = useContentEntriesQuery();
   const registryQuery = useTaxonomyRegistryQuery();
 
@@ -42,10 +41,7 @@ export function KompasContentList() {
   );
 
   const loadError = entriesQuery.isError
-    ? contentErrorMessage(
-        entriesQuery.error,
-        "Sadržaj se trenutno ne može učitati. Osvežite stranicu.",
-      )
+    ? safeError.text(entriesQuery.error, "content", "load")
     : null;
 
   return (

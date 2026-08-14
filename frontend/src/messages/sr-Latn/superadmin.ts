@@ -25,4 +25,13 @@ export const superadmin: Widen<EnSuperadmin> = {
     enabled: "Uključen feature gate — {gate}",
     disabled: "Isključen feature gate — {gate}",
   },
+  tenantUsers: {
+    loading: "Učitavanje korisnika…",
+    loadError: "Korisnici nisu učitani.",
+    saveError: "Uloga nije sačuvana.",
+    description:
+      "Korisnik se pojavljuje ovde nakon prve proverene prijave. Uloge se čuvaju u platformi, ne u Clerk-u.",
+    adminRole: "Administrator",
+    therapistRole: "Terapeut",
+  },
 };

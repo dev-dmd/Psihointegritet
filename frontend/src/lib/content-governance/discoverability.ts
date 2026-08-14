@@ -1,6 +1,5 @@
 import type { Metadata, MetadataRoute } from "next";
 
-import { faqItems } from "@/content/homepage";
 import { siteSettings } from "@/content/site-settings";
 
 import { isSitemapEligible } from "./validation";
@@ -162,7 +161,7 @@ export function jsonLdForEntity(
       records.push({
         "@context": "https://schema.org",
         "@type": "FAQPage",
-        mainEntity: faqItems.map((item) => ({
+        mainEntity: (entity.faq ?? []).map((item) => ({
           "@type": "Question",
           name: item.question,
           acceptedAnswer: { "@type": "Answer", text: item.answer },

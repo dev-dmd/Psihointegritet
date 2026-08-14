@@ -3,10 +3,10 @@
 import { useState } from "react";
 
 import { cn } from "@/helpers/cn";
+import { JsonRequestError } from "@/lib/api/request-json";
+import { useUserSafeError } from "@/lib/errors/use-user-safe-error";
 
-import { taxonomyErrorMessage } from "../../hooks/use-taxonomy-registry";
-import { taxonomyFieldErrors, TaxonomyApiError } from "../../taxonomy-api";
-import { TAXONOMY_FIELD_COPY, taxonomyErrorCopy } from "./taxonomy-error-copy";
+import { TAXONOMY_FIELD_COPY } from "./taxonomy-error-copy";
 import type { TaxonomyValidationIssue } from "./model";
 
 const FIELD_DOM_SUFFIX: Record<string, string> = {
@@ -32,6 +32,7 @@ export function useTaxonomyFormErrors(
    */
   onFieldTargeted?: (field: string) => void,
 ) {
+  const safeError = useUserSafeError();
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [serverError, setServerError] = useState<string | null>(null);
 
@@ -80,12 +81,9 @@ export function useTaxonomyFormErrors(
     fallback: string,
     collisionField?: string,
   ) => {
-    const copy = taxonomyErrorCopy(error);
-    const humanised = copy.nextAction
-      ? `${copy.message} ${copy.nextAction}`
-      : copy.message;
-
-    const apiFieldErrors = taxonomyFieldErrors(error);
+    const presentation = safeError.present(error, "taxonomy", "change");
+    const humanised = `${presentation.message} ${presentation.nextAction}`;
+    const apiFieldErrors = presentation.fieldErrors;
     const [field, message] = Object.entries(apiFieldErrors)[0] ?? [];
     if (field && message) {
       // A phrased rule for this field beats the server's own sentence, which
@@ -95,13 +93,13 @@ export function useTaxonomyFormErrors(
     }
     if (
       collisionField &&
-      error instanceof TaxonomyApiError &&
+      error instanceof JsonRequestError &&
       (error.status === 409 || error.status === 422)
     ) {
       setFieldError(collisionField, humanised);
       return;
     }
-    setServerError(error ? humanised : taxonomyErrorMessage(error, fallback));
+    setServerError(error ? humanised : fallback);
   };
   const errorId = (field: string) =>
     `${editorId}-${FIELD_DOM_SUFFIX[field]}-error`;

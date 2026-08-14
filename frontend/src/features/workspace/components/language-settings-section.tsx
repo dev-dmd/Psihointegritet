@@ -4,6 +4,7 @@ import { useState } from "react";
 
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
+import { useUserSafeError } from "@/lib/errors/use-user-safe-error";
 
 import {
   LOCALE_ENDONYMS,
@@ -11,19 +12,15 @@ import {
   type UiLocale,
 } from "@/i18n/locales";
 
-import {
-  useOrganizationLocalesMutation,
-  useOrganizationSettingsQuery,
-} from "../hooks/use-organization-settings";
+import { useOrganizationLocalesMutation } from "../hooks/use-organization-settings";
+import { useWorkspace } from "../workspace-context";
 
 /**
  * Language and regional settings (D-077 §20).
  *
- * Two fields, not one, because they answer different questions: `ui_locale` is
- * the language the team works in, `default_content_locale` the language the
- * public site speaks. An organization whose staff work in English while
- * publishing for Serbian clients needs them to differ — so the linked toggle is
- * a convenience, on by default, not the model.
+ * Two stored values answer different questions: `ui_locale` is the only
+ * organization-scoped render locale; `default_content_locale` is the initial
+ * locale stamped on a newly created CMS entry. Existing content is untouched.
  *
  * Language names are **endonyms** and never translated: a picker that says
  * „Serbian" in English to someone who only reads Serbian defeats its purpose.
@@ -32,7 +29,8 @@ export function LanguageSettingsSection() {
   const t = useTranslations("workspace");
   // Loading and saving states are shared chrome, not settings copy.
   const tc = useTranslations("common");
-  const { data, isPending, isError } = useOrganizationSettingsQuery();
+  const safeError = useUserSafeError();
+  const { organization, setOrganizationLocales } = useWorkspace();
 
   /**
    * Only the *edits* are state; the saved values stay where they are, in the
@@ -43,26 +41,20 @@ export function LanguageSettingsSection() {
   const [draft, setDraft] = useState<UiLocale | null>(null);
 
   const save = useOrganizationLocalesMutation({
-    onSaved: () => {
+    onSaved: (settings) => {
+      setOrganizationLocales({
+        slug: settings.slug,
+        uiLocale: settings.uiLocale,
+        defaultContentLocale: settings.defaultContentLocale,
+      });
       setDraft(null);
       toast.success(t("settings.saved"));
     },
     onFailed: (error) =>
-      toast.error(
-        error instanceof Error && error.message
-          ? error.message
-          : t("settings.loadFailed"),
-      ),
+      toast.error(safeError.text(error, "organization", "change")),
   });
 
-  if (isError) {
-    return <p className="text-danger text-sm">{t("settings.loadFailed")}</p>;
-  }
-  if (isPending || !data) {
-    return <p className="text-coffee/60 text-sm">{tc("state.loading")}</p>;
-  }
-
-  const uiLocale = draft ?? data.uiLocale;
+  const uiLocale = draft ?? organization.uiLocale;
 
   return (
     <section className="rounded-card border-line bg-surface border p-6">
@@ -96,18 +88,16 @@ export function LanguageSettingsSection() {
         {/*
           Read-only, by D-077 Amendment 4.
 
-          `ui_locale` is a daily setting and takes effect on save. Moving the
-          public content language is a release operation — legal documents,
-          canonical URLs, sitemap and Content Health land with it — so this card
-          reports the current value instead of offering a switch that would
-          publish a half-translated site.
+          `ui_locale` takes effect on save. The CMS creation default is shown
+          read-only until its own settings workflow exists; it never chooses
+          which locale the public site renders.
         */}
         <div className="border-line rounded-xl border px-4 py-3.5">
           <span className="text-coffee/75 text-[14px] font-medium">
             {t("settings.contentLanguage")}
           </span>
           <span className="text-forest mt-2 block text-[15px]">
-            {LOCALE_ENDONYMS[data.defaultContentLocale]}
+            {LOCALE_ENDONYMS[organization.defaultContentLocale]}
           </span>
           <span className="text-coffee/55 mt-1.5 block text-[13px]">
             {t("settings.contentLanguageManaged")}
@@ -127,7 +117,7 @@ export function LanguageSettingsSection() {
             uiLocale,
             // Sent unchanged: the contract still carries both, and this screen is
             // no longer allowed to move the second one.
-            defaultContentLocale: data.defaultContentLocale,
+            defaultContentLocale: organization.defaultContentLocale,
           })
         }
         className="bg-forest text-canvas hover:bg-forest-hover mt-5 inline-flex min-h-11 items-center rounded-full px-6 text-[14px] font-semibold disabled:opacity-60"

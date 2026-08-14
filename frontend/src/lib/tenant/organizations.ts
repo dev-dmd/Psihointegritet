@@ -1,4 +1,5 @@
 import { PLATFORM_DEFAULT_LOCALE, type UiLocale } from "@/i18n/locales";
+import type { ContentPackId } from "@/content/pack-types";
 
 /**
  * Per-organization locale settings, keyed by organization slug.
@@ -25,6 +26,8 @@ import { PLATFORM_DEFAULT_LOCALE, type UiLocale } from "@/i18n/locales";
  */
 
 export interface OrganizationLocaleSettings {
+  /** Checked-in C2(a) deployment mapping; not a persisted organization field. */
+  contentPack: ContentPackId;
   /** Language of navigation, system messages, statuses and system emails. */
   uiLocale: UiLocale;
   /**
@@ -51,6 +54,7 @@ export const ORGANIZATION_LOCALE_SETTINGS: Record<
   // `20260811_0026_organization_locales`, not defaulted — D-077 makes `en` the
   // platform default, and this organization must never inherit it.
   psihointegritet: {
+    contentPack: "psihointegritet",
     uiLocale: "sr-Latn",
     defaultContentLocale: "sr-Latn",
     timeZone: "Europe/Belgrade",
@@ -64,6 +68,7 @@ export const ORGANIZATION_LOCALE_SETTINGS: Record<
    * character limits, and English is routinely longer than Serbian.
    */
   "psihointegritet-en": {
+    contentPack: "psihointegritet",
     uiLocale: "en",
     defaultContentLocale: "en",
     timeZone: "America/Chicago",
@@ -85,6 +90,7 @@ export function findOrganizationLocaleSettings(
  */
 export const FALLBACK_ORGANIZATION_LOCALE_SETTINGS: OrganizationLocaleSettings =
   {
+    contentPack: "mental-health-starter",
     uiLocale: PLATFORM_DEFAULT_LOCALE,
     defaultContentLocale: PLATFORM_DEFAULT_LOCALE,
     timeZone: "UTC",

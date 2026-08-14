@@ -1,10 +1,10 @@
 "use client";
 
-import Link from "next/link";
+import { PublicLink as Link } from "@/components/ui/public-link";
 import { useMemo, useState } from "react";
 
-import { formatRsd, serviceCatalog } from "@/content/services";
-import { findTherapist, therapists } from "@/content/therapists";
+import { formatRsd } from "@/content/services";
+import { useFallbackContent } from "@/content/use-content";
 import {
   type BookingContext,
   type BookingFormat,
@@ -27,10 +27,7 @@ type Step = 1 | 2 | 3 | 4 | 5;
 interface BookingRequestFormProps {
   initialContext?: BookingContext;
   summary?: BookingSummary;
-  /**
-   * Compatibility for the existing profile and drawer surfaces during the
-   * route migration. New route-level callers should use `initialContext`.
-   */
+  /** Compatibility for profile/drawer callers; routes use `initialContext`. */
   therapistSlug?: string | null;
   therapistName?: string;
   tone?: "light" | "surface";
@@ -71,6 +68,10 @@ export function BookingRequestForm(props: BookingRequestFormProps) {
 }
 
 function BookingRequestFormContent(props: BookingRequestFormProps) {
+  const fallback = useFallbackContent();
+  const serviceCatalog = fallback.services.serviceCatalog;
+  const therapists = fallback.therapists;
+  const catalogs = { services: serviceCatalog, therapists };
   const context = initialContextFromProps(props);
   const [started, setStarted] = useState(
     context.serviceSlug !== null || context.therapistSlug !== null,
@@ -108,25 +109,25 @@ function BookingRequestFormContent(props: BookingRequestFormProps) {
   const selectedService = useMemo(
     () =>
       serviceCatalog.find((service) => service.slug === serviceSlug) ?? null,
-    [serviceSlug],
+    [serviceCatalog, serviceSlug],
   );
   const selectedTherapist = therapistSlug
-    ? (findTherapist(therapistSlug) ?? null)
+    ? (therapists.find((therapist) => therapist.slug === therapistSlug) ?? null)
     : null;
   const serviceOptions = therapistSlug
-    ? servicesForTherapist(therapistSlug)
+    ? servicesForTherapist(therapistSlug, catalogs)
     : serviceCatalog;
   const therapistOptions = serviceSlug
-    ? therapistsForService(serviceSlug)
+    ? therapistsForService(serviceSlug, catalogs)
     : therapists;
-  const locationOptions = locationsForTherapist(therapistSlug);
+  const locationOptions = locationsForTherapist(therapistSlug, catalogs);
 
   const changeService = (nextServiceSlug: string) => {
     setServiceSlug(nextServiceSlug || null);
     if (
       therapistSlug !== null &&
       nextServiceSlug &&
-      !therapistProvidesService(therapistSlug, nextServiceSlug)
+      !therapistProvidesService(therapistSlug, nextServiceSlug, catalogs)
     ) {
       setTherapistSlug(null);
       setSelectionMessage(
@@ -143,7 +144,7 @@ function BookingRequestFormContent(props: BookingRequestFormProps) {
     if (
       next !== null &&
       serviceSlug !== null &&
-      !therapistProvidesService(next, serviceSlug)
+      !therapistProvidesService(next, serviceSlug, catalogs)
     ) {
       setServiceSlug(null);
       setSelectionMessage(
@@ -153,7 +154,7 @@ function BookingRequestFormContent(props: BookingRequestFormProps) {
       setSelectionMessage(null);
     }
     if (location !== null) {
-      const nextLocations = locationsForTherapist(next);
+      const nextLocations = locationsForTherapist(next, catalogs);
       if (!nextLocations.some((item) => item.value === location)) {
         setLocation(null);
       }

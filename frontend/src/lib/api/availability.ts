@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { parseJsonResponse, requestJson } from "@/lib/api/request-json";
+
 /**
  * Availability transport (ADR-015 v2 §2.7) — layers 1 and 3.
  *
@@ -69,15 +71,7 @@ async function request<T>(
   init: RequestInit,
   schema: z.ZodType<T>,
 ): Promise<T> {
-  const response = await fetch(path, init);
-  if (!response.ok) {
-    const detail = await response.text();
-    throw new Error(
-      detail || `Zahtev nije uspeo (${String(response.status)}).`,
-    );
-  }
-  if (response.status === 204) return schema.parse(undefined);
-  return schema.parse(await response.json());
+  return requestJson(path, init, schema);
 }
 
 const jsonHeaders = { "Content-Type": "application/json" } as const;
@@ -115,8 +109,9 @@ export async function getMyTherapistProfile(): Promise<MyTherapistProfile | null
     method: "GET",
   });
   if (response.status === 404) return null;
-  if (!response.ok) throw new Error("Profil terapeuta nije mogao da se učita.");
-  return myTherapistSchema.parse(await response.json());
+  return myTherapistSchema.parse(
+    await parseJsonResponse<MyTherapistProfile>(response),
+  );
 }
 
 // ── Layer 1: profile ────────────────────────────────────────────────────────
@@ -200,7 +195,7 @@ export async function deleteAvailabilityRule(ruleId: string): Promise<void> {
     `/api/booking/staff/availability/rules/${ruleId}`,
     { method: "DELETE" },
   );
-  if (!response.ok) throw new Error("Brisanje smene nije uspelo.");
+  await parseJsonResponse<void>(response);
 }
 
 // ── Layer 3: exceptions ─────────────────────────────────────────────────────
@@ -252,7 +247,7 @@ export async function deleteAvailabilityException(
     `/api/booking/staff/availability/exceptions/${exceptionId}`,
     { method: "DELETE" },
   );
-  if (!response.ok) throw new Error("Brisanje izuzetka nije uspelo.");
+  await parseJsonResponse<void>(response);
 }
 
 // ── Layer 2: generated slots ────────────────────────────────────────────────
@@ -318,7 +313,7 @@ export async function deleteManualSlot(slotId: string): Promise<void> {
     `/api/booking/staff/availability/manual-slots/${slotId}`,
     { method: "DELETE" },
   );
-  if (!response.ok) throw new Error("Brisanje termina nije uspelo.");
+  await parseJsonResponse<void>(response);
 }
 
 // ── Summary for the four profile cards ──────────────────────────────────────

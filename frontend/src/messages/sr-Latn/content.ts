@@ -14,5 +14,14 @@ export const content: Widen<EnContent> = {
   systemNotice:
     "Zaštićeni sistemski sadržaj. Stavka bez CMS revizije koristi postojeći tekst iz koda; izmena počinje praznim poljima i čuva samo unete vrednosti.",
   wrongTemplate: "Pogrešan template",
+  checkingStatus: "Proveravam status…",
   counted: "{label} ({count})",
+  fieldOverride: {
+    statusLabel: "Izvor sadržaja za polje {field}",
+    inherit: "Početni tekst",
+    custom: "Prilagođeno",
+    hidden: "Sakriveno",
+    inheritHelp: "Prikazuje se početni sadržaj platforme.",
+    hiddenHelp: "Ovo opciono polje se ne prikazuje javno.",
+  },
 };

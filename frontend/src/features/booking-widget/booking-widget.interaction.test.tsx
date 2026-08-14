@@ -85,13 +85,13 @@ describe("changing offering", () => {
     const user = userEvent.setup();
     renderWidget(editable, { initialTherapistId: "maria" });
 
-    expect(screen.getByText(/60 minuta/)).toBeInTheDocument();
+    expect(screen.getAllByText(/60 min/)).not.toHaveLength(0);
     await user.click(
       within(offeringsGroup()).getByRole("radio", {
         name: /Bračno savetovanje/,
       }),
     );
-    expect(screen.getByText(/90 minuta/)).toBeInTheDocument();
+    expect(screen.getAllByText(/90 min/)).not.toHaveLength(0);
   });
 });
 
@@ -151,7 +151,7 @@ describe("initial format from the query", () => {
       within(formatSwitch).getByRole("radio", { name: "Uživo" }),
     ).toHaveAttribute("aria-checked", "true");
     expect(
-      within(formatSwitch).getByRole("radio", { name: "Online" }),
+      within(formatSwitch).getByRole("radio", { name: "Onlajn" }),
     ).toHaveAttribute("aria-checked", "false");
   });
 

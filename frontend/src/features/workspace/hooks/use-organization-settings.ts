@@ -1,6 +1,8 @@
 "use client";
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { startTransition } from "react";
+
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { usePathname, useRouter } from "next/navigation";
 
 import type { UiLocale } from "@/i18n/locales";
@@ -8,7 +10,6 @@ import { localizedPath } from "@/lib/routes/localized-path";
 import { matchPlatformPath } from "@/lib/routes/match";
 
 import {
-  fetchOrganizationSettings,
   updateOrganizationLocales,
   type OrganizationSettings,
 } from "../organization-api";
@@ -18,21 +19,12 @@ export const ORGANIZATION_SETTINGS_QUERY_KEY = [
   "settings",
 ] as const;
 
-export function useOrganizationSettingsQuery() {
-  return useQuery({
-    queryKey: ORGANIZATION_SETTINGS_QUERY_KEY,
-    queryFn: fetchOrganizationSettings,
-  });
-}
-
 /**
- * Changing the organization's languages.
+ * Changing the organization's render language.
  *
- * The panel is request-time rendered, so `ui_locale` takes effect on the next
- * navigation — but `default_content_locale` moves the public site, its canonical
- * URLs and its sitemap, which is a release operation rather than a toggle
- * (D-077). The screen says so; this hook only refreshes the cache it owns and
- * deliberately does not try to make the change look instant.
+ * The panel is request-time rendered, while public renders use the tagged read
+ * of the same `ui_locale`. `default_content_locale` is sent unchanged because
+ * it is only a creation default for new CMS entries (D-077 A5).
  */
 export function useOrganizationLocalesMutation(callbacks: {
   onSaved: (settings: OrganizationSettings) => void;
@@ -49,17 +41,15 @@ export function useOrganizationLocalesMutation(callbacks: {
     }) => updateOrganizationLocales(input),
     onSuccess: (settings) => {
       queryClient.setQueryData(ORGANIZATION_SETTINGS_QUERY_KEY, settings);
+      callbacks.onSaved(settings);
       // The language lives in the *server* tree — nav labels, the html lang
       // attribute and every href built by `localizedPath`. Updating the query
       // cache alone leaves all of that rendered in the previous language until
       // the user reloads by hand, which is exactly what it did.
-      // One navigation operation, not two.
-      //
-      // `refresh()` re-renders the tree in place; `replace()` re-renders it at
-      // the new path. Calling both raced the old path against the new one, and
-      // `refresh()` does not invalidate the server cache anyway — it could hand
-      // back the very value we just changed. So: move if the path changed,
-      // refresh only if it did not.
+      // Native history changes only the address and synchronizes Next's
+      // pathname. One refresh then asks the server for the new layout locale
+      // and messages. Two router operations race; one replace without refresh
+      // preserves the shared layout and leaves its provider in the old locale.
       const here = matchPlatformPath(pathname);
       const target =
         here === null
@@ -70,12 +60,17 @@ export function useOrganizationLocalesMutation(callbacks: {
             } as never);
 
       if (target !== null && target !== pathname) {
-        router.replace(target);
-      } else {
-        router.refresh();
+        const suffix = `${window.location.search}${window.location.hash}`;
+        window.history.replaceState(
+          window.history.state,
+          "",
+          `${target}${suffix}`,
+        );
       }
 
-      callbacks.onSaved(settings);
+      startTransition(() => {
+        router.refresh();
+      });
     },
     onError: callbacks.onFailed,
   });
