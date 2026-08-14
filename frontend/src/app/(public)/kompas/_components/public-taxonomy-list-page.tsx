@@ -1,4 +1,5 @@
 import { PublicLink as Link } from "@/components/ui/public-link";
+import { useTranslations } from "next-intl";
 
 import { JsonLd } from "@/components/shared/json-ld";
 import { CompassStartQuestionsButton } from "@/features/compass/sections/compass-start-questions-button";
@@ -37,8 +38,20 @@ export function PublicTaxonomyListPage({
   areas = [],
   topics = [],
 }: PublicTaxonomyListPageProps) {
+  const t = useTranslations("public.compass.lists");
   const record = compassListDiscoverability(routeKind);
   const isAreaList = routeKind === "oblast";
+  const localizedRecord = {
+    ...record,
+    description: t(isAreaList ? "areasLead" : "topicsLead"),
+    breadcrumbs: [
+      { label: t("home"), path: "/" },
+      {
+        label: t(isAreaList ? "areas" : "topics"),
+        path: isAreaList ? "/kompas/oblasti" : "/kompas/teme",
+      },
+    ],
+  };
 
   const parents = new Map(areas.map((area) => [area.stableId, area]));
   const topicItems: TopicSearchItem[] = terms.map((term) => {
@@ -55,27 +68,27 @@ export function PublicTaxonomyListPage({
 
   return (
     <>
-      <JsonLd data={compassBreadcrumbJsonLd(record)} />
+      <JsonLd data={compassBreadcrumbJsonLd(localizedRecord)} />
 
       <section id="vrh" className="scroll-mt-24 pt-6">
         <div className="mx-auto max-w-[1536px] px-5 pb-[72px] md:px-8 md:pb-24">
           {isAreaList ? (
             <>
               <CompassPageHero
-                breadcrumbs={record.breadcrumbs}
-                eyebrow="Kompas"
-                title="Oblasti"
-                lead={record.description}
+                breadcrumbs={localizedRecord.breadcrumbs}
+                eyebrow={t("compass")}
+                title={t("areas")}
+                lead={localizedRecord.description}
               >
                 <div className="mt-5 flex flex-wrap gap-2.5">
                   <Link
                     href="/kompas/teme"
                     className="border-coffee/18 text-forest hover:border-coffee/35 inline-flex min-h-[46px] items-center rounded-full border px-5 text-[14px] transition-colors"
                   >
-                    Pogledaj sve teme
+                    {t("viewTopics")}
                   </Link>
                   <CompassStartQuestionsButton
-                    label="Pokreni Kompas"
+                    label={t("start")}
                     className="mt-0"
                   />
                 </div>
@@ -97,14 +110,14 @@ export function PublicTaxonomyListPage({
                 </div>
               ) : (
                 <p className="bg-meadow/20 text-coffee/72 mt-3 rounded-[20px] px-5 py-6 text-[15px] leading-[1.65]">
-                  Trenutno nema objavljenih oblasti.
+                  {t("noAreas")}
                 </p>
               )}
             </>
           ) : (
             <TopicSearchList
-              breadcrumbs={record.breadcrumbs}
-              lead={record.description}
+              breadcrumbs={localizedRecord.breadcrumbs}
+              lead={localizedRecord.description}
               items={topicItems}
             />
           )}
@@ -112,18 +125,17 @@ export function PublicTaxonomyListPage({
           <section className="bg-forest text-canvas mt-3 rounded-[26px] px-6 py-8 md:flex md:items-center md:justify-between md:gap-10 md:px-10">
             <div className="max-w-[620px]">
               <h2 className="font-serif text-[30px] leading-tight font-normal">
-                Potreban vam je sledeći korak?
+                {t("nextTitle")}
               </h2>
               <p className="text-canvas/75 mt-3 text-[15px] leading-[1.65]">
-                Možete nastaviti ka izboru stručne podrške bez obzira na to gde
-                ste završili istraživanje.
+                {t("nextBody")}
               </p>
             </div>
             <Link
               href="/pronadji-podrsku"
               className="bg-canvas text-forest hover:bg-meadow mt-6 inline-flex min-h-12 shrink-0 items-center rounded-full px-6 text-[15px] font-semibold transition-colors md:mt-0"
             >
-              Pronađite podršku
+              {t("findSupport")}
             </Link>
           </section>
         </div>

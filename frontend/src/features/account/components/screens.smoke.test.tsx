@@ -134,4 +134,42 @@ describe("client panel screens", () => {
       ),
     ).toEqual(sidebar);
   });
+
+  it("uses English labels and public paths for an English organization", () => {
+    useMyAppointmentRequests.mockReturnValue({
+      data: [],
+      isPending: false,
+      isError: false,
+    });
+
+    const { unmount } = render(
+      withIntl(<ScreenPocetna firstName="Ana" />, "en"),
+    );
+    expect(
+      screen.getByRole("link", { name: "Book an appointment" }),
+    ).toHaveAttribute("href", "/book");
+    unmount();
+
+    render(
+      withIntl(
+        <ScreenProfil
+          displayName="Ana Marković"
+          email="ana@example.com"
+          initials="AM"
+        />,
+        "en",
+      ),
+    );
+    expect(
+      screen.getByRole("link", { name: "Privacy policy" }),
+    ).toHaveAttribute("href", "/privacy");
+    expect(screen.getByRole("link", { name: "Booking rules" })).toHaveAttribute(
+      "href",
+      "/booking-rules",
+    );
+    expect(screen.getByRole("link", { name: "Terms of use" })).toHaveAttribute(
+      "href",
+      "/terms",
+    );
+  });
 });

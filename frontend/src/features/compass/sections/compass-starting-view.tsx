@@ -1,5 +1,6 @@
 import type { Route } from "next";
 import { PublicLink as Link } from "@/components/ui/public-link";
+import { useTranslations } from "next-intl";
 
 import type { RoutablePublicTaxonomyTerm } from "@/lib/compass/types";
 
@@ -30,6 +31,7 @@ export function CompassStartingView({
   isDemo?: boolean;
   id: string;
 }) {
+  const t = useTranslations("public.compass.starting");
   const visibleTopics = topics.slice(0, 12);
 
   return (
@@ -43,17 +45,15 @@ export function CompassStartingView({
           id={`${id}-title`}
           className="text-forest font-serif text-[22px] leading-[1.15] font-normal md:text-[32px]"
         >
-          Polazni prikaz
+          {t("title")}
         </h2>
         <p className="text-coffee/78 mt-2.5 max-w-[60ch] text-[14.5px] leading-[1.7] text-pretty">
-          Bez odgovora na pitanja, ovde su sve oblasti i teme koje trenutno
-          postoje na platformi. Krenite od onoga što vam zvuči najbliže —
-          pitanja možete pokrenuti kad god poželite.
+          {t("body")}
         </p>
         <CompassStartQuestionsButton />
         {isDemo ? (
           <p className="border-honey/40 bg-honey/10 text-coffee mt-4 rounded-xl border px-3 py-2 text-[12.5px]">
-            Demo sadržaj — prikazan je samo u lokalnom preview režimu.
+            {t("demo")}
           </p>
         ) : null}
       </section>
@@ -67,13 +67,13 @@ export function CompassStartingView({
             id="kompas-polazni-oblasti"
             className="text-forest font-serif text-[24px] font-normal"
           >
-            Oblasti
+            {t("areas")}
           </h2>
           <Link
             href="/kompas/oblasti"
             className="text-forest hover:text-forest-soft ml-auto text-[13.5px] underline underline-offset-[3px]"
           >
-            Sve oblasti →
+            {t("allAreas")}
           </Link>
         </div>
 
@@ -91,12 +91,13 @@ export function CompassStartingView({
                 {area.shortDescription}
               </span>
               <span className="text-sage text-[11px] tracking-[0.06em] uppercase">
-                {
-                  topics.filter(
-                    (topic) => topic.parentStableId === area.stableId,
-                  ).length
-                }{" "}
-                tema
+                {t("topicCount", {
+                  count: String(
+                    topics.filter(
+                      (topic) => topic.parentStableId === area.stableId,
+                    ).length,
+                  ),
+                })}
               </span>
             </Link>
           ))}
@@ -113,13 +114,13 @@ export function CompassStartingView({
               id="kompas-polazni-teme"
               className="text-forest font-serif text-[24px] font-normal"
             >
-              Aktuelne teme
+              {t("topics")}
             </h2>
             <Link
               href="/kompas/teme"
               className="text-forest hover:text-forest-soft ml-auto text-[13.5px] underline underline-offset-[3px]"
             >
-              Sve teme →
+              {t("allTopics")}
             </Link>
           </div>
 
@@ -146,18 +147,17 @@ export function CompassStartingView({
           id="kompas-polazni-sadrzaj"
           className="text-forest mb-1 font-serif text-[24px] font-normal"
         >
-          Dostupno bez odgovora na pitanja
+          {t("available")}
         </h2>
         <p className="text-coffee/60 mb-4 text-[13.5px]">
-          Javno objavljeni sadržaji, poređani redosledom iz registra.
+          {t("availableBody")}
         </p>
         <div className="border-line-strong rounded-[18px] border border-dashed px-6 py-10 text-center">
           <p className="text-coffee text-[14.5px] font-semibold">
-            Još nema objavljenih sadržaja
+            {t("emptyTitle")}
           </p>
           <p className="text-coffee/70 mx-auto mt-2 max-w-[52ch] text-[13.5px] leading-[1.6]">
-            Sadržaji se prikazuju čim budu objavljeni i povezani sa oblastima u
-            registru.
+            {t("emptyBody")}
           </p>
         </div>
       </section>

@@ -2,6 +2,7 @@
 
 import { PublicLink as Link } from "@/components/ui/public-link";
 import type { Route } from "next";
+import { useTranslations } from "next-intl";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { MonogramAvatar } from "@/components/ui/monogram-avatar";
@@ -380,23 +381,24 @@ function GuidanceIntro({
   headingRef: React.RefObject<HTMLHeadingElement | null>;
   onStart: () => void;
 }) {
+  const t = useTranslations("guidance.flow.intro");
   return (
     <div className="bg-surface border-coffee/8 rounded-3xl border p-7 md:rounded-[32px] md:p-12">
       <p className="text-sage mb-4 text-[12px] font-semibold tracking-[0.15em] uppercase">
-        Vođeni izbor
+        {t("eyebrow")}
       </p>
       <h1
         ref={headingRef}
         tabIndex={-1}
         className="text-forest mb-4 font-serif text-[clamp(32px,7vw,48px)] leading-[1.08] font-normal outline-none"
       >
-        {INTAKE_INTRO.title}
+        {t("title")}
       </h1>
       <p className="text-coffee/75 max-w-[650px] text-[16px] leading-[1.65]">
-        {INTAKE_INTRO.description}
+        {t("description")}
       </p>
       <p className="bg-warm/20 text-coffee/80 mt-6 max-w-[680px] rounded-[18px] px-5 py-4 text-[14px] leading-[1.6]">
-        {INTAKE_INTRO.note}
+        {t("note")}
       </p>
       <GuidanceIntroActions onStart={onStart} />
     </div>

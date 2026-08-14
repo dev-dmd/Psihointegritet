@@ -1,5 +1,6 @@
 import type { Route } from "next";
 import { PublicLink as Link } from "@/components/ui/public-link";
+import { useLocale, useTranslations } from "next-intl";
 
 import { countSr } from "@/helpers/plural-sr";
 import type { RoutablePublicTaxonomyTerm } from "@/lib/compass/types";
@@ -25,11 +26,17 @@ export function AreaCard({
   topics: readonly RoutablePublicTaxonomyTerm[];
   contentCount: number | null;
 }) {
+  const locale = useLocale();
+  const t = useTranslations("public.compass.lists");
   const meta = [
-    countSr(topics.length, "tema", "teme", "tema"),
+    locale === "sr-Latn"
+      ? countSr(topics.length, "tema", "teme", "tema")
+      : `${topics.length} ${topics.length === 1 ? "topic" : "topics"}`,
     contentCount === null
-      ? "sadržaji u pripremi"
-      : countSr(contentCount, "sadržaj", "sadržaja", "sadržaja"),
+      ? t("contentPreparingLower")
+      : locale === "sr-Latn"
+        ? countSr(contentCount, "sadržaj", "sadržaja", "sadržaja")
+        : `${contentCount} ${contentCount === 1 ? "item" : "items"}`,
   ].join(" · ");
 
   return (
@@ -40,7 +47,7 @@ export function AreaCard({
         </span>
         <Link
           href={term.canonicalPath as Route}
-          aria-label={`Otvori oblast ${term.publicLabel}`}
+          aria-label={t("openArea", { name: term.publicLabel })}
           className="border-coffee/14 text-forest hover:border-forest hover:bg-meadow/30 grid h-[34px] w-[34px] place-items-center rounded-full border text-[13px] transition-colors"
         >
           <span aria-hidden>→</span>

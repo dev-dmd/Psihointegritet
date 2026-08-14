@@ -1,11 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
 import {
-  COMPANY_INTRO,
-  COMPANY_PRICE_ON_REQUEST,
   companySteps,
   emptyCompanyAnswers,
   findCompanyPlan,
@@ -16,6 +14,9 @@ import {
 import { useCompanyInquiryMutation } from "@/features/company/hooks/use-company-inquiry-mutation";
 import { cn } from "@/helpers/cn";
 import { QueryProvider } from "@/providers/query-provider";
+
+import { useCompanyConfiguratorCopy } from "./company-configurator-copy";
+import { CompanyConfiguratorField as Field } from "./company-configurator-field";
 
 type Screen = "intro" | "questions" | "recommendation" | "contact" | "done";
 
@@ -71,6 +72,7 @@ function CompanyConfiguratorDrawerContent({
   const advanceTimer = useRef<number | null>(null);
   const headingRef = useRef<HTMLHeadingElement | null>(null);
   const submitMutation = useCompanyInquiryMutation();
+  const { t, planTitle, optionLabel, modelCopy } = useCompanyConfiguratorCopy();
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -91,7 +93,7 @@ function CompanyConfiguratorDrawerContent({
 
   const safeIndex = Math.min(stepIndex, companySteps.length - 1);
   const currentStep = companySteps[safeIndex];
-  const model = useMemo(() => recommendCompanyModel(answers), [answers]);
+  const model = recommendCompanyModel(answers);
   const preselectedPlan = findCompanyPlan(preselectedPlanSlug);
 
   // Keyboard users land on the new question instead of a stale option.
@@ -160,7 +162,7 @@ function CompanyConfiguratorDrawerContent({
     setError(null);
     submitMutation.mutate(
       {
-        model: { name: model.name, price: COMPANY_PRICE_ON_REQUEST },
+        model: { name: model.name, price: "Cena po ponudi" },
         answers: {
           employees: answers.employees,
           goals: answers.goals,
@@ -179,24 +181,24 @@ function CompanyConfiguratorDrawerContent({
       },
       {
         onSuccess: () => setScreen("done"),
-        onError: () =>
-          setError(
-            "Slanje trenutno nije uspelo. Pokušajte ponovo za koji trenutak.",
-          ),
+        onError: () => setError(t("contact.error")),
       },
     );
   };
 
   const stepLabel =
     screen === "done"
-      ? "Upit poslat"
+      ? t("progress.sent")
       : screen === "contact"
-        ? "Kontakt"
+        ? t("progress.contact")
         : screen === "recommendation"
-          ? "Naš predlog"
+          ? t("progress.recommendation")
           : screen === "questions"
-            ? `Korak ${safeIndex + 1} od ${companySteps.length}`
-            : "Rad sa kompanijama";
+            ? t("progress.step", {
+                current: String(safeIndex + 1),
+                total: String(companySteps.length),
+              })
+            : t("progress.intro");
 
   const canGoBack = screen !== "intro" && screen !== "done";
 
@@ -210,7 +212,7 @@ function CompanyConfiguratorDrawerContent({
       <div
         role="dialog"
         aria-modal="true"
-        aria-label="Rad sa kompanijama"
+        aria-label={t("dialog")}
         className="bg-canvas shadow-drawer animate-drawer-in fixed top-0 right-0 bottom-0 z-[81] flex w-[min(560px,100vw)] flex-col"
       >
         <div className="border-coffee/10 flex items-center justify-between gap-6 border-b px-6 pt-7 pb-[22px] md:px-10">
@@ -219,7 +221,7 @@ function CompanyConfiguratorDrawerContent({
           </div>
           <button
             type="button"
-            aria-label="Zatvori"
+            aria-label={t("close")}
             onClick={onClose}
             className="border-coffee/15 text-coffee hover:bg-meadow/25 flex h-10 w-10 cursor-pointer items-center justify-center rounded-full border bg-transparent text-[17px]"
           >
@@ -234,25 +236,34 @@ function CompanyConfiguratorDrawerContent({
               tabIndex={-1}
               className="text-forest mb-3 font-serif text-[28px] leading-[1.12] font-normal text-pretty outline-none md:text-[32px]"
             >
-              {COMPANY_INTRO.title}
+              {t("intro.title")}
             </h3>
             <p className="text-coffee/70 mb-5 text-[15px] leading-[1.65]">
-              {COMPANY_INTRO.description}
+              {t("intro.description")}
             </p>
             {preselectedPlan ? (
               <p className="bg-meadow/25 text-coffee/80 mb-5 rounded-2xl px-4 py-3 text-[13.5px] leading-[1.55]">
-                Izabrali ste početni model:{" "}
-                <strong>{preselectedPlan.title}</strong>. Kratak upitnik će
-                pomoći da preciziramo potrebe.
+                {t("intro.selected", {
+                  plan: planTitle(preselectedPlan.slug, preselectedPlan.title),
+                })}
               </p>
             ) : null}
             <ul className="mb-8 flex flex-wrap gap-2">
-              {COMPANY_INTRO.offer.map((item) => (
+              {(
+                [
+                  "workshops",
+                  "talks",
+                  "counselling",
+                  "managers",
+                  "burnout",
+                  "teamBuilding",
+                ] as const
+              ).map((item) => (
                 <li
                   key={item}
                   className="bg-meadow/28 text-coffee rounded-full px-3.5 py-1.5 text-[13px] font-medium"
                 >
-                  {item}
+                  {t(`intro.offer.${item}`)}
                 </li>
               ))}
             </ul>
@@ -261,7 +272,7 @@ function CompanyConfiguratorDrawerContent({
               onClick={() => setScreen("questions")}
               className="bg-forest text-canvas hover:bg-forest-hover cursor-pointer rounded-full border-0 px-7 py-[15px] text-[15px] font-semibold transition-colors"
             >
-              {COMPANY_INTRO.cta}
+              {t("intro.cta")}
             </button>
           </div>
         ) : null}
@@ -273,7 +284,7 @@ function CompanyConfiguratorDrawerContent({
               tabIndex={-1}
               className="text-forest mb-[26px] font-serif text-[24px] leading-[1.14] font-normal tracking-[-0.01em] text-pretty outline-none md:text-[30px]"
             >
-              {currentStep.question}
+              {t(`questions.${currentStep.key}`)}
             </h3>
             <div className="flex flex-col gap-2.5">
               {currentStep.options.map((option) => {
@@ -299,7 +310,7 @@ function CompanyConfiguratorDrawerContent({
                         : "border-coffee/12 bg-surface",
                     )}
                   >
-                    <span>{option}</span>
+                    <span>{optionLabel(option)}</span>
                     <span aria-hidden className="text-sage text-[15px]">
                       {selected ? (currentStep.multi ? "✓" : "●") : ""}
                     </span>
@@ -315,7 +326,7 @@ function CompanyConfiguratorDrawerContent({
                 disabled={!multiCanAdvance}
                 className="bg-forest text-canvas hover:bg-forest-hover mt-6 cursor-pointer rounded-full border-0 px-7 py-[14px] text-[15px] font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-50"
               >
-                Dalje
+                {t("next")}
               </button>
             ) : null}
           </div>
@@ -324,56 +335,63 @@ function CompanyConfiguratorDrawerContent({
         {screen === "recommendation" ? (
           <div className="flex-1 overflow-y-auto px-6 py-9 md:px-10 md:py-11">
             <div className="text-sage mb-3 text-[12.5px] font-semibold tracking-[0.16em] uppercase">
-              Na osnovu vaših odgovora preporučujemo
+              {t("recommendation.eyebrow")}
             </div>
             <h3
               ref={headingRef}
               tabIndex={-1}
               className="text-forest mb-3 font-serif text-[30px] leading-[1.1] font-normal text-pretty outline-none"
             >
-              {model.name}
+              {modelCopy(model.slug).name}
             </h3>
             <p className="text-coffee/70 mb-5 text-[15px] leading-[1.6]">
-              {model.description}
+              {modelCopy(model.slug).description}
             </p>
             <div className="bg-meadow/20 mb-5 flex flex-col gap-2 rounded-2xl px-5 py-4">
               {answers.employees ? (
                 <div className="text-coffee text-[13.5px]">
-                  <span className="font-semibold">Veličina tima:</span>{" "}
-                  {answers.employees} zaposlenih
+                  <span className="font-semibold">
+                    {t("recommendation.teamSize")}
+                  </span>{" "}
+                  {t("recommendation.employees", {
+                    count: optionLabel(answers.employees),
+                  })}
                 </div>
               ) : null}
               {answers.topics.length > 0 ? (
                 <div className="text-coffee text-[13.5px]">
-                  <span className="font-semibold">Teme:</span>{" "}
-                  {answers.topics.join(", ")}
+                  <span className="font-semibold">
+                    {t("recommendation.topics")}
+                  </span>{" "}
+                  {answers.topics.map(optionLabel).join(", ")}
                 </div>
               ) : null}
               {answers.format ? (
                 <div className="text-coffee text-[13.5px]">
-                  <span className="font-semibold">Format:</span>{" "}
-                  {answers.format}
+                  <span className="font-semibold">
+                    {t("recommendation.format")}
+                  </span>{" "}
+                  {optionLabel(answers.format)}
                 </div>
               ) : null}
             </div>
             <div className="mb-6">
               <div className="text-sage mb-1.5 text-[11.5px] font-semibold tracking-[0.14em] uppercase">
-                Cena
+                {t("recommendation.price")}
               </div>
               <div className="text-forest font-serif text-[24px]">
-                {COMPANY_PRICE_ON_REQUEST}
+                {t("recommendation.priceOnRequest")}
               </div>
             </div>
             <p className="text-coffee/55 mb-6 text-[12.5px] leading-[1.55]">
-              Konačnu ponudu, obim i uslove saradnje definišemo u razgovoru,
-              prema potrebama vaše organizacije.
+              {t("recommendation.note")}
             </p>
             <button
               type="button"
               onClick={() => setScreen("contact")}
               className="bg-forest text-canvas hover:bg-forest-hover cursor-pointer rounded-full border-0 px-7 py-[15px] text-[15px] font-semibold transition-colors"
             >
-              Zatražite ponudu
+              {t("recommendation.request")}
             </button>
           </div>
         ) : null}
@@ -385,32 +403,32 @@ function CompanyConfiguratorDrawerContent({
               tabIndex={-1}
               className="text-forest mb-5 font-serif text-[26px] leading-[1.12] font-normal text-pretty outline-none"
             >
-              Kontakt za ponudu
+              {t("contact.title")}
             </h3>
             <div className="flex flex-col gap-3.5">
               <Field
-                label="Naziv kompanije *"
+                label={t("contact.companyName")}
                 value={contact.companyName}
                 onChange={(v) => setContact((c) => ({ ...c, companyName: v }))}
               />
               <Field
-                label="Ime i prezime kontakt osobe *"
+                label={t("contact.contactName")}
                 value={contact.contactName}
                 onChange={(v) => setContact((c) => ({ ...c, contactName: v }))}
               />
               <Field
-                label="Poslovni email *"
+                label={t("contact.email")}
                 type="email"
                 value={contact.email}
                 onChange={(v) => setContact((c) => ({ ...c, email: v }))}
               />
               <Field
-                label="Telefon"
+                label={t("contact.phone")}
                 value={contact.phone}
                 onChange={(v) => setContact((c) => ({ ...c, phone: v }))}
               />
               <label className="text-coffee/70 text-[13px] font-medium">
-                Dodatna poruka
+                {t("contact.message")}
                 <textarea
                   value={contact.message}
                   onChange={(event) =>
@@ -429,8 +447,7 @@ function CompanyConfiguratorDrawerContent({
                   }
                   className="mt-0.5 h-4 w-4 shrink-0"
                 />
-                Saglasan/na sam da me Psihointegritet kontaktira povodom ovog
-                upita.
+                {t("contact.consent")}
               </label>
             </div>
             {error ? (
@@ -445,8 +462,8 @@ function CompanyConfiguratorDrawerContent({
               className="bg-forest text-canvas hover:bg-forest-hover mt-6 cursor-pointer rounded-full border-0 px-7 py-[15px] text-[15px] font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-50"
             >
               {submitMutation.isPending
-                ? "Šaljemo…"
-                : "Pošaljite upit za program"}
+                ? t("contact.sending")
+                : t("contact.submit")}
             </button>
           </div>
         ) : null}
@@ -458,19 +475,17 @@ function CompanyConfiguratorDrawerContent({
               tabIndex={-1}
               className="text-forest mb-3 font-serif text-[28px] leading-[1.12] font-normal text-pretty outline-none"
             >
-              Hvala na interesovanju
+              {t("done.title")}
             </h3>
             <p className="text-coffee/70 text-[15px] leading-[1.65]">
-              Primili smo vaš upit i okvirne zahteve. Član tima Psihointegriteta
-              će vas kontaktirati radi potvrde potreba i pripreme konačne
-              ponude.
+              {t("done.body")}
             </p>
             <button
               type="button"
               onClick={onClose}
               className="bg-meadow text-forest hover:bg-meadow-hover mt-8 cursor-pointer rounded-full border-0 px-7 py-[15px] text-[15px] font-semibold transition-colors"
             >
-              Zatvori
+              {t("done.close")}
             </button>
           </div>
         ) : null}
@@ -482,36 +497,12 @@ function CompanyConfiguratorDrawerContent({
               onClick={goBack}
               className="text-coffee hover:text-sage inline-flex cursor-pointer items-center gap-2 border-0 bg-transparent py-2 font-sans text-[15px] font-semibold transition-colors duration-200"
             >
-              ← Nazad
+              ← {t("back")}
             </button>
           </div>
         ) : null}
       </div>
     </>,
     document.body,
-  );
-}
-
-function Field({
-  label,
-  value,
-  onChange,
-  type = "text",
-}: {
-  label: string;
-  value: string;
-  onChange: (value: string) => void;
-  type?: string;
-}) {
-  return (
-    <label className="text-coffee/70 text-[13px] font-medium">
-      {label}
-      <input
-        type={type}
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-        className="border-coffee/15 bg-surface text-coffee focus:border-sage mt-1.5 w-full rounded-2xl border px-4 py-2.5 text-[15px] outline-none"
-      />
-    </label>
   );
 }

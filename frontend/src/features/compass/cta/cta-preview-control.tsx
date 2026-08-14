@@ -1,12 +1,12 @@
 "use client";
 
 import { cn } from "@/helpers/cn";
+import { useTranslations } from "next-intl";
 
 import {
   compassCtaSchemeIds,
   compassCtaSchemes,
   compassCtaVariantIds,
-  compassCtaVariantLabels,
   type CompassCtaSchemeId,
   type CompassCtaVariantId,
 } from "./cta-schemes";
@@ -31,6 +31,7 @@ export function CompassCtaPreviewControl({
   onVariantChange: (next: CompassCtaVariantId) => void;
   onSchemeChange: (next: CompassCtaSchemeId) => void;
 }) {
+  const t = useTranslations("public.compass.preview");
   const schemeIndex = compassCtaSchemeIds.indexOf(scheme);
   const stepScheme = (delta: number) => {
     const next =
@@ -43,7 +44,7 @@ export function CompassCtaPreviewControl({
   return (
     <div className="rounded-tile border-coffee/20 bg-surface/50 mx-auto mb-4 flex max-w-[1536px] flex-wrap items-center gap-3 border border-dashed px-4 py-3">
       <span className="text-coffee/65 text-[10px] tracking-[0.14em] uppercase">
-        Kontrola za pregled · nije deo stranice
+        {t("label")}
       </span>
 
       <div className="flex flex-wrap gap-1.5 sm:ml-auto">
@@ -60,7 +61,7 @@ export function CompassCtaPreviewControl({
                 : "border-line-strong text-coffee/70 hover:border-coffee/40 bg-transparent",
             )}
           >
-            {compassCtaVariantLabels[id]}
+            {t("version", { id })}
           </button>
         ))}
       </div>
@@ -68,7 +69,7 @@ export function CompassCtaPreviewControl({
       <div className="flex flex-wrap items-center gap-2">
         <button
           type="button"
-          aria-label="Prethodna šema"
+          aria-label={t("previous")}
           onClick={() => stepScheme(-1)}
           className="border-line-strong bg-surface text-coffee grid h-11 w-11 cursor-pointer place-items-center rounded-full border"
         >
@@ -95,7 +96,7 @@ export function CompassCtaPreviewControl({
 
         <button
           type="button"
-          aria-label="Sledeća šema"
+          aria-label={t("next")}
           onClick={() => stepScheme(1)}
           className="border-line-strong bg-surface text-coffee grid h-11 w-11 cursor-pointer place-items-center rounded-full border"
         >

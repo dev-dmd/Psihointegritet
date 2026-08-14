@@ -212,6 +212,233 @@ export const publicUi: Widen<EnPublicUi> = {
       preparingBody: "Cena, trajanje i pravila rada se potvrđuju pre objave.",
       findSupport: "Pronađi podršku",
     },
+    companies: {
+      eyebrow: "Za organizacije",
+      title: "Rad sa kompanijama",
+      intro:
+        "Radionice, edukacije i psihološka podrška za timove i zaposlene — osmišljene tako da podrže mentalno zdravlje u radnom okruženju, sa istim principima poverljivosti i stručnosti kao i naš rad sa klijentima.",
+      configure: "Konfigurišite program",
+      offerings: {
+        workshops: {
+          title: "Radionice za timove",
+          description:
+            "Iskustvene radionice o stresu, sagorevanju i komunikaciji, prilagođene vašem timu i tempu rada.",
+        },
+        education: {
+          title: "Edukacije i predavanja",
+          description:
+            "Teme iz mentalnog zdravlja, emocionalne pismenosti i prevencije burnout-a, u formatu koji odgovara organizaciji.",
+        },
+        support: {
+          title: "Psihološka podrška zaposlenima",
+          description:
+            "Individualne konsultacije i savetovanje kao benefit koji zaposlenima olakšava svakodnevni rad.",
+        },
+      },
+      modelsEyebrow: "Modeli saradnje",
+      modelsTitle: "Početni modeli za razgovor",
+      modelsNote:
+        "Ovo nisu konačne javne ponude. Cena, obim, kapacitet i način plaćanja potvrđuju se nakon razgovora.",
+      status: { draft: "Nacrt modela", pending: "Čeka potvrdu" },
+      plans: {
+        individual: {
+          title: "Pojedinačni pristup",
+          description:
+            "Za organizacije koje žele fleksibilan početak podrške zaposlenima.",
+        },
+        teamFlex: {
+          title: "Team Flex",
+          description:
+            "Za timove kojima je potreban prilagodljiv spoj radionica i podrške.",
+        },
+        reserved: {
+          title: "Rezervisani kapacitet",
+          description:
+            "Za organizacije koje žele da unapred razgovaraju o kontinuitetu podrške.",
+        },
+        custom: {
+          title: "Program po meri",
+          description:
+            "Za kombinovane potrebe koje se definišu kroz konsultativni razgovor.",
+        },
+      },
+      delivery: {
+        flexible: {
+          title: "Fleksibilni termini",
+          description:
+            "Format i termini se dogovaraju prema potrebama organizacije.",
+        },
+        reserved: {
+          title: "Rezervisani kapacitet",
+          description:
+            "Mogućnost rezervisanog kapaciteta razmatra se kroz ponudu; broj termina i trajanje nisu javno potvrđeni.",
+        },
+        payment: {
+          title: "Način plaćanja",
+          description:
+            "Način plaćanja definiše se u ponudi, nakon dogovora o obimu programa.",
+        },
+        privacy: {
+          title: "Privatnost zaposlenih",
+          description:
+            "Konfigurator ne prikuplja zdravstvene podatke zaposlenih.",
+        },
+      },
+      faqEyebrow: "Najčešća pitanja",
+      faq: {
+        prices: {
+          question: "Da li su cene javno objavljene?",
+          answer:
+            "Ne. Cena, obim, kapacitet i način plaćanja potvrđuju se nakon razgovora i kroz ponudu.",
+        },
+        capacity: {
+          question: "Da li rezervisani kapacitet važi odmah?",
+          answer:
+            "Ne. Rezervisani kapacitet može biti deo dogovora, ali se potvrđuje tek kroz konkretnu ponudu.",
+        },
+        next: {
+          question: "Šta se dešava nakon konfiguratora?",
+          answer:
+            "Nakon kratkog upitnika tim predlaže sledeći razgovor kako bi precizirao teme, format i okvir saradnje.",
+        },
+      },
+      processEyebrow: "Kako počinje saradnja",
+      processTitle: "Tri koraka do prve radionice",
+      steps: {
+        contact: "Javite nam se sa kratkim opisom vašeg tima i potreba.",
+        proposal: "Predlažemo format, teme i okvirni obim saradnje.",
+        schedule: "Dogovaramo termine i način rada — onlajn ili uživo.",
+      },
+      closingTitle: "Zainteresovani za saradnju?",
+      closingBody:
+        "Javite nam se i predložićemo format koji odgovara vašem timu. Konkretan upitnik i ponuda stižu nakon prvog razgovora.",
+    },
+    companyConfigurator: {
+      dialog: "Rad sa kompanijama",
+      close: "Zatvori",
+      back: "Nazad",
+      next: "Dalje",
+      progress: {
+        sent: "Upit poslat",
+        contact: "Kontakt",
+        recommendation: "Naš predlog",
+        step: "Korak {current} od {total}",
+        intro: "Rad sa kompanijama",
+      },
+      intro: {
+        title: "Kako možemo pomoći vašoj organizaciji?",
+        description:
+          "Kroz nekoliko kratkih pitanja predložićemo model saradnje koji odgovara veličini vašeg tima i temama koje su vam važne.",
+        offer: {
+          workshops: "radionice",
+          talks: "predavanja i vebinari",
+          counselling: "individualno savetovanje zaposlenih",
+          managers: "podrška menadžerima",
+          burnout: "burnout programi",
+          teamBuilding: "team building radionice",
+        },
+        selected:
+          "Izabrali ste početni model: {plan}. Kratak upitnik će pomoći da preciziramo potrebe.",
+        cta: "Konfigurišite program",
+      },
+      questions: {
+        employees: "Koliko zaposlenih imate?",
+        goals: "Šta želite da organizujete?",
+        topics: "Koje teme vas najviše zanimaju?",
+        format: "Koji format vam odgovara?",
+      },
+      options: {
+        size: {
+          upTo20: "Do 20",
+          between20And50: "20–50",
+          between50And200: "50–200",
+          over200: "Više od 200",
+        },
+        goal: {
+          lecture: "Predavanje ili vebinar",
+          workshop: "Radionicu",
+          longTerm: "Dugoročnu saradnju",
+          individualSupport: "Individualnu podršku zaposlenima",
+          needsAssessment: "Procenu potreba",
+        },
+        topic: {
+          burnout: "Burnout",
+          stress: "Stres",
+          communication: "Komunikacija",
+          leadership: "Liderstvo",
+          mentalHealth: "Mentalno zdravlje",
+          psychSafety: "Psihološka sigurnost",
+        },
+        format: {
+          online: "Onlajn",
+          inPerson: "Uživo",
+          combined: "Kombinovano",
+          unsure: "Nismo sigurni",
+        },
+      },
+      recommendation: {
+        eyebrow: "Na osnovu vaših odgovora preporučujemo",
+        teamSize: "Veličina tima:",
+        employees: "{count} zaposlenih",
+        topics: "Teme:",
+        format: "Način rada:",
+        price: "Cena",
+        priceOnRequest: "Cena po ponudi",
+        note: "Konačnu ponudu, obim i uslove saradnje definišemo u razgovoru, prema potrebama vaše organizacije.",
+        request: "Zatražite ponudu",
+      },
+      models: {
+        lecture: {
+          name: "Predavanje ili vebinar po meri",
+          description:
+            "Stručno predavanje ili vebinar prilagođen vašem timu — tema, trajanje i termin po dogovoru.",
+        },
+        workshop: {
+          name: "Interaktivna radionica za tim",
+          description:
+            "Iskustvena radionica prilagođena vašem timu, sa praktičnim vežbama i prostorom za razgovor.",
+        },
+        support: {
+          name: "Program podrške zaposlenima",
+          description:
+            "Dugoročna saradnja koja kombinuje poverljivo individualno savetovanje zaposlenih sa edukativnim aktivnostima za tim.",
+        },
+        flexible: {
+          name: "Fleksibilni fond individualnih termina",
+          description:
+            "Zaposleni poverljivo koriste individualne razgovore kada im podrška zatreba — bez uvida kompanije u sadržaj.",
+        },
+        assessment: {
+          name: "Uvodna procena potreba organizacije",
+          description:
+            "Kratka procena potreba tima kao osnova za predlog daljih koraka i odgovarajućeg oblika podrške.",
+        },
+        custom: {
+          name: "Program po meri",
+          description:
+            "Za veće organizacije i kombinovane potrebe program definišemo zajedno, nakon kratkog konsultativnog razgovora.",
+        },
+      },
+      contact: {
+        title: "Kontakt za ponudu",
+        companyName: "Naziv kompanije *",
+        contactName: "Ime i prezime kontakt osobe *",
+        email: "Poslovni email *",
+        phone: "Telefon",
+        message: "Dodatna poruka",
+        consent:
+          "Saglasan/na sam da me Psihointegritet kontaktira povodom ovog upita.",
+        sending: "Šaljemo…",
+        submit: "Pošaljite upit za program",
+        error:
+          "Slanje trenutno nije uspelo. Pokušajte ponovo za koji trenutak.",
+      },
+      done: {
+        title: "Hvala na interesovanju",
+        body: "Primili smo vaš upit i okvirne zahteve. Član tima Psihointegriteta će vas kontaktirati radi potvrde potreba i pripreme konačne ponude.",
+        close: "Zatvori",
+      },
+    },
   },
   home: {
     hero: {
@@ -358,6 +585,160 @@ export const publicUi: Widen<EnPublicUi> = {
     details: "Podaci",
     noteLabel: "Napomena:",
     note: "Ovo još nije konačna potvrda termina. Terapeut ili član tima će proveriti dostupnost i poslati potvrdu ili predlog druge mogućnosti na adresu <email>{address}</email>.",
+  },
+  compass: {
+    hero: {
+      eyebrow: "Kompas mentalnog zdravlja",
+      title: "Vaš vodič do podrške koja ima smisla za vas",
+      body: "Izaberite oblast koja vam je najbliža i pogledajte sadržaje, vežbe i programe koji bi vam sada mogli biti korisni.",
+      disclaimer:
+        "Kompas nije test i ne postavlja dijagnozu. Ne zamenjuje razgovor sa stručnom osobom.",
+      start: "Pokreni Kompas",
+      skip: "Preskoči pitanja",
+      notes: {
+        shortLead: "Pet kratkih pitanja.",
+        shortRest: "Nema tačnih i netačnih odgovora.",
+        accountLead: "Bez naloga.",
+        accountRest: "Odgovori ostaju na vašem uređaju.",
+        stopLead: "Možete stati.",
+        stopRest: "Preporuke dobijate i na osnovu dela odgovora.",
+      },
+    },
+    always: {
+      label: "Uvek dostupno",
+      questions: "Pokreni pitanja",
+      areas: "Vrati se na oblasti",
+      topics: "Pogledaj sve teme",
+      support: "Želim stručnu pomoć",
+    },
+    starting: {
+      title: "Polazni prikaz",
+      body: "Bez odgovora na pitanja, ovde su sve oblasti i teme koje trenutno postoje na platformi. Krenite od onoga što vam zvuči najbliže — pitanja možete pokrenuti kad god poželite.",
+      questions: "Ipak odgovorite na pitanja",
+      demo: "Demo sadržaj — prikazan je samo u lokalnom preview režimu.",
+      areas: "Oblasti",
+      allAreas: "Sve oblasti →",
+      topics: "Aktuelne teme",
+      allTopics: "Sve teme →",
+      available: "Dostupno bez odgovora na pitanja",
+      availableBody:
+        "Javno objavljeni sadržaji, poređani redosledom iz registra.",
+      emptyTitle: "Još nema objavljenih sadržaja",
+      emptyBody:
+        "Sadržaji se prikazuju čim budu objavljeni i povezani sa oblastima u registru.",
+      topicCount: "{count} tema",
+    },
+    support: {
+      label: "Stručna podrška",
+      title: "Kada poželite razgovor",
+      body: "Kompas ne bira terapeuta umesto vas. Ako želite, prenosimo samo ono što ste izabrali u obrazac za pronalaženje podrške — i pre toga vam pokažemo šta se tačno prenosi.",
+      primary: "Želim stručnu pomoć",
+      secondary: "Završi istraživanje",
+      transfer:
+        "Kontekst je prenet u Pronađi podršku. Tamo možete da ga izmenite ili uklonite pre nego što nastavite.",
+    },
+    quiz: {
+      label: "Kompas",
+      fallbackTitle: "Kompas pitanja",
+      fallbackHelp: "Pitanja su opciona.",
+      close: "Zatvori Kompas",
+      loading: "Učitavanje Kompasa…",
+      unavailable: "Kompas trenutno nije dostupan.",
+      retry: "Pokušajte ponovo",
+      skip: "Preskoči pitanje",
+      next: "Dalje",
+      back: "Nazad na prethodno pitanje",
+      recommendations: "Prikaži preporuke sada",
+      startingPackage: "Prikaži polazni paket",
+    },
+    results: {
+      label: "Kompas rezultat",
+      preparing: "Pripremamo prikaz…",
+      loading: "Učitavamo preporuke…",
+      unavailable: "Preporuke trenutno nisu dostupne.",
+      retry: "Pokušajte ponovo",
+      sectionEmpty:
+        "Za ovaj izbor trenutno nema objavljenog sadržaja u sekciji.",
+      supportBody:
+        "Kompas ne rangira terapeute i ne tvrdi da je kontekst prenet pre vaše potvrde.",
+      support: "Želim stručnu podršku →",
+      empty:
+        "Trenutno nema objavljenog sadržaja za ovaj izbor. Prikazujemo samo proverene DB rezultate.",
+      edit: "Izmeni odgovore",
+      reset: "Poništi izbor",
+    },
+    feedback: {
+      title: "Da li vam je Kompas pomogao da vidite sledeći korak?",
+      body: "Anketa traje oko minut i ne utiče na vaše preporuke.",
+      accept: "Da, odvojiću minut",
+      dismiss: "Ne sada",
+    },
+    preview: {
+      label: "Kontrola za pregled · nije deo stranice",
+      version: "Verzija {id}",
+      previous: "Prethodna šema",
+      next: "Sledeća šema",
+    },
+    lists: {
+      compass: "Kompas",
+      home: "Početna",
+      breadcrumb: "Putanja",
+      areas: "Oblasti",
+      topics: "Teme",
+      areasLead:
+        "Pregled objavljenih oblasti koje pomažu da istražite teme i dostupne sadržaje u Kompasu.",
+      topicsLead:
+        "Pregled i pretraga objavljenih tema i povezanih sadržaja u Kompasu.",
+      viewTopics: "Pogledaj sve teme",
+      start: "Pokreni Kompas",
+      noAreas: "Trenutno nema objavljenih oblasti.",
+      nextTitle: "Potreban vam je sledeći korak?",
+      nextBody:
+        "Možete nastaviti ka izboru stručne podrške bez obzira na to gde ste završili istraživanje.",
+      findSupport: "Pronađite podršku",
+      searchLabel: "Pretraga tema",
+      searchPlaceholder: "Npr. granice, panika, roditeljstvo…",
+      clear: "Poništi",
+      showAll: "Prikaži sve teme",
+      noTopics: "Trenutno nema objavljenih tema.",
+      noResults: "Nema tema koje odgovaraju pretrazi.",
+      contentPreparing: "Sadržaji u pripremi",
+      contentPreparingLower: "sadržaji u pripremi",
+      openArea: "Otvori oblast {name}",
+      public: "Javno dostupno",
+      registered: "Za registrovane",
+      open: "Otvori",
+      formats: {
+        article: "Članak",
+        guide: "Vodič",
+        exercise: "Vežba",
+        program: "Program",
+        workshop: "Radionica",
+        video: "Video",
+        audio: "Audio",
+      },
+    },
+    detail: {
+      area: "Oblast",
+      topic: "Tema",
+      topicsHere: "Teme u ovoj oblasti",
+      areaContent: "Objavljeni sadržaji",
+      topicContent: "Sadržaji uz ovu temu",
+      areaEmpty: "Za ovu oblast još nema objavljenih sadržaja.",
+      topicEmpty: "Za ovu temu još nema objavljenih sadržaja.",
+      areaEmptyBody:
+        "Prikazuju se čim budu objavljeni u registru. U međuvremenu pogledajte srodne oblasti ili zatražite stručnu podršku.",
+      topicEmptyBody:
+        "Pogledajte druge teme u oblasti ili zatražite stručnu podršku.",
+      relatedAreas: "Srodne oblasti",
+      relatedTopics: "Druge teme u oblasti",
+      wholeArea: "Cela oblast: {name}",
+      allAreas: "Sve oblasti",
+      allTopics: "Sve teme",
+      support: "Želim stručnu pomoć",
+      metaTopics: "{count} tema",
+      metaContent: "{count} objavljenih sadržaja",
+    },
   },
   compassBanner: {
     titleSuffix: "mentalnog zdravlja",

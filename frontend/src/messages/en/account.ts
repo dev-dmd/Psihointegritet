@@ -10,6 +10,12 @@
  * the therapist gets in touch, never that a confirmation mail is on its way.
  */
 export const account = {
+  metadata: {
+    panel: "My account",
+    appointments: "My appointments",
+    programs: "Programs",
+    profile: "Profile",
+  },
   brand: {
     /** Caption under the wordmark in the desktop sidebar. */
     panel: "Client area",

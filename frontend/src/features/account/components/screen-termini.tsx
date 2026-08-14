@@ -5,9 +5,10 @@ import { useState } from "react";
 import { useTranslations } from "next-intl";
 
 import { TabPills } from "@/components/panel/tab-pills";
+import { useUiLocale } from "@/i18n/use-ui-locale";
 
 import { partitionRequests } from "../appointment-view";
-import { BOOKING_PATH } from "../booking-entry";
+import { accountBookingPath } from "../booking-entry";
 import { useMyAppointmentRequests } from "../hooks/use-my-appointment-requests";
 import { AppointmentRow } from "./appointment-row";
 
@@ -27,6 +28,7 @@ const TABS = ["upcoming", "history"] as const;
 export function ScreenTermini() {
   const t = useTranslations("account.appointments");
   const state = useTranslations("account.state");
+  const locale = useUiLocale();
   const [tab, setTab] = useState<(typeof TABS)[number]>("upcoming");
   const { data, isPending, isError } = useMyAppointmentRequests();
 
@@ -74,7 +76,7 @@ export function ScreenTermini() {
           {tab === "upcoming" ? (
             <>
               <Link
-                href={BOOKING_PATH}
+                href={accountBookingPath(locale)}
                 className="border-coffee/25 text-ink-55 hover:border-sage hover:text-forest flex min-h-12 items-center justify-center rounded-[18px] border-[1.5px] border-dashed px-4 py-4 text-[13.5px] font-semibold no-underline transition-colors"
               >
                 {t("newAppointment")}

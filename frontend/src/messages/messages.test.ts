@@ -90,6 +90,13 @@ describe("catalogue parity", () => {
     "account.home.greeting",
     "account.home.greetingPlain",
     "account.format.online", // the Serbian panel says „Online" too
+    "public.pages.companies.plans.teamFlex.title", // product/model name
+    "public.pages.companyConfigurator.options.size.between20And50", // numeric range
+    "public.pages.companyConfigurator.options.size.between50And200", // numeric range
+    "public.pages.companyConfigurator.options.topic.burnout", // established loanword in the approved Serbian copy
+    "public.compass.lists.formats.program", // established international format name
+    "public.compass.lists.formats.video", // established international format name
+    "public.compass.lists.formats.audio", // established international format name
   ]);
 
   it("does not leave Serbian values identical to English", () => {

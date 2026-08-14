@@ -1,5 +1,6 @@
 import type { Route } from "next";
 import { PublicLink as Link } from "@/components/ui/public-link";
+import { useLocale, useTranslations } from "next-intl";
 
 import { countSr } from "@/helpers/plural-sr";
 import type { RoutablePublicTaxonomyTerm } from "@/lib/compass/types";
@@ -22,6 +23,8 @@ export function TopicCard({
   parentPath?: string;
   contentCount: number | null;
 }) {
+  const locale = useLocale();
+  const t = useTranslations("public.compass.lists");
   return (
     <article className="bg-surface hover:shadow-card-hover flex flex-col gap-2 rounded-[18px] p-[18px] transition-shadow">
       {parentLabel ? (
@@ -50,8 +53,10 @@ export function TopicCard({
 
       <span className="text-coffee/65 mt-auto text-[12px]">
         {contentCount === null
-          ? "Sadržaji u pripremi"
-          : countSr(contentCount, "sadržaj", "sadržaja", "sadržaja")}
+          ? t("contentPreparing")
+          : locale === "sr-Latn"
+            ? countSr(contentCount, "sadržaj", "sadržaja", "sadržaja")
+            : `${contentCount} ${contentCount === 1 ? "item" : "items"}`}
       </span>
     </article>
   );

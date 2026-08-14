@@ -1,17 +1,18 @@
 import type { Route } from "next";
 import { PublicLink as Link } from "@/components/ui/public-link";
+import { useTranslations } from "next-intl";
 
 import type { PublicCompassContentCardView } from "@/lib/compass/taxonomy-view";
 
-const FORMAT_LABELS: Record<string, string> = {
-  article: "Članak",
-  guide: "Vodič",
-  exercise: "Vežba",
-  program: "Program",
-  workshop: "Radionica",
-  video: "Video",
-  audio: "Audio",
-};
+const FORMAT_IDS = [
+  "article",
+  "guide",
+  "exercise",
+  "program",
+  "workshop",
+  "video",
+  "audio",
+] as const;
 
 /**
  * A published content card on a canonical Kompas page.
@@ -29,7 +30,10 @@ export function CompassContentCard({
 }: {
   card: PublicCompassContentCardView;
 }) {
-  const formatLabel = FORMAT_LABELS[card.contentFormat] ?? card.contentFormat;
+  const t = useTranslations("public.compass.lists");
+  const formatLabel = FORMAT_IDS.includes(card.contentFormat as never)
+    ? t(`formats.${card.contentFormat as (typeof FORMAT_IDS)[number]}`)
+    : card.contentFormat;
 
   return (
     <article className="border-coffee/8 bg-surface hover:shadow-card-hover flex flex-col gap-2.5 rounded-[18px] border p-[18px] transition-shadow">
@@ -44,7 +48,7 @@ export function CompassContentCard({
               : "border-coffee/16 text-coffee/70 rounded-full border px-2.5 py-1 text-[11px] tracking-[0.06em] uppercase"
           }
         >
-          {card.accessLevel === "public" ? "Javno dostupno" : "Za registrovane"}
+          {card.accessLevel === "public" ? t("public") : t("registered")}
         </span>
       </div>
 
@@ -62,7 +66,7 @@ export function CompassContentCard({
         href={card.href as Route}
         className="text-forest hover:text-forest-soft mt-auto self-start pt-2 text-[13.5px] underline underline-offset-[3px]"
       >
-        Otvori <span aria-hidden>→</span>
+        {t("open")} <span aria-hidden>→</span>
       </Link>
     </article>
   );

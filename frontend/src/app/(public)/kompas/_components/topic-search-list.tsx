@@ -1,6 +1,7 @@
 "use client";
 
 import { useDeferredValue, useId, useState } from "react";
+import { useTranslations } from "next-intl";
 
 import { countSr } from "@/helpers/plural-sr";
 import type { CompassBreadcrumb } from "@/lib/compass/discoverability";
@@ -41,6 +42,7 @@ export function TopicSearchList({
   lead: string;
   items: readonly TopicSearchItem[];
 }) {
+  const t = useTranslations("public.compass.lists");
   const inputId = useId();
   const [query, setQuery] = useState("");
   const deferredQuery = useDeferredValue(query);
@@ -60,20 +62,20 @@ export function TopicSearchList({
     <>
       <CompassPageHero
         breadcrumbs={breadcrumbs}
-        eyebrow="Kompas"
-        title="Teme"
+        eyebrow={t("compass")}
+        title={t("topics")}
         lead={lead}
       >
         <div className="mt-5 flex flex-wrap items-center gap-2.5">
           <label htmlFor={inputId} className="sr-only">
-            Pretraga tema
+            {t("searchLabel")}
           </label>
           <input
             id={inputId}
             type="search"
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="Npr. granice, panika, roditeljstvo…"
+            placeholder={t("searchPlaceholder")}
             className="border-coffee/16 bg-surface text-coffee placeholder:text-coffee/45 focus:border-sage focus:ring-sage/25 min-h-12 min-w-[200px] flex-[1_1_240px] rounded-full border px-[18px] text-[14.5px] outline-none focus:ring-4"
           />
           <button
@@ -82,7 +84,7 @@ export function TopicSearchList({
             disabled={query === ""}
             className="border-coffee/14 text-forest hover:border-coffee/35 disabled:text-coffee/35 min-h-12 cursor-pointer rounded-full border px-[18px] text-[13.5px] transition-colors disabled:cursor-not-allowed"
           >
-            Poništi
+            {t("clear")}
           </button>
           <span aria-live="polite" className="text-coffee/68 text-[12.5px]">
             {filtered.length === items.length
@@ -106,9 +108,7 @@ export function TopicSearchList({
         {filtered.length === 0 ? (
           <div className="border-coffee/20 bg-surface/60 col-span-full rounded-[18px] border border-dashed px-5 py-[26px] text-center">
             <p className="text-forest mb-3 text-[14.5px]">
-              {items.length === 0
-                ? "Trenutno nema objavljenih tema."
-                : "Nema tema koje odgovaraju pretrazi."}
+              {items.length === 0 ? t("noTopics") : t("noResults")}
             </p>
             {items.length > 0 ? (
               <button
@@ -116,7 +116,7 @@ export function TopicSearchList({
                 onClick={() => setQuery("")}
                 className="border-coffee/16 text-forest hover:border-coffee/35 min-h-11 cursor-pointer rounded-full border px-[18px] text-[13.5px] transition-colors"
               >
-                Prikaži sve teme
+                {t("showAll")}
               </button>
             ) : null}
           </div>

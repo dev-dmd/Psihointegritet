@@ -55,4 +55,14 @@ describe("public localized paths", () => {
       "https://example.com/tim/maria",
     );
   });
+
+  it("localizes the legal links exposed in the client account", () => {
+    expect(localizedPublicPath("public.privacy", { locale: "en" })).toBe(
+      "/privacy",
+    );
+    expect(
+      localizedPublicPath("public.bookingRules", { locale: "sr-Latn" }),
+    ).toBe("/pravila-zakazivanja");
+    expect(localizePublicHref("/uslovi", "en")).toBe("/terms");
+  });
 });

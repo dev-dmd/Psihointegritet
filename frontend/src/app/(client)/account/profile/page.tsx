@@ -4,8 +4,13 @@ import { ScreenProfil } from "@/features/account/components/screen-profil";
 import { profileNameOf } from "@/features/account/identity-display";
 import { requireClient } from "@/lib/auth/guards";
 import { getInitials } from "@/lib/auth/clerk/initials";
+import { resolveWorkspaceLocale } from "@/lib/tenant/workspace-locale";
+import { getPlatformMessages } from "@/messages";
 
-export const metadata: Metadata = { title: "Profil" };
+export async function generateMetadata(): Promise<Metadata> {
+  const locale = await resolveWorkspaceLocale();
+  return { title: getPlatformMessages(locale).account.metadata.profile };
+}
 
 /**
  * KP 04 „Profil" — identity, notification preferences, documents, sign out.

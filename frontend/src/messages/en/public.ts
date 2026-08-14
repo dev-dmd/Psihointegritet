@@ -210,6 +210,233 @@ export const publicUi = {
         "Price, duration and working arrangements are confirmed before publication.",
       findSupport: "Find support",
     },
+    companies: {
+      eyebrow: "For organizations",
+      title: "Support for organizations",
+      intro:
+        "Workshops, education and psychological support for teams and employees — designed to support mental health at work with the same principles of confidentiality and professional care as our client work.",
+      configure: "Configure a program",
+      offerings: {
+        workshops: {
+          title: "Workshops for teams",
+          description:
+            "Experiential workshops on stress, burnout and communication, tailored to your team and pace of work.",
+        },
+        education: {
+          title: "Education and talks",
+          description:
+            "Mental health, emotional literacy and burnout prevention topics in a format that suits your organization.",
+        },
+        support: {
+          title: "Psychological support for employees",
+          description:
+            "Individual consultations and counselling as an employee benefit that supports everyday work.",
+        },
+      },
+      modelsEyebrow: "Ways to work together",
+      modelsTitle: "Starting points for a conversation",
+      modelsNote:
+        "These are not final public offers. Price, scope, capacity and payment arrangements are confirmed after a conversation.",
+      status: { draft: "Draft model", pending: "Pending confirmation" },
+      plans: {
+        individual: {
+          title: "Individual approach",
+          description:
+            "For organizations looking for a flexible way to begin supporting employees.",
+        },
+        teamFlex: {
+          title: "Team Flex",
+          description:
+            "For teams that need a flexible combination of workshops and support.",
+        },
+        reserved: {
+          title: "Reserved capacity",
+          description:
+            "For organizations that want to discuss continuity of support in advance.",
+        },
+        custom: {
+          title: "Tailored program",
+          description:
+            "For combined needs defined through a consultative conversation.",
+        },
+      },
+      delivery: {
+        flexible: {
+          title: "Flexible scheduling",
+          description:
+            "The format and schedule are agreed around the organization's needs.",
+        },
+        reserved: {
+          title: "Reserved capacity",
+          description:
+            "Reserved capacity can be considered in the proposal; the number of sessions and duration are not publicly confirmed.",
+        },
+        payment: {
+          title: "Payment arrangements",
+          description:
+            "Payment arrangements are defined in the proposal after the program scope is agreed.",
+        },
+        privacy: {
+          title: "Employee privacy",
+          description:
+            "The configurator does not collect employee health information.",
+        },
+      },
+      faqEyebrow: "Frequently asked questions",
+      faq: {
+        prices: {
+          question: "Are prices published publicly?",
+          answer:
+            "No. Price, scope, capacity and payment arrangements are confirmed after a conversation and in a proposal.",
+        },
+        capacity: {
+          question: "Is reserved capacity available immediately?",
+          answer:
+            "No. Reserved capacity may form part of an agreement, but it is confirmed only in a specific proposal.",
+        },
+        next: {
+          question: "What happens after the configurator?",
+          answer:
+            "After the short questionnaire, the team suggests a conversation to clarify topics, format and the scope of work.",
+        },
+      },
+      processEyebrow: "How collaboration begins",
+      processTitle: "Three steps to the first workshop",
+      steps: {
+        contact: "Tell us briefly about your team and its needs.",
+        proposal: "We suggest a format, topics and an initial scope.",
+        schedule: "We agree on dates and delivery — online or in person.",
+      },
+      closingTitle: "Interested in working together?",
+      closingBody:
+        "Get in touch and we will suggest a format that suits your team. A detailed questionnaire and proposal follow the first conversation.",
+    },
+    companyConfigurator: {
+      dialog: "Programs for organizations",
+      close: "Close",
+      back: "Back",
+      next: "Next",
+      progress: {
+        sent: "Enquiry sent",
+        contact: "Contact",
+        recommendation: "Our suggestion",
+        step: "Step {current} of {total}",
+        intro: "For organizations",
+      },
+      intro: {
+        title: "How can we support your organization?",
+        description:
+          "A few short questions will help us suggest an approach suited to your team size and the topics that matter to you.",
+        offer: {
+          workshops: "workshops",
+          talks: "talks and webinars",
+          counselling: "individual employee counselling",
+          managers: "support for managers",
+          burnout: "burnout programs",
+          teamBuilding: "team-building workshops",
+        },
+        selected:
+          "Your starting model is {plan}. The short questionnaire will help clarify your needs.",
+        cta: "Configure a program",
+      },
+      questions: {
+        employees: "How many employees do you have?",
+        goals: "What would you like to organize?",
+        topics: "Which topics interest you most?",
+        format: "Which format suits you?",
+      },
+      options: {
+        size: {
+          upTo20: "Up to 20",
+          between20And50: "20–50",
+          between50And200: "50–200",
+          over200: "More than 200",
+        },
+        goal: {
+          lecture: "Talk or webinar",
+          workshop: "Workshop",
+          longTerm: "Long-term collaboration",
+          individualSupport: "Individual employee support",
+          needsAssessment: "Needs assessment",
+        },
+        topic: {
+          burnout: "Burnout",
+          stress: "Stress",
+          communication: "Communication",
+          leadership: "Leadership",
+          mentalHealth: "Mental health",
+          psychSafety: "Psychological safety",
+        },
+        format: {
+          online: "Online",
+          inPerson: "In person",
+          combined: "Combined",
+          unsure: "Not sure",
+        },
+      },
+      recommendation: {
+        eyebrow: "Based on your answers, we recommend",
+        teamSize: "Team size:",
+        employees: "{count} employees",
+        topics: "Topics:",
+        format: "Format:",
+        price: "Price",
+        priceOnRequest: "Price on request",
+        note: "We define the final proposal, scope and terms together according to your organization's needs.",
+        request: "Request a proposal",
+      },
+      models: {
+        lecture: {
+          name: "Tailored talk or webinar",
+          description:
+            "A professional talk or webinar tailored to your team, with topic, duration and date agreed together.",
+        },
+        workshop: {
+          name: "Interactive team workshop",
+          description:
+            "An experiential workshop tailored to your team, with practical exercises and room for discussion.",
+        },
+        support: {
+          name: "Employee support program",
+          description:
+            "Long-term collaboration combining confidential individual employee counselling with educational activities for the team.",
+        },
+        flexible: {
+          name: "Flexible fund of individual sessions",
+          description:
+            "Employees confidentially use individual conversations when they need support, without the company seeing their content.",
+        },
+        assessment: {
+          name: "Initial organization needs assessment",
+          description:
+            "A short assessment of team needs as a basis for suggesting next steps and a suitable form of support.",
+        },
+        custom: {
+          name: "Tailored program",
+          description:
+            "For larger organizations and combined needs, we define the program together after a short consultation.",
+        },
+      },
+      contact: {
+        title: "Contact details for a proposal",
+        companyName: "Company name *",
+        contactName: "Contact person's full name *",
+        email: "Business email *",
+        phone: "Phone",
+        message: "Additional message",
+        consent:
+          "I agree that Psihointegritet may contact me about this enquiry.",
+        sending: "Sending…",
+        submit: "Send program enquiry",
+        error:
+          "Your enquiry could not be sent right now. Please try again shortly.",
+      },
+      done: {
+        title: "Thank you for your interest",
+        body: "We received your enquiry and initial requirements. A member of the Psihointegritet team will contact you to confirm your needs and prepare a final proposal.",
+        close: "Close",
+      },
+    },
   },
   home: {
     hero: {
@@ -356,6 +583,159 @@ export const publicUi = {
     details: "Details",
     noteLabel: "Note:",
     note: "This is not final appointment confirmation. The therapist or a team member will check availability and send confirmation or suggest another option to <email>{address}</email>.",
+  },
+  compass: {
+    hero: {
+      eyebrow: "Mental health Compass",
+      title: "Your guide to support that makes sense for you",
+      body: "Choose the area that feels closest to you and explore content, exercises and programs that may be useful right now.",
+      disclaimer:
+        "Compass is not a test and does not provide a diagnosis. It does not replace a conversation with a professional.",
+      start: "Start Compass",
+      skip: "Skip the questions",
+      notes: {
+        shortLead: "Five short questions.",
+        shortRest: "There are no right or wrong answers.",
+        accountLead: "No account needed.",
+        accountRest: "Your answers stay on your device.",
+        stopLead: "You can stop.",
+        stopRest: "You can get suggestions based on partial answers.",
+      },
+    },
+    always: {
+      label: "Always available",
+      questions: "Start the questions",
+      areas: "Return to areas",
+      topics: "View all topics",
+      support: "I want professional support",
+    },
+    starting: {
+      title: "Starting view",
+      body: "Without answering questions, these are all areas and topics currently available on the platform. Start with what feels closest — you can open the questions at any time.",
+      questions: "Answer the questions instead",
+      demo: "Demo content — shown only in local preview mode.",
+      areas: "Areas",
+      allAreas: "All areas →",
+      topics: "Current topics",
+      allTopics: "All topics →",
+      available: "Available without answering questions",
+      availableBody: "Published content in registry order.",
+      emptyTitle: "No published content yet",
+      emptyBody:
+        "Content appears as soon as it is published and linked to areas in the registry.",
+      topicCount: "{count} topics",
+    },
+    support: {
+      label: "Professional support",
+      title: "When you would like to talk",
+      body: "Compass does not choose a therapist for you. If you want, we transfer only what you selected to the support form — and show you exactly what will be transferred first.",
+      primary: "I want professional support",
+      secondary: "Finish exploring",
+      transfer:
+        "Context has been transferred to Find support. You can change or remove it there before continuing.",
+    },
+    quiz: {
+      label: "Compass",
+      fallbackTitle: "Compass questions",
+      fallbackHelp: "Questions are optional.",
+      close: "Close Compass",
+      loading: "Loading Compass…",
+      unavailable: "Compass is currently unavailable.",
+      retry: "Try again",
+      skip: "Skip question",
+      next: "Next",
+      back: "Back to the previous question",
+      recommendations: "Show suggestions now",
+      startingPackage: "Show starting package",
+    },
+    results: {
+      label: "Compass result",
+      preparing: "Preparing your view…",
+      loading: "Loading suggestions…",
+      unavailable: "Suggestions are currently unavailable.",
+      retry: "Try again",
+      sectionEmpty:
+        "There is currently no published content for this selection in this section.",
+      supportBody:
+        "Compass does not rank therapists and does not claim context was transferred before you confirm it.",
+      support: "I want professional support →",
+      empty:
+        "There is currently no published content for this selection. Only verified database results are shown.",
+      edit: "Edit answers",
+      reset: "Reset selection",
+    },
+    feedback: {
+      title: "Did Compass help you see a next step?",
+      body: "The survey takes about a minute and does not affect your suggestions.",
+      accept: "Yes, I can spare a minute",
+      dismiss: "Not now",
+    },
+    preview: {
+      label: "Preview control · not part of the page",
+      version: "Version {id}",
+      previous: "Previous scheme",
+      next: "Next scheme",
+    },
+    lists: {
+      compass: "Compass",
+      home: "Home",
+      breadcrumb: "Breadcrumb",
+      areas: "Areas",
+      topics: "Topics",
+      areasLead:
+        "Explore published areas that help you discover topics and available Compass content.",
+      topicsLead:
+        "Browse and search published topics and related Compass content.",
+      viewTopics: "View all topics",
+      start: "Start Compass",
+      noAreas: "There are currently no published areas.",
+      nextTitle: "Do you need a next step?",
+      nextBody:
+        "You can continue toward professional support regardless of where you stopped exploring.",
+      findSupport: "Find support",
+      searchLabel: "Search topics",
+      searchPlaceholder: "For example: boundaries, panic, parenting…",
+      clear: "Clear",
+      showAll: "Show all topics",
+      noTopics: "There are currently no published topics.",
+      noResults: "No topics match your search.",
+      contentPreparing: "Content in preparation",
+      contentPreparingLower: "content in preparation",
+      openArea: "Open area {name}",
+      public: "Publicly available",
+      registered: "For registered users",
+      open: "Open",
+      formats: {
+        article: "Article",
+        guide: "Guide",
+        exercise: "Exercise",
+        program: "Program",
+        workshop: "Workshop",
+        video: "Video",
+        audio: "Audio",
+      },
+    },
+    detail: {
+      area: "Area",
+      topic: "Topic",
+      topicsHere: "Topics in this area",
+      areaContent: "Published content",
+      topicContent: "Content for this topic",
+      areaEmpty: "There is no published content for this area yet.",
+      topicEmpty: "There is no published content for this topic yet.",
+      areaEmptyBody:
+        "Content appears once published in the registry. In the meantime, explore related areas or request professional support.",
+      topicEmptyBody:
+        "Explore other topics in this area or request professional support.",
+      relatedAreas: "Related areas",
+      relatedTopics: "Other topics in this area",
+      wholeArea: "Whole area: {name}",
+      allAreas: "All areas",
+      allTopics: "All topics",
+      support: "I want professional support",
+      metaTopics: "{count} topics",
+      metaContent: "{count} published items",
+    },
   },
   compassBanner: {
     titleSuffix: "for mental health",
