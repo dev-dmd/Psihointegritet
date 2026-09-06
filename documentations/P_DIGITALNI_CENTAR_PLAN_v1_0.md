@@ -285,6 +285,41 @@ retroaktivno ispravlja.
 
 **Ne pravimo:** hostname resolver · wildcard subdomene · onboarding UI · izmenu C2(a).
 
+#### Status PDC-0A — isporučeno 2026-09-06 (commit `a169b13`)
+
+Sanja postoji kao stvarna organizacija: `sanja-neuer` · `Sanja Neuer` · `sr-Latn`/`sr-Latn`,
+sa UUID-om iz baze. Kreirana kroz servis, **ne kroz migraciju**.
+
+**Šav:** `modules/organizations/provisioning.py` drži logiku, `scripts/provision_organization.py`
+samo parsira argumente i odlučuje o commit-u — ista podela koja već postoji za staff. Superadmin
+onboarding kasnije zove isti kod.
+
+| Ponašanje | Provereno |
+| --------- | --------- |
+| kreiranje | `created organization sanja-neuer [edca44cb-…]`, exit 0 |
+| idempotentnost | drugi identičan poziv: `already exists and matches; nothing to do`, exit 0, bez drugog reda i bez drugog audit zapisa |
+| konflikt | drugo `display_name` uz isti slug: greška koja **imenuje polje i obe vrednosti**, exit 1, red nepromenjen |
+| tenant resolution | `DEFAULT_ORGANIZATION_SLUG=sanja-neuer` → razrešava `Sanja Neuer` |
+| javni endpoint | `/api/v1/public/organizations/sanja-neuer/locales` → `sr-Latn`/`sr-Latn`; nepostojeći slug → 404 `ORG-404` |
+| bez regresije | `psihointegritet` i dalje razrešava; 564 backend testa, 766 frontend |
+
+**D-078 je proširen, ne zaobiđen.** `ActorKind` dobija `SYSTEM`, a recorder prima `AuditActor`
+umesto `StaffActor`. Lažni `StaffActor` sa `user_id=None` bio bi gori od izostanka traga — čita se
+kao stvaran čovek. Migracija `c4d81e37b920` širi CHECK constraint, a njen `downgrade` **odbija da se
+izvrši** dok postoje `system` redovi, umesto da briše audit zapise da bi shema prošla.
+
+> **Zamka zabeležena da se ne ponovi:** `op.drop_constraint` primenjuje `NAMING_CONVENTION` iz
+> `db/base.py` isto kao `create_check_constraint`. Prosleđivanje već razvijenog imena
+> (`ck_organization_audit_events_actor_kind_supported`) razvija se **drugi put** u skraćeno ime koje
+> ne postoji. Prosleđuje se **deklarisano** ime (`actor_kind_supported`).
+
+`HEAD_REVISION` u `test_booking_migration_chain.py` je pomeren na `c4d81e37b920` — taj test namerno
+pinuje head i komentar traži da se pomera uz svaku migraciju.
+
+**Van obima, kako je i planirano:** nijedna nova kolona na `organizations`, nema HTTP rute, nema
+Superadmin UI-ja, nema data migracije za Sanju, i **njen korisnički nalog nije napravljen** — traži
+Clerk `external_auth_id` koji ne postoji dok se ne registruje.
+
 ### PDC-0B — Tenant-scoped public site settings
 
 **Prvi implementacioni zadatak.**
@@ -529,8 +564,8 @@ i kada na Sanjinom deployment-u važi **sve**:
 - [ ] SEO nema Psihointegritet identitet — **JSON-LD jeste** tenant-scoped (PDC-0B);
       per-route `title`/`description` još dolaze iz kataloga sadržaja, pa ostaje za PDC-1
 - [ ] email nema Psihointegritet sender ni linkove
-- [ ] `sanja-neuer` organizacija postoji u bazi, kreirana kroz bootstrap seam (ne kroz migraciju)
-- [ ] nema demo Psihointegritet podataka
+- [x] `sanja-neuer` organizacija postoji u bazi, kreirana kroz bootstrap seam (ne kroz migraciju)
+- [x] nema demo Psihointegritet podataka
 - [x] tenant boundary testovi prolaze
 - [x] **postojeći Psihointegritet demo nije regresiran**
 
