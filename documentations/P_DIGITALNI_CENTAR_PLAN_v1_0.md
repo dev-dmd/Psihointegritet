@@ -422,9 +422,18 @@ promenljive i build je padao na `serverEnv`).
 
 > **Popravljen tihi kvar na produkciji.** `DEPLOYMENT_ENV` **nije postojao** u Production scope-u.
 > `env.ts` ga tada defaultuje na `development`, a `deploymentEnvironmentFromRuntime()` traži
-> tačan string `production` — pa je `isProductionEnvironment()` vraćao `false` i živi sajt je
-> emitovao **prazan sitemap uz `noindex`**. Nije se videlo ni u jednom build logu jer ništa ne
-> puca; samo se ne indeksira.
+> tačan string `production` — pa je `isProductionEnvironment()` vraćao `false` i `/robots.txt`
+> je servirao **`Disallow: /`**, čime je ceo sajt bio blokiran na nivou crawlera. Nije se videlo
+> ni u jednom build logu jer ništa ne puca. Posle popravke i redeploy-a produkcija vraća
+> `Allow: /` uz sitemap referencu — provereno 2026-09-06.
+>
+> **Ali indeksiranje time nije otključano, i to nije kvar.** `pageMayBeIndexed()` traži i
+> `publicationStatus === "published"`, a sve statičke stranice nose `prelaunchStatus = "in_review"`
+> (`static-provider.ts:32`) — namerno, dok R1.5 ne prevede odobrene stranice u `published`.
+> Zato `<meta name="robots" content="noindex">` i prazan `sitemap.xml` **ostaju** i posle
+> ispravnog `DEPLOYMENT_ENV`. Env otvara vrata crawleru; sadržaj otvara odobrenje.
+>
+> Ranija formulacija ovog pasusa pripisivala je prazan sitemap isključivo env-u — netačno.
 
 ### PDC-0D — Email identity
 
