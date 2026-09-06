@@ -152,6 +152,11 @@ stiže kao parametar. Statička provera ostaje, samo joj se dopunjuje komentar.
 
 ### 5.1 Otvoreno pitanje koje traži spike, ne pretpostavku
 
+> **Razrešeno 2026-09-07** — vidi `PDC_B2_SPIKE_RESULT_v1_0.md`. Odgovor je potvrdan, ali sa tri
+> ograničenja: `_sites` ne radi (privatni folder), `robots.ts`/`sitemap.ts` ne primaju `params` u
+> dinamičkom segmentu pa idu kao Route Handler-i pod nerezervisanim imenima, i interni put mora biti
+> 404-ovan spolja. Statika je potvrđeno očuvana.
+
 `app/robots.ts` i `app/sitemap.ts` su root-level konvencije. Pod rewrite-om
 `sanjaneuer.com/sitemap.xml` treba da pogodi tenant-scoped varijantu. Next podržava `generateSitemaps`,
 ali **nisam potvrdio** ponašanje metadata ruta unutar dinamičkog segmenta uz rewrite. To je prvi
