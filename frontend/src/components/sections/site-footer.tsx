@@ -3,17 +3,28 @@ import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 
 import { footerNavigationGroups } from "@/content/site-navigation";
-import { locationsShortLabel, siteSettings } from "@/content/site-settings";
+import {
+  getPublicSiteSettings,
+  locationsShortLabel,
+} from "@/lib/tenant/public-site";
 import { resolvePublicLocale } from "@/lib/tenant/public-locale";
 
 export async function SiteFooter() {
   const t = await getTranslations("public");
   const locale = await resolvePublicLocale();
+  const site = await getPublicSiteSettings();
+  // An online-only tenant has no places to list, so the separator has to be
+  // dropped with them — otherwise the line renders as a leading " · ".
+  const formats = [locationsShortLabel(site), site.formatsLabel]
+    .filter((part) => part !== "")
+    .join(" · ");
   const groups = footerNavigationGroups(
     (key) => t(`navigation.links.${key}`),
     {
       support: t("footer.supportGroup"),
-      organization: t("footer.organizationGroup"),
+      organization: t("footer.organizationGroup", {
+        organization: site.publicName,
+      }),
     },
     locale,
   );
@@ -24,7 +35,7 @@ export async function SiteFooter() {
           <div>
             <div className="mb-4 flex items-baseline">
               <span className="text-canvas font-serif text-[26px] font-medium">
-                Psihointegritet
+                {site.publicName}
               </span>
               <span
                 aria-hidden
@@ -35,13 +46,13 @@ export async function SiteFooter() {
               {t("footer.description")}
             </p>
             <div className="text-canvas/55 text-sm leading-[1.9]">
-              {t("footer.formats", { locations: locationsShortLabel })}
+              {formats}
               <br />
               <a
-                href={`mailto:${siteSettings.contactEmail}`}
+                href={`mailto:${site.contactEmail}`}
                 className="text-canvas/80 hover:text-meadow no-underline transition-colors duration-200"
               >
-                {siteSettings.contactEmail}
+                {site.contactEmail}
               </a>
             </div>
           </div>
@@ -65,7 +76,9 @@ export async function SiteFooter() {
           ))}
         </div>
         <div className="flex flex-wrap items-center justify-between gap-6 pt-7">
-          <div className="text-canvas/45 text-[13px]">{t("footer.rights")}</div>
+          <div className="text-canvas/45 text-[13px]">
+            {t("footer.rights", { organization: site.publicName })}
+          </div>
           <div className="text-canvas/40 max-w-[520px] text-[12.5px]">
             {t("footer.disclaimer")}
           </div>

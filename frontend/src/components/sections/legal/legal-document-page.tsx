@@ -2,7 +2,7 @@ import { RichText } from "@/components/content/rich-text";
 import { getFormatter, getTranslations } from "next-intl/server";
 import { PageHero } from "@/components/shared/page-hero";
 import { Eyebrow } from "@/components/ui/eyebrow";
-import { siteSettings } from "@/content/site-settings";
+import { getPublicSiteSettings } from "@/lib/tenant/public-site";
 import {
   fetchPublicLegalDocument,
   type PublicLegalDocumentKind,
@@ -27,6 +27,7 @@ export async function LegalDocumentPage({
   fallbackTitle: string;
 }) {
   const t = await getTranslations("public.pages.legalDocument");
+  const site = await getPublicSiteSettings();
   const format = await getFormatter();
   const document = await fetchPublicLegalDocument(kind);
 
@@ -61,10 +62,10 @@ export async function LegalDocumentPage({
               </p>
               <p className="text-coffee/70 mt-2.5 text-[14px] leading-[1.6]">
                 {t.rich("pendingBody", {
-                  address: siteSettings.contactEmail,
+                  address: site.contactEmail,
                   email: (chunks) => (
                     <a
-                      href={`mailto:${siteSettings.contactEmail}`}
+                      href={`mailto:${site.contactEmail}`}
                       className="text-forest underline underline-offset-2"
                     >
                       {chunks}

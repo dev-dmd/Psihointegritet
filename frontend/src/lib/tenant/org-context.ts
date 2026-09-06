@@ -3,7 +3,9 @@ import "server-only";
 import { isUiLocale } from "@/i18n/locales";
 import {
   findOrganizationLocaleSettings,
+  findOrganizationPublicSite,
   type OrganizationLocaleSettings,
+  type OrganizationPublicSite,
 } from "@/lib/tenant/organizations";
 import { serverEnv } from "@/lib/validation/env";
 
@@ -41,6 +43,14 @@ import { serverEnv } from "@/lib/validation/env";
 export interface OrganizationContext extends OrganizationLocaleSettings {
   /** Organization slug — the `organization_id` boundary's public handle. */
   slug: string;
+  /**
+   * Who this deployment says it is on public surfaces.
+   *
+   * Carried here rather than imported directly by the footer, the contact page,
+   * legal documents and the JSON-LD builder, so all four answer from the same
+   * resolved organization instead of from four copies of a constant.
+   */
+  publicSite: OrganizationPublicSite;
 }
 
 export class UnknownOrganizationError extends Error {
@@ -68,10 +78,11 @@ export function resolveDeploymentOrganization(
   slug: string,
 ): OrganizationContext {
   const settings = findOrganizationLocaleSettings(slug);
-  if (settings === undefined) {
+  const publicSite = findOrganizationPublicSite(slug);
+  if (settings === undefined || publicSite === undefined) {
     throw new UnknownOrganizationError(slug);
   }
-  return { slug, ...settings };
+  return { slug, ...settings, publicSite };
 }
 
 /**

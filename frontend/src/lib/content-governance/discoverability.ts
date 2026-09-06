@@ -1,6 +1,9 @@
 import type { Metadata, MetadataRoute } from "next";
 
-import { siteSettings } from "@/content/site-settings";
+import {
+  deploymentPublicSite,
+  type OrganizationPublicSite,
+} from "@/lib/tenant/organizations";
 
 import { isSitemapEligible } from "./validation";
 import { isProductionEnvironment, type DeploymentEnvironment } from "./runtime";
@@ -130,6 +133,7 @@ function breadcrumbJsonLd(
 export function jsonLdForEntity(
   entity: ContentEntity,
   origin = publicOrigin(),
+  site: OrganizationPublicSite = deploymentPublicSite(),
 ): JsonLdNode[] {
   if (entity.publicationStatus !== "published") return [];
 
@@ -144,16 +148,16 @@ export function jsonLdForEntity(
       records.push({
         "@context": "https://schema.org",
         "@type": "Organization",
-        name: siteSettings.name,
+        name: site.publicName,
         url: absolutePublicUrl("/", origin),
-        description: siteSettings.description,
+        description: site.description,
       });
     }
     if (entity.jsonLdKinds.includes("website")) {
       records.push({
         "@context": "https://schema.org",
         "@type": "WebSite",
-        name: siteSettings.name,
+        name: site.publicName,
         url: absolutePublicUrl("/", origin),
       });
     }
@@ -177,10 +181,11 @@ export function jsonLdForEntity(
       name: entity.source.name,
       description: entity.source.description,
       url: absolutePublicUrl(entity.route, origin),
+      // An online-only tenant contributes no places, leaving just "online" —
+      // which is the accurate answer, not a degraded one.
       areaServed: [
-        ...siteSettings.locations.map(
-          (location) =>
-            `${location.city}, ${location.region}, ${siteSettings.country}`,
+        ...site.locations.map(
+          (location) => `${location.city}, ${location.region}, ${site.country}`,
         ),
         "online",
       ],
@@ -204,9 +209,10 @@ export function jsonLdForEntity(
 export function jsonLdForRoute(
   route: string,
   provider: ContentProvider = staticContentProvider,
+  site: OrganizationPublicSite = deploymentPublicSite(),
 ): JsonLdNode[] {
   const entity =
     provider.getPageByRoute(route) ??
     staticContentProvider.getPageByRoute(route);
-  return entity ? jsonLdForEntity(entity) : [];
+  return entity ? jsonLdForEntity(entity, publicOrigin(), site) : [];
 }

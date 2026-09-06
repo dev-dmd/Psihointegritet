@@ -13,6 +13,7 @@ import { isCompassPublicEnabled } from "@/lib/compass/flags";
 import { AuthMenu } from "@/lib/auth/clerk/auth-menu";
 import { MobileAuthSection } from "@/lib/auth/clerk/mobile-auth-section";
 import { resolvePublicLocale } from "@/lib/tenant/public-locale";
+import { getPublicSiteSettings } from "@/lib/tenant/public-site";
 import { localizedPublicPath } from "@/lib/routes/public-path";
 
 /**
@@ -25,6 +26,7 @@ import { localizedPublicPath } from "@/lib/routes/public-path";
 export async function SiteHeader() {
   const t = await getTranslations("public");
   const locale = await resolvePublicLocale();
+  const site = await getPublicSiteSettings();
   const navLinks = visibleHeaderNavLinks(
     isCompassPublicEnabled(),
     (key) => t(`navigation.links.${key}`),
@@ -41,7 +43,7 @@ export async function SiteHeader() {
             className="col-start-1 flex items-baseline justify-self-start no-underline"
           >
             <span className="text-forest flex max-h-[48px] flex-col items-start gap-[1px] font-serif text-xl leading-none font-bold tracking-[-0.01em] md:text-[32px]">
-              <span>Psihointegritet</span>
+              <span>{site.publicName}</span>
               <small className="text-forest-lift hidden text-[13px] leading-none font-normal tracking-[0.01em] md:block">
                 {t("brand.tagline")}
               </small>

@@ -2,7 +2,10 @@ import { PublicLink as Link } from "@/components/ui/public-link";
 import { getTranslations } from "next-intl/server";
 
 import { PageHero } from "@/components/shared/page-hero";
-import { locationsShortLabel, siteSettings } from "@/content/site-settings";
+import {
+  getPublicSiteSettings,
+  locationsShortLabel,
+} from "@/lib/tenant/public-site";
 import { metadataForRoute } from "@/lib/content-governance/discoverability";
 import { getContentProvider } from "@/lib/content-governance/provider-resolver";
 
@@ -12,6 +15,8 @@ export async function generateMetadata() {
 
 export default async function ContactPage() {
   const t = await getTranslations("public.pages.contact");
+  const site = await getPublicSiteSettings();
+  const locations = locationsShortLabel(site);
   return (
     <>
       <PageHero id="kontakt" tone="warm">
@@ -23,7 +28,7 @@ export default async function ContactPage() {
             {t("title")}
           </h1>
           <p className="text-coffee/75 text-[16.5px] leading-[1.65]">
-            {t("intro", { email: siteSettings.contactEmail })}
+            {t("intro", { email: site.contactEmail })}
           </p>
         </div>
       </PageHero>
@@ -68,18 +73,22 @@ export default async function ContactPage() {
             {t("detailsHeading")}
           </h2>
           <a
-            href={`mailto:${siteSettings.contactEmail}`}
+            href={`mailto:${site.contactEmail}`}
             className="text-forest hover:text-sage mt-4 inline-flex font-semibold underline underline-offset-4"
           >
-            {siteSettings.contactEmail}
+            {site.contactEmail}
           </a>
           <p className="text-coffee/72 mt-5 text-[15px] leading-[1.65]">
             {t("detailsBody")}
           </p>
           <p className="text-coffee/72 mt-5 text-[15px] leading-[1.65]">
-            {locationsShortLabel}
-            <br />
-            {t("formats")}
+            {locations === "" ? null : (
+              <>
+                {locations}
+                <br />
+              </>
+            )}
+            {site.formatsLabel}
           </p>
         </section>
       </div>
