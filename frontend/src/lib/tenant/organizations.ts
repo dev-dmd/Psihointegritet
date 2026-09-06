@@ -27,7 +27,7 @@ import type { ContentPackId } from "@/content/pack-types";
  */
 
 export interface OrganizationLocaleSettings {
-  /** Checked-in C2(a) deployment mapping; not a persisted organization field. */
+  /** Checked-in per-organization mapping; not a persisted organization field. */
   contentPack: ContentPackId;
   /** Language of navigation, system messages, statuses and system emails. */
   uiLocale: UiLocale;
@@ -161,6 +161,11 @@ export interface OrganizationPublicSite {
  * and PDC-0B deliberately did not add it. Under C2(a) a deployment may own its
  * public identity as build-time configuration, so nothing is missing until a
  * tenant needs to edit these values from their own admin.
+ *
+ * Under B2 (D-077 A7) this table stops being keyed by *this deployment* and
+ * starts being keyed by *the resolved tenant* — the same shape, a different
+ * selector. That is why the registry survives the migration unchanged while the
+ * lookup around it moves.
  *
  * When that lands, `getDeploymentOrganization()` is where a live value overrides
  * this one, exactly as it already does for locales. Whether it arrives as

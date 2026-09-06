@@ -471,6 +471,24 @@ nijedan domen se ne sme upisati u kod kao literal — detaljno u
 
 ---
 
+### 10.1 `sanjaneuer.com` — kome pripada i odakle se servira (D-077 A7)
+
+| | |
+| - | - |
+| Domen | `sanjaneuer.com` (+ `www.` → 308 na apex) |
+| Tenant | `sanja-neuer` |
+| Servira se iz | **PDC Vercel projekta**, kroz `trusted hostname → domain registry → /s/sanja-neuer/...` |
+| **Nije** | zaseban frontend proizvod ni zaseban deployment model |
+
+Njen sadržaj, tema i kompozicija stranica ostaju **organization-scoped** — vezani za organizaciju
+`sanja-neuer`, ne za deployment. To je i razlog što PDC-1 Page Composer ne mora da čeka migraciju:
+radi nad `organizationSlug`-om bez obzira da li on stiže iz env-a ili iz rute.
+
+> Zaseban `sanja-neuer` Vercel projekat koji danas postoji je **privremen migracioni artefakt**
+> (`P_DIGITALNI_CENTAR_PLAN_v1_0.md`, PDC-0C superseded blok), ne model za buduće tenante.
+
+---
+
 ## 11. Admin panel za Sanju
 
 Sidebar (srpski UI, `ui_locale = sr-Latn`):

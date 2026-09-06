@@ -419,6 +419,31 @@ važi bez obzira koja se stranica renderuje; proza pripada stranici.
 
 ### PDC-0C — Backend deployment isolation
 
+> ## ⚠ SUPERSEDED za frontend deo — D-077 A7 (2026-09-07)
+>
+> Tekst ispod opisuje **prelaznu implementaciju**, ne ciljnu arhitekturu. Zadržan je jer objašnjava
+> zašto Sanjin deployment danas izgleda ovako, i šta je iz njega ostalo tačno.
+>
+> **Ciljna topologija:**
+>
+> ```
+> PDC Vercel projekat  (jedan)
+> ├── p-digital-center.com   → platforma
+> ├── psihointegritet.com    → tenant psihointegritet
+> └── sanjaneuer.com         → tenant sanja-neuer
+> ```
+>
+> `trusted hostname → domain registry → organizationSlug → rewrite /s/[organizationSlug]/...`
+>
+> **Zaseban `sanja-neuer` Vercel projekat je privremen migracioni artefakt.** Nije šablon za buduće
+> tenante i ne sme se kopirati za trećeg. **Ne briše se** dok B2 cutover ne prođe — vidi
+> `PDC_TENANT_ROUTING_AUDIT_v1_0.md §8`.
+>
+> **Šta iz PDC-0C ostaje tačno:** odvojene **baze** po tenantu ostaju, kao bezbednosna granica dok
+> RLS milestone ne bude isporučen (danas: 0 polisa, 111 ručnih filtera, `rolbypassrls=t`).
+> **Frontend konsolidacija nije konsolidacija baza.** Backend runtime sme privremeno da ostane na
+> C2(a) modelu.
+
 ```
 Psihointegritet frontend  ↕  Psihointegritet backend
                              DEFAULT_ORGANIZATION_SLUG=psihointegritet

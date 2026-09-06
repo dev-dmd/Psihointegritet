@@ -12,12 +12,19 @@ import { serverEnv } from "@/lib/validation/env";
 /**
  * Which organization this deployment serves, and what languages it speaks.
  *
- * **C2(a), locked 2026-08-11: one deployment = one organization.** Host-shared
- * multi-tenancy is not implemented here and must not be smuggled in through
- * i18n or `proxy.ts` — it belongs to ADR-023 §6.3, the RLS rollout and its own
- * approved milestone. So `DEFAULT_ORGANIZATION_SLUG` *is* verified organization
- * identity: no host parsing, no hostname → organization lookup, no cookie, no
- * database, and no per-request input of any kind.
+ * **C2(a): one deployment = one organization.** This is what the module does
+ * today, and it is no longer the target — D-077 A7 (2026-09-07) makes **B2**
+ * the canonical frontend tenancy model: one project, several tenant domains,
+ * `trusted hostname → domain registry → organizationSlug → /s/[organizationSlug]/…`.
+ * C2(a) stays as the transitional model until that migration lands (TODO §5K).
+ *
+ * So `DEFAULT_ORGANIZATION_SLUG` *is* verified organization identity **for now**:
+ * no host parsing here, no cookie, no database, no per-request input.
+ *
+ * Read the next paragraph before concluding that B2 conflicts with it. It does
+ * not: the tenant arrives as a **route param**, which §5 of ADR-026 has listed
+ * among the allowed sources from the start. What stays forbidden is reading the
+ * request *inside this module*.
  *
  * That last property is load-bearing rather than incidental. Next.js treats
  * `headers()` and `cookies()` as request-time APIs, and this module is reached

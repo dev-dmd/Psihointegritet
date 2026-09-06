@@ -793,6 +793,37 @@ Dokazuje `SlotSpec` registar koji pravni tok ne dokazuje (`legal_page` ima samo 
 
 ---
 
+## 5K. B2 — host-aware tenancy na jednom Vercel projektu (D-077 A7, 2026-09-07)
+
+> **Gde piše:** D-077 A7 · ADR-026 §9 · ADR-023 §6.3 A1 · `PDC_TENANT_ROUTING_AUDIT_v1_0.md` ·
+> `PDC_B2_SPIKE_RESULT_v1_0.md`
+> **Status:** odluka doneta, spike zatvoren, **implementacija nije počela**
+
+**Pitanje „da li aktivirati host/domain multi-tenancy" je zatvoreno — odgovor je DA, kroz B2.**
+Nije više arhitektonska rasprava nego migracioni zadatak.
+
+```
+BILO:  deployment env → DEFAULT_ORGANIZATION_SLUG → organization
+BIĆE:  trusted hostname → domain registry → organizationSlug → /s/[organizationSlug]/...
+```
+
+| ID | Zadatak | Status | Napomena |
+| -- | ------- | ------ | -------- |
+| B2-0 | Spike: metadata rute, canonical, ISR pod rewrite-om | ✅ | 2026-09-07. Potvrđeno: statika ostaje, tri ograničenja u ADR-026 §9 |
+| B2-1 | **Tenant-scoped authorization guards** | ⬜ | **Bezbednosni gate.** `hasRole()` ne gleda `organizationId` — pod C2(a) prikriveno deployment izolacijom, pod B2 cross-tenant bug. **Mora pre B2-3** |
+| B2-2 | PDC-0D email identity | ⬜ | Nezavisno od routinga, može paralelno |
+| B2-3 | Domain registry + proxy rewrite + `useContent` tenant context | ⬜ | Vidi audit §8, koraci 1–7 |
+| B2-4 | PDC-1 Sanja Page Composer / njen sajt | ⬜ | Radi nad `organizationSlug`-om bez obzira odakle stiže — ne mora da čeka B2-3 |
+| B2-5 | Deljeni backend runtime + RLS | ⬜ | **Mnogo kasnije.** Odvojene baze ostaju bezbednosna granica dok RLS ne bude isporučen |
+
+**Redosled je obavezujući za B2-1 → B2-3.** Ostalo se sme preklapati.
+
+> **Merilo da je PDC postao platforma:** treći tenant ne sme tražiti novu arhitektonsku fazu.
+> Onboarding mora biti `create organization → add domain → assign owner → select capabilities →
+> theme/content → publish`, a ne ponavljanje Clerk/Vercel/Railway infrastrukture svaki put.
+
+---
+
 ## 6. R2 — Operativni MVP + Booking Engine
 
 > **Gde piše:** master plan §6 · Proposal v1.1 §7 (Faza 2) · Engines (status enum §7.3, dijagnostika §18)

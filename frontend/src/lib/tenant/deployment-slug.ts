@@ -1,6 +1,14 @@
 /**
  * Which tenant this deployment serves — the C2(a) deployment binding.
  *
+ * **Transitional.** D-077 A7 (2026-09-07) makes B2 the canonical frontend
+ * tenancy model, where the tenant comes from the request's hostname rather than
+ * from this deployment's environment. When that lands (TODO §5K) this value
+ * survives only as a local development convenience: which tenant you see on
+ * `localhost:3007` without editing your hosts file. The rule below — a deployed
+ * environment must name its tenant — holds for as long as deployments bind to
+ * one at all.
+ *
  * This is **not** a tenant onboarding mechanism. It answers one question, at
  * one moment: which organization is this running copy of the application bound
  * to. Creating a tenant is `provision_organization`; binding a deployment to

@@ -252,6 +252,21 @@ settings.default_organization_slug = "psihointegritet"
 
 Praviti domain routing tabelu sada bilo bi kršenje Rules §25 („empty placeholder abstractions added 'for future use' without a current contract"). Domain resolver ostaje **opisan budući korak**, van prvog PR-a; ulazi kad postoji druga organizacija sa sopstvenim domenom.
 
+> **Amandman 1 (2026-09-07) — uslov aktivacije je ispunjen.**
+>
+> Gornji tekst kaže da domain resolver „ulazi kad postoji **druga organizacija sa sopstvenim
+> domenom**". Taj uslov je sada ispunjen: organizacija `sanja-neuer` postoji, a njen domen je
+> `sanjaneuer.com`. Domain resolver time prelazi iz **opisanog budućeg koraka** u **aktivnu
+> frontend arhitekturu**, po modelu B2 (`D-077 A7`, `ADR-026 §9`).
+>
+> Rules §25 se time ne krši — abstrakcija više nije „for future use", ima potrošača.
+>
+> **Šta se ovim amandmanom NE aktivira.** `organization_id` ostaje kanonska granica izolacije,
+> nepromenjeno. Deljeni backend runtime i RLS **nisu** aktivirani ovom odlukom: frontend se
+> konsoliduje u jedan Vercel projekat, dok tenanti privremeno zadržavaju **odvojene baze** kao
+> bezbednosnu granicu dok RLS milestone (§5, §7) ne bude isporučen. Frontend konsolidacija nije
+> konsolidacija baza.
+
 Stvarni šavovi danas:
 
 ```text
