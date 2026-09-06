@@ -1,6 +1,7 @@
 "use client";
 
-import { therapists } from "@/content/therapists";
+import { useFallbackContent } from "@/content/use-content";
+import type { Therapist } from "@/types/therapist";
 
 /**
  * A therapist dropdown that reads the CTA wire format the `byline.author` slot
@@ -19,7 +20,10 @@ export interface CtaAuthorValue {
   targetId?: string;
 }
 
-function buildCta(slug: string): CtaAuthorValue {
+function buildCta(
+  slug: string,
+  therapists: readonly Therapist[],
+): CtaAuthorValue {
   const therapist = therapists.find((t) => t.slug === slug);
   if (!therapist)
     return { action: CTA_ACTION, label: slug, targetId: `therapist:${slug}` };
@@ -48,6 +52,7 @@ export function ArticleAuthorField({
   onChange: (next: CtaAuthorValue) => void;
   disabled?: boolean;
 }) {
+  const { therapists } = useFallbackContent();
   const currentSlug = extractTherapistSlug(value);
 
   return (
@@ -61,7 +66,7 @@ export function ArticleAuthorField({
         onChange={(event) => {
           const slug = event.target.value;
           if (!slug) return;
-          onChange(buildCta(slug));
+          onChange(buildCta(slug, therapists));
         }}
         className="border-line-strong text-ink-90 bg-surface focus-visible:ring-coffee rounded-full border px-4 py-2.5 text-[13px] focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-60"
         aria-label="Autor teksta"

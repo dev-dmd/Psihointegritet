@@ -7,24 +7,29 @@ from pydantic import BaseModel, Field
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from psihointegritet.core.logging import get_logger
-from psihointegritet.core.observability import get_correlation_id
 
 PROBLEM_CONTENT_TYPE = "application/problem+json"
 
 _log = get_logger(__name__)
 
 
+SafeParam = str | int | float | bool
+
+
+class ApiFieldError(BaseModel):
+    code: str
+    params: dict[str, SafeParam] | None = None
+
+
 class ApiProblem(BaseModel):
     """Stable problem-details envelope; mirrored by the frontend contract."""
 
     type: str = "about:blank"
-    title: str
     status: int
     code: str
-    detail: str | None = None
-    correlation_id: str = Field(serialization_alias="correlationId")
+    params: dict[str, SafeParam] | None = None
     field_path: str | None = Field(default=None, serialization_alias="fieldPath")
-    field_errors: dict[str, list[str]] | None = Field(
+    field_errors: dict[str, list[ApiFieldError]] | None = Field(
         default=None, serialization_alias="fieldErrors"
     )
 
@@ -42,24 +47,28 @@ async def _handle_http_exception(_: Request, exc: Exception) -> JSONResponse:
     detail = exc.detail
     if isinstance(detail, dict):
         payload = cast(dict[str, object], detail)
-        title = str(payload.get("message") or payload.get("title") or "Zahtev nije uspeo.")
         code = str(payload.get("code") or "http_error")
+        raw_params = payload.get("params")
+        params = (
+            {
+                str(key): value
+                for key, value in cast(dict[object, object], raw_params).items()
+                if isinstance(value, str | int | float | bool)
+            }
+            if isinstance(raw_params, dict)
+            else None
+        )
         field_path_raw = payload.get("fieldPath") or payload.get("field_path")
         field_path = str(field_path_raw) if field_path_raw is not None else None
-        detail_raw = payload.get("detail")
-        problem_detail = str(detail_raw) if detail_raw is not None else None
     else:
-        title = str(detail)
         code = "http_error"
+        params = None
         field_path = None
-        problem_detail = None
     return _problem_response(
         ApiProblem(
-            title=title,
             status=exc.status_code,
             code=code,
-            detail=problem_detail,
-            correlation_id=get_correlation_id(),
+            params=params,
             field_path=field_path,
         )
     )
@@ -67,16 +76,14 @@ async def _handle_http_exception(_: Request, exc: Exception) -> JSONResponse:
 
 async def _handle_validation_error(_: Request, exc: Exception) -> JSONResponse:
     assert isinstance(exc, RequestValidationError)  # noqa: S101 — guarded by registration
-    field_errors: dict[str, list[str]] = {}
+    field_errors: dict[str, list[ApiFieldError]] = {}
     for error in exc.errors():
         location = ".".join(str(part) for part in error["loc"])
-        field_errors.setdefault(location, []).append(error["msg"])
+        field_errors.setdefault(location, []).append(ApiFieldError(code=str(error["type"])))
     return _problem_response(
         ApiProblem(
-            title="Validation failed",
             status=status.HTTP_422_UNPROCESSABLE_CONTENT,
             code="validation_error",
-            correlation_id=get_correlation_id(),
             field_errors=field_errors,
         )
     )
@@ -90,11 +97,8 @@ async def _handle_unexpected_error(request: Request, exc: Exception) -> JSONResp
     )
     return _problem_response(
         ApiProblem(
-            title="Internal server error",
             status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             code="internal_error",
-            detail="An unexpected error occurred. Contact support with the correlation ID.",
-            correlation_id=get_correlation_id(),
         )
     )
 

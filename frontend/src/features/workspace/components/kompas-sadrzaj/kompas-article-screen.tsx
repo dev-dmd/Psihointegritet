@@ -2,11 +2,11 @@
 
 import Link from "next/link";
 
-import {
-  contentErrorMessage,
-  useContentEntriesQuery,
-} from "../../hooks/use-content-entries";
+import { useContentEntriesQuery } from "../../hooks/use-content-entries";
 import { KompasArticleEditor } from "./kompas-article-editor";
+import { localizedPath } from "@/lib/routes/localized-path";
+import { useUiLocale } from "@/i18n/use-ui-locale";
+import { useUserSafeError } from "@/lib/errors/use-user-safe-error";
 
 /**
  * Resolves the article the route names, then hands it to the editor.
@@ -16,6 +16,8 @@ import { KompasArticleEditor } from "./kompas-article-editor";
  * lifecycle call patches it in place.
  */
 export function KompasArticleScreen({ entryId }: { entryId: string }) {
+  const locale = useUiLocale();
+  const safeError = useUserSafeError();
   const entriesQuery = useContentEntriesQuery();
   const entry = (entriesQuery.data ?? []).find(
     (item) => item.entryId === entryId,
@@ -32,10 +34,7 @@ export function KompasArticleScreen({ entryId }: { entryId: string }) {
           Tekst se ne može učitati
         </p>
         <p className="text-ink-70 mt-1 text-[13px] leading-[1.5]">
-          {contentErrorMessage(
-            entriesQuery.error,
-            "Osvežite stranicu; ako se ponovi, javite tehničkom timu.",
-          )}
+          {safeError.text(entriesQuery.error, "content", "load")}
         </p>
       </div>
     );
@@ -51,7 +50,10 @@ export function KompasArticleScreen({ entryId }: { entryId: string }) {
           Možda je obrisan ili je otvoren pogrešan link.
         </p>
         <Link
-          href="/radni-prostor/kompas?tab=content"
+          href={localizedPath("workspace.compass.home", {
+            locale,
+            tab: "content",
+          })}
           className="text-forest mt-3 inline-flex min-h-11 items-center text-[13px] font-semibold underline"
         >
           ← Nazad na Kompas sadržaj

@@ -11,20 +11,20 @@ describe("extractTherapistSlug", () => {
     expect(
       extractTherapistSlug({
         action: "VIEW_THERAPIST",
-        label: "Anja Stamenković",
-        targetId: "therapist:anja-stamenkovic",
+        label: "Maria Bullock",
+        targetId: "therapist:maria-bullock",
       }),
-    ).toBe("anja-stamenkovic");
+    ).toBe("maria-bullock");
   });
 
-  it("returns the slug from a CTA with marjan-jankovic", () => {
+  it("returns the slug from a CTA with john-francis", () => {
     expect(
       extractTherapistSlug({
         action: "VIEW_THERAPIST",
-        label: "Marjan Janković",
-        targetId: "therapist:marjan-jankovic",
+        label: "John Francis",
+        targetId: "therapist:john-francis",
       }),
-    ).toBe("marjan-jankovic");
+    ).toBe("john-francis");
   });
 
   it("returns null for null value", () => {
@@ -43,7 +43,7 @@ describe("extractTherapistSlug", () => {
     expect(
       extractTherapistSlug({
         action: "VIEW_THERAPIST",
-        label: "Anja",
+        label: "Maria",
       }),
     ).toBeNull();
   });
@@ -70,7 +70,7 @@ describe("extractTherapistSlug", () => {
     expect(
       extractTherapistSlug({
         action: "VIEW_THERAPIST",
-        targetId: "anja-stamenkovic",
+        targetId: "maria-bullock",
       }),
     ).toBeNull();
   });

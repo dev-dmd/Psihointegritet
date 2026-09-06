@@ -19,6 +19,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm.exc import StaleDataError
 
+from psihointegritet.core.locales import is_supported_locale
 from psihointegritet.modules.content.health import (
     CONTENT_HEALTH_RULESET_VERSION,
     authored_content_findings,
@@ -80,6 +81,7 @@ from psihointegritet.modules.content.taxonomy_models import (
 from psihointegritet.modules.guidance.authorization import StaffActor
 from psihointegritet.modules.identity.models import InternalUser
 from psihointegritet.modules.identity.schemas import ActorSummaryOut
+from psihointegritet.modules.organizations.models import Organization
 from psihointegritet.shared.domain.content_management import ContentManagement
 from psihointegritet.shared.domain.publication import (
     ApprovalCapability,
@@ -90,6 +92,20 @@ from psihointegritet.shared.domain.publication import (
 )
 
 _EMPTY_SLOT_DATA: dict[str, object] = {}
+
+
+def resolve_content_creation_locale(explicit_locale: str | None, organization_default: str) -> str:
+    """Choose and validate the locale stamped on a new CMS entry.
+
+    Explicit input wins, but both paths use the global platform allowlist. The
+    organization value is database constrained; validating it again here keeps
+    a corrupted or stale row from becoming an unsupported content identity.
+    """
+
+    locale = explicit_locale or organization_default
+    if not is_supported_locale(locale):
+        raise ValueError(f"Unsupported content locale {locale!r}")
+    return locale
 
 
 class ContentNotFoundError(LookupError):
@@ -555,17 +571,23 @@ class ContentService:
         self, actor: StaffActor, request: CreateContentEntryRequest
     ) -> ContentRevisionOut:
         self._require_org_admin(actor)
+        organization = await self._session.get(Organization, actor.organization_id)
+        if organization is None:
+            raise ContentNotFoundError("Verified organization no longer exists")
+        locale = resolve_content_creation_locale(
+            request.locale, organization.default_content_locale
+        )
         require_content_identity(
             request.content_type,
             request.slug,
             request.template,
-            request.locale,
+            locale,
         )
         existing = await self._session.scalar(
             select(ContentEntry).where(
                 ContentEntry.organization_id == actor.organization_id,
                 ContentEntry.content_type == request.content_type,
-                ContentEntry.locale == request.locale,
+                ContentEntry.locale == locale,
                 ContentEntry.slug == request.slug,
             )
         )
@@ -583,7 +605,7 @@ class ContentService:
                 organization_id=actor.organization_id,
                 content_type=request.content_type,
                 slug=request.slug,
-                locale=request.locale,
+                locale=locale,
             )
             self._session.add(entry)
             await self._session.flush()

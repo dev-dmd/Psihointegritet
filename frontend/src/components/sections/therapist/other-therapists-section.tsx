@@ -3,24 +3,36 @@ import Link from "next/link";
 import { Reveal } from "@/components/motion/reveal";
 import { Eyebrow } from "@/components/ui/eyebrow";
 import { MonogramAvatar } from "@/components/ui/monogram-avatar";
+import type { UiLocale } from "@/i18n/locales";
+import { localizedPublicPath } from "@/lib/routes/public-path";
 import type { Therapist } from "@/types/therapist";
+import { getLocale, getTranslations } from "next-intl/server";
 
-export function OtherTherapistsSection({ others }: { others: Therapist[] }) {
+export async function OtherTherapistsSection({
+  others,
+}: {
+  others: Therapist[];
+}) {
+  const t = await getTranslations("public.pages.therapist");
+  const locale = (await getLocale()) as UiLocale;
   return (
     <section className="pt-[72px] pb-[72px] md:pt-32 md:pb-32">
       <div className="mx-auto max-w-[1536px] px-5 md:px-8">
         <Reveal>
           <div className="mb-11 max-w-[640px]">
-            <Eyebrow className="mb-4">Ostali terapeuti</Eyebrow>
+            <Eyebrow className="mb-4">{t("otherEyebrow")}</Eyebrow>
             <h2 className="text-forest font-serif text-[clamp(26px,6.5vw,30px)] leading-[1.12] font-normal">
-              Upoznajte i ostatak tima
+              {t("otherTitle")}
             </h2>
           </div>
           <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
             {others.map((therapist) => (
               <Link
                 key={therapist.slug}
-                href={`/tim/${therapist.slug}`}
+                href={localizedPublicPath("public.team.detail", {
+                  locale,
+                  params: { slug: therapist.slug },
+                })}
                 className="bg-surface border-coffee/6 hover:shadow-card-hover flex items-center gap-5 rounded-[22px] border p-[26px] no-underline transition-all duration-[250ms] hover:-translate-y-1"
               >
                 <MonogramAvatar

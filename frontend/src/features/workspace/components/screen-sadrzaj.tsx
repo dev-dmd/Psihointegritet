@@ -10,10 +10,11 @@ import {
   type SystemContentDefinition,
 } from "@/lib/content-governance/system-content-catalog";
 import type { ContentType } from "@/lib/content-governance/types";
+import type { PlatformRouteId } from "@/lib/routes/platform-routes";
+import { useUserSafeError } from "@/lib/errors/use-user-safe-error";
 
 import type { ApiContentRevision } from "../content-api";
 import {
-  contentErrorMessage,
   useContentEntriesQuery,
   useOpenSystemContentEntryMutation,
 } from "../hooks/use-content-entries";
@@ -21,9 +22,9 @@ import { usePanelErrors } from "../panel-errors";
 import { ContentEntryList } from "./content-entry-list";
 import { ContentRevisionEditor } from "./content-revision-editor";
 import { PageHeader } from "./page-header";
+import { useTranslations } from "next-intl";
 
-const HREF = "/radni-prostor/sadrzaj" as const;
-const TAB_LABEL = "Sadržaj";
+const ROUTE_ID = "workspace.content.list" satisfies PlatformRouteId;
 
 /**
  * CG-C1b — generic draft editor. Orchestrates the entry list, the active
@@ -33,6 +34,8 @@ const TAB_LABEL = "Sadržaj";
  * lifecycle belongs to `hooks/use-content-entries.ts`.
  */
 export function ScreenSadrzaj() {
+  const t = useTranslations("content");
+  const safeError = useUserSafeError();
   const { reportError, errorsFor, clearError } = usePanelErrors();
 
   const entriesQuery = useContentEntriesQuery();
@@ -40,16 +43,13 @@ export function ScreenSadrzaj() {
 
   const entries = entriesQuery.data ?? [];
   const loadError = entriesQuery.isError
-    ? contentErrorMessage(
-        entriesQuery.error,
-        "Sadržaj se trenutno ne može učitati. Osvežite stranicu.",
-      )
+    ? safeError.text(entriesQuery.error, "content", "load")
     : null;
 
   const [activeType, setActiveType] = useState<ContentType>("static_page");
   const [selectedEntryId, setSelectedEntryId] = useState<string | null>(null);
 
-  const errors = errorsFor(HREF);
+  const errors = errorsFor(ROUTE_ID);
   const selectedEntry =
     entries.find((entry) => entry.entryId === selectedEntryId) ?? null;
   const selectedDefinition = selectedEntry
@@ -63,10 +63,7 @@ export function ScreenSadrzaj() {
       ? systemContentIdentity(openEntry.variables)
       : null;
   const openError = openEntry.isError
-    ? contentErrorMessage(
-        openEntry.error,
-        "Zahtev nije uspeo. Pokušajte ponovo.",
-      )
+    ? safeError.text(openEntry.error, "content", "change")
     : null;
 
   const handleOpen = (
@@ -82,15 +79,12 @@ export function ScreenSadrzaj() {
     openEntry.mutate(definition, {
       onSuccess: (entry) => setSelectedEntryId(entry.entryId),
       onError: (error) => {
-        const message = contentErrorMessage(
-          error,
-          "Zahtev nije uspeo. Pokušajte ponovo.",
-        );
+        const presentation = safeError.present(error, "content", "change");
         reportError({
-          href: HREF,
-          tabLabel: TAB_LABEL,
-          title: "Sistemska stranica nije otvorena",
-          description: message,
+          routeId: ROUTE_ID,
+          tabLabel: t("title"),
+          title: presentation.message,
+          description: presentation.nextAction,
           details: [],
         });
       },
@@ -99,17 +93,14 @@ export function ScreenSadrzaj() {
 
   return (
     <section className="animate-fade-up">
-      <PageHeader
-        title="Sadržaj"
-        description="Sistemske stranice, usluge, terapeuti, programi, kompanije i paketi. Izaberite postojeću stavku i menjajte samo polja definisana njenom strukturom."
-      />
+      <PageHeader title={t("title")} description={t("description")} />
 
       <ErrorBanner errors={errors} onDismiss={clearError} />
 
       {loadError ? (
         <div className="border-danger/45 bg-danger/8 rounded-panel mb-6 border px-5 py-4">
           <p className="text-coffee text-[14.5px] font-semibold">
-            Sadržaj se ne može učitati
+            {t("loadFailed")}
           </p>
           <p className="text-ink-70 mt-1 text-[13px] leading-[1.5]">
             {loadError}
@@ -117,37 +108,34 @@ export function ScreenSadrzaj() {
         </div>
       ) : null}
 
-      {entriesQuery.isLoading ? (
-        <p className="text-ink-55 text-[13.5px]">Učitavanje…</p>
-      ) : (
-        <>
-          <ContentEntryList
-            entries={entries}
-            catalogue={systemContentCatalog}
-            activeType={activeType}
-            onTypeChange={(type) => {
-              setActiveType(type);
-              setSelectedEntryId(null);
-              openEntry.reset();
-            }}
-            selectedEntryId={selectedEntryId}
-            onSelect={setSelectedEntryId}
-            openingIdentity={openingIdentity}
-            openError={openError}
-            onOpen={handleOpen}
-          />
+      <ContentEntryList
+        entries={entries}
+        catalogue={systemContentCatalog}
+        activeType={activeType}
+        onTypeChange={(type) => {
+          setActiveType(type);
+          setSelectedEntryId(null);
+          openEntry.reset();
+        }}
+        selectedEntryId={selectedEntryId}
+        onSelect={setSelectedEntryId}
+        openingIdentity={openingIdentity}
+        openError={openError}
+        isInitialSync={
+          entriesQuery.isPending && entriesQuery.data === undefined
+        }
+        onOpen={handleOpen}
+      />
 
-          {selectedEntry && selectedDefinition ? (
-            <ContentRevisionEditor
-              key={selectedEntry.revisionId}
-              entry={selectedEntry}
-              displayTitle={selectedDefinition.title}
-              publicRoute={selectedDefinition.publicRoute}
-              onDeleted={() => setSelectedEntryId(null)}
-            />
-          ) : null}
-        </>
-      )}
+      {selectedEntry && selectedDefinition ? (
+        <ContentRevisionEditor
+          key={selectedEntry.revisionId}
+          entry={selectedEntry}
+          displayTitle={selectedDefinition.title}
+          publicRoute={selectedDefinition.publicRoute}
+          onDeleted={() => setSelectedEntryId(null)}
+        />
+      ) : null}
     </section>
   );
 }

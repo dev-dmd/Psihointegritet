@@ -153,3 +153,50 @@
     animation-iteration-count: 1 !important;
   }
 }
+
+/* ── Reveal animation for treatment / therapist transitions ──────────────── */
+
+@keyframes reveal-fade {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-reveal-fade {
+  animation: reveal-fade 280ms ease-out both;
+}
+
+/* ── Hidden scrollbar for chip containers ─────────────────────────────────── */
+
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* ── Bottom-sheet slide-up animation for overlays ─────────────────────────── */
+
+@keyframes slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-slide-up {
+  animation: slide-up 240ms ease-out both;
+}

@@ -1,4 +1,5 @@
 import { cn } from "@/helpers/cn";
+import { useTranslations } from "next-intl";
 
 import { useBookingWidget } from "../hooks/use-booking-widget";
 import type {
@@ -12,6 +13,7 @@ interface BookingWidgetSlotsProps {
 }
 
 export function BookingWidgetSlots({ copy, theme }: BookingWidgetSlotsProps) {
+  const t = useTranslations("public.bookingWidget");
   const { selectedSlotId, setSelectedSlotId, visibleSlots } =
     useBookingWidget();
 
@@ -51,8 +53,7 @@ export function BookingWidgetSlots({ copy, theme }: BookingWidgetSlotsProps) {
             theme.muted,
           )}
         >
-          Za izabrani dan trenutno nema slobodnih termina. Izaberite drugi datum
-          ili zatražite obaveštenje.
+          {t("noSlots")}
         </p>
       )}
     </section>

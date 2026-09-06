@@ -21,6 +21,10 @@ from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass
 from typing import Literal, cast
 
+from psihointegritet.modules.content.field_override import (
+    MISSING_CONTENT_FIELD,
+    normalize_content_field_override,
+)
 from psihointegritet.modules.content.models import (
     ContentTemplate,
     ContentType,
@@ -354,7 +358,12 @@ def structural_findings(
                 field_spec, CollectionFieldSpec | CtaListFieldSpec | RepeaterFieldSpec
             ):
                 continue
-            field_value = slot_value.get(field_name)
+            normalized = normalize_content_field_override(
+                slot_value.get(field_name, MISSING_CONTENT_FIELD)
+            )
+            if normalized.mode != "custom":
+                continue
+            field_value = normalized.value
             # Same `list[Unknown]` narrowing gap as above.
             count = len(cast("list[object]", field_value)) if isinstance(field_value, list) else 0
             if not (field_spec.min <= count <= field_spec.max):

@@ -1,9 +1,10 @@
 import { revalidatePath, revalidateTag } from "next/cache";
 
+import { isUiLocale } from "@/i18n/locales";
 import { revalidatePublicCompassAfterMutation } from "@/lib/compass/revalidation";
 import {
   pathsForContentChange,
-  PUBLIC_CONTENT_CACHE_TAG,
+  publicContentCacheTag,
 } from "@/lib/content-governance/cache";
 import type {
   ContentType,
@@ -50,10 +51,12 @@ export async function POST(
     const revision = (await response.clone().json()) as {
       contentType: ContentType;
       slug: string;
+      locale: unknown;
     };
+    if (!isUiLocale(revision.locale)) return response;
     // `expire: 0` makes the next public request fetch the new read-model
     // immediately; the default "max" profile may serve one stale response.
-    revalidateTag(PUBLIC_CONTENT_CACHE_TAG, { expire: 0 });
+    revalidateTag(publicContentCacheTag(revision.locale), { expire: 0 });
     for (const path of pathsForContentChange(
       revision.contentType,
       revision.slug,

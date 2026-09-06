@@ -2,8 +2,9 @@
 
 import { useRef, useState } from "react";
 
-import { findTherapist } from "@/content/therapists";
+import { useFallbackContent } from "@/content/use-content";
 import { usePublicIntakeSubmission } from "@/features/guidance/hooks/use-public-intake-submission";
+import { useUiLocale } from "@/i18n/use-ui-locale";
 
 import { ConsentDocumentDisclosure } from "./consent-document-disclosure";
 import {
@@ -37,6 +38,8 @@ export function IntakeRequestForm({
   requestAcknowledgementVersion,
   onBack,
 }: IntakeRequestFormProps) {
+  const locale = useUiLocale();
+  const { therapists } = useFallbackContent();
   const idempotencyKey = useRef<string>(createIdempotencyKey());
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
@@ -65,7 +68,7 @@ export function IntakeRequestForm({
       ? "Pošaljite zahtev"
       : "Neka tim pregleda zahtev";
   const preferredTherapist = preferredTherapistSlug
-    ? findTherapist(preferredTherapistSlug)
+    ? therapists.find((therapist) => therapist.slug === preferredTherapistSlug)
     : undefined;
 
   const submit = (event: React.FormEvent<HTMLFormElement>) => {
@@ -86,12 +89,12 @@ export function IntakeRequestForm({
           {
             kind: "intake_data_processing_notice",
             documentVersion: dataProcessingNoticeVersion,
-            locale: "sr-Latn",
+            locale,
           },
           {
             kind: "intake_request_acknowledgement",
             documentVersion: requestAcknowledgementVersion,
-            locale: "sr-Latn",
+            locale,
           },
         ],
         freeText: allowsFreeText ? freeText.trim() || null : null,

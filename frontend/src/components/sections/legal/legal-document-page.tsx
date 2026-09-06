@@ -1,4 +1,5 @@
 import { RichText } from "@/components/content/rich-text";
+import { getFormatter, getTranslations } from "next-intl/server";
 import { PageHero } from "@/components/shared/page-hero";
 import { Eyebrow } from "@/components/ui/eyebrow";
 import { siteSettings } from "@/content/site-settings";
@@ -25,6 +26,8 @@ export async function LegalDocumentPage({
   eyebrow: string;
   fallbackTitle: string;
 }) {
+  const t = await getTranslations("public.pages.legalDocument");
+  const format = await getFormatter();
   const document = await fetchPublicLegalDocument(kind);
 
   return (
@@ -37,10 +40,12 @@ export async function LegalDocumentPage({
           </h1>
           {document ? (
             <p className="text-coffee/55 text-[13px]">
-              Verzija {document.versionLabel}
               {document.publishedAt
-                ? ` · objavljeno ${new Date(document.publishedAt).toLocaleDateString("sr-Latn-RS")}`
-                : ""}
+                ? t("published", {
+                    version: document.versionLabel,
+                    date: format.dateTime(new Date(document.publishedAt)),
+                  })
+                : t("version", { version: document.versionLabel })}
             </p>
           ) : null}
         </div>
@@ -52,18 +57,20 @@ export async function LegalDocumentPage({
           ) : (
             <div className="border-coffee/12 bg-surface rounded-[20px] border px-6 py-8">
               <p className="text-coffee text-[15px] font-semibold">
-                Ovaj dokument je u pripremi.
+                {t("pendingTitle")}
               </p>
               <p className="text-coffee/70 mt-2.5 text-[14px] leading-[1.6]">
-                Tekst čeka pravnu potvrdu pre objave. Za pitanja u međuvremenu
-                pišite nam na{" "}
-                <a
-                  href={`mailto:${siteSettings.contactEmail}`}
-                  className="text-forest underline underline-offset-2"
-                >
-                  {siteSettings.contactEmail}
-                </a>
-                .
+                {t.rich("pendingBody", {
+                  address: siteSettings.contactEmail,
+                  email: (chunks) => (
+                    <a
+                      href={`mailto:${siteSettings.contactEmail}`}
+                      className="text-forest underline underline-offset-2"
+                    >
+                      {chunks}
+                    </a>
+                  ),
+                })}
               </p>
             </div>
           )}

@@ -7,10 +7,9 @@ describe("isApiProblem", () => {
     expect(
       isApiProblem({
         type: "about:blank",
-        title: "Not Found",
         status: 404,
         code: "not_found",
-        correlationId: "abc-123",
+        params: { resource: "page" },
       }),
     ).toBe(true);
   });

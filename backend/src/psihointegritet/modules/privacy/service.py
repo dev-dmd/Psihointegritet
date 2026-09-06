@@ -64,22 +64,30 @@ _EMPTY_BODY: dict[str, object] = {"schemaVersion": 1, "blocks": []}
 _DOCX_CONVERSION_TIMEOUT_SECONDS = 20
 RESERVED_CUSTOM_DOCUMENT_SLUGS: Final[frozenset[str]] = frozenset(
     {
+        "account",
         "booking-widget",
         "cene",
         "kolacici",
         "kompas",
         "kontakt",
+        "nalog",
         "o-nama",
         "podrska-roditeljima",
         "pravila-zakazivanja",
+        "prijava",
         "privatnost",
         "pronadji-podrsku",
         "rad-sa-kompanijama",
         "radionice",
+        "radni-prostor",
+        "registracija",
+        "superadmin",
         "tim",
         "uslovi",
         "usluge",
+        "workspace",
         "zakazi",
+        "zakazivanje",
         "znanje",
     }
 )

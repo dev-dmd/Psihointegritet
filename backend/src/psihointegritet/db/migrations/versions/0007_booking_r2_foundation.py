@@ -29,7 +29,70 @@ branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
 
+_BOOKING_TABLES = {
+    "service_booking_configs",
+    "availability_rules",
+    "availability_exceptions",
+    "slot_holds",
+    "appointments",
+    "appointment_requests",
+    "alternative_proposals",
+}
+
+
+def _adopt_existing_booking_schema() -> bool:
+    """Adopt the complete legacy schema after an accidental marker rewind.
+
+    Revision ``0007`` was already applied on Railway before its file was
+    mistakenly rewritten in place.  The features database was later stamped
+    back to this revision's parent while the seven physical tables remained.
+    Replaying the original CREATE TABLE statements would therefore fail at the
+    first table.  A complete, recognisable booking schema is safe to adopt;
+    partial or unfamiliar state is deliberately rejected.
+    """
+
+    inspector = sa.inspect(op.get_bind())
+    present = _BOOKING_TABLES.intersection(inspector.get_table_names())
+    if not present:
+        return False
+    if present != _BOOKING_TABLES:
+        missing = sorted(_BOOKING_TABLES - present)
+        raise RuntimeError(
+            "Refusing to adopt a partial legacy booking schema while replaying 0007; "
+            f"missing tables: {', '.join(missing)}"
+        )
+
+    signatures = {
+        "service_booking_configs": {"id", "organization_id", "service_id", "booking_mode"},
+        "availability_rules": {"id", "organization_id", "day_of_week", "format"},
+        "availability_exceptions": {"id", "organization_id", "therapist_profile_id", "kind"},
+        "slot_holds": {"id", "organization_id", "slot_start", "slot_end"},
+        "appointments": {"id", "organization_id", "start_time", "end_time", "status"},
+        "appointment_requests": {"id", "organization_id", "request_type", "status"},
+        "alternative_proposals": {"id", "organization_id", "appointment_request_id"},
+    }
+    for table, required in signatures.items():
+        columns = {column["name"] for column in inspector.get_columns(table)}
+        missing = required - columns
+        if missing:
+            raise RuntimeError(
+                f"Refusing to adopt unrecognised table {table!r}; "
+                f"missing columns: {', '.join(sorted(missing))}"
+            )
+
+    config_columns = {column["name"] for column in inspector.get_columns("service_booking_configs")}
+    if not {"slot_duration_minutes", "duration_minutes"}.intersection(config_columns):
+        raise RuntimeError(
+            "Refusing to adopt service_booking_configs without either the legacy "
+            "slot_duration_minutes or current duration_minutes column"
+        )
+    return True
+
+
 def upgrade() -> None:
+    if _adopt_existing_booking_schema():
+        return
+
     # ── service_booking_configs ──────────────────────────────────────────
     op.create_table(
         "service_booking_configs",

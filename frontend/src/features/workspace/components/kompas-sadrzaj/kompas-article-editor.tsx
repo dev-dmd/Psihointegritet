@@ -18,9 +18,12 @@ import {
   useSubmitArticleReviewMutation,
 } from "../../hooks/use-content-revision";
 import { useTaxonomyRegistryLookupQuery } from "../../hooks/use-taxonomy-registry";
-import { contentErrorMessage } from "../../hooks/use-content-entries";
+import { useUserSafeError } from "@/lib/errors/use-user-safe-error";
 import { usePanelErrors } from "../../panel-errors";
 import type { RichDoc } from "@/lib/content-governance/rich-doc";
+import type { PlatformRouteId } from "@/lib/routes/platform-routes";
+import { localizedPath } from "@/lib/routes/localized-path";
+import { useUiLocale } from "@/i18n/use-ui-locale";
 
 import { KompasContentActions } from "./kompas-content-actions";
 import { KompasEditorHeader } from "./kompas-editor-header";
@@ -34,7 +37,7 @@ import { ArticleReviewStep } from "./article-review-step";
 import { TechnicalDetails } from "../taxonomy-term-form/technical-details";
 import type { ApiContentDiscovery } from "../../content-api";
 
-const HREF = "/radni-prostor/kompas/sadrzaj" as const;
+const ROUTE_ID = "workspace.compass.content.list" satisfies PlatformRouteId;
 const TAB_LABEL = "Kompas sadržaj";
 
 /**
@@ -60,13 +63,25 @@ function initialSlotData(entry: ApiContentRevision): Record<string, unknown> {
  * The article's own page (D-063).
  *
  * Reuses the schema-driven slot layer and every transport hook the CMS editor
- * uses, but not that editor's information architecture: an article is not one
- * of six fixed system pages and must not be rendered underneath their
+ * uses, but not its information architecture: an article is not one of six
+ * fixed system pages and must not be rendered underneath their
  * catalogue. `content-revision-editor.tsx` is untouched and stays at its
  * architecture baseline.
  */
 export function KompasArticleEditor({ entry }: { entry: ApiContentRevision }) {
   const router = useRouter();
+  const locale = useUiLocale();
+  const safeError = useUserSafeError();
+  // Both call sites used `window.location.href`, bypassing the router
+  // (Rules §35) — harmless while the path was a Serbian literal, wrong once the
+  // physical route is English and this must follow the organization's locale.
+  const openEntry = (entryId: string) =>
+    router.push(
+      localizedPath("workspace.compass.content.detail", {
+        locale,
+        params: { entryId },
+      }),
+    );
   const { reportError, clearError, errorsFor } = usePanelErrors();
   const { replaceEntry, removeEntry } = useContentEntriesCache();
 
@@ -117,10 +132,10 @@ export function KompasArticleEditor({ entry }: { entry: ApiContentRevision }) {
 
   const fail = (title: string) => (error: unknown) =>
     reportError({
-      href: HREF,
+      routeId: ROUTE_ID,
       tabLabel: TAB_LABEL,
       title,
-      description: contentErrorMessage(error, "Pokušajte ponovo."),
+      description: safeError.text(error, "content", "change"),
       details: [],
     });
 
@@ -139,7 +154,7 @@ export function KompasArticleEditor({ entry }: { entry: ApiContentRevision }) {
         return;
       }
       reportError({
-        href: HREF,
+        routeId: ROUTE_ID,
         tabLabel: TAB_LABEL,
         title: "Objava je zaustavljena",
         description: "Server je odbio objavu dok nalazi ispod nisu rešeni.",
@@ -163,7 +178,7 @@ export function KompasArticleEditor({ entry }: { entry: ApiContentRevision }) {
       setDirty(false);
       // Navigate to the newly created draft so the editor is attached to the
       // correct revisionId and the wizard is interactive again.
-      window.location.href = `/radni-prostor/kompas/sadrzaj/${next.entryId}`;
+      openEntry(next.entryId);
     },
     onFailed: fail("Nova radna verzija nije kreirana"),
   });
@@ -171,7 +186,7 @@ export function KompasArticleEditor({ entry }: { entry: ApiContentRevision }) {
   const remove = useDeleteContentRevisionMutation(entry, {
     onRemoved: () => {
       removeEntry(entry.entryId);
-      router.push(HREF);
+      router.push(localizedPath(ROUTE_ID, { locale }));
     },
     onFailed: fail("Radna verzija nije obrisana"),
   });
@@ -181,7 +196,7 @@ export function KompasArticleEditor({ entry }: { entry: ApiContentRevision }) {
       replaceEntry(next);
       // Rejected decisions return a new draft revision — navigate to it.
       if (next.status === "draft" && next.revisionId !== entry.revisionId) {
-        window.location.href = `/radni-prostor/kompas/sadrzaj/${next.entryId}`;
+        openEntry(next.entryId);
       }
     },
     onFailed: fail("Odluka nije zabeležena"),
@@ -268,7 +283,7 @@ export function KompasArticleEditor({ entry }: { entry: ApiContentRevision }) {
 
       <NextActionCard state={completion} />
 
-      {errorsFor(HREF).map((error) => (
+      {errorsFor(ROUTE_ID).map((error) => (
         <div
           key={error.id}
           className="border-danger/45 bg-danger/8 rounded-panel border px-5 py-4"

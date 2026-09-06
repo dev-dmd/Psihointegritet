@@ -1,14 +1,16 @@
-import Link from "next/link";
+import { PublicLink as Link } from "@/components/ui/public-link";
 import type { Route } from "next";
+import { getTranslations } from "next-intl/server";
 
 import { Reveal } from "@/components/motion/reveal";
 import { ButtonLink } from "@/components/ui/button-link";
 import { Chip } from "@/components/ui/chip";
 import { SectionHeading } from "@/components/ui/section-heading";
 import {
-  homepageOfferCards,
+  buildHomepageOfferCards,
   type HomepageOfferCard,
 } from "@/content/homepage-offers";
+import { getFallbackContent } from "@/content/server";
 import { cn } from "@/helpers/cn";
 
 type OfferCardVariant = "default" | "glass" | "light" | "dark";
@@ -82,7 +84,17 @@ const offerCardStyles: Record<
   },
 };
 
-export function Services() {
+export async function Services() {
+  const t = await getTranslations("public.home.services");
+  const labels = {
+    forParents: t("forParents"),
+    preparing: t("preparing"),
+    learnMore: t("learnMore"),
+    book: t("book"),
+  };
+  const homepageOfferCards = buildHomepageOfferCards(
+    (await getFallbackContent()).services.serviceCatalog,
+  );
   const featured = homepageOfferCards.find((item) => item.featured);
   const standard = homepageOfferCards.filter((item) => !item.featured);
   const standardLead = standard.slice(0, -2);
@@ -93,21 +105,26 @@ export function Services() {
       <div className="mx-auto max-w-[1536px] px-5 md:px-8">
         <Reveal>
           <SectionHeading
-            eyebrow="Usluge"
-            title="Podrška prilagođena vašoj situaciji"
-            description="Svaka usluga jasno definiše šta uključuje, kome odgovara i koji je sledeći korak."
+            eyebrow={t("eyebrow")}
+            title={t("title")}
+            description={t("description")}
             className="mb-14"
           />
           <div className="space-y-5">
             <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
-              {featured ? <FeaturedOfferCard offer={featured} /> : null}
+              {featured ? (
+                <FeaturedOfferCard
+                  offer={featured}
+                  bookLabel={t("firstConversation")}
+                />
+              ) : null}
               {standardLead.map((offer) => (
-                <OfferCard key={offer.id} offer={offer} />
+                <OfferCard key={offer.id} offer={offer} labels={labels} />
               ))}
             </div>
             <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
               {balancedTail.map((offer) => (
-                <OfferCard key={offer.id} offer={offer} />
+                <OfferCard key={offer.id} offer={offer} labels={labels} />
               ))}
             </div>
           </div>
@@ -117,7 +134,13 @@ export function Services() {
   );
 }
 
-function FeaturedOfferCard({ offer }: { offer: HomepageOfferCard }) {
+function FeaturedOfferCard({
+  offer,
+  bookLabel,
+}: {
+  offer: HomepageOfferCard;
+  bookLabel: string;
+}) {
   return (
     <article className="bg-forest flex flex-col justify-between gap-12 rounded-[28px] p-8 md:col-span-2 md:min-h-[520px] md:p-14 lg:row-span-2">
       <div>
@@ -125,9 +148,11 @@ function FeaturedOfferCard({ offer }: { offer: HomepageOfferCard }) {
         <h3 className="text-canvas mt-[22px] mb-4 font-serif text-[34px] leading-[1.08] font-normal tracking-[-0.01em] md:text-[42px]">
           {offer.title}
         </h3>
-        <p className="text-canvas/72 max-w-[520px] text-base leading-[1.65]">
-          {offer.description}
-        </p>
+        {offer.description ? (
+          <p className="text-canvas/72 max-w-[520px] text-base leading-[1.65]">
+            {offer.description}
+          </p>
+        ) : null}
       </div>
       <div className="flex flex-wrap items-end justify-between gap-8">
         <div className="flex flex-wrap gap-[18px] md:gap-10">
@@ -139,7 +164,7 @@ function FeaturedOfferCard({ offer }: { offer: HomepageOfferCard }) {
             variant="light"
             className="whitespace-nowrap"
           >
-            Zakaži prvi razgovor
+            {bookLabel}
           </ButtonLink>
         ) : null}
       </div>
@@ -147,23 +172,38 @@ function FeaturedOfferCard({ offer }: { offer: HomepageOfferCard }) {
   );
 }
 
-function OfferCard({ offer }: { offer: HomepageOfferCard }) {
+function OfferCard({
+  offer,
+  labels,
+}: {
+  offer: HomepageOfferCard;
+  labels: {
+    forParents: string;
+    preparing: string;
+    learnMore: string;
+    book: string;
+  };
+}) {
   const variant = getOfferCardVariant(offer);
   const styles = offerCardStyles[variant];
   const muted = offer.status === "coming-soon";
   const badgeLabel =
-    variant === "glass" ? "Za roditelje" : muted ? "U pripremi" : undefined;
+    variant === "glass"
+      ? labels.forParents
+      : muted
+        ? labels.preparing
+        : undefined;
   const actions = [
     {
       href: offer.detailsHref,
-      label: "Saznaj više",
+      label: labels.learnMore,
       emphasis: "secondary" as const,
     },
     ...(offer.bookingHref
       ? [
           {
             href: offer.bookingHref,
-            label: "Zakaži termin",
+            label: labels.book,
             emphasis: "primary" as const,
           },
         ]
@@ -172,7 +212,7 @@ function OfferCard({ offer }: { offer: HomepageOfferCard }) {
       ? [
           {
             href: offer.relatedHref,
-            label: "Za roditelje",
+            label: labels.forParents,
             emphasis: "tertiary" as const,
           },
         ]
@@ -206,9 +246,11 @@ function OfferCard({ offer }: { offer: HomepageOfferCard }) {
         >
           {offer.title}
         </h3>
-        <p className={cn("text-[14.5px] leading-7", styles.description)}>
-          {offer.description}
-        </p>
+        {offer.description ? (
+          <p className={cn("text-[14.5px] leading-7", styles.description)}>
+            {offer.description}
+          </p>
+        ) : null}
       </div>
       <div className="relative z-10 mt-auto">
         <div className="mb-[18px] flex flex-wrap gap-2.5">

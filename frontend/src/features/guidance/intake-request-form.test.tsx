@@ -1,5 +1,6 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { NextIntlClientProvider } from "next-intl";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { QueryProvider } from "@/providers/query-provider";
@@ -23,11 +24,8 @@ afterEach(() => {
 function successfulResponse(
   submissionKind: "request" | "team_review" = "request",
   reviewPriority: "standard" | "priority" = "standard",
-) {
-  return {
-    ok: true,
-    json: vi.fn().mockResolvedValue({ submissionKind, reviewPriority }),
-  };
+): Response {
+  return Response.json({ submissionKind, reviewPriority });
 }
 
 async function fillRequiredContact(user: ReturnType<typeof userEvent.setup>) {
@@ -44,7 +42,12 @@ async function acceptRequiredNotices(user: ReturnType<typeof userEvent.setup>) {
 }
 
 function renderWithQueryProvider(element: React.ReactElement) {
-  return render(element, { wrapper: QueryProvider });
+  return render(
+    <NextIntlClientProvider locale="sr-Latn" messages={{}}>
+      {element}
+    </NextIntlClientProvider>,
+    { wrapper: QueryProvider },
+  );
 }
 
 describe("IntakeRequestForm", () => {
@@ -65,7 +68,7 @@ describe("IntakeRequestForm", () => {
           format: WORK_FORMATS.online,
         }}
         submissionKind="request"
-        preferredTherapistSlug="anja-stamenkovic"
+        preferredTherapistSlug="maria-bullock"
         dataProcessingNoticeVersion="notice-v1"
         requestAcknowledgementVersion="request-v1"
         onBack={vi.fn()}
@@ -96,7 +99,7 @@ describe("IntakeRequestForm", () => {
     >;
     expect(payload).toMatchObject({
       submissionKind: "request",
-      preferredTherapistSlug: "anja-stamenkovic",
+      preferredTherapistSlug: "maria-bullock",
       guardianConsentStatus: "not_applicable",
       freeText: "Kratka dodatna poruka.",
     });

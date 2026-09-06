@@ -6,6 +6,7 @@ Pure functions and value objects. No FastAPI, SQLAlchemy, or Redis imports.
 from dataclasses import dataclass
 from datetime import UTC, date, datetime, time, timedelta
 from uuid import UUID
+from zoneinfo import ZoneInfo
 
 from .models import (
     AppointmentRequestStatus,
@@ -43,17 +44,27 @@ class DerivedSlot:
 
 @dataclass(frozen=True, slots=True)
 class AvailabilityWindow:
-    """Internal: a resolved availability window for one day."""
+    """Internal: a resolved availability window for one day (ADR-015 v2).
+
+    ``start_step_minutes`` is the grid step (how often candidates start);
+    ``duration_minutes`` is how long a candidate occupies the calendar. The
+    two are independent: duration=90 with step=60 gives starts 08,09,10… that
+    each occupy 90 minutes.
+    """
 
     date: date
     start_time: time
     end_time: time
-    slot_duration_minutes: int
+    #: IANA zone the wall-clock times belong to (ADR-015 v2 §2.7.3). Recurring
+    #: rules are stored as local time; UTC only exists once a concrete date is
+    #: known, so the summer/winter offset is applied per day rather than fixed.
+    timezone: str
+    start_step_minutes: int
+    duration_minutes: int
     buffer_before_minutes: int
     buffer_after_minutes: int
     format: str
     location_id: UUID | None
-    service_ids: list[str] | None
 
 
 # ── Booking Mode Resolution ──────────────────────────────────────────────────
@@ -84,7 +95,111 @@ def resolve_booking_mode(
     return reverse[effective]
 
 
-# ── Slot Derivation ──────────────────────────────────────────────────────────
+# ── Slot Derivation (ADR-015 v2 §2.7: candidate generation ≠ occupancy) ─────
+
+
+@dataclass(frozen=True, slots=True)
+class CandidateStart:
+    """A candidate start produced by a generation strategy.
+
+    Strategies (hourly / flexible / manual) all return these; the occupancy
+    resolver then applies duration + buffers + BLOCKERS to produce DerivedSlot.
+    """
+
+    start: datetime
+    format: str
+    location_id: UUID | None = None
+
+
+def hourly_grid_strategy(window: AvailabilityWindow) -> list[CandidateStart]:
+    """Hourly grid: candidates on the hour (start_step_minutes = 60)."""
+    return _grid_candidates(window, step_minutes=60)
+
+
+def flexible_grid_strategy(window: AvailabilityWindow) -> list[CandidateStart]:
+    """Flexible grid: candidates every ``window.start_step_minutes``."""
+    return _grid_candidates(window, step_minutes=window.start_step_minutes)
+
+
+def manual_slots_strategy(slots: list[tuple[datetime, str, UUID | None]]) -> list[CandidateStart]:
+    """Manual mode: explicit starts chosen by the therapist (ADR-015 v2 §2.7.5).
+
+    Each entry is ``(starts_at, format, location_id)``. No grid is generated —
+    the therapist picks the starts; occupancy still applies.
+    """
+    return [CandidateStart(start=start, format=fmt, location_id=loc) for start, fmt, loc in slots]
+
+
+def _grid_candidates(window: AvailabilityWindow, step_minutes: int) -> list[CandidateStart]:
+    """Generate candidates from one window advancing by the grid step.
+
+    Each candidate occupies ``window.duration_minutes``; the loop stops once
+    the candidate no longer fits fully before the window end.
+    """
+    zone = ZoneInfo(window.timezone)
+    # Local wall clock → UTC instant. Stamping the local time as UTC (the
+    # previous behaviour) shifted every slot by the zone offset and ignored DST
+    # entirely: 08:00 Belgrade is 06:00Z in summer and 07:00Z in winter.
+    day_start = datetime.combine(window.date, window.start_time, tzinfo=zone).astimezone(UTC)
+    day_end = datetime.combine(window.date, window.end_time, tzinfo=zone).astimezone(UTC)
+    step = timedelta(minutes=step_minutes)
+    duration = timedelta(minutes=window.duration_minutes)
+    candidates: list[CandidateStart] = []
+    current = day_start
+    while current + duration <= day_end:
+        candidates.append(
+            CandidateStart(start=current, format=window.format, location_id=window.location_id)
+        )
+        current += step
+    return candidates
+
+
+def occupancy_resolver(
+    candidates: list[CandidateStart],
+    *,
+    duration_minutes: int,
+    buffer_before_minutes: int = 0,
+    buffer_after_minutes: int = 0,
+    existing_bookings: list[tuple[datetime, datetime]] | None = None,
+    existing_holds: list[tuple[datetime, datetime]] | None = None,
+    unavailable_intervals: list[tuple[datetime, datetime]] | None = None,
+    therapist_profile_id: str = "",
+    service_id: str = "",
+) -> list[DerivedSlot]:
+    """Shared occupancy filtering: AVAILABLE = POSITIVE - BLOCKERS.
+
+    BLOCKERS = unavailable intervals | confirmed appointments | active holds.
+    Each candidate becomes ``candidate + duration + buffers``; if that block
+    overlaps any blocker it is dropped. Caller fills therapist/service ids.
+    """
+    bookings = existing_bookings or []
+    holds = existing_holds or []
+    unavailable = unavailable_intervals or []
+    blockers = [*bookings, *holds, *unavailable]
+    duration = timedelta(minutes=duration_minutes)
+    result: list[DerivedSlot] = []
+    for candidate in candidates:
+        slot_start = candidate.start
+        slot_end = slot_start + duration
+        block_start = slot_start - timedelta(minutes=buffer_before_minutes)
+        block_end = slot_end + timedelta(minutes=buffer_after_minutes)
+        if not is_available((block_start, block_end), blockers, []):
+            continue
+        result.append(
+            DerivedSlot(
+                start=slot_start,
+                end=slot_end,
+                therapist_profile_id=therapist_profile_id,
+                service_id=service_id,
+                format=candidate.format,
+                location_id=candidate.location_id,
+                slot_duration_minutes=duration_minutes,
+                buffer_before_minutes=buffer_before_minutes,
+                buffer_after_minutes=buffer_after_minutes,
+            )
+        )
+    result.sort(key=lambda s: s.start)
+    return result
 
 
 def derive_slots(
@@ -93,9 +208,12 @@ def derive_slots(
     existing_holds: list[tuple[datetime, datetime]],
     date_from: date,
     date_until: date,
-    tz_offset_hours: int = 2,  # Europe/Belgrade default
 ) -> list[DerivedSlot]:
     """Compute candidate slots from availability windows minus conflicts.
+
+    Backwards-compatible entry point: uses ``flexible_grid_strategy`` per
+    window and the shared occupancy resolver. Candidates advance by
+    ``start_step_minutes``; each occupies ``duration_minutes``.
 
     Args:
         windows: Resolved availability windows from rules minus exceptions.
@@ -103,7 +221,6 @@ def derive_slots(
         existing_holds: List of (start, end) for active slot holds.
         date_from: Start of query range (inclusive).
         date_until: End of query range (inclusive).
-        tz_offset_hours: UTC offset for the organization's timezone.
 
     Returns:
         Chronologically sorted list of available DerivedSlot objects.
@@ -113,32 +230,17 @@ def derive_slots(
     for window in windows:
         if window.date < date_from or window.date > date_until:
             continue
-        # Convert window times to UTC datetimes for the given date
-        day_start = datetime.combine(window.date, window.start_time, tzinfo=UTC)
-        day_end = datetime.combine(window.date, window.end_time, tzinfo=UTC)
-        duration = timedelta(minutes=window.slot_duration_minutes)
-        current = day_start
-        while current + duration <= day_end:
-            slot_start = current
-            slot_end = current + duration
-            # Check for conflicts with existing bookings (including buffer zones)
-            block_start = slot_start - timedelta(minutes=window.buffer_before_minutes)
-            block_end = slot_end + timedelta(minutes=window.buffer_after_minutes)
-            if is_available((block_start, block_end), existing_bookings, existing_holds):
-                slots.append(
-                    DerivedSlot(
-                        start=slot_start,
-                        end=slot_end,
-                        therapist_profile_id="",  # filled by caller
-                        service_id="",  # filled by caller
-                        format=window.format,
-                        location_id=window.location_id,
-                        slot_duration_minutes=window.slot_duration_minutes,
-                        buffer_before_minutes=window.buffer_before_minutes,
-                        buffer_after_minutes=window.buffer_after_minutes,
-                    )
-                )
-            current += duration
+        candidates = flexible_grid_strategy(window)
+        slots.extend(
+            occupancy_resolver(
+                candidates,
+                duration_minutes=window.duration_minutes,
+                buffer_before_minutes=window.buffer_before_minutes,
+                buffer_after_minutes=window.buffer_after_minutes,
+                existing_bookings=existing_bookings,
+                existing_holds=existing_holds,
+            )
+        )
     slots.sort(key=lambda s: s.start)
     return slots
 

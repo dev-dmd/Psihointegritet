@@ -6,20 +6,22 @@ import { TherapistCard } from "psihointegritet-ds";
 // MonogramAvatar's own JSDoc notes photos are "placeholder until real
 // portraits are approved", so the initials-only state IS the current
 // production state, not a preview shortcut.
-const anja = {
-  slug: "anja-stamenkovic",
-  name: "Anja Stamenković",
-  nameAccusative: "Anju",
-  firstName: "Anja",
-  firstNameInstrumental: "Anjom",
-  initials: "AS",
-  title: "Osnivačica Psihointegriteta · Socijalni radnik i geštalt psihoterapeutkinja",
+const maria = {
+  slug: "maria-bullock",
+  name: "Maria Bullock",
+  nameAccusative: "Mariju",
+  firstName: "Maria",
+  firstNameInstrumental: "Elsom",
+  initials: "MB",
+  title: "Osnivačica Psihointegriteta · Socijalni radnik i sertifikovana geštalt psihoterapeutkinja",
   badge: "Osnivačica",
   quote:
-    "Vjerujem da svaka osoba nosi kapacitet za promjenu, ali da se ona događa tek kada se osjetimo dovoljno sigurno da budemo autentični.",
+    "Moj pristup se oslanja na geštalt psihoterapiju, koja podstiče razvoj svesnosti, autentičnosti i preuzimanje odgovornosti za sopstveni život.",
   formats: "Individualni rad · Rad sa parovima · Online i uživo",
-  city: "Niš",
-  cityLocative: "Nišu",
+  city: "Chicago",
+  cityLocative: "Chicagu",
+  cityRegion: "Illinois",
+  cityRegionCode: "IL",
   areas: [
     "Anksioznost i depresija",
     "Burnout",
@@ -32,37 +34,39 @@ const anja = {
   bookingServiceSlugs: ["individualna-psihoterapija", "bracno-savetovanje", "roditeljsko-savetovanje"],
   image: "",
   cardExcerpt:
-    "Kao geštalt psihoterapeut posvećena sam stvaranju prostora u kojem ljudi mogu da zastanu, bolje razumiju sebe i pronađu način da žive u većem skladu sa sobom i drugima.",
+    "Kroz individualni rad i rad sa parovima pružam podršku ljudima koji žele bolje da razumeju sebe, unaprede kvalitet svojih odnosa i pronađu zdravije načine suočavanja.",
   bio: [],
 };
 
-const marija = {
-  slug: "marija-stamenkovic",
-  name: "Marija Stamenković",
+const elsa = {
+  slug: "elsa-browers",
+  name: "Elsa Browers",
   nameAccusative: "Mariju",
-  firstName: "Marija",
-  firstNameInstrumental: "Marijom",
-  initials: "MS",
-  title: "Pedagog i geštalt psihoterapeutkinja",
+  firstName: "Elsa",
+  firstNameInstrumental: "Elsom",
+  initials: "EB",
+  title: "Pedagog i sertifikovana geštalt psihoterapeutkinja",
   badge: "Adolescenti i odrasli",
   quote:
-    "Verujem da svaka osoba u sebi nosi kapacitet za promenu i rast, a da je uloga terapeuta da stvori siguran odnos u kojem taj potencijal može da se razvije.",
+    "Podržavam adolescente i odrasle u ličnom razvoju, emocionalnim teškoćama i unapređenju odnosa sa drugima.",
   formats: "Individualni rad · Adolescenti i odrasli · Online i uživo",
-  city: "Leskovac",
-  cityLocative: "Leskovcu",
+  city: "Milwaukee",
+  cityLocative: "Milwaukeeju",
+  cityRegion: "Wisconsin",
+  cityRegionCode: "WI",
   areas: ["Adolescenti", "Samopouzdanje", "Emocionalne teškoće", "Odnosi", "Razvoj identiteta", "Rad na emocijama"],
   additionalServices: [{ title: "Savetovanje adolescenata", duration: null, price: null }],
   bookingServiceSlugs: ["individualna-psihoterapija", "roditeljsko-savetovanje"],
   image: "",
   cardExcerpt:
-    "Više od 26 godina radim kao stručni saradnik u obrazovanju, pružajući podršku deci, adolescentima, roditeljima i nastavnicima u različitim razvojnim i životnim izazovima.",
+    "Radim sa adolescentima i odraslima kroz individualni psihoterapijski rad, pružajući podršku u ličnom razvoju, emocionalnim teškoćama i unapređenju međuljudskih odnosa.",
   bio: [],
 };
 
 export function Founder() {
-  return <TherapistCard therapist={anja} />;
+  return <TherapistCard therapist={maria} />;
 }
 
 export function TeamMember() {
-  return <TherapistCard therapist={marija} />;
+  return <TherapistCard therapist={elsa} />;
 }

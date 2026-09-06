@@ -8,6 +8,7 @@ import {
   useReducer,
 } from "react";
 import type { ReactNode } from "react";
+import { useTranslations } from "next-intl";
 
 import { initialActivity, initialGates } from "./data";
 import type { ActivityItem, FeatureGate } from "./types";
@@ -27,6 +28,8 @@ export interface GatesState {
 
 export type GatesAction = {
   type: "toggle-gate";
+  /** Already-rendered feed title — the reducer cannot translate. */
+  title: string;
   gateId: string;
   reason: string;
 };
@@ -42,7 +45,11 @@ export function gatesReducer(
   }
   const next = gate.status === "on" ? "off" : "on";
   const entry: ActivityItem = {
-    title: `${next === "on" ? "Uključen" : "Isključen"} feature gate — ${gate.name}`,
+    // The reducer is a pure function and cannot translate. The title arrives
+    // already rendered from the provider, which is where React — and therefore
+    // the organization's language — lives. Same rule as the backend's
+    // `code + params`: the layer that knows the words does the wording.
+    title: action.title,
     detail: `upravo · superadmin · razlog: ${action.reason}`,
     kind: "gate",
   };
@@ -61,14 +68,24 @@ interface GatesContextValue extends GatesState {
 const GatesContext = createContext<GatesContextValue | null>(null);
 
 export function GatesProvider({ children }: { children: ReactNode }) {
+  const t = useTranslations("superadmin");
   const [state, dispatch] = useReducer(gatesReducer, {
     gates: initialGates,
     activity: initialActivity,
   });
 
-  const toggleGate = useCallback((gateId: string, reason: string) => {
-    dispatch({ type: "toggle-gate", gateId, reason });
-  }, []);
+  const toggleGate = useCallback(
+    (gateId: string, reason: string) => {
+      const gate = state.gates.find((item) => item.id === gateId);
+      const next = gate?.status === "on" ? "off" : "on";
+      const title = t(
+        next === "on" ? "gateToggle.enabled" : "gateToggle.disabled",
+        { gate: gate?.name ?? "" },
+      );
+      dispatch({ type: "toggle-gate", gateId, reason, title });
+    },
+    [state.gates, t],
+  );
 
   const value = useMemo(() => ({ ...state, toggleGate }), [state, toggleGate]);
 

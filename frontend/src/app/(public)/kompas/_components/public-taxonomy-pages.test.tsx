@@ -12,6 +12,8 @@ import type {
   PublicTaxonomyPageAggregate,
   RoutablePublicTaxonomyTerm,
 } from "@/lib/compass/types";
+import { getFallbackContentForLocale } from "@/content/registry";
+import { withIntl } from "@/test-support/intl";
 
 import { PublicTaxonomyListPage } from "./public-taxonomy-list-page";
 import { PublicTaxonomyPage } from "./public-taxonomy-page";
@@ -65,11 +67,18 @@ const aggregate: PublicTaxonomyPageAggregate = {
     },
   ],
 };
+const therapists = getFallbackContentForLocale("sr-Latn").therapists;
 
 describe("public Compass page renderers", () => {
   it("renders an aggregate through registry-controlled taxonomy and content links", () => {
     const { container } = render(
-      <PublicTaxonomyPage aggregate={aggregate} routeKind="oblast" />,
+      withIntl(
+        <PublicTaxonomyPage
+          aggregate={aggregate}
+          routeKind="oblast"
+          therapists={therapists}
+        />,
+      ),
     );
 
     expect(
@@ -108,11 +117,13 @@ describe("public Compass page renderers", () => {
 
   it("renders the topic collection with local-search input and parent label", () => {
     render(
-      <PublicTaxonomyListPage
-        routeKind="tema"
-        terms={[topic]}
-        areas={[area]}
-      />,
+      withIntl(
+        <PublicTaxonomyListPage
+          routeKind="tema"
+          terms={[topic]}
+          areas={[area]}
+        />,
+      ),
     );
 
     expect(
@@ -132,11 +143,13 @@ describe("public Compass page renderers", () => {
 
   it("lists areas with an ordinal, their topics and a content-count meta line", () => {
     render(
-      <PublicTaxonomyListPage
-        routeKind="oblast"
-        terms={[area]}
-        topics={[topic]}
-      />,
+      withIntl(
+        <PublicTaxonomyListPage
+          routeKind="oblast"
+          terms={[area]}
+          topics={[topic]}
+        />,
+      ),
     );
 
     expect(
@@ -157,5 +170,34 @@ describe("public Compass page renderers", () => {
     expect(
       screen.getByText("1 tema · sadržaji u pripremi"),
     ).toBeInTheDocument();
+  });
+
+  it("renders English system copy and localized Compass routes", () => {
+    render(
+      withIntl(
+        <PublicTaxonomyListPage
+          routeKind="oblast"
+          terms={[area]}
+          topics={[topic]}
+        />,
+        "en",
+      ),
+    );
+
+    expect(
+      screen.getByRole("heading", { name: "Areas", level: 1 }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText("1 topic · content in preparation"),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("link", {
+        name: "Open area Stres i preopterećenost",
+      }),
+    ).toHaveAttribute("href", "/compass/area/stres");
+    expect(screen.getByRole("link", { name: "Find support" })).toHaveAttribute(
+      "href",
+      "/find-support",
+    );
   });
 });

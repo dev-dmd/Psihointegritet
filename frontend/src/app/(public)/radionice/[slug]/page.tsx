@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import { PublicLink as Link } from "@/components/ui/public-link";
 import { notFound } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 
 import { PageHero } from "@/components/shared/page-hero";
 import { JsonLd } from "@/components/shared/json-ld";
@@ -35,6 +36,7 @@ export async function generateMetadata({
 export default async function WorkshopDetailPage({
   params,
 }: WorkshopDetailProps) {
+  const t = await getTranslations("public.pages.workshopDetail");
   const slug = (await params).slug;
   const provider = await getContentProvider();
   const contentEntity = provider.getEntity("program", `program:${slug}`);
@@ -45,15 +47,15 @@ export default async function WorkshopDetailPage({
     <>
       {contentEntity ? <JsonLd data={jsonLdForEntity(contentEntity)} /> : null}
       <PageHero id="radionica" tone="warm">
-        <nav aria-label="Putanja" className="mb-9 text-sm">
+        <nav aria-label={t("breadcrumbLabel")} className="mb-9 text-sm">
           <Link href="/" className="text-coffee/60 hover:text-forest">
-            Početna
+            {t("home")}
           </Link>
           <span aria-hidden className="text-coffee/35 px-2">
             /
           </span>
           <Link href="/radionice" className="text-coffee/60 hover:text-forest">
-            Radionice
+            {t("workshops")}
           </Link>
           <span aria-hidden className="text-coffee/35 px-2">
             /
@@ -63,8 +65,8 @@ export default async function WorkshopDetailPage({
         <div className="max-w-[760px]">
           <p className="text-coffee/60 mb-4 text-[12px] font-semibold tracking-[0.14em] uppercase">
             {program.status === "price-confirmed"
-              ? "Cena potvrđena"
-              : "Program u pripremi"}
+              ? t("priceConfirmed")
+              : t("preparing")}
           </p>
           <h1 className="text-coffee mb-4 font-serif text-[clamp(32px,8.5vw,52px)] leading-[1.06] font-normal text-pretty">
             {program.title}
@@ -83,11 +85,10 @@ export default async function WorkshopDetailPage({
         <div className="mx-auto grid max-w-[1120px] gap-8 px-5 md:grid-cols-[7fr_5fr] md:px-8">
           <div>
             <h2 className="text-forest font-serif text-[28px] font-normal">
-              O programu
+              {t("aboutHeading")}
             </h2>
             <p className="text-coffee/75 mt-4 text-[15.5px] leading-[1.65]">
-              Trenutno su potvrđeni tema, ciljna grupa i broj susreta. Dodatni
-              sadržaj programa objavljuje se nakon potvrde tima.
+              {t("aboutBody")}
             </p>
             {program.note ? (
               <p className="bg-warm/20 text-coffee/78 mt-6 rounded-[18px] px-5 py-4 text-[14px] leading-[1.6]">
@@ -97,17 +98,16 @@ export default async function WorkshopDetailPage({
           </div>
           <aside className="bg-meadow/22 rounded-[22px] p-6">
             <h2 className="text-forest font-serif text-[25px] font-normal">
-              Status prijava
+              {t("registrationHeading")}
             </h2>
             <p className="text-coffee/72 mt-3 text-[14.5px] leading-[1.6]">
-              Prijave još nisu otvorene. Datum, voditelj, kapacitet i pravila
-              prijave biće objavljeni nakon potvrde tima.
+              {t("registrationBody")}
             </p>
             <Link
               href="/kontakt"
               className="text-forest hover:text-sage mt-5 inline-flex min-h-11 items-center text-[14px] font-semibold underline underline-offset-4"
             >
-              Postavite opšte pitanje
+              {t("askQuestion")}
             </Link>
           </aside>
         </div>

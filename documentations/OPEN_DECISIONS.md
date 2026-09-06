@@ -281,7 +281,13 @@ O-24 više nije otvorena arhitektonska blokada. Implementacija se prati u `KOMPA
 2. Šta se dešava sa **sistemskim katalogom** stranog tenanta: da li se D-052/D-053 sistemske ose i termini sejuju prevedeni po jeziku, ili strani tenant dobija svoj registar od nule.
 3. Da li brana ostaje kao **provera** (jezik tenanta mora biti tačno jedan i sav sistemski sadržaj mora biti na njemu) ili se uklanja.
 
-**Dok ne stigne:** konstanta se ne dira, `next-intl` se ne uključuje, nema `default_locale` kolone i nema koda. Važe samo tri pravila iz TODO §5G koja ništa ne koštaju: backend vraća kod a frontend bira reči · nov tekst ide u copy modul, ne inline u JSX · ijekavica je pun locale, nikad automatska zamena `e → je/ije`.
+**✅ ZATVORENO 2026-08-11 odlukom D-077.** Sva tri pitanja imaju odgovor:
+
+1. **`ui_locale` je jedini organization-scoped render locale.** `organizations.default_content_locale` samo pečati locale na nov tenant-authored CMS zapis. Deployment ostaje način razrešavanja organizacije; organization `default_locale` i `supported_locales` ne uvode se (D-077 A5).
+2. **Platformski sistemski UI i fallback moraju biti kompletni na oba podržana jezika.** Novi tenant bira `mental-health-starter` ili `blank`; tenant-authored CMS override može biti mešan po poljima i platforma ga ne prevodi (D-077 A6). „Prazan sistemski katalog" više nije važeći opis fallback modela.
+3. **Brana ostaje kao parity/health provera globalnih kataloga i content paketa.** Polupreveden platformski UI ili fallback nije dozvoljen; nedostajući stručni/poslovni/legal approval blokira samo status konkretnog tenant sadržaja, ne neutralni starter ili označeni showcase.
+
+Aktivni plan isporuke je `documentations/i18n/03_I18N_DEMO_CONTENT_IMPLEMENTATION_PLAN_v1_0.md`. Tri pravila iz TODO §5G ostaju na snazi i mehanizuju se u CI-ju: backend vraća kod a frontend bira reči · nov tekst ide u copy modul, ne inline u JSX · ijekavica je sadržaj unutar `sr-Latn`, nikad automatska zamena `e → je/ije`.
 
 ---
 
@@ -290,6 +296,8 @@ O-24 više nije otvorena arhitektonska blokada. Implementacija se prati u `KOMPA
 ### O-08 · S7 — Pravila otkazivanja
 
 > **Gde piše:** MP §13 S7 · Proposal §4 #7 · **Blokira:** seed `cancellation_policies` (M2.3)
+>
+> ⚠️ **Napomena 2026-08-09 (D-070):** `cancellation_notice_hours` sada **postoji kao kolona po terapeutu** (`availability_profiles`, migracija `0023`, default 24) i podešava se na ekranu „Dostupnost". To je **samo skladište broja** — S7 i dalje nije rešen. Konačna pravila (šta se dešava pri kasnom otkazivanju, nedolasku, ko snosi trošak) i dalje čekaju Anjinu odluku i mogu suziti ili nadjačati vrednost po terapeutu.
 
 Nacrt iz materijala: otkazivanje 24 h ranije; kasnije se naplaćuje; kašnjenje skraćuje termin. Treba **potvrda** — ovo se seeduje u bazu i ulazi u pravnu stranicu.
 
@@ -314,6 +322,7 @@ Koji kalendar po terapeutu, koji scope-ovi. Free/busy only, nikad naslovi (T15).
 | O-11 · S4 | Model saglasnosti/zaštite za adolescente       | MP §13 S4 · T10            | Self-service za maloletnike (posle R2) |
 | O-12 · S8 | Ko prima uplate i izdaje račune                | MP §13 S8 · Proposal §4 #9 | R5; izričito van R2 (D-031)            |
 | O-13 · S9 | Provajder meeting linkova + rezervna procedura | MP §13 S9                  | R5                                     |
+| O-14 · S9 | **Video poziv na platformi.** CTO napomena 2026-08-09: razmotriti da sastanak ide kroz jedan provajder da klijent i terapeut ne žongliraju različite aplikacije. U panelima terapeuta i klijenta stajala bi ikonica provajdera (npr. Google Meet) i vreme početka. **Nije odlučeno i ne ulazi u tekući Booking obim** — beleži se da se ne izgubi; dodiruje O-13 (provajder linkova) i M2.6 (Google). Link se ne generiše dok provajder i rezervna procedura ne budu odlučeni |
 
 ---
 

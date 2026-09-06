@@ -60,6 +60,93 @@ describe("CmsContentProvider", () => {
     expect(entity?.seo.description).toBe(fallback?.seo.description);
   });
 
+  it("reads old published primitives and new wrappers without rewriting JSON", () => {
+    const provider = new CmsContentProvider(staticContentProvider, [
+      {
+        ...publishedService,
+        slotData: {
+          hero: {
+            mode: "override",
+            fields: {
+              title: { mode: "custom", value: "Wrapper naslov" },
+              lead: "",
+            },
+          },
+        },
+      },
+    ]);
+    const fallback = staticContentProvider.getEntity(
+      "service",
+      "service:individualna-psihoterapija",
+    );
+    const entity = provider.getEntity(
+      "service",
+      "service:individualna-psihoterapija",
+    );
+
+    expect(entity?.source.name).toBe("Wrapper naslov");
+    expect(entity?.source.description).toBe(fallback?.source.description);
+  });
+
+  it("distinguishes an optional hidden field from inherit", () => {
+    const provider = new CmsContentProvider(staticContentProvider, [
+      {
+        ...publishedService,
+        slotData: {
+          hero: {
+            mode: "override",
+            fields: {
+              title: { mode: "hidden" },
+              lead: { mode: "hidden" },
+            },
+          },
+        },
+      },
+    ]);
+    const fallback = staticContentProvider.getEntity(
+      "service",
+      "service:individualna-psihoterapija",
+    );
+    const entity = provider.getEntity(
+      "service",
+      "service:individualna-psihoterapija",
+    );
+
+    // Bad historical data cannot hide the required H1; the public resolver
+    // fails safe even though the backend rejects publishing this shape.
+    expect(entity?.source.name).toBe(fallback?.source.name);
+    expect(entity?.source.description).toBe("");
+  });
+
+  it("removes an inherited optional program field when explicitly hidden", () => {
+    const fallback = staticContentProvider
+      .listAll()
+      .find((item) => item.type === "program" && Boolean(item.source.details));
+    expect(fallback?.type).toBe("program");
+    if (!fallback || fallback.type !== "program") return;
+
+    const provider = new CmsContentProvider(staticContentProvider, [
+      {
+        contentType: "program",
+        management: "system",
+        slug: fallback.canonicalSlug,
+        locale: "sr-Latn",
+        template: "program_detail",
+        slotData: {
+          facts: {
+            mode: "override",
+            fields: { details: { mode: "hidden" } },
+          },
+        },
+        seo: fallback.seo,
+        publishedAt: "2026-08-14T00:00:00Z",
+      },
+    ]);
+    const entity = provider.getEntity("program", fallback.id);
+
+    expect(entity?.source.details).toBeUndefined();
+  });
+
   it("keeps a clean static provider when there is no published override", () => {
     const provider = new CmsContentProvider(staticContentProvider, []);
     expect(provider.listAll()).toEqual(staticContentProvider.listAll());

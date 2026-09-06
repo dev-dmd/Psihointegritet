@@ -3,6 +3,7 @@ import type {
   BookingSlot,
   BookingTherapist,
   BookingWidgetBrand,
+  BookingWidgetOffering,
 } from "./booking-widget.types";
 
 function dateAfterToday(days: number): string {
@@ -30,10 +31,35 @@ export const mockService: BookingService = {
 
 export const mockTherapist: BookingTherapist = {
   id: "therapist-1",
-  slug: "anja-stamenkovic",
-  name: "Anja Stamenković",
-  avatarUrl: "/images/therapists/anja.jpeg",
+  slug: "maria-bullock",
+  name: "Maria Bullock",
+  firstNameGenitive: "Marije",
+  title: "Sertifikovana geštalt psihoterapeutkinja",
+  avatarUrl: "/images/therapists/maria-profile-pic.webp",
 };
+
+export const mockOfferings: BookingWidgetOffering[] = [
+  {
+    id: "therapist-1__bracno-savetovanje__online",
+    therapistId: "therapist-1",
+    serviceId: "bracno-savetovanje",
+    serviceName: "Bračno savetovanje",
+    durationMinutes: 90,
+    format: "online",
+    priceAmount: 5500,
+    currency: "RSD",
+  },
+  {
+    id: "therapist-1__individualna-psihoterapija__online",
+    therapistId: "therapist-1",
+    serviceId: "individualna-psihoterapija",
+    serviceName: "Individualna psihoterapija",
+    durationMinutes: 60,
+    format: "online",
+    priceAmount: 4000,
+    currency: "RSD",
+  },
+];
 
 const slotHours = [
   "09:00",

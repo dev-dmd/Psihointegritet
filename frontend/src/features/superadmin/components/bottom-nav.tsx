@@ -1,51 +1,59 @@
 "use client";
 
-import type { Route } from "next";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useTranslations } from "next-intl";
 import type { ComponentType, SVGProps } from "react";
 
 import { cn } from "@/helpers/cn";
+import { localizedPath } from "@/lib/routes/localized-path";
+import { isRouteActive } from "@/lib/routes/match";
+import type { PlatformRouteId } from "@/lib/routes/platform-routes";
+import { useUiLocale } from "@/i18n/use-ui-locale";
+import type { EnWorkspace } from "@/messages/en/workspace";
 
 import { ActivityIcon, BuildingIcon, GatesIcon, GridIcon } from "./icons";
 
 interface BottomNavItem {
-  href: Route;
-  label: string;
+  routeId: PlatformRouteId;
+  labelKey: keyof EnWorkspace["superadmin"]["nav"];
   icon: ComponentType<SVGProps<SVGSVGElement> & { size?: number }>;
 }
 
 /** Mobile order per the prototype — Gates last, shortened label. */
 const items: BottomNavItem[] = [
-  { href: "/superadmin", label: "Pregled", icon: GridIcon },
-  { href: "/superadmin/tenants", label: "Tenanti", icon: BuildingIcon },
+  { routeId: "superadmin.home", labelKey: "home", icon: GridIcon },
   {
-    href: "/superadmin/diagnostics",
-    label: "Dijagnostika",
+    routeId: "superadmin.tenants.list",
+    labelKey: "tenants",
+    icon: BuildingIcon,
+  },
+  {
+    routeId: "superadmin.diagnostics",
+    labelKey: "diagnostics",
     icon: ActivityIcon,
   },
-  { href: "/superadmin/features", label: "Gates", icon: GatesIcon },
+  {
+    routeId: "superadmin.features",
+    labelKey: "featuresShort",
+    icon: GatesIcon,
+  },
 ];
-
-function isActive(pathname: string, href: string): boolean {
-  if (href === "/superadmin") {
-    return pathname === "/superadmin";
-  }
-  return pathname === href || pathname.startsWith(`${href}/`);
-}
 
 /** Mobile bottom navigation (<1024px), 4 tiles with warm active pill. */
 export function SuperadminBottomNav() {
   const pathname = usePathname();
+  const locale = useUiLocale();
+  const t = useTranslations("workspace");
 
   return (
     <nav className="border-coffee/8 bg-surface fixed right-0 bottom-0 left-0 z-[70] grid grid-cols-4 border-t px-1.5 pt-2 pb-[calc(10px+env(safe-area-inset-bottom))] lg:hidden">
       {items.map((item) => {
-        const active = isActive(pathname, item.href);
+        const active = isRouteActive(pathname, item.routeId);
         return (
           <Link
-            key={item.href}
-            href={item.href}
+            key={item.routeId}
+            href={localizedPath(item.routeId, { locale })}
             className="flex min-h-12 flex-col items-center justify-end gap-[3px] py-1 no-underline"
           >
             <span
@@ -62,7 +70,7 @@ export function SuperadminBottomNav() {
                 active ? "text-coffee" : "text-coffee/50",
               )}
             >
-              {item.label}
+              {t(`superadmin.nav.${item.labelKey}`)}
             </span>
           </Link>
         );

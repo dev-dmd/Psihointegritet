@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 
 import { KV } from "@/components/panel/kv";
 import {
@@ -9,30 +10,33 @@ import {
 } from "@/components/panel/status-badge";
 import { TabPills } from "@/components/panel/tab-pills";
 import { Chip } from "@/components/ui/chip";
+import type { EnSuperadmin } from "@/messages/en/superadmin";
 
 import { psihointegritetTenant, usageTiles } from "../data";
 import { useGates } from "../gates-context";
 import type { GateStatus } from "../types";
+import { TenantUsersPanel } from "./tenant-users-panel";
 
 const GATE_STATUS: Record<
   GateStatus,
-  { label: string; tone: StatusBadgeTone }
+  { labelKey: keyof EnSuperadmin["gateStatus"]; tone: StatusBadgeTone }
 > = {
-  on: { label: "Uključeno", tone: "ok" },
-  off: { label: "Isključeno", tone: "neutral" },
-  coming_soon: { label: "U pripremi", tone: "amber" },
+  on: { labelKey: "on", tone: "ok" },
+  off: { labelKey: "off", tone: "neutral" },
+  coming_soon: { labelKey: "comingSoon", tone: "amber" },
 };
 
 const tabs = [
   { id: "pregled", label: "Pregled" },
   { id: "funkcionalnosti", label: "Funkcionalnosti" },
   { id: "potrosnja", label: "Potrošnja" },
-  { id: "korisnici", label: "Korisnici · uskoro", disabled: true },
+  { id: "korisnici", label: "Korisnici" },
   { id: "pretplata", label: "Pretplata · uskoro", disabled: true },
 ];
 
 /** Tenant profile tabs (Pregled / Funkcionalnosti / Potrošnja + 2 „uskoro"). */
 export function TenantProfileView() {
+  const t = useTranslations("superadmin");
   const [tab, setTab] = useState("pregled");
   const { gates } = useGates();
   const tenant = psihointegritetTenant;
@@ -111,7 +115,9 @@ export function TenantProfileView() {
                     Min. plan: {gate.minPlan}
                   </span>
                 </span>
-                <StatusBadge tone={status.tone}>{status.label}</StatusBadge>
+                <StatusBadge tone={status.tone}>
+                  {t(`gateStatus.${status.labelKey}`)}
+                </StatusBadge>
               </div>
             );
           })}
@@ -143,6 +149,10 @@ export function TenantProfileView() {
             Read-only u ovoj fazi — plan i cena se unose ručno, naplata kasnije.
           </p>
         </>
+      ) : null}
+
+      {tab === "korisnici" ? (
+        <TenantUsersPanel tenantSlug="psihointegritet" />
       ) : null}
     </>
   );

@@ -2,6 +2,13 @@
 
 import { createContext, useContext, useMemo, useState } from "react";
 import type { ReactNode } from "react";
+import type { UiLocale } from "@/i18n/locales";
+
+export interface WorkspaceOrganizationLocales {
+  slug: string;
+  uiLocale: UiLocale;
+  defaultContentLocale: UiLocale;
+}
 
 /**
  * Workspace role state. The role flags are computed server-side in the layout
@@ -13,7 +20,12 @@ import type { ReactNode } from "react";
 interface WorkspaceContextValue {
   isAdmin: boolean;
   isTherapist: boolean;
-  roleLabel: string;
+  /** How to address the signed-in person; null when the provider holds no name. */
+  displayName: string | null;
+  organization: WorkspaceOrganizationLocales;
+  setOrganizationLocales: (settings: WorkspaceOrganizationLocales) => void;
+  /** Key into `workspace.roles`; the component renders it. */
+  roleLabelKey: ReturnType<typeof roleLabelKeyFor>;
   /** Slug of the therapist the admin is filtering by, or null for all. */
   selectedTherapistSlug: string | null;
   setSelectedTherapistSlug: (slug: string | null) => void;
@@ -21,22 +33,37 @@ interface WorkspaceContextValue {
 
 const WorkspaceContext = createContext<WorkspaceContextValue | null>(null);
 
-export function roleLabelFor(isAdmin: boolean, isTherapist: boolean): string {
-  if (isAdmin && isTherapist) return "Administrator i terapeut";
-  if (isAdmin) return "Administrator centra";
-  if (isTherapist) return "Terapeut";
-  return "Član tima";
+/**
+ * Which role label a set of flags resolves to — the key, not the wording.
+ *
+ * Kept as a pure function so the union-role rule stays unit-testable without a
+ * provider; the component turns the key into text.
+ */
+export function roleLabelKeyFor(
+  isAdmin: boolean,
+  isTherapist: boolean,
+): "adminAndTherapist" | "admin" | "therapist" | "member" {
+  if (isAdmin && isTherapist) return "adminAndTherapist";
+  if (isAdmin) return "admin";
+  if (isTherapist) return "therapist";
+  return "member";
 }
 
 export function WorkspaceProvider({
   isAdmin,
   isTherapist,
+  displayName,
+  initialOrganization,
   children,
 }: {
   isAdmin: boolean;
   isTherapist: boolean;
+  displayName: string | null;
+  initialOrganization: WorkspaceOrganizationLocales;
   children: ReactNode;
 }) {
+  const [organization, setOrganizationLocales] =
+    useState<WorkspaceOrganizationLocales>(initialOrganization);
   const [selectedTherapistSlug, setSelectedTherapistSlug] = useState<
     string | null
   >(null);
@@ -45,11 +72,14 @@ export function WorkspaceProvider({
     () => ({
       isAdmin,
       isTherapist,
-      roleLabel: roleLabelFor(isAdmin, isTherapist),
+      displayName,
+      organization,
+      setOrganizationLocales,
+      roleLabelKey: roleLabelKeyFor(isAdmin, isTherapist),
       selectedTherapistSlug,
       setSelectedTherapistSlug,
     }),
-    [isAdmin, isTherapist, selectedTherapistSlug],
+    [isAdmin, isTherapist, displayName, organization, selectedTherapistSlug],
   );
 
   return (

@@ -1,0 +1,85 @@
+schema_version: 1
+updated_at: 2026-08-13
+status_note: >-
+  Prisustvo izvornog fajla ne znači da je njegov sadržaj odobren. Status approved ili
+  published zahteva eksplicitan, dokumentovan approval.
+
+items:
+  - content_id: public_site.psihointegritet.en
+    locale: en
+    source: owner
+    status: in_review
+    files:
+      - public-site/en/landing-page-en.docx
+      - public-site/en/psihointegritet_en.pdf
+    approvals_required: [business]
+
+  - content_id: public_site.psihointegritet.sr_latn
+    locale: sr-Latn
+    source: owner
+    status: in_review
+    files:
+      - public-site/sr-Latn/landing-page.docx
+    approvals_required: [business]
+
+  - content_id: therapists.psihointegritet
+    locale: not_applicable
+    source: owner
+    status: in_review
+    files:
+      - therapists/I deo-1.pdf
+      - therapists/I dio.pdf
+      - therapists/bio
+    approvals_required: [business, clinical]
+
+  - content_id: services.psihointegritet
+    locale: not_applicable
+    source: owner
+    status: missing
+    files: []
+    approvals_required: [business]
+
+  - content_id: intake_matching.psihointegritet
+    locale: not_applicable
+    source: clinician
+    status: in_review
+    files:
+      - intake-matching/anja-intake-case.pdf
+      - intake-matching/odgovor-za-matching-anketa.pdf
+    approvals_required: [clinical, legal]
+
+  - content_id: research.psihointegritet
+    locale: not_applicable
+    source: owner
+    status: missing
+    files: []
+    approvals_required: [business, clinical]
+
+  - content_id: compass.psihointegritet
+    locale: not_applicable
+    source: clinician
+    status: in_review
+    files:
+      - compass/CODEX HANDOFF — KOMPAS.docx
+      - compass/Kompas-updated.pdf
+      - compass/Kompas.pdf
+      - compass/Poslovno mentalno zdravlje; kada uspjeh počne da košta previše.docx
+      - compass/Stres nije samo ono što nam se događa.docx
+      - compass/Trauma ne ostaje u prošlosti.docx
+      - compass/Tugovanje nije nešto što treba _preboljeti_.docx
+      - compass/anksioznost-nije-vas-neprijatelj.docx
+    approvals_required: [clinical, business]
+
+  - content_id: companies.psihointegritet
+    locale: not_applicable
+    source: owner
+    status: missing
+    files: []
+    approvals_required: [business]
+
+  - content_id: legal.psihointegritet
+    locale: not_applicable
+    source: legal
+    status: missing
+    files: []
+    approvals_required: [legal, business]

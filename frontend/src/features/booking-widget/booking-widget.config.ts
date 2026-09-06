@@ -1,45 +1,19 @@
 import type {
   BookingFormat,
   BookingSlot,
-  BookingWidgetCopy,
   BookingWidgetSearchContext,
 } from "./booking-widget.types";
+import type { UiLocale } from "@/i18n/locales";
 
-export const defaultBookingWidgetCopy: BookingWidgetCopy = {
-  title: "Zakažite termin",
-  requestNotice: "Izbor termina je zahtev; terapeut ga potvrđuje.",
-  nextAvailableLabel: "Sledeći dostupni termini",
-  cancelLabel: "Otkaži",
-  notifyLabel: "Obavesti me",
-  bookLabel: "Zakaži",
-  onlineLabel: "Online",
-  inPersonLabel: "Uživo",
-};
-
-export const bookingWeekdayLabels = [
-  "Pon",
-  "Uto",
-  "Sre",
-  "Čet",
-  "Pet",
-  "Sub",
-  "Ned",
-] as const;
-
-export const bookingMonthLabels = [
-  "Januar",
-  "Februar",
-  "Mart",
-  "April",
-  "Maj",
-  "Jun",
-  "Jul",
-  "Avgust",
-  "Septembar",
-  "Oktobar",
-  "Novembar",
-  "Decembar",
-] as const;
+/** Fills a single `{name}` placeholder without touching the rest of the copy. */
+export function formatBookingCopy(
+  template: string,
+  values: Record<string, string>,
+): string {
+  return template.replace(/\{(\w+)\}/g, (match, key: string) =>
+    key in values ? (values[key] ?? match) : match,
+  );
+}
 
 export function parseBookingWidgetSearchParams(
   searchParams: Pick<URLSearchParams, "get">,
@@ -58,8 +32,12 @@ export function isBookingFormat(value: string | null): value is BookingFormat {
   return value === "online" || value === "uzivo";
 }
 
-export function formatBookingPrice(price: number, currency: string): string {
-  return new Intl.NumberFormat("sr-Latn-RS", {
+export function formatBookingPrice(
+  price: number,
+  currency: string,
+  locale: UiLocale = "sr-Latn",
+): string {
+  return new Intl.NumberFormat(locale === "en" ? "en-US" : "sr-Latn-RS", {
     maximumFractionDigits: 0,
   })
     .format(price)
@@ -113,4 +91,13 @@ export function monthGrid(month: Date): Array<Date | null> {
 
   while (days.length % 7 !== 0) days.push(null);
   return days;
+}
+
+/** Honours the OS "reduce motion" setting; safe in SSR and in jsdom. */
+export function prefersReducedMotion(): boolean {
+  return (
+    typeof window !== "undefined" &&
+    typeof window.matchMedia === "function" &&
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches
+  );
 }

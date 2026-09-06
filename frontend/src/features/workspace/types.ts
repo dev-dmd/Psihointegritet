@@ -1,4 +1,5 @@
 import type { StatusBadgeTone } from "@/components/panel/status-badge";
+import type { PlatformRouteId } from "@/lib/routes/platform-routes";
 
 /**
  * Control Center demo models (design handoff §8.1, README §13). Mock-only —
@@ -29,32 +30,40 @@ export type WorkspaceStatus =
   | "usNacrt";
 
 export interface StatusMeta {
-  label: string;
   tone: StatusBadgeTone;
 }
 
-/** Label + badge tone for every workspace status (verbatim from the prototype). */
+/**
+ * Badge tone for every workspace status.
+ *
+ * The words moved to `screens.status` in the message catalogue: a status is
+ * system UI, which D-077 gives to `ui_locale`, and this table is a module
+ * constant that cannot see it. The keys stay Serbian — they are the stored
+ * value, and renaming them would be a data migration for no gain.
+ *
+ * Read a label with `useStatusLabel()`.
+ */
 export const STATUS_META: Record<WorkspaceStatus, StatusMeta> = {
-  potvrdjen: { label: "Potvrđen", tone: "ok" },
-  ceka: { label: "Čeka potvrdu", tone: "wait" },
-  predlog: { label: "Predložena izmena", tone: "soft" },
-  zavrsen: { label: "Završen", tone: "neutral" },
-  odrzan: { label: "Održan", tone: "ok" },
-  otkazanK: { label: "Otkazao klijent", tone: "danger" },
-  otkazanT: { label: "Otkazao terapeut", tone: "danger" },
-  odbijen: { label: "Odbijen", tone: "danger" },
-  rezervisano: { label: "Kompanijski termin", tone: "dark" },
-  aktivan: { label: "Aktivan klijent", tone: "ok" },
-  neaktivan: { label: "Neaktivan", tone: "neutral" },
-  nedodeljen: { label: "Nedodeljen", tone: "wait" },
-  preuzet: { label: "Preuzet", tone: "ok" },
-  koNovi: { label: "Novi upit", tone: "wait" },
-  koPonuda: { label: "Ponuda poslata", tone: "amber" },
-  koPilot: { label: "Pilot program", tone: "soft" },
-  koAktivna: { label: "Aktivna", tone: "ok" },
-  usAktivna: { label: "Aktivna", tone: "ok" },
-  usPriprema: { label: "U pripremi", tone: "amber" },
-  usNacrt: { label: "Nacrt", tone: "neutral" },
+  potvrdjen: { tone: "ok" },
+  ceka: { tone: "wait" },
+  predlog: { tone: "soft" },
+  zavrsen: { tone: "neutral" },
+  odrzan: { tone: "ok" },
+  otkazanK: { tone: "danger" },
+  otkazanT: { tone: "danger" },
+  odbijen: { tone: "danger" },
+  rezervisano: { tone: "dark" },
+  aktivan: { tone: "ok" },
+  neaktivan: { tone: "neutral" },
+  nedodeljen: { tone: "wait" },
+  preuzet: { tone: "ok" },
+  koNovi: { tone: "wait" },
+  koPonuda: { tone: "amber" },
+  koPilot: { tone: "soft" },
+  koAktivna: { tone: "ok" },
+  usAktivna: { tone: "ok" },
+  usPriprema: { tone: "amber" },
+  usNacrt: { tone: "neutral" },
 };
 
 export interface Appointment {
@@ -87,7 +96,8 @@ export interface PriorityCard {
   title: string;
   description: string;
   cta: string;
-  href: string;
+  /** Route identity — the card's href is built per locale at render time. */
+  routeId: PlatformRouteId;
   dot: "meadow" | "warm" | "danger";
   adminOnly?: boolean;
 }

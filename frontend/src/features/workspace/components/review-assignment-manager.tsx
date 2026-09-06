@@ -3,6 +3,7 @@
 import { useState } from "react";
 
 import type { ApprovalCapability } from "@/lib/content-governance/types";
+import { useUserSafeError } from "@/lib/errors/use-user-safe-error";
 
 import {
   useCreateReviewAssignmentMutation,
@@ -18,6 +19,7 @@ const CAP_LABELS: Record<ApprovalCapability, string> = {
 
 /** Inline ability management inside the article editor (RW-6). */
 export function ReviewAssignmentManager() {
+  const safeError = useUserSafeError();
   const [selectedUserId, setSelectedUserId] = useState("");
   const [selectedCap, setSelectedCap] =
     useState<ApprovalCapability>("clinical");
@@ -117,7 +119,7 @@ export function ReviewAssignmentManager() {
 
       {assignMutation.isError ? (
         <p className="text-danger mt-1.5 text-[11px]">
-          {(assignMutation.error as Error)?.message ?? "Greška pri dodeli."}
+          {safeError.text(assignMutation.error, "content", "change")}
         </p>
       ) : null}
     </div>

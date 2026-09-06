@@ -99,10 +99,11 @@ export type SlotSpec =
  * field-level fallback, locked here rather than deferred to CG-C3 —
  * Amendment 2 §A2.3). `inherit` uses the full static fallback; `override`
  * carries authored `fields`, and a field missing within an override still
- * falls back to its static counterpart where one exists; `hidden` is only a
- * legal `mode` for a `visibility: "toggleable"` slot — a `visibility:
- * "fixed"` (required) slot may never be `hidden`. An empty string field
- * value normalizes to absent at save time rather than a hollow override.
+ * falls back to its static counterpart where one exists. Individual values
+ * also accept the backward-compatible `ContentFieldOverride<T>` wrapper from
+ * `content-field-override.ts`; legacy values remain custom values. `hidden`
+ * below is only the slot-level mode and is legal only for a `visibility:
+ * "toggleable"` slot. A legacy empty string resolves as field-level inherit.
  */
 export interface SlotOverride {
   mode: "inherit" | "override" | "hidden";

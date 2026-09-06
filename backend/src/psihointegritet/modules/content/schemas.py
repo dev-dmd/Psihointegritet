@@ -15,6 +15,7 @@ from uuid import UUID
 from pydantic import BaseModel, ConfigDict, Field
 from pydantic.alias_generators import to_camel
 
+from psihointegritet.core.locales import UiLocale
 from psihointegritet.modules.content.models import ContentTemplate, ContentType, ReviewOutcome
 from psihointegritet.modules.content.publication import PublishStage, Severity
 from psihointegritet.modules.identity.schemas import ActorSummaryOut
@@ -104,7 +105,9 @@ class CreateContentEntryRequest(ApiSchema):
     content_type: ContentType
     slug: str = Field(min_length=1, max_length=160)
     template: ContentTemplate
-    locale: str = Field(default="sr-Latn", min_length=2, max_length=16)
+    #: Omitted means the verified organization's `default_content_locale`.
+    #: The Literal rejects unsupported explicit values before the use case.
+    locale: UiLocale | None = None
 
 
 class UpdateContentRevisionRequest(ApiSchema):

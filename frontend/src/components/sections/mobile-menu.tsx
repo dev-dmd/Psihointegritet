@@ -4,10 +4,11 @@ import type { Route } from "next";
 import Link from "next/link";
 import { useEffect, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
+import { useTranslations } from "next-intl";
 
 import { cn } from "@/helpers/cn";
 import { MobileDrawerCloseContext } from "@/components/sections/mobile-menu-context";
-import { headerBookingHref, type SiteNavLink } from "@/content/site-navigation";
+import type { SiteNavLink } from "@/content/site-navigation";
 
 interface MobileMenuProps {
   links: SiteNavLink[];
@@ -20,6 +21,8 @@ interface MobileMenuProps {
    * prop injection crosses the server/client boundary.
    */
   authSlot?: ReactNode;
+  bookLabel: string;
+  bookingHref: string;
 }
 
 /** Burger trigger + slide-in navigation drawer, visible below the lg breakpoint. */
@@ -27,7 +30,10 @@ export function MobileMenu({
   links,
   variant = "glass",
   authSlot,
+  bookLabel,
+  bookingHref,
 }: MobileMenuProps) {
+  const t = useTranslations("public.navigation");
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
@@ -51,7 +57,7 @@ export function MobileMenu({
     <>
       <button
         type="button"
-        aria-label="Otvori meni"
+        aria-label={t("openMenu")}
         aria-expanded={open}
         onClick={() => setOpen(true)}
         className={cn(
@@ -90,7 +96,7 @@ export function MobileMenu({
               <div
                 role="dialog"
                 aria-modal="true"
-                aria-label="Meni"
+                aria-label={t("menuLabel")}
                 className="bg-canvas shadow-drawer animate-drawer-in fixed top-0 right-0 bottom-0 z-[89] flex w-[min(340px,88vw)] flex-col"
               >
                 <div className="border-coffee/10 flex items-center justify-between border-b px-6 py-[22px]">
@@ -99,7 +105,7 @@ export function MobileMenu({
                   </span>
                   <button
                     type="button"
-                    aria-label="Zatvori meni"
+                    aria-label={t("closeMenu")}
                     onClick={() => setOpen(false)}
                     className="border-coffee/15 text-coffee flex h-[38px] w-[38px] cursor-pointer items-center justify-center rounded-full border bg-transparent text-[15px]"
                   >
@@ -107,7 +113,7 @@ export function MobileMenu({
                   </button>
                 </div>
                 <nav
-                  aria-label="Mobilna navigacija"
+                  aria-label={t("mobileLabel")}
                   className="flex flex-1 flex-col overflow-y-auto px-2 py-4"
                 >
                   {links.map((link) => (
@@ -123,11 +129,11 @@ export function MobileMenu({
                 </nav>
                 <div className="border-coffee/10 border-t px-6 pt-5 pb-7">
                   <Link
-                    href={headerBookingHref as Route}
+                    href={bookingHref as Route}
                     onClick={() => setOpen(false)}
                     className="bg-forest text-canvas flex min-h-11 items-center justify-center gap-2.5 rounded-full px-6 text-[15px] font-semibold no-underline"
                   >
-                    Zakaži termin
+                    {bookLabel}
                   </Link>
                   {authSlot ? (
                     <MobileDrawerCloseContext.Provider

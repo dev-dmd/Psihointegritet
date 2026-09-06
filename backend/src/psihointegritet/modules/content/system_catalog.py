@@ -13,9 +13,8 @@ from __future__ import annotations
 
 from typing import Final
 
+from psihointegritet.core.locales import is_supported_locale
 from psihointegritet.modules.content.models import ContentTemplate, ContentType
-
-SYSTEM_CONTENT_LOCALE: Final = "sr-Latn"
 
 SYSTEM_CONTENT_TEMPLATES: Final[dict[tuple[ContentType, str], ContentTemplate]] = {
     # Fixed public pages.
@@ -36,9 +35,9 @@ SYSTEM_CONTENT_TEMPLATES: Final[dict[tuple[ContentType, str], ContentTemplate]] 
     (ContentType.SERVICE, "bracno-savetovanje"): ContentTemplate.SERVICE_DETAIL,
     (ContentType.SERVICE, "roditeljsko-savetovanje"): ContentTemplate.SERVICE_DETAIL,
     # Current therapist profiles.
-    (ContentType.THERAPIST, "anja-stamenkovic"): ContentTemplate.THERAPIST_PROFILE,
-    (ContentType.THERAPIST, "marija-stamenkovic"): ContentTemplate.THERAPIST_PROFILE,
-    (ContentType.THERAPIST, "marjan-jankovic"): ContentTemplate.THERAPIST_PROFILE,
+    (ContentType.THERAPIST, "maria-bullock"): ContentTemplate.THERAPIST_PROFILE,
+    (ContentType.THERAPIST, "elsa-browers"): ContentTemplate.THERAPIST_PROFILE,
+    (ContentType.THERAPIST, "john-francis"): ContentTemplate.THERAPIST_PROFILE,
     # Current program detail routes.
     (ContentType.PROGRAM, "postpartalni-period"): ContentTemplate.PROGRAM_DETAIL,
     (ContentType.PROGRAM, "roditeljstvo-0-3"): ContentTemplate.PROGRAM_DETAIL,
@@ -64,7 +63,7 @@ def is_system_content_definition(
     locale: str,
 ) -> bool:
     return (
-        locale == SYSTEM_CONTENT_LOCALE
+        is_supported_locale(locale)
         and SYSTEM_CONTENT_TEMPLATES.get((content_type, slug)) == template
     )
 
@@ -77,8 +76,8 @@ def require_system_content_definition(
 ) -> None:
     """Reject free-form CMS entry creation at the server boundary."""
 
-    if locale != SYSTEM_CONTENT_LOCALE:
-        raise ValueError(f"System content currently supports only locale {SYSTEM_CONTENT_LOCALE!r}")
+    if not is_supported_locale(locale):
+        raise ValueError(f"Unsupported content locale {locale!r}")
 
     expected = SYSTEM_CONTENT_TEMPLATES.get((content_type, slug))
     if expected is None:

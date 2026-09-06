@@ -4,8 +4,9 @@ Orchestrates transactions, authorization, and event emission.
 No SQL in routers; no business logic outside this layer.
 """
 
-from datetime import UTC, datetime, time, timedelta
+from datetime import UTC, date, datetime, time, timedelta
 from uuid import UUID, uuid4
+from zoneinfo import ZoneInfo
 
 from sqlalchemy import CursorResult, delete, func, or_, select
 from sqlalchemy.dialects.postgresql import insert as pg_insert
@@ -16,8 +17,12 @@ from psihointegritet.core.config import Settings
 from psihointegritet.core.logging import get_logger
 from psihointegritet.modules.booking.domain import (
     AvailabilityWindow,
+    CandidateStart,
     can_client_cancel,
-    derive_slots,
+    flexible_grid_strategy,
+    hourly_grid_strategy,
+    manual_slots_strategy,
+    occupancy_resolver,
     require_appointment_request_transition,
     require_appointment_transition,
 )
@@ -31,9 +36,13 @@ from psihointegritet.modules.booking.models import (
     AppointmentStatus,
     AvailabilityException,
     AvailabilityExceptionKind,
+    AvailabilityMode,
+    AvailabilityProfile,
     AvailabilityRule,
     BookingMode,
     CancellationActor,
+    ManualAvailabilitySlot,
+    ManualAvailabilitySlotSource,
     ServiceBookingConfig,
     SlotHold,
 )
@@ -44,10 +53,18 @@ from psihointegritet.modules.booking.schemas import (
     AppointmentRequestOut,
     AvailabilityExceptionIn,
     AvailabilityExceptionOut,
+    AvailabilityProfileIn,
+    AvailabilityProfileOut,
     AvailabilityRuleIn,
     AvailabilityRuleOut,
+    AvailabilityRulesBulkIn,
+    AvailabilitySummaryOut,
     CancelAppointmentRequest,
     DerivedSlotOut,
+    ManualAvailabilitySlotIn,
+    ManualAvailabilitySlotOut,
+    MyTherapistProfileOut,
+    ReservedCapacityOut,
     ReviewAction,
     ServiceBookingConfigIn,
     ServiceBookingConfigOut,
@@ -55,6 +72,7 @@ from psihointegritet.modules.booking.schemas import (
     SlotHoldRequest,
     SlotQueryParams,
 )
+from psihointegritet.modules.guidance.models import TherapistMatchingProfile
 
 logger = get_logger(__name__)
 
@@ -127,18 +145,20 @@ class BookingService:
             format=data.format,
             location_id=data.location_id,
             booking_mode=BookingMode(data.booking_mode),
-            slot_duration_minutes=data.slot_duration_minutes,
+            duration_minutes=data.duration_minutes,
             buffer_before_minutes=data.buffer_before_minutes,
             buffer_after_minutes=data.buffer_after_minutes,
+            availability_profile_id=data.availability_profile_id,
             is_active=data.is_active,
         )
         stmt = stmt.on_conflict_do_update(
             constraint="uq_booking_config_offer",
             set_={
                 "booking_mode": stmt.excluded.booking_mode,
-                "slot_duration_minutes": stmt.excluded.slot_duration_minutes,
+                "duration_minutes": stmt.excluded.duration_minutes,
                 "buffer_before_minutes": stmt.excluded.buffer_before_minutes,
                 "buffer_after_minutes": stmt.excluded.buffer_after_minutes,
+                "availability_profile_id": stmt.excluded.availability_profile_id,
                 "is_active": stmt.excluded.is_active,
                 "updated_at": func.now(),
             },
@@ -148,6 +168,116 @@ class BookingService:
         await self._session.flush()
         return ServiceBookingConfigOut.model_validate(config)
 
+    async def get_therapist_profile_for_user(
+        self, organization_id: UUID, user_id: UUID
+    ) -> MyTherapistProfileOut | None:
+        """Resolve the therapist a staff account is assigned to, if any.
+
+        An ``org_admin`` who does not see clients has no matching profile; that
+        is a legitimate answer, not an error, so the caller decides what to do.
+        """
+        result = await self._session.execute(
+            select(TherapistMatchingProfile).where(
+                TherapistMatchingProfile.organization_id == organization_id,
+                TherapistMatchingProfile.assigned_user_id == user_id,
+            )
+        )
+        profile = result.scalar_one_or_none()
+        return None if profile is None else MyTherapistProfileOut.model_validate(profile)
+
+    async def list_therapist_profiles(self, organization_id: UUID) -> list[MyTherapistProfileOut]:
+        """Every therapist in the tenant, for the superadmin schedule picker."""
+        result = await self._session.execute(
+            select(TherapistMatchingProfile)
+            .where(TherapistMatchingProfile.organization_id == organization_id)
+            .order_by(TherapistMatchingProfile.display_name)
+        )
+        return [MyTherapistProfileOut.model_validate(profile) for profile in result.scalars().all()]
+
+    # ── Availability Profiles (ADR-015 v2) ────────────────────────────────
+
+    async def create_availability_profile(
+        self, organization_id: UUID, data: AvailabilityProfileIn
+    ) -> AvailabilityProfileOut:
+        profile = AvailabilityProfile(
+            id=uuid4(),
+            organization_id=organization_id,
+            therapist_profile_id=data.therapist_profile_id,
+            mode=AvailabilityMode(data.mode),
+            timezone=data.timezone,
+            start_step_minutes=data.start_step_minutes,
+            min_lead_time_hours=data.min_lead_time_hours,
+            cancellation_notice_hours=data.cancellation_notice_hours,
+            enabled=data.enabled,
+        )
+        self._session.add(profile)
+        try:
+            await self._session.flush()
+        except IntegrityError:
+            await self._session.rollback()
+            raise BookingConflictError(
+                "An availability profile already exists for this therapist and mode"
+            ) from None
+        return AvailabilityProfileOut.model_validate(profile)
+
+    async def list_availability_profiles(
+        self, organization_id: UUID, therapist_profile_id: UUID
+    ) -> list[AvailabilityProfileOut]:
+        result = await self._session.execute(
+            select(AvailabilityProfile)
+            .where(
+                AvailabilityProfile.organization_id == organization_id,
+                AvailabilityProfile.therapist_profile_id == therapist_profile_id,
+            )
+            .order_by(AvailabilityProfile.created_at)
+        )
+        return [AvailabilityProfileOut.model_validate(p) for p in result.scalars().all()]
+
+    async def get_availability_profile(
+        self, organization_id: UUID, profile_id: UUID
+    ) -> AvailabilityProfileOut:
+        result = await self._session.execute(
+            select(AvailabilityProfile).where(
+                AvailabilityProfile.id == profile_id,
+                AvailabilityProfile.organization_id == organization_id,
+            )
+        )
+        profile = result.scalar_one_or_none()
+        if profile is None:
+            raise BookingValidationError("Availability profile not found")
+        return AvailabilityProfileOut.model_validate(profile)
+
+    async def update_availability_profile(
+        self, organization_id: UUID, profile_id: UUID, data: AvailabilityProfileIn
+    ) -> AvailabilityProfileOut:
+        result = await self._session.execute(
+            select(AvailabilityProfile).where(
+                AvailabilityProfile.id == profile_id,
+                AvailabilityProfile.organization_id == organization_id,
+            )
+        )
+        profile = result.scalar_one_or_none()
+        if profile is None:
+            raise BookingValidationError("Availability profile not found")
+        profile.mode = AvailabilityMode(data.mode)
+        profile.timezone = data.timezone
+        profile.start_step_minutes = data.start_step_minutes
+        profile.enabled = data.enabled
+        await self._session.flush()
+        await self._session.refresh(profile)
+        return AvailabilityProfileOut.model_validate(profile)
+
+    async def delete_availability_profile(self, organization_id: UUID, profile_id: UUID) -> None:
+        result = await self._session.execute(
+            delete(AvailabilityProfile).where(
+                AvailabilityProfile.id == profile_id,
+                AvailabilityProfile.organization_id == organization_id,
+            )
+        )
+        if isinstance(result, CursorResult) and result.rowcount == 0:
+            raise BookingValidationError("Availability profile not found")
+        await self._session.flush()
+
     # ── Availability Rules ──────────────────────────────────────────────
 
     async def create_availability_rule(
@@ -156,34 +286,36 @@ class BookingService:
         rule = AvailabilityRule(
             id=uuid4(),
             organization_id=organization_id,
-            therapist_profile_id=data.therapist_profile_id,
+            availability_profile_id=data.availability_profile_id,
             day_of_week=data.day_of_week,
-            start_time=_parse_time(data.start_time) if data.start_time else None,
-            end_time=_parse_time(data.end_time) if data.end_time else None,
+            start_local_time=_parse_time(data.start_local_time),
+            end_local_time=_parse_time(data.end_local_time),
             valid_from=data.valid_from,
             valid_until=data.valid_until,
             format=data.format,
             location_id=data.location_id,
-            service_ids=[str(s) for s in data.service_ids] if data.service_ids else None,
-            slot_duration_minutes=data.slot_duration_minutes,
-            buffer_before_minutes=data.buffer_before_minutes,
-            buffer_after_minutes=data.buffer_after_minutes,
         )
         self._session.add(rule)
-        await self._session.flush()
+        try:
+            await self._session.flush()
+        except IntegrityError:
+            await self._session.rollback()
+            raise BookingConflictError(
+                "An overlapping rule already exists for this profile and weekday"
+            ) from None
         return AvailabilityRuleOut.model_validate(rule)
 
     async def list_availability_rules(
-        self, organization_id: UUID, therapist_profile_id: UUID
+        self, organization_id: UUID, availability_profile_id: UUID
     ) -> list[AvailabilityRuleOut]:
         result = await self._session.execute(
             select(AvailabilityRule)
             .where(
                 AvailabilityRule.organization_id == organization_id,
-                AvailabilityRule.therapist_profile_id == therapist_profile_id,
+                AvailabilityRule.availability_profile_id == availability_profile_id,
                 AvailabilityRule.is_active == True,  # noqa: E712
             )
-            .order_by(AvailabilityRule.day_of_week, AvailabilityRule.start_time)
+            .order_by(AvailabilityRule.day_of_week, AvailabilityRule.start_local_time)
         )
         return [AvailabilityRuleOut.model_validate(r) for r in result.scalars().all()]
 
@@ -191,18 +323,21 @@ class BookingService:
         self, organization_id: UUID, rule_id: UUID, data: AvailabilityRuleIn
     ) -> AvailabilityRuleOut:
         rule = await self._get_availability_rule(organization_id, rule_id)
+        rule.availability_profile_id = data.availability_profile_id
         rule.day_of_week = data.day_of_week
-        rule.start_time = _parse_time(data.start_time)
-        rule.end_time = _parse_time(data.end_time)
+        rule.start_local_time = _parse_time(data.start_local_time)
+        rule.end_local_time = _parse_time(data.end_local_time)
         rule.valid_from = data.valid_from
         rule.valid_until = data.valid_until
         rule.format = data.format
         rule.location_id = data.location_id
-        rule.service_ids = [str(s) for s in data.service_ids] if data.service_ids else None
-        rule.slot_duration_minutes = data.slot_duration_minutes
-        rule.buffer_before_minutes = data.buffer_before_minutes
-        rule.buffer_after_minutes = data.buffer_after_minutes
-        await self._session.flush()
+        try:
+            await self._session.flush()
+        except IntegrityError:
+            await self._session.rollback()
+            raise BookingConflictError(
+                "An overlapping rule already exists for this profile and weekday"
+            ) from None
         await self._session.refresh(rule)
         return AvailabilityRuleOut.model_validate(rule)
 
@@ -225,7 +360,7 @@ class BookingService:
             raise BookingValidationError("Availability rule not found")
         return rule
 
-    # ── Availability Exceptions ─────────────────────────────────────────
+    # ── Availability Exceptions (ADR-015 v2) ──────────────────────────────
 
     async def create_availability_exception(
         self, organization_id: UUID, data: AvailabilityExceptionIn
@@ -234,18 +369,18 @@ class BookingService:
             id=uuid4(),
             organization_id=organization_id,
             therapist_profile_id=data.therapist_profile_id,
-            exception_date=data.exception_date,
+            availability_profile_id=data.availability_profile_id,
             kind=AvailabilityExceptionKind(data.kind),
-            start_time=_parse_time(data.start_time) if data.start_time else None,
-            end_time=_parse_time(data.end_time) if data.end_time else None,
-            reason=data.reason,
+            starts_at=data.starts_at,
+            ends_at=data.ends_at,
+            format=data.format,
+            location_id=data.location_id,
+            reason_code=data.reason_code,
+            note=data.note,
+            client_visible=data.client_visible,
         )
         self._session.add(exc)
-        try:
-            await self._session.flush()
-        except IntegrityError:
-            await self._session.rollback()
-            raise BookingConflictError("Exception already exists for this date and kind") from None
+        await self._session.flush()
         return AvailabilityExceptionOut.model_validate(exc)
 
     async def delete_availability_exception(
@@ -261,17 +396,500 @@ class BookingService:
             raise BookingValidationError("Availability exception not found")
         await self._session.flush()
 
+    # ── Manual Availability Slots (ADR-015 v2 §2.7.5) ─────────────────────
+
+    async def create_manual_availability_slot(
+        self, organization_id: UUID, data: ManualAvailabilitySlotIn
+    ) -> ManualAvailabilitySlotOut:
+        slot = ManualAvailabilitySlot(
+            id=uuid4(),
+            organization_id=organization_id,
+            availability_profile_id=data.availability_profile_id,
+            starts_at=data.starts_at,
+            format=data.format,
+            location_id=data.location_id,
+            source=ManualAvailabilitySlotSource(data.source),
+        )
+        self._session.add(slot)
+        await self._session.flush()
+        return ManualAvailabilitySlotOut.model_validate(slot)
+
+    async def delete_manual_availability_slot(self, organization_id: UUID, slot_id: UUID) -> None:
+        result = await self._session.execute(
+            delete(ManualAvailabilitySlot).where(
+                ManualAvailabilitySlot.id == slot_id,
+                ManualAvailabilitySlot.organization_id == organization_id,
+            )
+        )
+        if isinstance(result, CursorResult) and result.rowcount == 0:
+            raise BookingValidationError("Manual availability slot not found")
+        await self._session.flush()
+
+    async def list_availability_exceptions(
+        self,
+        organization_id: UUID,
+        therapist_profile_id: UUID,
+        date_from: date,
+        date_until: date,
+    ) -> list[AvailabilityExceptionOut]:
+        """List exceptions for a therapist overlapping the given date range."""
+        result = await self._session.execute(
+            select(AvailabilityException)
+            .where(
+                AvailabilityException.organization_id == organization_id,
+                AvailabilityException.therapist_profile_id == therapist_profile_id,
+                AvailabilityException.ends_at
+                >= datetime.combine(date_from, datetime.min.time(), tzinfo=UTC),
+                AvailabilityException.starts_at
+                <= datetime.combine(date_until, datetime.max.time(), tzinfo=UTC),
+            )
+            .order_by(AvailabilityException.starts_at)
+        )
+        return [AvailabilityExceptionOut.model_validate(e) for e in result.scalars().all()]
+
+    async def list_manual_availability_slots(
+        self,
+        organization_id: UUID,
+        availability_profile_id: UUID,
+        date_from: date,
+        date_until: date,
+    ) -> list[ManualAvailabilitySlotOut]:
+        """List manual slots for a profile overlapping the given date range."""
+        result = await self._session.execute(
+            select(ManualAvailabilitySlot)
+            .where(
+                ManualAvailabilitySlot.organization_id == organization_id,
+                ManualAvailabilitySlot.availability_profile_id == availability_profile_id,
+                ManualAvailabilitySlot.starts_at
+                >= datetime.combine(date_from, datetime.min.time(), tzinfo=UTC),
+                ManualAvailabilitySlot.starts_at
+                <= datetime.combine(date_until, datetime.max.time(), tzinfo=UTC),
+            )
+            .order_by(ManualAvailabilitySlot.starts_at)
+        )
+        return [ManualAvailabilitySlotOut.model_validate(s) for s in result.scalars().all()]
+
+    async def generate_week(
+        self,
+        organization_id: UUID,
+        availability_profile_id: UUID,
+        week_start: date,
+    ) -> list[ManualAvailabilitySlotOut]:
+        """Generate explicit manual slots for one week from recurring rules.
+
+        ADR-015 v2 §2.7.5: ``weekly_generator`` materializes the recurring
+        rules of a profile into explicit ``manual_availability_slots`` so the
+        therapist can then delete/add individual starts. Uses the profile's
+        grid step; ``HOURLY_GRID`` falls back to 60.
+        """
+        profile = await self._get_availability_profile_row(organization_id, availability_profile_id)
+        step = profile.start_step_minutes or 60
+        zone = ZoneInfo(profile.timezone)
+        week_end = week_start + timedelta(days=6)
+
+        # How long a generated start must fit before the end of the working
+        # window. `manual_availability_slots` stores only a start, so this check
+        # is the single guard against publishing a start that runs past closing
+        # time. The longest configured offering wins: a start that fits the
+        # 90-minute service also fits the 60-minute one, never the reverse.
+        # Falls back to 60 — the same default `get_available_slots` uses — so
+        # the generator and the public endpoint never disagree.
+        duration_result = await self._session.execute(
+            select(func.max(ServiceBookingConfig.duration_minutes)).where(
+                ServiceBookingConfig.organization_id == organization_id,
+                ServiceBookingConfig.availability_profile_id == availability_profile_id,
+                ServiceBookingConfig.is_active.is_(True),
+            )
+        )
+        duration = timedelta(minutes=duration_result.scalar_one_or_none() or 60)
+
+        rules_result = await self._session.execute(
+            select(AvailabilityRule).where(
+                AvailabilityRule.organization_id == organization_id,
+                AvailabilityRule.availability_profile_id == availability_profile_id,
+                AvailabilityRule.is_active == True,  # noqa: E712
+                AvailabilityRule.valid_from <= week_end,
+                or_(
+                    AvailabilityRule.valid_until.is_(None),
+                    AvailabilityRule.valid_until >= week_start,
+                ),
+            )
+        )
+        rules = list(rules_result.scalars().all())
+
+        rows: list[ManualAvailabilitySlot] = []
+        current_day = week_start
+        while current_day <= week_end:
+            for rule in rules:
+                if rule.day_of_week != current_day.weekday():
+                    continue
+                # Rules are local wall clock (ADR-015 §2.7.3). Stamping them as
+                # UTC — as this did before — shifted every generated start by
+                # the zone offset and ignored DST, the same defect D29 closed in
+                # `_grid_candidates`.
+                window_start = datetime.combine(
+                    current_day, rule.start_local_time, tzinfo=zone
+                ).astimezone(UTC)
+                window_end = datetime.combine(
+                    current_day, rule.end_local_time, tzinfo=zone
+                ).astimezone(UTC)
+                step_td = timedelta(minutes=step)
+                slot_start = window_start
+                while slot_start + duration <= window_end:
+                    row = ManualAvailabilitySlot(
+                        id=uuid4(),
+                        organization_id=organization_id,
+                        availability_profile_id=availability_profile_id,
+                        starts_at=slot_start,
+                        format=rule.format,
+                        location_id=rule.location_id,
+                        source=ManualAvailabilitySlotSource.WEEKLY_GENERATOR,
+                    )
+                    self._session.add(row)
+                    rows.append(row)
+                    slot_start += step_td
+            current_day += timedelta(days=1)
+        await self._session.flush()
+        return [ManualAvailabilitySlotOut.model_validate(r) for r in rows]
+
+    async def copy_week(
+        self,
+        organization_id: UUID,
+        availability_profile_id: UUID,
+        source_week_start: date,
+        target_week_start: date,
+    ) -> list[ManualAvailabilitySlotOut]:
+        """Copy the manual slots of one week into another (offset 7 days).
+
+        ADR-015 v2 §2.7.5: ``copied_week`` marks slots produced by the weekly
+        copy. Only ``manual_availability_slots`` are copied — recurring rules
+        already apply every matching weekday.
+        """
+        source_week_end = source_week_start + timedelta(days=6)
+        result = await self._session.execute(
+            select(ManualAvailabilitySlot).where(
+                ManualAvailabilitySlot.organization_id == organization_id,
+                ManualAvailabilitySlot.availability_profile_id == availability_profile_id,
+                ManualAvailabilitySlot.starts_at
+                >= datetime.combine(source_week_start, datetime.min.time(), tzinfo=UTC),
+                ManualAvailabilitySlot.starts_at
+                <= datetime.combine(source_week_end, datetime.max.time(), tzinfo=UTC),
+            )
+        )
+        offset = target_week_start - source_week_start
+        rows: list[ManualAvailabilitySlot] = []
+        for source in result.scalars().all():
+            row = ManualAvailabilitySlot(
+                id=uuid4(),
+                organization_id=organization_id,
+                availability_profile_id=availability_profile_id,
+                starts_at=source.starts_at + offset,
+                format=source.format,
+                location_id=source.location_id,
+                source=ManualAvailabilitySlotSource.COPIED_WEEK,
+            )
+            self._session.add(row)
+            rows.append(row)
+        await self._session.flush()
+        return [ManualAvailabilitySlotOut.model_validate(r) for r in rows]
+
+    async def _get_availability_profile_row(
+        self, organization_id: UUID, profile_id: UUID
+    ) -> AvailabilityProfile:
+        result = await self._session.execute(
+            select(AvailabilityProfile).where(
+                AvailabilityProfile.id == profile_id,
+                AvailabilityProfile.organization_id == organization_id,
+            )
+        )
+        profile = result.scalar_one_or_none()
+        if profile is None:
+            raise BookingValidationError("Availability profile not found")
+        return profile
+
+    # ── Ownership (remaining half of D33) ───────────────────────────────
+
+    async def therapist_owns_profile(
+        self, organization_id: UUID, therapist_profile_id: UUID, user_id: UUID
+    ) -> bool:
+        """Whether `user_id` is the therapist behind `therapist_profile_id`.
+
+        `RequireStaff` only proves the caller is *a* member of the team. Editing
+        a schedule additionally requires that it is **their** schedule — without
+        this any therapist could rewrite a colleague's week.
+        """
+        own = await self.get_therapist_profile_for_user(organization_id, user_id)
+        return own is not None and own.id == therapist_profile_id
+
+    async def therapist_of_availability_profile(
+        self, organization_id: UUID, availability_profile_id: UUID
+    ) -> UUID:
+        """Whose schedule an availability profile belongs to."""
+        profile = await self._get_availability_profile_row(organization_id, availability_profile_id)
+        return profile.therapist_profile_id
+
+    async def therapist_of_exception(
+        self, organization_id: UUID, exception_id: UUID
+    ) -> UUID | None:
+        result = await self._session.execute(
+            select(AvailabilityException.therapist_profile_id).where(
+                AvailabilityException.id == exception_id,
+                AvailabilityException.organization_id == organization_id,
+            )
+        )
+        return result.scalar_one_or_none()
+
+    async def therapist_of_manual_slot(self, organization_id: UUID, slot_id: UUID) -> UUID | None:
+        result = await self._session.execute(
+            select(AvailabilityProfile.therapist_profile_id)
+            .join(
+                ManualAvailabilitySlot,
+                ManualAvailabilitySlot.availability_profile_id == AvailabilityProfile.id,
+            )
+            .where(
+                ManualAvailabilitySlot.id == slot_id,
+                ManualAvailabilitySlot.organization_id == organization_id,
+            )
+        )
+        return result.scalar_one_or_none()
+
+    async def therapist_of_rule(self, organization_id: UUID, rule_id: UUID) -> UUID | None:
+        result = await self._session.execute(
+            select(AvailabilityProfile.therapist_profile_id)
+            .join(
+                AvailabilityRule,
+                AvailabilityRule.availability_profile_id == AvailabilityProfile.id,
+            )
+            .where(
+                AvailabilityRule.id == rule_id,
+                AvailabilityRule.organization_id == organization_id,
+            )
+        )
+        return result.scalar_one_or_none()
+
+    # ── Bulk rule replacement ────────────────────────────────────────────
+
+    async def replace_availability_rules(
+        self, organization_id: UUID, data: AvailabilityRulesBulkIn
+    ) -> list[AvailabilityRuleOut]:
+        """Replace every rule of one profile inside a single transaction.
+
+        Hard delete, not the soft `is_active = False` used by the single-row
+        endpoint: this is replace semantics, and soft-deleting on every save
+        would pile up dead rows for a schedule that is edited weekly.
+        """
+        await self._session.execute(
+            delete(AvailabilityRule).where(
+                AvailabilityRule.organization_id == organization_id,
+                AvailabilityRule.availability_profile_id == data.availability_profile_id,
+            )
+        )
+        rows: list[AvailabilityRule] = []
+        for rule in data.rules:
+            row = AvailabilityRule(
+                id=uuid4(),
+                organization_id=organization_id,
+                availability_profile_id=data.availability_profile_id,
+                day_of_week=rule.day_of_week,
+                start_local_time=_parse_time(rule.start_local_time),
+                end_local_time=_parse_time(rule.end_local_time),
+                valid_from=rule.valid_from,
+                valid_until=rule.valid_until,
+                format=rule.format,
+                location_id=rule.location_id,
+            )
+            self._session.add(row)
+            rows.append(row)
+        try:
+            await self._session.flush()
+        except IntegrityError as error:
+            raise BookingConflictError(
+                "Raspored sadrži dva identična intervala u istom danu."
+            ) from error
+        return [AvailabilityRuleOut.model_validate(r) for r in rows]
+
+    # ── Summary for the profile cards ────────────────────────────────────
+
+    async def availability_summary(
+        self, organization_id: UUID, therapist_profile_id: UUID, week_start: date
+    ) -> AvailabilitySummaryOut:
+        """One call behind all four cards on the profile availability tab."""
+        profiles = await self._session.execute(
+            select(AvailabilityProfile)
+            .where(
+                AvailabilityProfile.organization_id == organization_id,
+                AvailabilityProfile.therapist_profile_id == therapist_profile_id,
+                AvailabilityProfile.enabled.is_(True),
+            )
+            .order_by(AvailabilityProfile.created_at)
+        )
+        profile = profiles.scalars().first()
+
+        week_end = week_start + timedelta(days=6)
+        empty_capacity: list[ReservedCapacityOut] = []
+
+        if profile is None:
+            return AvailabilitySummaryOut(
+                therapist_profile_id=therapist_profile_id,
+                availability_profile_id=None,
+                mode=None,
+                timezone="Europe/Belgrade",
+                min_lead_time_hours=24,
+                cancellation_notice_hours=24,
+                rules=[],
+                week_start=week_start,
+                derived_slot_count=0,
+                service_id=None,
+                duration_minutes=60,
+                buffer_after_minutes=0,
+                mixed_durations=False,
+                exceptions=[],
+                reserved_capacity=empty_capacity,
+            )
+
+        rules_result = await self._session.execute(
+            select(AvailabilityRule)
+            .where(
+                AvailabilityRule.organization_id == organization_id,
+                AvailabilityRule.availability_profile_id == profile.id,
+                AvailabilityRule.is_active.is_(True),
+            )
+            .order_by(AvailabilityRule.day_of_week, AvailabilityRule.start_local_time)
+        )
+        rules = [AvailabilityRuleOut.model_validate(r) for r in rules_result.scalars().all()]
+
+        # Representative offering: the longest duration, so every start counted
+        # is bookable for every service on this profile. `mixed_durations` tells
+        # the card to describe duration per service instead of naming minutes.
+        configs_result = await self._session.execute(
+            select(ServiceBookingConfig)
+            .where(
+                ServiceBookingConfig.organization_id == organization_id,
+                ServiceBookingConfig.availability_profile_id == profile.id,
+                ServiceBookingConfig.is_active.is_(True),
+            )
+            .order_by(ServiceBookingConfig.duration_minutes.desc().nulls_last())
+        )
+        configs = list(configs_result.scalars().all())
+        representative = configs[0] if configs else None
+        durations = {c.duration_minutes or 60 for c in configs}
+
+        slot_count = 0
+        if representative is not None:
+            slots = await self.get_available_slots(
+                organization_id,
+                SlotQueryParams(
+                    service_id=representative.service_id,
+                    therapist_profile_id=therapist_profile_id,
+                    format=representative.format,
+                    location_id=representative.location_id,
+                    date_from=week_start,
+                    date_until=week_end,
+                ),
+            )
+            slot_count = len(slots)
+
+        exceptions_result = await self._session.execute(
+            select(AvailabilityException)
+            .where(
+                AvailabilityException.organization_id == organization_id,
+                AvailabilityException.therapist_profile_id == therapist_profile_id,
+                AvailabilityException.ends_at >= datetime.now(UTC),
+            )
+            .order_by(AvailabilityException.starts_at)
+        )
+        exceptions = [
+            AvailabilityExceptionOut.model_validate(e) for e in exceptions_result.scalars().all()
+        ]
+
+        return AvailabilitySummaryOut(
+            therapist_profile_id=therapist_profile_id,
+            availability_profile_id=profile.id,
+            mode=str(profile.mode),
+            timezone=profile.timezone,
+            min_lead_time_hours=profile.min_lead_time_hours,
+            cancellation_notice_hours=profile.cancellation_notice_hours,
+            rules=rules,
+            week_start=week_start,
+            derived_slot_count=slot_count,
+            service_id=representative.service_id if representative else None,
+            duration_minutes=(representative.duration_minutes or 60) if representative else 60,
+            buffer_after_minutes=representative.buffer_after_minutes if representative else 0,
+            mixed_durations=len(durations) > 1,
+            exceptions=exceptions,
+            reserved_capacity=empty_capacity,
+        )
+
     # ── Slot Derivation & Hold ──────────────────────────────────────────
 
     async def get_available_slots(
         self, organization_id: UUID, params: SlotQueryParams
     ) -> list[DerivedSlotOut]:
-        """Compute available slots for a given service/therapist/format combo."""
-        # Load availability rules for the therapist
+        """Compute available slots for a given service/therapist/format combo.
+
+        ADR-015 v2: availability is resolved through ``AvailabilityProfile``
+        (mode/step), ``AvailabilityRule`` (when), ``AvailabilityException``
+        (unavailable / extra_available) and ``ManualAvailabilitySlot``
+        (manual mode). Per-offer duration/buffers come from
+        ``ServiceBookingConfig``; defaults apply when no config exists yet.
+        """
+        # Per-offer duration/buffers (KOLIKO) — ADR-015 v2 §2.7.2.
+        #
+        # `location_id` is part of `uq_booking_config_offer`, so an offer with
+        # two locations has two rows. Without filtering on it, `scalar_one_or_none`
+        # raised `MultipleResultsFound` — a 500 on a perfectly valid setup.
+        config_result = await self._session.execute(
+            select(ServiceBookingConfig)
+            .where(
+                ServiceBookingConfig.organization_id == organization_id,
+                ServiceBookingConfig.service_id == params.service_id,
+                ServiceBookingConfig.therapist_profile_id == params.therapist_profile_id,
+                ServiceBookingConfig.format == params.format,
+                ServiceBookingConfig.location_id == params.location_id,
+                ServiceBookingConfig.is_active == True,  # noqa: E712
+            )
+            .limit(1)
+        )
+        config = config_result.scalar_one_or_none()
+        duration_minutes = config.duration_minutes if config and config.duration_minutes else 60
+        buffer_before = config.buffer_before_minutes if config else 0
+        buffer_after = config.buffer_after_minutes if config else 0
+        profile_id = config.availability_profile_id if config else None
+
+        # Availability profile (KAKO) — from config, or first enabled for therapist
+        profile: AvailabilityProfile | None = None
+        if profile_id is not None:
+            prof_result = await self._session.execute(
+                select(AvailabilityProfile).where(
+                    AvailabilityProfile.id == profile_id,
+                    AvailabilityProfile.organization_id == organization_id,
+                    AvailabilityProfile.enabled == True,  # noqa: E712
+                )
+            )
+            profile = prof_result.scalar_one_or_none()
+        if profile is None:
+            prof_result = await self._session.execute(
+                select(AvailabilityProfile)
+                .where(
+                    AvailabilityProfile.organization_id == organization_id,
+                    AvailabilityProfile.therapist_profile_id == params.therapist_profile_id,
+                    AvailabilityProfile.enabled == True,  # noqa: E712
+                )
+                .order_by(AvailabilityProfile.created_at)
+                .limit(1)
+            )
+            profile = prof_result.scalars().first()
+        if profile is None:
+            return []
+        start_step = profile.start_step_minutes or 60
+        zone = ZoneInfo(profile.timezone)
+        profile_id = profile.id
+
+        # Availability rules (KADA) on the resolved profile
         rules_result = await self._session.execute(
             select(AvailabilityRule).where(
                 AvailabilityRule.organization_id == organization_id,
-                AvailabilityRule.therapist_profile_id == params.therapist_profile_id,
+                AvailabilityRule.availability_profile_id == profile_id,
                 AvailabilityRule.is_active == True,  # noqa: E712
                 AvailabilityRule.format == params.format,
                 AvailabilityRule.valid_from <= params.date_until,
@@ -283,15 +901,38 @@ class BookingService:
         )
         rules = list(rules_result.scalars().all())
 
-        # Load exceptions for the date range
+        # Exceptions (unavailable / extra_available) — global or profile-scoped
         exc_result = await self._session.execute(
             select(AvailabilityException).where(
                 AvailabilityException.organization_id == organization_id,
                 AvailabilityException.therapist_profile_id == params.therapist_profile_id,
-                AvailabilityException.exception_date.between(params.date_from, params.date_until),
+                or_(
+                    AvailabilityException.availability_profile_id.is_(None),
+                    AvailabilityException.availability_profile_id == profile_id,
+                ),
+                AvailabilityException.ends_at
+                >= datetime.combine(params.date_from, datetime.min.time(), tzinfo=UTC),
+                AvailabilityException.starts_at
+                <= datetime.combine(params.date_until, datetime.max.time(), tzinfo=UTC)
+                + timedelta(days=1),
             )
         )
-        exceptions = {e.exception_date: e for e in exc_result.scalars().all()}
+        exceptions = list(exc_result.scalars().all())
+
+        # Manual slots for manual_slots mode
+        manual_slots: list[ManualAvailabilitySlot] = []
+        if profile.mode == AvailabilityMode.MANUAL_SLOTS:
+            manual_result = await self._session.execute(
+                select(ManualAvailabilitySlot).where(
+                    ManualAvailabilitySlot.organization_id == organization_id,
+                    ManualAvailabilitySlot.availability_profile_id == profile_id,
+                    ManualAvailabilitySlot.starts_at
+                    >= datetime.combine(params.date_from, datetime.min.time(), tzinfo=UTC),
+                    ManualAvailabilitySlot.starts_at
+                    <= datetime.combine(params.date_until, datetime.max.time(), tzinfo=UTC),
+                )
+            )
+            manual_slots = list(manual_result.scalars().all())
 
         # Load confirmed appointments
         appts_result = await self._session.execute(
@@ -319,76 +960,95 @@ class BookingService:
         )
         holds = [(h.slot_start, h.slot_end) for h in holds_result.scalars().all()]
 
-        # Build windows from rules, applying exceptions
+        # ── POSITIVE AVAILABILITY: generate candidates per mode ───────────
+        # hourly_grid / flexible_grid → grid windows from rules + extra
+        # manual_slots → explicit starts (ADR-015 v2 §2.7.6)
         from datetime import timedelta as td
 
-        windows: list[AvailabilityWindow] = []
-        current_date = params.date_from
-        while current_date <= params.date_until:
-            day_exception = exceptions.get(current_date)
-            if day_exception and day_exception.kind == AvailabilityExceptionKind.BLOCK:
-                current_date += td(days=1)
-                continue
-            for rule in rules:
-                if rule.day_of_week != current_date.weekday():
-                    continue
-                # Build windows from AvailabilityWindow dataclass
-                win_start = (
-                    day_exception.start_time
-                    if day_exception
-                    and day_exception.kind == AvailabilityExceptionKind.MODIFIED_HOURS
-                    and day_exception.start_time
-                    else rule.start_time
-                )
-                win_end = (
-                    day_exception.end_time
-                    if day_exception
-                    and day_exception.kind == AvailabilityExceptionKind.MODIFIED_HOURS
-                    and day_exception.end_time
-                    else rule.end_time
-                )
-                windows.append(
-                    AvailabilityWindow(
-                        date=current_date,
-                        start_time=win_start,
-                        end_time=win_end,
-                        slot_duration_minutes=rule.slot_duration_minutes,
-                        buffer_before_minutes=rule.buffer_before_minutes,
-                        buffer_after_minutes=rule.buffer_after_minutes,
-                        format=rule.format,
-                        location_id=rule.location_id,
-                        service_ids=rule.service_ids,
-                    )
-                )
-            # Handle extra_slot exceptions
-            if (
-                day_exception
-                and day_exception.kind == AvailabilityExceptionKind.EXTRA_SLOT
-                and day_exception.start_time
-                and day_exception.end_time
-            ):
-                windows.append(
-                    AvailabilityWindow(
-                        date=current_date,
-                        start_time=day_exception.start_time,
-                        end_time=day_exception.end_time,
-                        slot_duration_minutes=60,
-                        buffer_before_minutes=0,
-                        buffer_after_minutes=0,
-                        format=params.format,
-                        location_id=params.location_id,
-                        service_ids=None,
-                    )
-                )
-            current_date += td(days=1)
+        candidates: list[CandidateStart] = []
 
-        # Derive slots using domain function
-        slots = derive_slots(
-            windows=windows,
+        if profile.mode == AvailabilityMode.MANUAL_SLOTS:
+            # manual mode: only explicit therapist-chosen starts
+            candidates = manual_slots_strategy(
+                [(m.starts_at, m.format, m.location_id) for m in manual_slots]
+            )
+        else:
+            windows: list[AvailabilityWindow] = []
+            current_date = params.date_from
+            while current_date <= params.date_until:
+                for rule in rules:
+                    if rule.day_of_week != current_date.weekday():
+                        continue
+                    windows.append(
+                        AvailabilityWindow(
+                            date=current_date,
+                            start_time=rule.start_local_time,
+                            end_time=rule.end_local_time,
+                            timezone=profile.timezone,
+                            start_step_minutes=start_step,
+                            duration_minutes=duration_minutes,
+                            buffer_before_minutes=buffer_before,
+                            buffer_after_minutes=buffer_after,
+                            format=rule.format,
+                            location_id=rule.location_id,
+                        )
+                    )
+                for exc in exceptions:
+                    if exc.kind != AvailabilityExceptionKind.EXTRA_AVAILABLE:
+                        continue
+                    # Compare the *local* date: `starts_at` is a UTC instant, so
+                    # an exception opening 22:00Z lands on the next UTC day and
+                    # would otherwise be attached to the wrong local day.
+                    if exc.starts_at.astimezone(zone).date() != current_date:
+                        continue
+                    windows.append(
+                        AvailabilityWindow(
+                            date=current_date,
+                            start_time=exc.starts_at.astimezone(zone).time(),
+                            end_time=exc.ends_at.astimezone(zone).time(),
+                            timezone=profile.timezone,
+                            start_step_minutes=start_step,
+                            duration_minutes=duration_minutes,
+                            buffer_before_minutes=0,
+                            buffer_after_minutes=0,
+                            format=exc.format or params.format,
+                            location_id=exc.location_id or params.location_id,
+                        )
+                    )
+                current_date += td(days=1)
+
+            strategy = (
+                hourly_grid_strategy
+                if profile.mode == AvailabilityMode.HOURLY_GRID
+                else flexible_grid_strategy
+            )
+            for window in windows:
+                candidates.extend(strategy(window))
+
+        # ── BLOCKERS: unavailable intervals + appointments + holds ─────────
+        unavailable_intervals = [
+            (exc.starts_at, exc.ends_at)
+            for exc in exceptions
+            if exc.kind == AvailabilityExceptionKind.UNAVAILABLE
+        ]
+
+        # Minimum notice (per therapist, ADR-015 §5.1 / migration 0022). Applied
+        # to candidates rather than to the query range: the client may legitimately
+        # browse tomorrow, they just cannot take a slot inside the notice window.
+        if profile.min_lead_time_hours > 0:
+            earliest = datetime.now(UTC) + timedelta(hours=profile.min_lead_time_hours)
+            candidates = [c for c in candidates if c.start >= earliest]
+
+        slots = occupancy_resolver(
+            candidates,
+            duration_minutes=duration_minutes,
+            buffer_before_minutes=buffer_before,
+            buffer_after_minutes=buffer_after,
             existing_bookings=bookings,
             existing_holds=holds,
-            date_from=params.date_from,
-            date_until=params.date_until,
+            unavailable_intervals=unavailable_intervals,
+            therapist_profile_id=str(params.therapist_profile_id),
+            service_id=str(params.service_id),
         )
 
         return [
@@ -398,7 +1058,7 @@ class BookingService:
                 therapist_profile_id=params.therapist_profile_id,
                 service_id=params.service_id,
                 format=s.format,
-                slot_duration_minutes=s.slot_duration_minutes,
+                duration_minutes=s.slot_duration_minutes,
             )
             for s in slots
         ]

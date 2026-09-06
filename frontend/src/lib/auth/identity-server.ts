@@ -1,12 +1,22 @@
 import "server-only";
 
+import { cache } from "react";
+
+import { getClerkServerIdentity } from "@/lib/auth/clerk/server-identity";
+
 /**
  * Provider-neutral server identity seam. Guards and pages import ONLY from
  * this module — never from the Clerk adapter directly.
  *
- * TODO(identity-backend): when the backend identity slice lands (M2.1),
- * replace this re-export with an adapter that calls `GET /api/v1/me` through
- * `src/lib/api/client.ts`. Swapping the source is this one line; every caller
- * keeps working unchanged (ARCHITECTURAL_RULES §10.1).
+ * The Clerk adapter verifies the session then reads PostgreSQL roles through
+ * `GET /api/v1/me`; callers remain provider-neutral.
  */
-export { getClerkServerIdentity as getServerIdentity } from "@/lib/auth/clerk/server-identity";
+async function loadServerIdentity() {
+  return getClerkServerIdentity();
+}
+
+/**
+ * Request-scoped identity. React clears this memoization between server
+ * requests, so auth data is never persisted or shared between users.
+ */
+export const getServerIdentity = cache(loadServerIdentity);

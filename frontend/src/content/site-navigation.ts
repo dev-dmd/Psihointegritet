@@ -1,57 +1,96 @@
+import type { UiLocale } from "@/i18n/locales";
+import { localizedPublicPath } from "@/lib/routes/public-path";
+import type { PublicRouteId } from "@/lib/routes/platform-routes";
+
 export interface SiteNavLink {
   label: string;
   href: string;
 }
 
-/** The sticky-header destinations remain deliberately compact. */
-export const headerNavLinks: SiteNavLink[] = [
-  { label: "Pronađi podršku", href: "/pronadji-podrsku" },
-  { label: "Terapeuti", href: "/tim" },
-  { label: "Usluge", href: "/usluge" },
-  { label: "Radionice", href: "/radionice" },
-  { label: "Znanje i resursi", href: "/znanje" },
-  { label: "Kompas", href: "/kompas" },
-  { label: "O nama", href: "/o-nama" },
+export type SiteNavigationLabelKey =
+  | "support"
+  | "therapists"
+  | "services"
+  | "workshops"
+  | "knowledge"
+  | "compass"
+  | "about"
+  | "parents"
+  | "prices"
+  | "team"
+  | "companies"
+  | "contact";
+
+type LabelResolver = (key: SiteNavigationLabelKey) => string;
+
+const HEADER_NAV_ITEMS: ReadonlyArray<{
+  key: SiteNavigationLabelKey;
+  routeId: PublicRouteId;
+}> = [
+  { key: "support", routeId: "public.findSupport" },
+  { key: "therapists", routeId: "public.team.list" },
+  { key: "services", routeId: "public.services.list" },
+  { key: "workshops", routeId: "public.workshops.list" },
+  { key: "knowledge", routeId: "public.knowledge" },
+  { key: "compass", routeId: "public.compass.home" },
+  { key: "about", routeId: "public.about" },
 ];
 
-/**
- * Header links minus destinations that are switched off for this environment.
- * The Kompas entry follows D-059: it disappears wherever `/kompas` answers 404,
- * so the navigation never advertises a route that is not activated.
- */
-export function visibleHeaderNavLinks(compassEnabled: boolean): SiteNavLink[] {
-  return compassEnabled
-    ? headerNavLinks
-    : headerNavLinks.filter((link) => link.href !== "/kompas");
+/** System navigation wording comes from the active UI locale catalogue. */
+export function visibleHeaderNavLinks(
+  compassEnabled: boolean,
+  label: LabelResolver,
+  locale: UiLocale,
+): SiteNavLink[] {
+  return HEADER_NAV_ITEMS.filter(
+    (item) => compassEnabled || item.key !== "compass",
+  ).map((item) => ({
+    label: label(item.key),
+    href: localizedPublicPath(item.routeId, { locale } as never),
+  }));
 }
 
-export const headerBookingHref = "/zakazi?source=header";
+export function headerBookingHref(locale: UiLocale): string {
+  return localizedPublicPath("public.book", {
+    locale,
+    query: { source: "header" },
+  });
+}
 
 export interface FooterNavigationGroup {
   title: string;
   links: SiteNavLink[];
 }
 
-/** Every link below has a public route in this R1 slice. */
-export const footerNavigationGroups: FooterNavigationGroup[] = [
-  {
-    title: "Podrška",
-    links: [
-      { label: "Pronađi podršku", href: "/pronadji-podrsku" },
-      { label: "Usluge", href: "/usluge" },
-      { label: "Roditeljska podrška", href: "/podrska-roditeljima" },
-      { label: "Radionice", href: "/radionice" },
-      { label: "Cene", href: "/cene" },
-    ],
-  },
-  {
-    title: "Psihointegritet",
-    links: [
-      { label: "Tim", href: "/tim" },
-      { label: "O nama", href: "/o-nama" },
-      { label: "Znanje i resursi", href: "/znanje" },
-      { label: "Rad sa kompanijama", href: "/rad-sa-kompanijama" },
-      { label: "Kontakt", href: "/kontakt" },
-    ],
-  },
-];
+export function footerNavigationGroups(
+  label: LabelResolver,
+  groupTitles: { support: string; organization: string },
+  locale: UiLocale,
+): FooterNavigationGroup[] {
+  const link = (key: SiteNavigationLabelKey, routeId: PublicRouteId) => ({
+    label: label(key),
+    href: localizedPublicPath(routeId, { locale } as never),
+  });
+  return [
+    {
+      title: groupTitles.support,
+      links: [
+        link("support", "public.findSupport"),
+        link("services", "public.services.list"),
+        link("parents", "public.parentSupport"),
+        link("workshops", "public.workshops.list"),
+        link("prices", "public.pricing"),
+      ],
+    },
+    {
+      title: groupTitles.organization,
+      links: [
+        link("team", "public.team.list"),
+        link("about", "public.about"),
+        link("knowledge", "public.knowledge"),
+        link("companies", "public.forCompanies"),
+        link("contact", "public.contact"),
+      ],
+    },
+  ];
+}

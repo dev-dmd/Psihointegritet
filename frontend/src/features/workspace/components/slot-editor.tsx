@@ -6,8 +6,9 @@ import type {
   SlotOverride,
   SlotSpec,
 } from "@/lib/content-governance/slot-schema";
+import type { ContentTemplate } from "@/lib/content-governance/types";
 
-import { SlotFieldEditor } from "./slot-field-editor";
+import { ContentFieldOverrideEditor } from "./content-field-override-editor";
 
 /**
  * One slot: `editable` (with the `inherit`/`override`/`hidden` payload
@@ -18,11 +19,13 @@ import { SlotFieldEditor } from "./slot-field-editor";
  * `slotData[slotName]`.
  */
 export function SlotEditor({
+  template,
   slotName,
   spec,
   value,
   onChange,
 }: {
+  template: ContentTemplate;
   slotName: string;
   spec: SlotSpec;
   value: unknown;
@@ -118,8 +121,10 @@ export function SlotEditor({
       {mode === "override" ? (
         <div className="mt-2">
           {Object.entries(spec.fields).map(([fieldName, fieldSpec]) => (
-            <SlotFieldEditor
+            <ContentFieldOverrideEditor
               key={fieldName}
+              template={template}
+              slotName={slotName}
               fieldName={fieldName}
               spec={fieldSpec}
               value={fields[fieldName]}

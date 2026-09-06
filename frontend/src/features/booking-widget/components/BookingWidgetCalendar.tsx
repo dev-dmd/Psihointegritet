@@ -1,14 +1,9 @@
 import { ChevronLeftIcon, ChevronRightIcon } from "@heroicons/react/24/outline";
+import { useFormatter, useTranslations } from "next-intl";
 
 import { cn } from "@/helpers/cn";
 
-import {
-  bookingMonthLabels,
-  bookingWeekdayLabels,
-  isPastDate,
-  monthGrid,
-  toDateKey,
-} from "../booking-widget.config";
+import { isPastDate, monthGrid, toDateKey } from "../booking-widget.config";
 import { useBookingWidget } from "../hooks/use-booking-widget";
 import type { BookingWidgetTheme } from "../booking-widget.types";
 
@@ -21,6 +16,8 @@ function moveMonth(month: Date, offset: number): Date {
 }
 
 export function BookingWidgetCalendar({ theme }: BookingWidgetCalendarProps) {
+  const t = useTranslations("public.bookingWidget");
+  const format = useFormatter();
   const {
     availableDates,
     calendarOpen,
@@ -32,13 +29,19 @@ export function BookingWidgetCalendar({ theme }: BookingWidgetCalendarProps) {
   } = useBookingWidget();
   const today = toDateKey(new Date());
   const days = monthGrid(month);
+  const monthLabels = Array.from({ length: 12 }, (_, index) =>
+    format.dateTime(new Date(2020, index, 1, 12), { month: "long" }),
+  );
+  const weekdayLabels = Array.from({ length: 7 }, (_, index) =>
+    format.dateTime(new Date(2020, 0, 6 + index, 12), { weekday: "short" }),
+  );
 
   return (
-    <section aria-label="Izbor datuma" className="relative min-w-0">
+    <section aria-label={t("calendarLabel")} className="relative min-w-0">
       <div className="mb-3 flex items-center justify-between gap-2">
         <button
           type="button"
-          aria-label="Prethodni mesec"
+          aria-label={t("previousMonth")}
           onClick={() => setMonth(moveMonth(month, -1))}
           className={cn(
             "focus-visible:ring-meadow inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-full transition-colors outline-none focus-visible:ring-2",
@@ -57,11 +60,11 @@ export function BookingWidgetCalendar({ theme }: BookingWidgetCalendarProps) {
             theme.body,
           )}
         >
-          {bookingMonthLabels[month.getMonth()]} {month.getFullYear()}
+          {format.dateTime(month, { month: "long", year: "numeric" })}
         </button>
         <button
           type="button"
-          aria-label="Sledeći mesec"
+          aria-label={t("nextMonth")}
           onClick={() => setMonth(moveMonth(month, 1))}
           className={cn(
             "focus-visible:ring-meadow inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-full transition-colors outline-none focus-visible:ring-2",
@@ -75,14 +78,14 @@ export function BookingWidgetCalendar({ theme }: BookingWidgetCalendarProps) {
       {calendarOpen ? (
         <div
           role="dialog"
-          aria-label="Izaberite mesec"
+          aria-label={t("chooseMonth")}
           className={cn(
             "shadow-pill absolute top-11 z-20 grid w-full grid-cols-3 gap-1 rounded-2xl border p-3",
             theme.panel,
             theme.border,
           )}
         >
-          {bookingMonthLabels.map((label, index) => (
+          {monthLabels.map((label, index) => (
             <button
               key={label}
               type="button"
@@ -104,7 +107,7 @@ export function BookingWidgetCalendar({ theme }: BookingWidgetCalendarProps) {
       ) : null}
 
       <div className="grid grid-cols-7 gap-y-1 text-center">
-        {bookingWeekdayLabels.map((weekday) => (
+        {weekdayLabels.map((weekday) => (
           <span
             key={weekday}
             className={cn("pb-1 text-[10px] font-medium", theme.muted)}

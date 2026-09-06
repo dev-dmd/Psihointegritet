@@ -2,15 +2,14 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import type { Route } from "next";
 
-import {
-  contentErrorMessage,
-  useContentEntriesQuery,
-} from "../../hooks/use-content-entries";
+import { useContentEntriesQuery } from "../../hooks/use-content-entries";
 import { useCreateArticleMutation } from "../../hooks/use-compass-content";
 import { PageHeader } from "../page-header";
 import { KompasContentCreate } from "./kompas-content-create";
+import { localizedPath } from "@/lib/routes/localized-path";
+import { useUiLocale } from "@/i18n/use-ui-locale";
+import { useUserSafeError } from "@/lib/errors/use-user-safe-error";
 
 /**
  * „Novi sadržaj" as its own page (D-063).
@@ -22,6 +21,8 @@ import { KompasContentCreate } from "./kompas-content-create";
  */
 export function KompasContentNew() {
   const router = useRouter();
+  const locale = useUiLocale();
+  const safeError = useUserSafeError();
   const entriesQuery = useContentEntriesQuery();
   const createArticle = useCreateArticleMutation();
 
@@ -37,7 +38,10 @@ export function KompasContentNew() {
       />
 
       <Link
-        href="/radni-prostor/kompas?tab=content"
+        href={localizedPath("workspace.compass.home", {
+          locale,
+          tab: "content",
+        })}
         className="text-forest mb-4 inline-flex min-h-11 items-center text-[13px] font-semibold underline"
       >
         ← Nazad na Kompas sadržaj
@@ -48,10 +52,7 @@ export function KompasContentNew() {
         takenSlugs={takenSlugs}
         serverError={
           createArticle.isError
-            ? contentErrorMessage(
-                createArticle.error,
-                "Tekst nije napravljen. Pokušajte ponovo.",
-              )
+            ? safeError.text(createArticle.error, "content", "change")
             : null
         }
         onCreate={(slug) =>
@@ -60,7 +61,10 @@ export function KompasContentNew() {
             {
               onSuccess: (entry) =>
                 router.push(
-                  `/radni-prostor/kompas/sadrzaj/${encodeURIComponent(entry.entryId)}` as Route,
+                  localizedPath("workspace.compass.content.detail", {
+                    locale,
+                    params: { entryId: entry.entryId },
+                  }),
                 ),
             },
           )

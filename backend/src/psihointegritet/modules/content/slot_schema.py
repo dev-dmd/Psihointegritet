@@ -223,8 +223,9 @@ SlotFieldSpec = NonRepeaterFieldSpec | CollectionFieldSpec | CtaListFieldSpec | 
 #: Amendment 2 §A2.3). Mirrors `SlotOverride` in `slot-schema.ts`. `inherit`
 #: uses the full static fallback; `override` carries authored `fields`, and
 #: a field missing within an override still falls back to its static
-#: counterpart where one exists; `hidden` is only a legal `mode` for a
-#: `visibility="toggleable"` slot.
+#: counterpart where one exists. Individual values also accept the compatible
+#: wrapper owned by `field_override.py`; legacy values remain custom. `hidden`
+#: here is the slot-level mode and only legal for `visibility="toggleable"`.
 SlotOverrideMode = Literal["inherit", "override", "hidden"]
 
 

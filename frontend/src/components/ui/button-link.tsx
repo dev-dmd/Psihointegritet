@@ -1,9 +1,14 @@
+"use client";
+
 import { cva, type VariantProps } from "class-variance-authority";
 import type { Route } from "next";
 import Link from "next/link";
+import { useLocale } from "next-intl";
 import type { ReactNode } from "react";
 
 import { cn } from "@/helpers/cn";
+import type { UiLocale } from "@/i18n/locales";
+import { localizePublicHref } from "@/lib/routes/public-path";
 
 export const buttonLinkVariants = cva(
   "inline-flex items-center justify-center rounded-full text-center font-semibold no-underline transition-colors duration-200",
@@ -55,6 +60,7 @@ export function ButtonLink({
   className,
   ariaLabel,
 }: ButtonLinkProps) {
+  const locale = useLocale() as UiLocale;
   const linkClassName = cn(buttonLinkVariants({ variant, size }), className);
 
   if (href.startsWith("#")) {
@@ -67,7 +73,11 @@ export function ButtonLink({
 
   // Content-driven hrefs are non-literal strings — documented `as Route` cast.
   return (
-    <Link href={href as Route} aria-label={ariaLabel} className={linkClassName}>
+    <Link
+      href={localizePublicHref(href, locale) as Route}
+      aria-label={ariaLabel}
+      className={linkClassName}
+    >
       {children}
     </Link>
   );

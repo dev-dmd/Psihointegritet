@@ -40,4 +40,7 @@ async def test_unknown_route_returns_problem_envelope(
     assert response.headers["content-type"] == "application/problem+json"
     body = response.json()
     assert body["code"] == "http_error"
-    assert body["correlationId"]
+    assert body["status"] == 404
+    assert "correlationId" not in body
+    assert "title" not in body
+    assert "detail" not in body

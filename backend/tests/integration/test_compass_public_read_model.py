@@ -330,7 +330,7 @@ async def compass_data(db_session: AsyncSession) -> CompassFixture:
         db_session,
         organization_id=organization.id,
         content_type=ContentType.THERAPIST,
-        slug="anja-stamenkovic",
+        slug="maria-bullock",
         template=ContentTemplate.THERAPIST_PROFILE,
         status=RevisionStatus.PUBLISHED,
         locale="sr-Latn",

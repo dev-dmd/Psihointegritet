@@ -1,0 +1,166 @@
+import type {
+  ClientLink,
+  CompaniesContent,
+  FaqItem,
+  FirstSessionStep,
+  NavLink,
+  ReasonCard,
+  ResourceArticle,
+  TrustItem,
+  WorkshopFact,
+} from "@/content/homepage";
+
+/** The tenant's own homepage copy. Overridden field by field by the CMS (D-038). */
+
+export const companies: CompaniesContent = {
+  eyebrow: "Za organizacije",
+  title: "Rad sa kompanijama",
+  description:
+    "Radionice, edukacije i psihološka podrška za timove i zaposlene.",
+  action: { label: "Saznajte više", href: "/rad-sa-kompanijama" },
+};
+
+export const clientLink: ClientLink = {
+  prefix: "Već ste klijent?",
+  label: "Zakažite naredni termin",
+  href: "/zakazi?source=homepage",
+};
+
+export const footerServiceLinks: NavLink[] = [
+  {
+    label: "Individualna psihoterapija",
+    href: "/usluge/individualna-psihoterapija",
+  },
+  { label: "Bračno savetovanje", href: "/usluge/bracno-savetovanje" },
+  { label: "Roditeljsko savetovanje", href: "/usluge/roditeljsko-savetovanje" },
+  { label: "Radionice", href: "/radionice" },
+];
+
+export const trustItems: TrustItem[] = [
+  { icon: "screen", label: "Online i uživo" },
+  { icon: "pin", label: "Chicago, Milwaukee, Madison i online" },
+  { icon: "people", label: "Individualni i partnerski rad" },
+  { icon: "shield", label: "Poverljivost i stručnost" },
+];
+
+export const reasons: ReasonCard[] = [
+  {
+    number: "01",
+    title: "Stres i burnout",
+    description:
+      "Kada iscrpljenost postane svakodnevica, a odmor više ne pomaže.",
+    href: "/pronadji-podrsku",
+  },
+  {
+    number: "02",
+    title: "Partnerski odnosi",
+    description:
+      "Komunikacija, bliskost, konflikti i faze kroz koje odnos prolazi.",
+    href: "/pronadji-podrsku",
+  },
+  {
+    number: "03",
+    title: "Anksioznost i emocionalne teškoće",
+    description: "Briga, napetost i osećanja koja je teško imenovati.",
+    href: "/pronadji-podrsku",
+  },
+  {
+    number: "04",
+    title: "Roditeljstvo",
+    description: "Podrška u izazovima roditeljske uloge i odnosu sa decom.",
+    href: "/podrska-roditeljima",
+  },
+  {
+    number: "05",
+    title: "Samopouzdanje i granice",
+    description: "Jasnije zauzimanje za sebe, bez osećaja krivice.",
+    href: "/pronadji-podrsku",
+  },
+  {
+    number: "06",
+    title: "Podrška adolescentima",
+    description: "Siguran prostor za mlade u periodu odrastanja i promena.",
+    href: "/tim",
+  },
+];
+
+export const firstSessionSteps: FirstSessionStep[] = [
+  {
+    number: "01",
+    title: "Upoznavanje",
+    description:
+      "Razgovaramo o razlogu zbog kojeg dolazite i o tome šta vas trenutno opterećuje.",
+  },
+  {
+    number: "02",
+    title: "Očekivanja i pitanja",
+    description:
+      "Istražujemo vaša očekivanja od terapije. Imate priliku postaviti sva pitanja koja vas zanimaju.",
+  },
+  {
+    number: "03",
+    title: "Naredni koraci",
+    description:
+      "Terapeut objašnjava način rada i pravila poverljivosti, pa zajedno dogovarate kako dalje.",
+  },
+];
+
+export const workshopFacts: WorkshopFact[] = [
+  { label: "Trajanje", value: "3 sata" },
+  { label: "Format", value: "Grupni rad uživo" },
+  { label: "Namenjeno", value: "Svima, bez iskustva" },
+];
+
+export const resources: ResourceArticle[] = [
+  {
+    category: "Stres i burnout",
+    title: "Kako prepoznati burnout pre nego što postane ozbiljan problem?",
+    description:
+      "Burnout se ne pojavljuje odjednom. Često mu prethode dugotrajan umor, gubitak motivacije, razdražljivost i osećaj da se ni nakon odmora ne oporavljamo. Saznajte koje rane signale ne treba zanemariti.",
+  },
+  {
+    category: "Psihoterapija",
+    title:
+      "Zašto nije potrebno da dođemo do „pucanja“ da bismo potražili podršku?",
+    description:
+      "Psihoterapija nije rezervisana samo za krizne trenutke. Razgovor sa terapeutom može biti prostor za bolje razumevanje sebe, odnosa i obrazaca koje želimo da promenimo.",
+  },
+  {
+    category: "Granice i odnosi",
+    title: "Postavljanje granica bez osećaja krivice",
+    description:
+      "Granice nisu odbacivanje drugih, već način da zaštitimo svoje potrebe, vreme i emocionalni prostor. Istražite zašto se krivica javlja i kako možemo jasnije komunicirati ono što nam je važno.",
+  },
+];
+
+export const faqItems: FaqItem[] = [
+  {
+    id: "poverljivost",
+    question: "Da li je sve što kažem poverljivo?",
+    answer:
+      "Da. Sve informacije ostaju između klijenta i terapeuta, osim u situacijama propisanim zakonom i etičkim kodeksom.",
+  },
+  {
+    id: "trajanje",
+    question: "Koliko traje terapija?",
+    answer:
+      "Trajanje zavisi od vaših ciljeva i potreba. Neki ljudi dolaze nekoliko meseci, dok drugi biraju dugoročniji proces.",
+  },
+  {
+    id: "online",
+    question: "Da li mogu raditi online?",
+    answer: "Da. Sve usluge dostupne su i online.",
+  },
+  {
+    id: "izbor-terapeuta",
+    question: "Kako da znam koji terapeut mi odgovara?",
+    answer:
+      "Na profilima terapeuta možete pronaći informacije o njihovom pristupu, iskustvu i oblastima rada, a uvek nas možete kontaktirati za preporuku.",
+  },
+  {
+    id: "dijagnoza",
+    question: "Da li mi treba dijagnoza da bih došao na terapiju?",
+    answer:
+      "Ne. Psihoterapija je namenjena svima koji žele bolje razumeti sebe ili prolaze kroz izazovan životni period.",
+  },
+];

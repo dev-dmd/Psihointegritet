@@ -8,9 +8,9 @@ import { MonogramAvatar } from "psihointegritet-ds";
 // other-therapists-section.tsx; "sm" is used in guidance-flow.tsx's compact
 // therapist-match row.
 export function Medium() {
-  return <MonogramAvatar initials="AS" name="Anja Stamenković" />;
+  return <MonogramAvatar initials="MB" name="Maria Bullock" />;
 }
 
 export function Small() {
-  return <MonogramAvatar initials="MS" name="Marija Stamenković" size="sm" />;
+  return <MonogramAvatar initials="EB" name="Elsa Browers" size="sm" />;
 }

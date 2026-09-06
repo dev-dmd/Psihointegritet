@@ -1,6 +1,7 @@
 "use client";
 
 import { createPortal } from "react-dom";
+import { useTranslations } from "next-intl";
 
 const SESSION_KEY = "psihointegritet:compass-feedback-shown";
 
@@ -40,6 +41,7 @@ export function CompassFeedbackBanner({
   onAccept: () => void;
   onDismiss: () => void;
 }) {
+  const t = useTranslations("public.compass.feedback");
   // `open` only ever becomes true from a client interaction, so `document`
   // exists by then; no mount flag is needed to make the portal safe.
   if (!open || typeof document === "undefined") return null;
@@ -56,10 +58,10 @@ export function CompassFeedbackBanner({
           id="kompas-feedback-title"
           className="text-forest font-serif text-[19px] leading-[1.3] md:text-[21px]"
         >
-          Da li vam je Kompas pomogao da vidite sledeći korak?
+          {t("title")}
         </p>
         <p className="text-coffee/70 mt-2 text-[13.5px] leading-[1.6]">
-          Anketa traje oko minut i ne utiče na vaše preporuke.
+          {t("body")}
         </p>
 
         <div className="mt-5 flex flex-wrap gap-2.5">
@@ -68,14 +70,14 @@ export function CompassFeedbackBanner({
             onClick={onAccept}
             className="bg-forest text-canvas hover:bg-forest-hover min-h-11 cursor-pointer rounded-full px-5 text-[13.5px] font-semibold transition-colors"
           >
-            Da, odvojiću minut
+            {t("accept")}
           </button>
           <button
             type="button"
             onClick={onDismiss}
             className="border-line-strong text-coffee/75 hover:border-coffee/40 min-h-11 cursor-pointer rounded-full border px-5 text-[13.5px] font-semibold transition-colors"
           >
-            Ne sada
+            {t("dismiss")}
           </button>
         </div>
       </div>

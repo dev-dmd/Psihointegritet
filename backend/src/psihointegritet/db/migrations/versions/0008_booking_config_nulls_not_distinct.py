@@ -56,7 +56,24 @@ def upgrade() -> None:
             f"{report}"
         )
 
-    op.drop_constraint(CONSTRAINT_NAME, "service_booking_configs", type_="unique")
+    nulls_not_distinct = conn.scalar(
+        sa.text(
+            """
+            SELECT i.indnullsnotdistinct
+            FROM pg_constraint AS c
+            JOIN pg_index AS i ON i.indexrelid = c.conindid
+            WHERE c.conrelid = 'service_booking_configs'::regclass
+              AND c.conname = :constraint_name
+            """
+        ),
+        {"constraint_name": CONSTRAINT_NAME},
+    )
+    if nulls_not_distinct is True:
+        # Recovery path: the physical 0008 constraint survived an accidental
+        # alembic_version rewind to 3bb47763bb91.
+        return
+    if nulls_not_distinct is not None:
+        op.drop_constraint(CONSTRAINT_NAME, "service_booking_configs", type_="unique")
     op.create_unique_constraint(
         CONSTRAINT_NAME,
         "service_booking_configs",

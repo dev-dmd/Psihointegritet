@@ -136,7 +136,16 @@ jobs:
           uv sync --locked --all-groups
           uv run alembic upgrade head
           uv run python scripts/seed_compass_demo.py
-          uv run uvicorn psihointegritet.main:app --host 127.0.0.1 --port 8001 >/tmp/psihointegritet-api.log 2>&1 &
+          # `.venv/bin/uvicorn`, deliberately NOT `uv run uvicorn`.
+          #
+          # `uv run` stays alive as the parent of the server for the whole job,
+          # and uv marks its cache in-use while any uv process runs. The
+          # `setup-uv` post-job step then calls `uv cache prune --ci`, waits
+          # 300s for a lock the API server is holding, and fails the job with
+          # exit code 2 — after every quality gate has already passed. Starting
+          # the server from the synced venv leaves no uv process behind, so
+          # cleanup finds the lock free.
+          .venv/bin/uvicorn psihointegritet.main:app --host 127.0.0.1 --port 8001 >/tmp/psihointegritet-api.log 2>&1 &
           for attempt in {1..30}; do
             if curl --fail --silent http://127.0.0.1:8001/api/v1/health >/dev/null; then
               exit 0
@@ -172,3 +181,11 @@ jobs:
             frontend/test-results
             /tmp/psihointegritet-api.log
           if-no-files-found: ignore
+
+      # Runs even when a gate above failed, and always before the `setup-uv`
+      # post-job step: normal steps finish first, post steps run afterwards in
+      # reverse order. Second line of defence for the cache lock above — if the
+      # server is ever started through uv again, cleanup still finds it free.
+      - name: Stop public API
+        if: always()
+        run: pkill -f "uvicorn psihointegritet.main:app" || true

@@ -215,6 +215,13 @@ class TestStructuralFindings:
         assert [item.rule_id for item in findings] == ["LIMIT-002"]
         assert [item.field_path for item in findings] == ["areas.items"]
 
+    def test_missing_or_explicitly_inherited_repeater_uses_fallback(self) -> None:
+        template = ContentTemplate.THERAPIST_PROFILE
+        for fields in ({}, {"items": {"mode": "inherit"}}):
+            slots = complete_slots(template)
+            slots["areas"] = {"mode": "override", "fields": fields}
+            assert structural_findings(template, slots) == ()
+
     def test_repeater_field_above_maximum_is_limit_002(self) -> None:
         # therapist_profile.areas.items has max=12.
         template = ContentTemplate.THERAPIST_PROFILE

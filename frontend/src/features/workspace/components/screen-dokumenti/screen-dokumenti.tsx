@@ -3,9 +3,9 @@
 import { useState } from "react";
 
 import { ErrorBanner } from "@/components/panel/error-banner";
+import { useUserSafeError } from "@/lib/errors/use-user-safe-error";
 
 import {
-  legalErrorMessage,
   useAdvanceLegalDocumentMutation,
   useCreateLegalDocumentMutation,
   useDeleteLegalDocumentMutation,
@@ -27,8 +27,7 @@ import { usePanelErrors } from "../../panel-errors";
 import { PageHeader } from "../page-header";
 import {
   describeApiPublishBlock,
-  describeDocxImportError,
-  HREF,
+  ROUTE_ID,
   resourceFor,
   resourceForNewDocument,
   TAB_LABEL,
@@ -44,16 +43,14 @@ import { NewDocumentForm } from "./new-document-form";
  */
 export function ScreenDokumenti() {
   const { reportError, errorsFor, clearErrorsForResource } = usePanelErrors();
+  const safeError = useUserSafeError();
   const { replaceInList, appendToList, removeFromList } =
     useLegalDocumentsCache();
 
   const documentsQuery = useLegalDocumentsQuery();
   const documents = documentsQuery.data ?? [];
   const loadError = documentsQuery.isError
-    ? legalErrorMessage(
-        documentsQuery.error,
-        "Dokumenti se trenutno ne mogu učitati. Osvežite stranicu.",
-      )
+    ? safeError.text(documentsQuery.error, "legal", "load")
     : null;
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -61,23 +58,21 @@ export function ScreenDokumenti() {
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
   const [docxPreview, setDocxPreview] = useState<DocxPreviewState | null>(null);
 
-  const errors = errorsFor(HREF);
+  const errors = errorsFor(ROUTE_ID);
   const gateOpen = intakeGateOpen(documents);
 
   const reportApiError = (
     document: LegalDocument,
-    title: string,
+    operation: "change" | "publish",
     error: unknown,
   ) => {
+    const presentation = safeError.present(error, "legal", operation);
     reportError({
-      href: HREF,
+      routeId: ROUTE_ID,
       tabLabel: TAB_LABEL,
       resource: resourceFor(document),
-      title,
-      description: legalErrorMessage(
-        error,
-        "Zahtev nije uspeo. Pokušajte ponovo.",
-      ),
+      title: presentation.message,
+      description: presentation.nextAction,
       details: [],
     });
   };
@@ -94,7 +89,7 @@ export function ScreenDokumenti() {
       if (outcome.kind === "blocked") {
         // A blocked publish is reported, never thrown: the panel stays usable.
         reportError({
-          href: HREF,
+          routeId: ROUTE_ID,
           tabLabel: TAB_LABEL,
           resource: resourceFor(document),
           ...describeApiPublishBlock(document, outcome.block),
@@ -103,34 +98,18 @@ export function ScreenDokumenti() {
       }
       acceptUpdate(document, outcome.document);
     },
-    onFailed: (document, error) =>
-      reportApiError(
-        document,
-        `Dokument „${document.title}“ nije objavljen`,
-        error,
-      ),
+    onFailed: (document, error) => reportApiError(document, "publish", error),
   });
 
   const advanceMutation = useAdvanceLegalDocumentMutation({
     onAdvanced: acceptUpdate,
-    onFailed: (document, error) =>
-      reportApiError(
-        document,
-        `Nedozvoljen korak za „${document.title}“`,
-        error,
-      ),
+    onFailed: (document, error) => reportApiError(document, "change", error),
   });
 
   const approvalMutation = useLegalDocumentApprovalMutation({
     onRecorded: acceptUpdate,
-    onFailed: (document, action, error) =>
-      reportApiError(
-        document,
-        action === "grant"
-          ? `Odobrenje nije zabeleženo za „${document.title}“`
-          : `Odobrenje nije poništeno za „${document.title}“`,
-        error,
-      ),
+    onFailed: (document, _action, error) =>
+      reportApiError(document, "change", error),
   });
 
   const saveBodyMutation = useSaveLegalDocumentBodyMutation({
@@ -138,25 +117,22 @@ export function ScreenDokumenti() {
       acceptUpdate(document, next);
       if (docxPreview?.documentId === document.documentId) setDocxPreview(null);
     },
-    onFailed: (document, error) =>
-      reportApiError(
-        document,
-        `Izmena nije sačuvana za „${document.title}“`,
-        error,
-      ),
+    onFailed: (document, error) => reportApiError(document, "change", error),
   });
 
   const docxPreviewMutation = usePreviewLegalDocumentDocxMutation({
     onPreview: setDocxPreview,
-    onFailed: (document, file, error) =>
+    onFailed: (document, _file, error) => {
+      const presentation = safeError.present(error, "legal", "import");
       reportError({
-        href: HREF,
+        routeId: ROUTE_ID,
         tabLabel: TAB_LABEL,
         resource: resourceFor(document),
-        title: `DOCX „${file.name}” nije uvezen`,
-        description: describeDocxImportError(error),
+        title: presentation.message,
+        description: presentation.nextAction,
         details: [],
-      }),
+      });
+    },
   });
 
   const deleteMutation = useDeleteLegalDocumentMutation({
@@ -167,11 +143,7 @@ export function ScreenDokumenti() {
     },
     onFailed: (document, error) => {
       setPendingDeleteId(null);
-      reportApiError(
-        document,
-        `Dokument „${document.title}“ nije obrisan`,
-        error,
-      );
+      reportApiError(document, "change", error);
     },
   });
 
@@ -182,18 +154,17 @@ export function ScreenDokumenti() {
       setCreating(false);
       setSelectedId(created.documentId);
     },
-    onFailed: (slug, error) =>
+    onFailed: (slug, error) => {
+      const presentation = safeError.present(error, "legal", "change");
       reportError({
-        href: HREF,
+        routeId: ROUTE_ID,
         tabLabel: TAB_LABEL,
         resource: resourceForNewDocument(slug),
-        title: "Nova stranica nije sačuvana",
-        description: legalErrorMessage(
-          error,
-          "Zahtev nije uspeo. Pokušajte ponovo.",
-        ),
+        title: presentation.message,
+        description: presentation.nextAction,
         details: [],
-      }),
+      });
+    },
   });
 
   /** D-045 / A.1: only drafts are hard-deletable. The button is hidden for the
@@ -202,7 +173,7 @@ export function ScreenDokumenti() {
     if (!canDelete(document.status)) {
       setPendingDeleteId(null);
       reportError({
-        href: HREF,
+        routeId: ROUTE_ID,
         tabLabel: TAB_LABEL,
         resource: resourceFor(document),
         title: `Dokument „${document.title}“ nije obrisan`,

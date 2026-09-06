@@ -122,7 +122,7 @@ describe("the rows the Kompas content workspace shows", () => {
         entry({
           entryId: "entry-therapist",
           contentType: "therapist",
-          slug: "marjan-jankovic",
+          slug: "john-francis",
         }),
       ],
       registry,

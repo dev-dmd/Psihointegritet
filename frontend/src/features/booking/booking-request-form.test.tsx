@@ -1,5 +1,6 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { NextIntlClientProvider } from "next-intl";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { BookingRequestForm } from "./booking-request-form";
@@ -11,15 +12,17 @@ afterEach(() => {
 
 function renderForm() {
   render(
-    <BookingRequestForm
-      initialContext={{
-        serviceSlug: "individualna-psihoterapija",
-        therapistSlug: "anja-stamenkovic",
-        format: "online",
-        source: "service",
-        messages: [],
-      }}
-    />,
+    <NextIntlClientProvider locale="sr-Latn" messages={{}}>
+      <BookingRequestForm
+        initialContext={{
+          serviceSlug: "individualna-psihoterapija",
+          therapistSlug: "maria-bullock",
+          format: "online",
+          source: "service",
+          messages: [],
+        }}
+      />
+    </NextIntlClientProvider>,
   );
 }
 
@@ -42,7 +45,7 @@ describe("BookingRequestForm", () => {
     const matchingSummary = {
       answers: [{ question: "Razlog", answer: "Burnout" }],
       recommendedService: "Individualna psihoterapija",
-      recommendedTherapist: "Anja Stamenković",
+      recommendedTherapist: "Maria Bullock",
       reasons: ["Radi sa temama burnouta i stresa."],
     };
     storeBookingSummary(matchingSummary);

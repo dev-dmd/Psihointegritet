@@ -4,15 +4,15 @@ Public endpoints for clients and staff endpoints for therapists/admins.
 No SQL, no business logic — delegates to BookingService.
 """
 
+from datetime import date
 from typing import Annotated
 from uuid import UUID
 
 from fastapi import APIRouter, HTTPException, Query, status
 
-from psihointegritet.api.dependencies import AppSettings, CurrentIdentity, DatabaseSession
+from psihointegritet.api.dependencies import AppSettings, DatabaseSession, RequireStaff
 from psihointegritet.core.config import Settings
 from psihointegritet.core.logging import get_logger
-from psihointegritet.infrastructure.auth.identity import IdentityClaims
 from psihointegritet.modules.booking.schemas import (
     AcceptAlternativeRequest,
     AppointmentOut,
@@ -20,10 +20,17 @@ from psihointegritet.modules.booking.schemas import (
     AppointmentRequestOut,
     AvailabilityExceptionIn,
     AvailabilityExceptionOut,
+    AvailabilityProfileIn,
+    AvailabilityProfileOut,
     AvailabilityRuleIn,
     AvailabilityRuleOut,
+    AvailabilityRulesBulkIn,
+    AvailabilitySummaryOut,
     CancelAppointmentRequest,
     DerivedSlotOut,
+    ManualAvailabilitySlotIn,
+    ManualAvailabilitySlotOut,
+    MyTherapistProfileOut,
     ReviewAction,
     ServiceBookingConfigIn,
     ServiceBookingConfigOut,
@@ -36,6 +43,7 @@ from psihointegritet.modules.booking.service import (
     BookingService,
     BookingValidationError,
 )
+from psihointegritet.modules.guidance.authorization import StaffActor
 
 logger = get_logger(__name__)
 
@@ -177,7 +185,7 @@ async def accept_alternative(
 )
 async def upsert_booking_config(
     data: ServiceBookingConfigIn,
-    identity: CurrentIdentity,
+    actor: RequireStaff,
     session: DatabaseSession,
     settings: AppSettings,
 ) -> ServiceBookingConfigOut:
@@ -189,7 +197,146 @@ async def upsert_booking_config(
     return result
 
 
+@staff_router.get("/availability/me", response_model=MyTherapistProfileOut)
+async def get_my_therapist_profile(
+    actor: RequireStaff,
+    session: DatabaseSession,
+    settings: AppSettings,
+) -> MyTherapistProfileOut:
+    """Staff: which therapist the signed-in account is, for the availability screens."""
+    svc = BookingService(session, settings)
+    org_id = await _resolve_org_id(session, settings)
+    profile = await svc.get_therapist_profile_for_user(org_id, actor.user_id)
+    if profile is not None:
+        return profile
+
+    # Outside production a superadmin may work on a therapist's schedule without
+    # being one, so schedules can be built and tested before the team has
+    # accounts. `acting_as` makes the substitution visible instead of silent.
+    if actor.is_superadmin and settings.superadmin_may_act_as_therapist:
+        candidates = await svc.list_therapist_profiles(org_id)
+        if candidates:
+            return candidates[0].model_copy(update={"acting_as": True})
+
+    raise HTTPException(
+        status_code=status.HTTP_404_NOT_FOUND,
+        detail={
+            "code": "NO_THERAPIST_PROFILE",
+            "message": "Ovaj nalog nije povezan ni sa jednim terapeutskim profilom.",
+        },
+    )
+
+
+@staff_router.get("/availability/therapists", response_model=list[MyTherapistProfileOut])
+async def list_availability_therapists(
+    actor: RequireStaff,
+    session: DatabaseSession,
+    settings: AppSettings,
+) -> list[MyTherapistProfileOut]:
+    """Staff: therapists whose schedule the caller may open.
+
+    A therapist gets only themselves. A superadmin gets the whole team, but
+    **only outside production** — same allowlist as the fallback above, so the
+    picker cannot appear on the live site.
+    """
+    svc = BookingService(session, settings)
+    org_id = await _resolve_org_id(session, settings)
+    if actor.is_superadmin and settings.superadmin_may_act_as_therapist:
+        return await svc.list_therapist_profiles(org_id)
+    own = await svc.get_therapist_profile_for_user(org_id, actor.user_id)
+    return [] if own is None else [own]
+
+
 # ── Staff: Availability ──────────────────────────────────────────────────────
+
+
+async def _require_own_schedule(
+    svc: BookingService,
+    org_id: UUID,
+    actor: StaffActor,
+    therapist_profile_id: UUID,
+) -> None:
+    """Refuse to *modify* somebody else's schedule.
+
+    `RequireStaff` proves the caller belongs to the team, not that the schedule
+    is theirs — without this, any therapist could rewrite a colleague's week
+    (the remaining half of D33).
+
+    A superadmin passes: D-051 gives the platform operator the full staff
+    capability set, and reaching this point already required naming a specific
+    therapist. An `org_admin` does **not** pass — per the 2026-08-09 decision
+    they may read a colleague's schedule but not edit it; editing belongs to
+    the future `/radni-prostor/tim/[memberId]` surface.
+    """
+    if actor.is_superadmin:
+        return
+    if await svc.therapist_owns_profile(org_id, therapist_profile_id, actor.user_id):
+        return
+    raise HTTPException(
+        status_code=status.HTTP_403_FORBIDDEN,
+        detail={
+            "code": "NOT_OWN_SCHEDULE",
+            "message": "Možete menjati samo sopstveni raspored.",
+        },
+    )
+
+
+async def _require_readable_schedule(
+    svc: BookingService,
+    org_id: UUID,
+    actor: StaffActor,
+    therapist_profile_id: UUID,
+) -> None:
+    """Reading a colleague's schedule is allowed for admins; writing is not."""
+    if actor.is_superadmin or actor.is_org_admin:
+        return
+    if await svc.therapist_owns_profile(org_id, therapist_profile_id, actor.user_id):
+        return
+    raise HTTPException(
+        status_code=status.HTTP_403_FORBIDDEN,
+        detail={
+            "code": "NOT_OWN_SCHEDULE",
+            "message": "Nemate pristup ovom rasporedu.",
+        },
+    )
+
+
+@staff_router.get("/availability/summary", response_model=AvailabilitySummaryOut)
+async def availability_summary(
+    therapist_profile_id: UUID,
+    week_start: Annotated[date, Query()],
+    actor: RequireStaff,
+    session: DatabaseSession,
+    settings: AppSettings,
+) -> AvailabilitySummaryOut:
+    """Staff: everything the four availability cards need, in one call."""
+    svc = BookingService(session, settings)
+    org_id = await _resolve_org_id(session, settings)
+    await _require_readable_schedule(svc, org_id, actor, therapist_profile_id)
+    return await svc.availability_summary(org_id, therapist_profile_id, week_start)
+
+
+@staff_router.put(
+    "/availability/rules/bulk",
+    response_model=list[AvailabilityRuleOut],
+)
+async def replace_availability_rules(
+    data: AvailabilityRulesBulkIn,
+    actor: RequireStaff,
+    session: DatabaseSession,
+    settings: AppSettings,
+) -> list[AvailabilityRuleOut]:
+    """Staff: replace one profile's whole week atomically."""
+    svc = BookingService(session, settings)
+    org_id = await _resolve_org_id(session, settings)
+    therapist_id = await svc.therapist_of_availability_profile(org_id, data.availability_profile_id)
+    await _require_own_schedule(svc, org_id, actor, therapist_id)
+    try:
+        result = await svc.replace_availability_rules(org_id, data)
+    except BookingConflictError as e:
+        raise _conflict_problem(e) from e
+    await session.commit()
+    return result
 
 
 @staff_router.post(
@@ -199,32 +346,224 @@ async def upsert_booking_config(
 )
 async def create_availability_rule(
     data: AvailabilityRuleIn,
-    identity: CurrentIdentity,
+    actor: RequireStaff,
     session: DatabaseSession,
     settings: AppSettings,
 ) -> AvailabilityRuleOut:
     """Staff: create a recurring availability rule for a therapist."""
     svc = BookingService(session, settings)
     org_id = await _resolve_org_id(session, settings)
+    therapist_id = await svc.therapist_of_availability_profile(org_id, data.availability_profile_id)
+    await _require_own_schedule(svc, org_id, actor, therapist_id)
     result = await svc.create_availability_rule(org_id, data)
     await session.commit()
     return result
 
 
 @staff_router.get(
-    "/availability/rules/{therapist_profile_id}",
+    "/availability/rules/{availability_profile_id}",
     response_model=list[AvailabilityRuleOut],
 )
 async def list_availability_rules(
-    therapist_profile_id: UUID,
-    identity: CurrentIdentity,
+    availability_profile_id: UUID,
+    actor: RequireStaff,
     session: DatabaseSession,
     settings: AppSettings,
 ) -> list[AvailabilityRuleOut]:
-    """Staff: list active availability rules for a therapist."""
+    """Staff: list active availability rules for a profile."""
     svc = BookingService(session, settings)
     org_id = await _resolve_org_id(session, settings)
-    return await svc.list_availability_rules(org_id, therapist_profile_id)
+    return await svc.list_availability_rules(org_id, availability_profile_id)
+
+
+# ── Staff: Availability Profiles (ADR-015 v2) ───────────────────────────────
+
+
+@staff_router.post(
+    "/availability/profiles",
+    response_model=AvailabilityProfileOut,
+    status_code=status.HTTP_201_CREATED,
+)
+async def create_availability_profile(
+    data: AvailabilityProfileIn,
+    actor: RequireStaff,
+    session: DatabaseSession,
+    settings: AppSettings,
+) -> AvailabilityProfileOut:
+    """Staff: create an availability profile for a therapist (KAKO)."""
+    svc = BookingService(session, settings)
+    org_id = await _resolve_org_id(session, settings)
+    await _require_own_schedule(svc, org_id, actor, data.therapist_profile_id)
+    try:
+        result = await svc.create_availability_profile(org_id, data)
+        await session.commit()
+        return result
+    except BookingConflictError as e:
+        raise _conflict_problem(e) from e
+
+
+@staff_router.get(
+    "/availability/profiles/{therapist_profile_id}",
+    response_model=list[AvailabilityProfileOut],
+)
+async def list_availability_profiles(
+    therapist_profile_id: UUID,
+    actor: RequireStaff,
+    session: DatabaseSession,
+    settings: AppSettings,
+) -> list[AvailabilityProfileOut]:
+    """Staff: list availability profiles for a therapist."""
+    svc = BookingService(session, settings)
+    org_id = await _resolve_org_id(session, settings)
+    await _require_readable_schedule(svc, org_id, actor, therapist_profile_id)
+    return await svc.list_availability_profiles(org_id, therapist_profile_id)
+
+
+@staff_router.put(
+    "/availability/profiles/{profile_id}",
+    response_model=AvailabilityProfileOut,
+)
+async def update_availability_profile(
+    profile_id: UUID,
+    data: AvailabilityProfileIn,
+    actor: RequireStaff,
+    session: DatabaseSession,
+    settings: AppSettings,
+) -> AvailabilityProfileOut:
+    """Staff: update an availability profile."""
+    svc = BookingService(session, settings)
+    org_id = await _resolve_org_id(session, settings)
+    result = await svc.update_availability_profile(org_id, profile_id, data)
+    await session.commit()
+    return result
+
+
+@staff_router.delete(
+    "/availability/profiles/{profile_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+async def delete_availability_profile(
+    profile_id: UUID,
+    actor: RequireStaff,
+    session: DatabaseSession,
+    settings: AppSettings,
+) -> None:
+    """Staff: delete an availability profile."""
+    svc = BookingService(session, settings)
+    org_id = await _resolve_org_id(session, settings)
+    await svc.delete_availability_profile(org_id, profile_id)
+    await session.commit()
+
+
+# ── Staff: Manual Availability Slots (ADR-015 v2) ───────────────────────────
+
+
+@staff_router.post(
+    "/availability/manual-slots",
+    response_model=ManualAvailabilitySlotOut,
+    status_code=status.HTTP_201_CREATED,
+)
+async def create_manual_availability_slot(
+    data: ManualAvailabilitySlotIn,
+    actor: RequireStaff,
+    session: DatabaseSession,
+    settings: AppSettings,
+) -> ManualAvailabilitySlotOut:
+    """Staff: add an explicit manual slot (manual_slots mode)."""
+    svc = BookingService(session, settings)
+    org_id = await _resolve_org_id(session, settings)
+    therapist_id = await svc.therapist_of_availability_profile(org_id, data.availability_profile_id)
+    await _require_own_schedule(svc, org_id, actor, therapist_id)
+    result = await svc.create_manual_availability_slot(org_id, data)
+    await session.commit()
+    return result
+
+
+@staff_router.delete(
+    "/availability/manual-slots/{slot_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+async def delete_manual_availability_slot(
+    slot_id: UUID,
+    actor: RequireStaff,
+    session: DatabaseSession,
+    settings: AppSettings,
+) -> None:
+    """Staff: remove a manual availability slot."""
+    svc = BookingService(session, settings)
+    org_id = await _resolve_org_id(session, settings)
+    owner = await svc.therapist_of_manual_slot(org_id, slot_id)
+    if owner is not None:
+        await _require_own_schedule(svc, org_id, actor, owner)
+    await svc.delete_manual_availability_slot(org_id, slot_id)
+    await session.commit()
+
+
+@staff_router.get(
+    "/availability/manual-slots/{availability_profile_id}",
+    response_model=list[ManualAvailabilitySlotOut],
+)
+async def list_manual_availability_slots(
+    availability_profile_id: UUID,
+    actor: RequireStaff,
+    session: DatabaseSession,
+    settings: AppSettings,
+    date_from: Annotated[date, Query()],
+    date_until: Annotated[date, Query()],
+) -> list[ManualAvailabilitySlotOut]:
+    """Staff: list manual slots for a profile in a date range."""
+    svc = BookingService(session, settings)
+    org_id = await _resolve_org_id(session, settings)
+    return await svc.list_manual_availability_slots(
+        org_id, availability_profile_id, date_from, date_until
+    )
+
+
+@staff_router.post(
+    "/availability/profiles/{availability_profile_id}/generate-week",
+    response_model=list[ManualAvailabilitySlotOut],
+    status_code=status.HTTP_201_CREATED,
+)
+async def generate_week(
+    availability_profile_id: UUID,
+    week_start: Annotated[date, Query()],
+    actor: RequireStaff,
+    session: DatabaseSession,
+    settings: AppSettings,
+) -> list[ManualAvailabilitySlotOut]:
+    """Staff: materialize one week of recurring rules into manual slots."""
+    svc = BookingService(session, settings)
+    org_id = await _resolve_org_id(session, settings)
+    owner = await svc.therapist_of_availability_profile(org_id, availability_profile_id)
+    await _require_own_schedule(svc, org_id, actor, owner)
+    result = await svc.generate_week(org_id, availability_profile_id, week_start)
+    await session.commit()
+    return result
+
+
+@staff_router.post(
+    "/availability/profiles/{availability_profile_id}/copy-week",
+    response_model=list[ManualAvailabilitySlotOut],
+    status_code=status.HTTP_201_CREATED,
+)
+async def copy_week(
+    availability_profile_id: UUID,
+    source_week_start: Annotated[date, Query()],
+    target_week_start: Annotated[date, Query()],
+    actor: RequireStaff,
+    session: DatabaseSession,
+    settings: AppSettings,
+) -> list[ManualAvailabilitySlotOut]:
+    """Staff: copy a week of manual slots into another week."""
+    svc = BookingService(session, settings)
+    org_id = await _resolve_org_id(session, settings)
+    owner = await svc.therapist_of_availability_profile(org_id, availability_profile_id)
+    await _require_own_schedule(svc, org_id, actor, owner)
+    result = await svc.copy_week(
+        org_id, availability_profile_id, source_week_start, target_week_start
+    )
+    await session.commit()
+    return result
 
 
 @staff_router.put(
@@ -234,7 +573,7 @@ async def list_availability_rules(
 async def update_availability_rule(
     rule_id: UUID,
     data: AvailabilityRuleIn,
-    identity: CurrentIdentity,
+    actor: RequireStaff,
     session: DatabaseSession,
     settings: AppSettings,
 ) -> AvailabilityRuleOut:
@@ -252,13 +591,16 @@ async def update_availability_rule(
 )
 async def delete_availability_rule(
     rule_id: UUID,
-    identity: CurrentIdentity,
+    actor: RequireStaff,
     session: DatabaseSession,
     settings: AppSettings,
 ) -> None:
     """Staff: soft-delete a recurring availability rule."""
     svc = BookingService(session, settings)
     org_id = await _resolve_org_id(session, settings)
+    owner = await svc.therapist_of_rule(org_id, rule_id)
+    if owner is not None:
+        await _require_own_schedule(svc, org_id, actor, owner)
     await svc.delete_availability_rule(org_id, rule_id)
     await session.commit()
 
@@ -270,13 +612,14 @@ async def delete_availability_rule(
 )
 async def create_availability_exception(
     data: AvailabilityExceptionIn,
-    identity: CurrentIdentity,
+    actor: RequireStaff,
     session: DatabaseSession,
     settings: AppSettings,
 ) -> AvailabilityExceptionOut:
     """Staff: create a one-off availability exception."""
     svc = BookingService(session, settings)
     org_id = await _resolve_org_id(session, settings)
+    await _require_own_schedule(svc, org_id, actor, data.therapist_profile_id)
     try:
         result = await svc.create_availability_exception(org_id, data)
         await session.commit()
@@ -291,15 +634,39 @@ async def create_availability_exception(
 )
 async def delete_availability_exception(
     exception_id: UUID,
-    identity: CurrentIdentity,
+    actor: RequireStaff,
     session: DatabaseSession,
     settings: AppSettings,
 ) -> None:
     """Staff: delete a one-off availability exception."""
     svc = BookingService(session, settings)
     org_id = await _resolve_org_id(session, settings)
+    owner = await svc.therapist_of_exception(org_id, exception_id)
+    if owner is not None:
+        await _require_own_schedule(svc, org_id, actor, owner)
     await svc.delete_availability_exception(org_id, exception_id)
     await session.commit()
+
+
+@staff_router.get(
+    "/availability/exceptions/{therapist_profile_id}",
+    response_model=list[AvailabilityExceptionOut],
+)
+async def list_availability_exceptions(
+    therapist_profile_id: UUID,
+    actor: RequireStaff,
+    session: DatabaseSession,
+    settings: AppSettings,
+    date_from: Annotated[date, Query()],
+    date_until: Annotated[date, Query()],
+) -> list[AvailabilityExceptionOut]:
+    """Staff: list exceptions for a therapist in a date range."""
+    svc = BookingService(session, settings)
+    org_id = await _resolve_org_id(session, settings)
+    await _require_readable_schedule(svc, org_id, actor, therapist_profile_id)
+    return await svc.list_availability_exceptions(
+        org_id, therapist_profile_id, date_from, date_until
+    )
 
 
 # ── Staff: Appointment Request Review ────────────────────────────────────────
@@ -310,7 +677,7 @@ async def delete_availability_exception(
     response_model=list[AppointmentRequestOut],
 )
 async def list_appointment_requests(
-    identity: CurrentIdentity,
+    actor: RequireStaff,
     session: DatabaseSession,
     settings: AppSettings,
     therapist_profile_id: Annotated[UUID | None, Query()] = None,
@@ -326,7 +693,7 @@ async def list_appointment_requests(
 async def review_appointment_request(
     request_id: UUID,
     action: ReviewAction,
-    identity: CurrentIdentity,
+    actor: RequireStaff,
     session: DatabaseSession,
     settings: AppSettings,
 ) -> dict[str, str]:
@@ -334,9 +701,7 @@ async def review_appointment_request(
     svc = BookingService(session, settings)
     org_id = await _resolve_org_id(session, settings)
     try:
-        result = await svc.review_request(
-            org_id, request_id, action, _reviewer_id_from_identity(identity)
-        )
+        result = await svc.review_request(org_id, request_id, action, actor.user_id)
         await session.commit()
         return result
     except BookingConflictError as e:
@@ -350,7 +715,7 @@ async def review_appointment_request(
 
 @staff_router.get("/appointments", response_model=list[AppointmentOut])
 async def list_appointments(
-    identity: CurrentIdentity,
+    actor: RequireStaff,
     session: DatabaseSession,
     settings: AppSettings,
     therapist_profile_id: Annotated[UUID | None, Query()] = None,
@@ -379,7 +744,7 @@ async def list_appointments(
 async def cancel_appointment(
     appointment_id: UUID,
     data: CancelAppointmentRequest,
-    identity: CurrentIdentity,
+    actor: RequireStaff,
     session: DatabaseSession,
     settings: AppSettings,
 ) -> AppointmentOut:
@@ -400,7 +765,7 @@ async def cancel_appointment(
 )
 async def complete_appointment(
     appointment_id: UUID,
-    identity: CurrentIdentity,
+    actor: RequireStaff,
     session: DatabaseSession,
     settings: AppSettings,
 ) -> AppointmentOut:
@@ -418,7 +783,7 @@ async def complete_appointment(
 )
 async def mark_no_show(
     appointment_id: UUID,
-    identity: CurrentIdentity,
+    actor: RequireStaff,
     session: DatabaseSession,
     settings: AppSettings,
 ) -> AppointmentOut:
@@ -449,15 +814,3 @@ async def _resolve_org_id(session: DatabaseSession, settings: Settings) -> UUID:
             detail="Default organization not found",
         )
     return org_id
-
-
-def _reviewer_id_from_identity(identity: IdentityClaims) -> UUID:
-    """Extract internal user UUID from Clerk identity claims.
-
-    The identity.sub is the Clerk user ID; internal users table maps this.
-    For now, return a placeholder — actual mapping requires identity module.
-    """
-    try:
-        return UUID(identity.subject)
-    except ValueError:
-        return UUID("00000000-0000-0000-0000-000000000000")

@@ -4,6 +4,7 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import type { RichDoc } from "@/lib/content-governance/rich-doc";
+import { withIntl } from "@/test-support/intl";
 
 import { importRichDocDocx } from "../../content-api";
 import { KompasDocxImport } from "./kompas-docx-import";
@@ -40,9 +41,11 @@ function renderImport(props: {
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
   });
   return render(
-    <QueryClientProvider client={client}>
-      <KompasDocxImport {...props} />
-    </QueryClientProvider>,
+    withIntl(
+      <QueryClientProvider client={client}>
+        <KompasDocxImport {...props} />
+      </QueryClientProvider>,
+    ),
   );
 }
 
@@ -138,9 +141,11 @@ describe("Uvoz Word dokumenta u telo članka", () => {
     // of defence for a drag-drop or a programmatic call, and is asserted
     // directly because the input will not let the bad file through.
     const fetchMock = stubImport(converted);
-    await expect(importRichDocDocx(docx("tekst.pdf"))).rejects.toThrow(
-      /nije \.docx/,
-    );
+    await expect(importRichDocDocx(docx("tekst.pdf"))).rejects.toMatchObject({
+      status: 422,
+      code: "file_type_invalid",
+      message: "Request failed",
+    });
     expect(fetchMock).not.toHaveBeenCalled();
   });
 });

@@ -124,7 +124,7 @@ describe("deriveArticleCompletion", () => {
     const entry = revision({
       slotData: {
         hero: hero("Test Title"),
-        byline: byline("anja-stamenkovic"),
+        byline: byline("maria-bullock"),
       },
     });
     const state = deriveArticleCompletion(entry);
@@ -134,7 +134,7 @@ describe("deriveArticleCompletion", () => {
 
   it("basics not done without title", () => {
     const entry = revision({
-      slotData: { byline: byline("anja-stamenkovic") },
+      slotData: { byline: byline("maria-bullock") },
     });
     const state = deriveArticleCompletion(entry);
     expect(steps(state)[0].done).toBe(false);
@@ -161,7 +161,7 @@ describe("deriveArticleCompletion", () => {
     const entry = revision({
       slotData: {
         hero: hero("Test Title"),
-        byline: byline("anja-stamenkovic"),
+        byline: byline("maria-bullock"),
         body_intro: bodyIntro(3),
       },
     });
@@ -173,7 +173,7 @@ describe("deriveArticleCompletion", () => {
     const entry = revision({
       slotData: {
         hero: hero("Test Title"),
-        byline: byline("anja-stamenkovic"),
+        byline: byline("maria-bullock"),
         body_intro: bodyIntro(0),
       },
     });
@@ -188,7 +188,7 @@ describe("deriveArticleCompletion", () => {
     const entry = revision({
       slotData: {
         hero: hero("Test Title"),
-        byline: byline("anja-stamenkovic"),
+        byline: byline("maria-bullock"),
         body_intro: bodyIntro(1),
       },
       discovery: {
@@ -204,7 +204,7 @@ describe("deriveArticleCompletion", () => {
     const entry = revision({
       slotData: {
         hero: hero("Test Title"),
-        byline: byline("anja-stamenkovic"),
+        byline: byline("maria-bullock"),
         body_intro: bodyIntro(1),
       },
       discovery: {
@@ -222,7 +222,7 @@ describe("deriveArticleCompletion", () => {
     const entry = revision({
       slotData: {
         hero: hero("Test Title"),
-        byline: byline("anja-stamenkovic"),
+        byline: byline("maria-bullock"),
         body_intro: bodyIntro(1),
       },
       discovery: {
@@ -242,7 +242,7 @@ describe("deriveArticleCompletion", () => {
     const entry = revision({
       slotData: {
         hero: hero("Test Title"),
-        byline: byline("anja-stamenkovic"),
+        byline: byline("maria-bullock"),
         body_intro: bodyIntro(1),
       },
       discovery: {
@@ -263,7 +263,7 @@ describe("deriveArticleCompletion", () => {
     const entry = revision({
       slotData: {
         hero: hero("Test Title"),
-        byline: byline("anja-stamenkovic"),
+        byline: byline("maria-bullock"),
         body_intro: bodyIntro(1),
       },
       discovery: {
@@ -283,7 +283,7 @@ describe("deriveArticleCompletion", () => {
     const entry = revision({
       slotData: {
         hero: hero("Test Title"),
-        byline: byline("anja-stamenkovic"),
+        byline: byline("maria-bullock"),
         body_intro: bodyIntro(1),
       },
       discovery: {
@@ -306,7 +306,7 @@ describe("deriveArticleCompletion", () => {
     const entry = revision({
       slotData: {
         hero: hero("Test Title"),
-        byline: byline("anja-stamenkovic"),
+        byline: byline("maria-bullock"),
         body_intro: bodyIntro(1),
       },
       discovery: {
@@ -348,7 +348,7 @@ describe("deriveArticleCompletion", () => {
     const entry = revision({
       slotData: {
         hero: hero("Test Title"),
-        byline: byline("anja-stamenkovic"),
+        byline: byline("maria-bullock"),
         body_intro: bodyIntro(1),
       },
     });
@@ -396,7 +396,7 @@ describe("deriveArticleCompletion", () => {
     const entry = revision({
       slotData: {
         hero: hero("Test Title"),
-        byline: byline("anja-stamenkovic"),
+        byline: byline("maria-bullock"),
         body_intro: bodyIntro(1),
       },
     });
@@ -410,7 +410,7 @@ describe("deriveArticleCompletion", () => {
     const entry = revision({
       slotData: {
         hero: hero("Test Title"),
-        byline: byline("anja-stamenkovic"),
+        byline: byline("maria-bullock"),
         body_intro: bodyIntro(1),
       },
       discovery: {

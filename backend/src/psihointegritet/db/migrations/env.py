@@ -2,6 +2,7 @@ from logging.config import fileConfig
 
 from alembic import context
 from sqlalchemy import engine_from_config, pool
+from sqlalchemy.engine import Connection
 
 from psihointegritet.core.config import get_settings
 from psihointegritet.db.base import Base
@@ -44,6 +45,50 @@ def _database_url() -> str:
     return get_settings().migration_database_url
 
 
+#: Arbitrary but fixed key for the advisory lock that serialises migration runs.
+#: Any constant works as long as it never changes — a new value would let an old
+#: and a new deployment migrate at the same time, which is the thing this stops.
+_MIGRATION_ADVISORY_LOCK_KEY = 8_140_723_915_662_001
+
+
+def _guard_concurrent_runs(connection: Connection) -> None:
+    """Serialise migration runs and bound how long DDL waits for a lock.
+
+    Railway runs ``alembic upgrade head`` as a ``preDeployCommand`` while the
+    **previous** deployment is still serving traffic. A failed pre-deploy is not
+    retried; ``restartPolicyMaxRetries`` applies only after a container starts.
+    The production deploy on 2026-08-12 hit a live query holding
+    ``AccessShareLock`` on a table the migration needed ``AccessExclusiveLock``
+    for (``DROP TABLE availability_rules`` in ``20260810_0022``), each session
+    waiting on a relation the other had already locked.
+
+    Two guards, for the two causes:
+
+    - ``pg_advisory_lock`` makes a second ``alembic upgrade head`` wait for the
+      first instead of interleaving with it. Session-scoped, so it is released
+      when the connection closes — including when a migration raises.
+    - ``lock_timeout`` bounds how long any single statement waits for a table
+      lock. It does not make destructive DDL compatible with a live old app;
+      it only fails fast so an operator can drain the app and manually trigger
+      a clean deployment instead of leaving the migration queued indefinitely.
+
+    ``statement_timeout`` is deliberately left alone: migrations legitimately
+    run long data backfills, and capping those would trade a rare deadlock for
+    a routine failure.
+
+    The ``commit()`` is not optional. Issuing any statement on a fresh
+    Connection implicitly begins a transaction, and Alembic's own
+    ``begin_transaction()`` then nests inside it rather than owning it — so its
+    commit resolves nothing and SQLAlchemy rolls the whole migration back when
+    the connection closes. `upgrade head` reports success and applies nothing.
+    `test_booking_migration_chain.py` caught exactly that. Both settings are
+    session-scoped, so committing here keeps them for the run.
+    """
+    connection.exec_driver_sql("SET lock_timeout = '10s'")
+    connection.exec_driver_sql(f"SELECT pg_advisory_lock({_MIGRATION_ADVISORY_LOCK_KEY})")
+    connection.commit()
+
+
 def run_migrations_offline() -> None:
     """Run migrations in 'offline' mode — emits SQL without a DBAPI."""
     context.configure(
@@ -70,6 +115,10 @@ def run_migrations_online() -> None:
     )
 
     with connectable.connect() as connection:
+        # Before `context.configure`, so the lock is held for the whole run —
+        # including the revision lookup that decides what to apply.
+        _guard_concurrent_runs(connection)
+
         context.configure(
             connection=connection,
             target_metadata=target_metadata,

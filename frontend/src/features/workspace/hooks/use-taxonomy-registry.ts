@@ -2,6 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
+import { JsonRequestError } from "@/lib/api/request-json";
 import type { ApprovalCapability } from "@/lib/content-governance/types";
 
 import {
@@ -14,7 +15,6 @@ import {
   recordTaxonomyReviewDecision,
   suggestTaxonomyRoute,
   TAXONOMY_REGISTRY_QUERY_KEY,
-  TaxonomyApiError,
   transitionTaxonomyIntakeLink,
   transitionTaxonomyRevision,
   updateTaxonomyRevision,
@@ -28,24 +28,6 @@ import {
   type TaxonomyTerm,
   type UpdateTaxonomyRevisionInput,
 } from "../taxonomy-api";
-
-/** Single place that turns an unknown rejection into panel copy. Every Kompas
- * surface used to inline the same `instanceof TaxonomyApiError ? … : …` ladder. */
-export function taxonomyErrorMessage(error: unknown, fallback: string): string {
-  return error instanceof TaxonomyApiError ? error.message : fallback;
-}
-
-/** First non-null message across a set of mutations, in the order given. */
-export function firstTaxonomyError(
-  candidates: readonly { isError: boolean; error: unknown; fallback: string }[],
-): string | null {
-  for (const candidate of candidates) {
-    if (candidate.isError) {
-      return taxonomyErrorMessage(candidate.error, candidate.fallback);
-    }
-  }
-  return null;
-}
 
 export function useTaxonomyRegistryQuery(options?: { enabled?: boolean }) {
   return useQuery({
@@ -259,7 +241,7 @@ export function useSaveTaxonomyTermMutation(callbacks: {
         );
       }
       if (!variables.create) {
-        throw new TaxonomyApiError("Nedostaju podaci za čuvanje termina.", 422);
+        throw new JsonRequestError(422, "Request failed", "validation_error");
       }
       return createTaxonomyTerm(variables.create);
     },

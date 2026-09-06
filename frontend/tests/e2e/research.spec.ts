@@ -49,7 +49,7 @@ test.beforeEach(async ({ page }) => {
   await mockResearchApi(page);
 });
 
-test("floating question button opens Research, not Intake", async ({
+test("floating question button opens the Research drawer, not Compass or Intake", async ({
   page,
 }) => {
   await page.goto("/");
@@ -61,10 +61,40 @@ test("floating question button opens Research, not Intake", async ({
     "Da li ste ranije koristili psihološku podršku?",
   );
   await expect(drawer).not.toContainText("Za koga tražite podršku?");
+  await expect(
+    drawer.getByRole("slider", { name: /Visina prozora/ }),
+  ).toHaveCount(0);
   await expect(drawer.getByRole("button", { name: "Nastavi" })).toBeDisabled();
   await expect(
     drawer.getByRole("button", { name: "Preskoči pitanje" }),
   ).toHaveCount(0);
+});
+
+test("Research drawer is full-height, right-aligned, and closes with Escape", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await page.goto("/");
+  await page.getByRole("button", { name: /Podelite mišljenje/ }).click();
+
+  const drawer = page.getByRole("dialog");
+  await expect(drawer).toBeVisible();
+  await page.waitForTimeout(500);
+
+  const box = await drawer.boundingBox();
+  if (!box) throw new Error("Research drawer has no bounding box");
+  const viewport = await page.evaluate(() => ({
+    width: window.innerWidth,
+    height: window.innerHeight,
+  }));
+
+  expect(box.width).toBeLessThanOrEqual(520);
+  expect(box.x + box.width).toBeCloseTo(viewport.width, 0);
+  expect(box.y).toBe(0);
+  expect(box.height).toBe(viewport.height);
+
+  await page.keyboard.press("Escape");
+  await expect(drawer).toBeHidden();
 });
 
 test("last single-select answer is included in the submission payload", async ({

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 
 import { ConfirmModal } from "@/components/panel/confirm-modal";
 import {
@@ -8,6 +9,7 @@ import {
   type StatusBadgeTone,
 } from "@/components/panel/status-badge";
 import { Toggle } from "@/components/panel/toggle";
+import type { EnSuperadmin } from "@/messages/en/superadmin";
 
 import { useGates } from "../gates-context";
 import type { FeatureGate, GateStatus } from "../types";
@@ -15,11 +17,11 @@ import { LockIcon } from "./icons";
 
 const GATE_STATUS: Record<
   GateStatus,
-  { label: string; tone: StatusBadgeTone }
+  { labelKey: keyof EnSuperadmin["gateStatus"]; tone: StatusBadgeTone }
 > = {
-  on: { label: "Uključeno", tone: "ok" },
-  off: { label: "Isključeno", tone: "neutral" },
-  coming_soon: { label: "U pripremi", tone: "amber" },
+  on: { labelKey: "on", tone: "ok" },
+  off: { labelKey: "off", tone: "neutral" },
+  coming_soon: { labelKey: "comingSoon", tone: "amber" },
 };
 
 /**
@@ -28,6 +30,7 @@ const GATE_STATUS: Record<
  * feed (in-memory demo of the future Audit Log flow).
  */
 export function GatesTable() {
+  const t = useTranslations("superadmin");
   const { gates, toggleGate } = useGates();
   const [pending, setPending] = useState<FeatureGate | null>(null);
 
@@ -68,7 +71,9 @@ export function GatesTable() {
               {gate.tenantOverride}
             </span>
             <span className="col-start-2 row-start-1 flex items-center justify-end gap-2.5 lg:col-start-auto lg:row-start-auto">
-              <StatusBadge tone={status.tone}>{status.label}</StatusBadge>
+              <StatusBadge tone={status.tone}>
+                {t(`gateStatus.${status.labelKey}`)}
+              </StatusBadge>
               {gate.status === "coming_soon" ? (
                 <span
                   aria-hidden
@@ -92,7 +97,9 @@ export function GatesTable() {
         open={pending !== null}
         eyebrow="Potvrda promene"
         title={pending?.name ?? ""}
-        description={`Tenant Psihointegritet · ${pendingStatus?.label ?? ""} → ${pendingNext?.label ?? ""}`}
+        description={`Tenant Psihointegritet · ${
+          pendingStatus ? t(`gateStatus.${pendingStatus.labelKey}`) : ""
+        } → ${pendingNext ? t(`gateStatus.${pendingNext.labelKey}`) : ""}`}
         reasonLabel="Razlog promene — obavezno"
         reasonPlaceholder="npr. Dogovor sa vlasnicom centra"
         note="Promena se upisuje u Audit Log: ko, kada, prethodna i nova vrednost, razlog."

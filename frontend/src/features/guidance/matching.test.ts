@@ -25,9 +25,9 @@ import {
   SUPPORT_AREA_LABELS,
 } from "./taxonomy";
 
-const ANJA = "anja-stamenkovic";
-const MARIJA = "marija-stamenkovic";
-const MARJAN = "marjan-jankovic";
+const MARIA = "maria-bullock";
+const ELSA = "elsa-browers";
+const JOHN = "john-francis";
 
 const taxonomyFixture = JSON.parse(
   readFileSync(
@@ -68,7 +68,7 @@ describe("evaluateIntake", () => {
       }),
     );
 
-    expect(topSlugs(result).slice(0, 2).sort()).toEqual([ANJA, MARJAN].sort());
+    expect(topSlugs(result).slice(0, 2).sort()).toEqual([MARIA, JOHN].sort());
     expect(result.recommendedService).toBe(RECOMMENDED_SERVICES.couples);
     expect(result.showBoth).toBe(true);
     for (const match of result.recommendedTherapists) {
@@ -77,7 +77,7 @@ describe("evaluateIntake", () => {
     }
   });
 
-  it("prioritizes Anja for addiction-related support while preserving team handoff", () => {
+  it("prioritizes Maria for addiction-related support while preserving team handoff", () => {
     const result = evaluateIntake(
       answers({
         reason: REASONS.addiction,
@@ -87,14 +87,14 @@ describe("evaluateIntake", () => {
       }),
     );
 
-    expect(result.primaryRecommendation?.therapist.slug).toBe(ANJA);
-    expect(therapistMatchingConfig[ANJA].serviceCapabilities).toContain(
+    expect(result.primaryRecommendation?.therapist.slug).toBe(MARIA);
+    expect(therapistMatchingConfig[MARIA].serviceCapabilities).toContain(
       ADDICTION_RELATED_SUPPORT,
     );
     expect(taxonomyFixture.specialties).toContainEqual({
       id: ADDICTION_RELATED_SUPPORT,
       label: "Zavisnost",
-      primaryTherapistSlugs: [ANJA],
+      primaryTherapistSlugs: [MARIA],
       handoffAllowed: true,
     });
   });
@@ -106,11 +106,11 @@ describe("evaluateIntake", () => {
         participants: PARTICIPANTS.alone,
         goal: GOALS.emotions,
         format: WORK_FORMATS.inPerson,
-        location: LOCATIONS.nis,
+        location: LOCATIONS.chicago,
       }),
     );
 
-    expect(topSlugs(result)).toEqual([ANJA]);
+    expect(topSlugs(result)).toEqual([MARIA]);
     expect(result.onlineFallback).toBe(false);
   });
 
@@ -161,9 +161,9 @@ describe("evaluateIntake", () => {
 
     expect(result.controlledMinorFlow).toBe(true);
     expect(result.needsManualReview).toBe(true);
-    expect(topSlugs(result)).toContain(MARIJA);
-    expect(topSlugs(result)).toContain(ANJA);
-    expect(topSlugs(result)).toContain(MARJAN);
+    expect(topSlugs(result)).toContain(ELSA);
+    expect(topSlugs(result)).toContain(MARIA);
+    expect(topSlugs(result)).toContain(JOHN);
   });
 
   it("keeps the adolescent self path individual and controlled", () => {

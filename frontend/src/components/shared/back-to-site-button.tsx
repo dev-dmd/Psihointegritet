@@ -1,8 +1,11 @@
+"use client";
+
 import { MenuItem } from "@headlessui/react";
 import type { Route } from "next";
 import Link from "next/link";
 
 import { cn } from "@/helpers/cn";
+import { useTranslations } from "next-intl";
 
 function GlobeIcon() {
   return (
@@ -33,20 +36,21 @@ function GlobeIcon() {
  * supply only the surrounding topbar's existing button theme via `className`.
  */
 export function BackToSiteButton({ className }: { className?: string }) {
+  const t = useTranslations("common");
   return (
     <Link
       href={"/" as Route}
       target="_blank"
       rel="noopener noreferrer"
-      title="Glavni sajt"
-      aria-label="Glavni sajt"
+      title={t("shell.backToSite")}
+      aria-label={t("shell.backToSite")}
       className={cn(
         "inline-flex h-10 w-10 shrink-0 items-center justify-center gap-2 rounded-full border text-[13px] font-semibold no-underline transition-colors lg:w-auto lg:px-3.5",
         className,
       )}
     >
       <GlobeIcon />
-      <span className="hidden lg:inline">Glavni sajt</span>
+      <span className="hidden lg:inline">{t("shell.backToSite")}</span>
     </Link>
   );
 }

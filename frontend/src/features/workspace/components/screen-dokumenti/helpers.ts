@@ -1,4 +1,5 @@
 import type { StatusBadgeTone } from "@/components/panel/status-badge";
+import type { PlatformRouteId } from "@/lib/routes/platform-routes";
 
 import {
   CAPABILITY_LABELS,
@@ -10,13 +11,10 @@ import {
   type LegalDocument,
   type RevisionStatus,
 } from "../../legal-documents";
-import {
-  LegalDocumentsApiError,
-  type ApiPublishBlock,
-} from "../../legal-documents-api";
+import type { ApiPublishBlock } from "../../legal-documents-api";
 import type { PanelErrorResource } from "../../panel-errors";
 
-export const HREF = "/radni-prostor/dokumenti" as const;
+export const ROUTE_ID = "workspace.documents" satisfies PlatformRouteId;
 export const TAB_LABEL = "Dokumenti i saglasnosti";
 /** Single-tenant seed org; the backend membership check owns the real value. */
 const ORGANIZATION_ID = "psihointegritet";
@@ -98,26 +96,4 @@ export function describeApiPublishBlock(
       `Nedostaje: ${block.missing.map((capability) => CAPABILITY_LABELS[capability]).join(", ")}.`,
     ],
   };
-}
-
-export function describeDocxImportError(error: unknown): string {
-  if (!(error instanceof LegalDocumentsApiError)) {
-    return "DOCX nije moguće obraditi. Zahtev nije stigao do servisa za uvoz.";
-  }
-  if (error.status === 401) {
-    return "Prijava je istekla. Osvežite stranicu, prijavite se i ponovite uvoz.";
-  }
-  if (error.status === 403) {
-    return "Nalog nema dozvolu za uvoz dokumenata u ovom radnom prostoru.";
-  }
-  if (error.status === 405) {
-    return "DOCX uvoz nije pokrenut: aplikaciona ruta ne prihvata POST zahtev (405). Osvežite panel nakon restartovanja development servera.";
-  }
-  if (error.status === 413) {
-    return "Fajl je prevelik. Maksimalna dozvoljena veličina je 15 MB.";
-  }
-  if (error.status === 503) {
-    return "Backend za DOCX uvoz trenutno nije dostupan. Tekst i dalje možete uneti ručno.";
-  }
-  return error.message;
 }

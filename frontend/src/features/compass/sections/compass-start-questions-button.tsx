@@ -1,6 +1,7 @@
 "use client";
 
 import { cn } from "@/helpers/cn";
+import { useTranslations } from "next-intl";
 
 import { CompassQuizLauncher } from "../quiz/compass-quiz-launcher";
 
@@ -15,12 +16,13 @@ import { CompassQuizLauncher } from "../quiz/compass-quiz-launcher";
  * `/kompas` and then asks for a second „Pokreni Kompas" click.
  */
 export function CompassStartQuestionsButton({
-  label = "Ipak odgovorite na pitanja",
+  label,
   className,
 }: {
   label?: string;
   className?: string;
 }) {
+  const t = useTranslations("public.compass.starting");
   return (
     <CompassQuizLauncher>
       {(open) => (
@@ -32,7 +34,7 @@ export function CompassStartQuestionsButton({
             className,
           )}
         >
-          {label}
+          {label ?? t("questions")}
         </button>
       )}
     </CompassQuizLauncher>

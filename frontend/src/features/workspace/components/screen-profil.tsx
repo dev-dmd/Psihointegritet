@@ -1,5 +1,7 @@
 "use client";
 
+import { useTranslations } from "next-intl";
+
 import Image from "next/image";
 import { useState } from "react";
 
@@ -7,29 +9,36 @@ import { KV } from "@/components/panel/kv";
 import { TabPills } from "@/components/panel/tab-pills";
 import { Toggle } from "@/components/panel/toggle";
 import { Chip } from "@/components/ui/chip";
-import { formatRsd, serviceCatalog } from "@/content/services";
-import { findTherapist } from "@/content/therapists";
+import { formatRsd } from "@/content/services";
+import { useFallbackContent } from "@/content/use-content";
 
-import {
-  availabilityLayers,
-  matchingPreferences,
-  myProfileSlug,
-} from "../data";
+import { MARIA } from "../demo-slugs";
+import { AvailabilityOverviewCards } from "./availability/availability-overview-cards";
 import { LockIcon } from "./icons";
 import { PageHeader } from "./page-header";
+import { WorkspaceDataNotice } from "./workspace-data-notice";
 
-const tabs = [
-  { id: "javni", label: "Javni profil" },
-  { id: "match", label: "Matching preferencije" },
-  { id: "dostupnost", label: "Dostupnost" },
-];
-
+// Stable codes — query values are never translated (D-077 Amendment §2).
 export function ScreenProfil() {
-  const [tab, setTab] = useState("javni");
-  const therapist = findTherapist(myProfileSlug);
+  const t = useTranslations("screens.profile");
+  const tabs = [
+    { id: "public", label: t("tabs.public") },
+    { id: "matching", label: t("tabs.matching") },
+    { id: "availability", label: t("tabs.availability") },
+  ];
+  const [tab, setTab] = useState("public");
+  const fallback = useFallbackContent();
+  const { matchingPreferences } = fallback.workspaceDemo;
+  const serviceCatalog = fallback.services.serviceCatalog;
+  const therapist = fallback.therapists.find((item) => item.slug === MARIA);
 
   if (!therapist) {
-    return null;
+    return (
+      <section className="animate-fade-up">
+        <PageHeader title={t("title")} description={t("description")} />
+        <WorkspaceDataNotice />
+      </section>
+    );
   }
 
   const publicServices = [
@@ -45,13 +54,11 @@ export function ScreenProfil() {
 
   return (
     <section className="animate-fade-up">
-      <PageHeader
-        title="Moj profil"
-        description="Javni profil, interne matching preferencije i slojevi dostupnosti."
-      />
+      <PageHeader title={t("title")} description={t("description")} />
+      <WorkspaceDataNotice />
       <TabPills tabs={tabs} activeId={tab} onChange={setTab} className="mb-5" />
 
-      {tab === "javni" ? (
+      {tab === "public" ? (
         <div className="grid grid-cols-1 gap-3.5 lg:grid-cols-2">
           <div className="rounded-card border-line bg-surface border px-6 py-6">
             <div className="mb-4 flex items-center gap-4">
@@ -75,13 +82,15 @@ export function ScreenProfil() {
               {`„${therapist.quote}“`}
             </p>
             <div className="grid grid-cols-2 gap-3.5">
-              <KV label="Grad i format">{therapist.city} · online</KV>
-              <KV label="Formati">{therapist.formats}</KV>
+              <KV label={t("cityAndFormat")}>
+                {therapist.city}, {therapist.cityRegionCode} · {t("online")}
+              </KV>
+              <KV label={t("formats")}>{therapist.formats}</KV>
             </div>
           </div>
           <div className="rounded-card border-line bg-surface border px-6 py-6">
             <div className="text-sage mb-3 text-[11.5px] font-semibold tracking-[0.14em] uppercase">
-              Oblasti rada — javno
+              {t("publicAreas")}
             </div>
             <div className="mb-5 flex flex-wrap gap-2">
               {therapist.areas.map((area) => (
@@ -91,7 +100,7 @@ export function ScreenProfil() {
               ))}
             </div>
             <div className="text-sage mb-2.5 text-[11.5px] font-semibold tracking-[0.14em] uppercase">
-              Usluge
+              {t("services")}
             </div>
             <div className="flex flex-col gap-1.5">
               {publicServices.map((service) => (
@@ -109,33 +118,33 @@ export function ScreenProfil() {
         </div>
       ) : null}
 
-      {tab === "match" ? (
+      {tab === "matching" ? (
         <div className="flex flex-col gap-3.5">
           <div className="bg-warm/16 border-warm/45 rounded-tile text-coffee flex items-center gap-2.5 border px-4 py-3 text-[13px]">
             <LockIcon />
             <span>
-              <span className="font-bold">Interno.</span> Ove preferencije čita
-              samo Matching engine — ne prikazuju se u javnoj biografiji.
+              <span className="font-bold">{t("internalLabel")}</span>{" "}
+              {t("internalNote")}
             </span>
           </div>
           <div className="grid grid-cols-1 gap-3.5 lg:grid-cols-2">
             <div className="rounded-card border-line bg-surface border px-6 py-6">
               <div className="text-sage mb-3.5 text-[11.5px] font-semibold tracking-[0.14em] uppercase">
-                Koga prima
+                {t("acceptsHeading")}
               </div>
               <div className="grid grid-cols-2 gap-3.5">
-                <KV label="Starosne grupe">{matchingPreferences.ageGroups}</KV>
-                <KV label="Max novih mesečno" serif>
+                <KV label={t("ageGroups")}>{matchingPreferences.ageGroups}</KV>
+                <KV label={t("maxNewMonthly")} serif>
                   {matchingPreferences.maxNewMonthly}
                 </KV>
-                <KV label="Prioritet pri preporuci">
+                <KV label={t("recommendationPriority")}>
                   {matchingPreferences.priority}
                 </KV>
-                <KV label="Gradovi">{matchingPreferences.cities}</KV>
+                <KV label={t("cities")}>{matchingPreferences.cities}</KV>
               </div>
               <div className="border-line mt-4 border-t pt-3.5">
                 <div className="text-ink-45 mb-2 text-[11px] font-semibold tracking-[0.12em] uppercase">
-                  Trenutno ne prima
+                  {t("notAccepting")}
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {matchingPreferences.notAccepting.map((item) => (
@@ -151,7 +160,7 @@ export function ScreenProfil() {
             </div>
             <div className="rounded-card border-line bg-surface border px-6 py-6">
               <div className="text-sage mb-2 text-[11.5px] font-semibold tracking-[0.14em] uppercase">
-                Dostupnost za formate
+                {t("formatAvailability")}
               </div>
               <div className="flex flex-col">
                 {matchingPreferences.toggles.map((toggle) => (
@@ -172,7 +181,7 @@ export function ScreenProfil() {
                 ))}
                 <div className="flex items-center justify-between gap-3 py-3">
                   <span className="text-coffee text-sm font-semibold">
-                    Online / uživo
+                    {t("onlineOrInPerson")}
                   </span>
                   <span className="text-ink-55 text-[13.5px] font-semibold">
                     {matchingPreferences.formatNote}
@@ -184,30 +193,7 @@ export function ScreenProfil() {
         </div>
       ) : null}
 
-      {tab === "dostupnost" ? (
-        <div className="flex flex-col gap-3.5">
-          <div className="bg-meadow/22 border-sage/30 text-coffee rounded-tile border px-4 py-3 text-[13px] leading-[1.5]">
-            <span className="font-bold">Četiri odvojena sloja:</span> radno
-            vreme → slotovi → izuzeci → rezervisani kapacitet. Booking engine ih
-            čita zasebno — raspoloživost nije isto što i termin.
-          </div>
-          <div className="grid grid-cols-1 gap-3.5 lg:grid-cols-2">
-            {availabilityLayers.map((layer) => (
-              <div
-                key={layer.index}
-                className="rounded-card border-line bg-surface border px-6 py-5"
-              >
-                <div className="text-sage mb-2.5 text-[11.5px] font-semibold tracking-[0.14em] uppercase">
-                  {layer.index} · {layer.title}
-                </div>
-                <p className="text-coffee/80 text-[13.5px] leading-[1.65] whitespace-pre-line">
-                  {layer.body}
-                </p>
-              </div>
-            ))}
-          </div>
-        </div>
-      ) : null}
+      {tab === "availability" ? <AvailabilityOverviewCards /> : null}
     </section>
   );
 }

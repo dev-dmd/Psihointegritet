@@ -12,6 +12,7 @@ import {
   DialogTitle,
 } from "@headlessui/react";
 import { useMemo, useState } from "react";
+import { useFormatter, useTranslations } from "next-intl";
 
 import { cn } from "@/helpers/cn";
 
@@ -19,16 +20,17 @@ import { isPastDate, toLocalDate } from "../booking-widget.config";
 import { useBookingWidget } from "../hooks/use-booking-widget";
 import type {
   BookingSlot,
-  BookingTherapist,
   BookingWidgetCopy,
   BookingWidgetTheme,
 } from "../booking-widget.types";
 
 interface BookingWidgetActionsProps {
   copy: BookingWidgetCopy;
-  therapist?: BookingTherapist;
   slots: BookingSlot[];
   showNotifyAction: boolean;
+  /** Present only when the selection is locked (e.g. the Intake hand-off). */
+  onBack?: (() => void) | undefined;
+  backLabel?: string | undefined;
   onCancel?: () => void;
   onNotify?: () => void;
   onSubmit?: (payload: {
@@ -41,28 +43,25 @@ interface BookingWidgetActionsProps {
   theme: BookingWidgetTheme;
 }
 
-function formatNotifyDate(date: string): string {
-  return new Intl.DateTimeFormat("sr-Latn-RS", {
-    day: "numeric",
-    month: "long",
-  }).format(toLocalDate(date));
-}
-
 export function BookingWidgetActions({
   copy,
-  therapist,
   slots,
   showNotifyAction,
+  onBack,
+  backLabel,
   onCancel,
   onNotify,
   onSubmit,
   theme,
 }: BookingWidgetActionsProps) {
+  const t = useTranslations("public.bookingWidget");
+  const format = useFormatter();
   const {
     buildSubmitPayload,
     notifyOpen,
     resetSelection,
     selectedSlotId,
+    selectedTherapistId,
     setNotifyOpen,
   } = useBookingWidget();
   const notifyCandidates = useMemo(
@@ -99,16 +98,38 @@ export function BookingWidgetActions({
           theme.border,
         )}
       >
-        <button
-          type="button"
-          onClick={cancel}
-          className={cn(
-            "focus-visible:ring-meadow min-h-10 cursor-pointer rounded-lg border px-5 py-2.5 text-sm font-medium transition-all duration-300 ease-out outline-none hover:-translate-y-0.5 focus-visible:ring-2",
-            theme.secondaryButton,
-          )}
-        >
-          {copy.cancelLabel}
-        </button>
+        {/*
+          „Nazad" and „Otkaži" share one row on every width and one styling.
+          On mobile „Nazad" keeps its content width while „Otkaži" takes all
+          remaining space up to the right edge, so the pair never reads as two
+          interchangeable grey buttons. On desktop the footer row is already
+          content-sized, so both fall back to their natural widths.
+        */}
+        <div className="flex items-center gap-3">
+          {onBack ? (
+            <button
+              type="button"
+              onClick={onBack}
+              aria-label={backLabel ?? copy.backAriaLabel}
+              className={cn(
+                "focus-visible:ring-meadow min-h-10 w-auto shrink-0 cursor-pointer rounded-lg border px-5 py-2.5 text-sm font-medium transition-all duration-300 ease-out outline-none hover:-translate-y-0.5 focus-visible:ring-2",
+                theme.secondaryButton,
+              )}
+            >
+              {copy.backLabel}
+            </button>
+          ) : null}
+          <button
+            type="button"
+            onClick={cancel}
+            className={cn(
+              "focus-visible:ring-meadow min-h-10 grow cursor-pointer rounded-lg border px-5 py-2.5 text-sm font-medium transition-all duration-300 ease-out outline-none hover:-translate-y-0.5 focus-visible:ring-2 sm:w-auto sm:grow-0",
+              theme.secondaryButton,
+            )}
+          >
+            {copy.cancelLabel}
+          </button>
+        </div>
         <div className="grid grid-cols-1 gap-3 sm:flex sm:items-center">
           {showNotifyAction ? (
             <button
@@ -126,7 +147,9 @@ export function BookingWidgetActions({
           <button
             type="button"
             disabled={!selectedSlotId}
-            onClick={() => onSubmit?.(buildSubmitPayload(therapist?.id))}
+            onClick={() =>
+              onSubmit?.(buildSubmitPayload(selectedTherapistId ?? undefined))
+            }
             className={cn(
               "focus-visible:ring-meadow inline-flex min-h-10 cursor-pointer items-center justify-center gap-3 rounded-full px-6 py-2.5 text-sm font-semibold transition-all duration-300 ease-out outline-none hover:-translate-y-0.5 focus-visible:ring-2 disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:translate-y-0",
               theme.primaryButton,
@@ -160,7 +183,7 @@ export function BookingWidgetActions({
                     "text-warm text-xs font-semibold tracking-[0.14em] uppercase",
                   )}
                 >
-                  Raniji termin
+                  {t("notifyEyebrow")}
                 </p>
                 <DialogTitle
                   className={cn(
@@ -168,12 +191,12 @@ export function BookingWidgetActions({
                     theme.heading,
                   )}
                 >
-                  Obavestite me kada se termin oslobodi
+                  {t("notifyTitle")}
                 </DialogTitle>
               </div>
               <button
                 type="button"
-                aria-label="Zatvori"
+                aria-label={t("close")}
                 onClick={() => setNotifyOpen(false)}
                 className={cn(
                   "focus-visible:ring-meadow inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-full outline-none focus-visible:ring-2",
@@ -184,8 +207,7 @@ export function BookingWidgetActions({
               </button>
             </div>
             <p className={cn("mt-3 text-sm leading-[1.55]", theme.muted)}>
-              Izaberite popunjen budući termin. Ako se oslobodi, dobićete
-              privatnu ponudu; kasniji zakazani termin možete zadržati.
+              {t("notifyBody")}
             </p>
 
             {notifyCandidates.length > 0 ? (
@@ -204,7 +226,10 @@ export function BookingWidgetActions({
                       )}
                     >
                       <span className="block font-semibold">
-                        {formatNotifyDate(slot.date)}
+                        {format.dateTime(toLocalDate(slot.date), {
+                          day: "numeric",
+                          month: "long",
+                        })}
                       </span>
                       <span className="mt-0.5 block text-xs opacity-75">
                         {slot.startTime}–{slot.endTime}
@@ -221,7 +246,7 @@ export function BookingWidgetActions({
                   theme.muted,
                 )}
               >
-                Trenutno nema popunjenih budućih termina za izbor.
+                {t("noNotifySlots")}
               </p>
             )}
 
@@ -234,7 +259,7 @@ export function BookingWidgetActions({
                   theme.secondaryButton,
                 )}
               >
-                Nazad
+                {t("back")}
               </button>
               <button
                 type="button"
@@ -245,7 +270,7 @@ export function BookingWidgetActions({
                   theme.primaryButton,
                 )}
               >
-                Sačuvaj obaveštenje
+                {t("saveNotification")}
               </button>
             </div>
           </DialogPanel>

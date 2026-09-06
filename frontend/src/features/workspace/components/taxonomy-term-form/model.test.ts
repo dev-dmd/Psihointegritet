@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import type { TaxonomyTerm } from "../../taxonomy-api";
+import { contentCharacterLimits } from "@/lib/content-governance/limits";
 import {
   buildTaxonomyTermSavePayload,
   createTaxonomyTermDraft,
@@ -133,17 +134,19 @@ describe("taxonomy term form model", () => {
 
   it("reports SEO limits as non-blocking warnings without truncation", () => {
     const publicLabel = "N".repeat(66);
-    const shortDescription = "O".repeat(171);
+    const limit = contentCharacterLimits.seoDescription;
+    const shortDescription = "O".repeat(limit + 1);
     const warnings = taxonomySeoWarnings({ publicLabel, shortDescription });
 
     expect(warnings.publicLabel).toContain("65");
-    expect(warnings.shortDescription).toContain("170");
+    expect(warnings.shortDescription).toContain(String(limit));
     expect(publicLabel).toHaveLength(66);
-    expect(shortDescription).toHaveLength(171);
+    // The warning must not truncate — the author keeps what they typed.
+    expect(shortDescription).toHaveLength(limit + 1);
     expect(
       taxonomySeoWarnings({
         publicLabel: "N".repeat(65),
-        shortDescription: "O".repeat(170),
+        shortDescription: "O".repeat(limit),
       }),
     ).toEqual({ publicLabel: null, shortDescription: null });
   });

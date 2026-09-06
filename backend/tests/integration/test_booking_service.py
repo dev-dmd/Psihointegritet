@@ -7,7 +7,7 @@ Requires real PostgreSQL (docker compose up -d postgres).
 Tests run inside rolled-back transactions — no rows persist.
 """
 
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
 from uuid import UUID, uuid4
 
 import pytest
@@ -18,6 +18,8 @@ from psihointegritet.core.config import get_settings
 from psihointegritet.modules.booking.models import (
     AppointmentRequestStatus,
     AppointmentStatus,
+    AvailabilityMode,
+    AvailabilityProfile,
     CancellationActor,
     ServiceBookingConfig,
 )
@@ -26,14 +28,19 @@ from psihointegritet.modules.booking.schemas import (
     AlternativeProposalIn,
     AppointmentRequestIn,
     AvailabilityExceptionIn,
+    AvailabilityProfileIn,
     AvailabilityRuleIn,
+    AvailabilityRulesBulkIn,
     CancelAppointmentRequest,
+    DerivedSlotOut,
+    ManualAvailabilitySlotIn,
     ReviewAction,
     ServiceBookingConfigIn,
     SlotHoldRequest,
     SlotQueryParams,
 )
 from psihointegritet.modules.booking.service import (
+    BookingConflictError,
     BookingService,
     BookingSlotConflictError,
     BookingValidationError,
@@ -104,6 +111,34 @@ async def _seed_therapist(
     db.add(profile)
     await db.flush()
     return profile
+
+
+async def _seed_availability_profile(
+    db: AsyncSession,
+    org: Organization,
+    therapist: TherapistMatchingProfile,
+    mode: str = "hourly_grid",
+    step: int = 60,
+    timezone: str = "UTC",
+    min_lead_time_hours: int = 0,
+) -> UUID:
+    """Seed an AvailabilityProfile (ADR-015 v2) and return its id.
+
+    Defaults to a UTC profile with no notice period so existing slot tests keep
+    asserting grid arithmetic rather than the local-time and lead-time rules,
+    which have their own coverage.
+    """
+    profile = AvailabilityProfile(
+        organization_id=org.id,
+        therapist_profile_id=therapist.id,
+        mode=AvailabilityMode(mode),
+        timezone=timezone,
+        min_lead_time_hours=min_lead_time_hours,
+        start_step_minutes=step,
+    )
+    db.add(profile)
+    await db.flush()
+    return profile.id
 
 
 # ── Slot Hold ────────────────────────────────────────────────────────────────
@@ -235,16 +270,16 @@ class TestDoubleBookingPrevention:
         # Create availability rule for today
         today = _now().date()
         weekday = today.weekday()
+        profile_id = await _seed_availability_profile(db_session, org, therapist)
         await svc.create_availability_rule(
             org.id,
             AvailabilityRuleIn(
-                therapist_profile_id=therapist.id,
+                availability_profile_id=profile_id,
                 day_of_week=weekday,
-                start_time="07:00",  # 09:00 Belgrade
-                end_time="15:00",  # 17:00 Belgrade
+                start_local_time="07:00",  # 09:00 Belgrade
+                end_local_time="15:00",  # 17:00 Belgrade
                 valid_from=today,
                 format="online",
-                slot_duration_minutes=60,
             ),
         )
 
@@ -985,21 +1020,21 @@ class TestAvailabilityRules:
         svc = _svc(db_session)
 
         today = _now().date()
+        profile_id = await _seed_availability_profile(db_session, org, therapist)
         rule = await svc.create_availability_rule(
             org.id,
             AvailabilityRuleIn(
-                therapist_profile_id=therapist.id,
+                availability_profile_id=profile_id,
                 day_of_week=1,  # Tuesday
-                start_time="07:00",
-                end_time="15:00",
+                start_local_time="07:00",
+                end_local_time="15:00",
                 valid_from=today,
                 format="online",
-                slot_duration_minutes=60,
             ),
         )
         assert rule.day_of_week == 1
 
-        rules = await svc.list_availability_rules(org.id, therapist.id)
+        rules = await svc.list_availability_rules(org.id, profile_id)
         assert len(rules) == 1
         assert rules[0].id == rule.id
 
@@ -1010,16 +1045,16 @@ class TestAvailabilityRules:
         svc = _svc(db_session)
 
         today = _now().date()
+        profile_id = await _seed_availability_profile(db_session, org, therapist)
         rule = await svc.create_availability_rule(
             org.id,
             AvailabilityRuleIn(
-                therapist_profile_id=therapist.id,
+                availability_profile_id=profile_id,
                 day_of_week=3,  # Thursday
-                start_time="07:00",
-                end_time="15:00",
+                start_local_time="07:00",
+                end_local_time="15:00",
                 valid_from=today,
                 format="online",
-                slot_duration_minutes=60,
             ),
         )
 
@@ -1027,22 +1062,21 @@ class TestAvailabilityRules:
             org.id,
             rule.id,
             AvailabilityRuleIn(
-                therapist_profile_id=therapist.id,
+                availability_profile_id=profile_id,
                 day_of_week=4,  # Friday
-                start_time="08:00",
-                end_time="16:00",
+                start_local_time="08:00",
+                end_local_time="16:00",
                 valid_from=today,
                 format="online",
-                slot_duration_minutes=60,
             ),
         )
         assert updated.day_of_week == 4
 
         await svc.delete_availability_rule(org.id, rule.id)
-        rules = await svc.list_availability_rules(org.id, therapist.id)
+        rules = await svc.list_availability_rules(org.id, profile_id)
         assert len(rules) == 0  # soft-deleted
 
-    async def test_create_exception_and_get_slots_respects_block(
+    async def test_create_exception_and_get_slots_respects_unavailable(
         self, db_session: AsyncSession
     ) -> None:
         suffix = uuid4().hex[:10]
@@ -1055,27 +1089,30 @@ class TestAvailabilityRules:
         weekday = tomorrow.weekday()
 
         # Create recurring availability for tomorrow
+        profile_id = await _seed_availability_profile(db_session, org, therapist)
         await svc.create_availability_rule(
             org.id,
             AvailabilityRuleIn(
-                therapist_profile_id=therapist.id,
+                availability_profile_id=profile_id,
                 day_of_week=weekday,
-                start_time="07:00",
-                end_time="15:00",
+                start_local_time="07:00",
+                end_local_time="15:00",
                 valid_from=tomorrow,
                 format="online",
-                slot_duration_minutes=60,
             ),
         )
 
-        # Block the entire day
+        # Mark the whole day unavailable (global — no profile scope)
+        day_start = datetime.combine(tomorrow, datetime.min.time(), tzinfo=UTC)
+        day_end = datetime.combine(tomorrow, datetime.max.time(), tzinfo=UTC)
         await svc.create_availability_exception(
             org.id,
             AvailabilityExceptionIn(
                 therapist_profile_id=therapist.id,
-                exception_date=tomorrow,
-                kind="block",
-                reason="Godišnji odmor",
+                kind="unavailable",
+                starts_at=day_start,
+                ends_at=day_end,
+                reason_code="annual_leave",
             ),
         )
 
@@ -1126,7 +1163,7 @@ class TestBookingConfig:
                 therapist_profile_id=therapist.id,
                 format="online",
                 booking_mode="slot_request",
-                slot_duration_minutes=60,
+                duration_minutes=60,
             ),
         )
         assert first.location_id is None
@@ -1138,13 +1175,13 @@ class TestBookingConfig:
                 therapist_profile_id=therapist.id,
                 format="online",
                 booking_mode="request",
-                slot_duration_minutes=90,
+                duration_minutes=90,
             ),
         )
 
         assert second.id == first.id
         assert second.booking_mode == "request"
-        assert second.slot_duration_minutes == 90
+        assert second.duration_minutes == 90
         assert (await self._config_count(db_session, org.id, service.id, therapist.id)) == 1
 
     async def test_upsert_with_same_location_updates_in_place(
@@ -1165,7 +1202,7 @@ class TestBookingConfig:
                 format="in_person",
                 location_id=location_id,
                 booking_mode="slot_request",
-                slot_duration_minutes=45,
+                duration_minutes=45,
             ),
         )
         second = await svc.upsert_booking_config(
@@ -1176,7 +1213,7 @@ class TestBookingConfig:
                 format="in_person",
                 location_id=location_id,
                 booking_mode="disabled",
-                slot_duration_minutes=45,
+                duration_minutes=45,
             ),
         )
 
@@ -1199,7 +1236,7 @@ class TestBookingConfig:
                 format="in_person",
                 location_id=uuid4(),
                 booking_mode="slot_request",
-                slot_duration_minutes=45,
+                duration_minutes=45,
             ),
         )
         location_b = await svc.upsert_booking_config(
@@ -1210,7 +1247,7 @@ class TestBookingConfig:
                 format="in_person",
                 location_id=uuid4(),
                 booking_mode="slot_request",
-                slot_duration_minutes=45,
+                duration_minutes=45,
             ),
         )
 
@@ -1233,7 +1270,7 @@ class TestBookingConfig:
                 therapist_profile_id=therapist.id,
                 format="online",
                 booking_mode="slot_request",
-                slot_duration_minutes=60,
+                duration_minutes=60,
             ),
         )
         location_config = await svc.upsert_booking_config(
@@ -1244,9 +1281,556 @@ class TestBookingConfig:
                 format="online",
                 location_id=uuid4(),
                 booking_mode="request",
-                slot_duration_minutes=60,
+                duration_minutes=60,
             ),
         )
 
         assert global_config.id != location_config.id
         assert (await self._config_count(db_session, org.id, service.id, therapist.id)) == 2
+
+
+# ── Availability Profiles & Manual Slots (ADR-015 v2) ────────────────────────
+
+
+class TestAvailabilityProfiles:
+    async def test_create_and_list_profile(self, db_session: AsyncSession) -> None:
+        suffix = uuid4().hex[:10]
+        org = await _seed_org(db_session, suffix)
+        therapist = await _seed_therapist(db_session, org, suffix)
+        svc = _svc(db_session)
+
+        profile = await svc.create_availability_profile(
+            org.id,
+            AvailabilityProfileIn(
+                therapist_profile_id=therapist.id,
+                mode="hourly_grid",
+                start_step_minutes=60,
+            ),
+        )
+        assert profile.mode == "hourly_grid"
+        assert profile.start_step_minutes == 60
+
+        profiles = await svc.list_availability_profiles(org.id, therapist.id)
+        assert len(profiles) == 1
+        assert profiles[0].id == profile.id
+
+    async def test_duplicate_mode_for_therapist_conflicts(self, db_session: AsyncSession) -> None:
+        suffix = uuid4().hex[:10]
+        org = await _seed_org(db_session, suffix)
+        therapist = await _seed_therapist(db_session, org, suffix)
+        svc = _svc(db_session)
+
+        await svc.create_availability_profile(
+            org.id,
+            AvailabilityProfileIn(
+                therapist_profile_id=therapist.id,
+                mode="flexible_grid",
+                start_step_minutes=15,
+            ),
+        )
+        with pytest.raises(BookingConflictError):
+            await svc.create_availability_profile(
+                org.id,
+                AvailabilityProfileIn(
+                    therapist_profile_id=therapist.id,
+                    mode="flexible_grid",
+                    start_step_minutes=30,
+                ),
+            )
+
+    async def test_update_profile_step(self, db_session: AsyncSession) -> None:
+        suffix = uuid4().hex[:10]
+        org = await _seed_org(db_session, suffix)
+        therapist = await _seed_therapist(db_session, org, suffix)
+        svc = _svc(db_session)
+
+        profile = await svc.create_availability_profile(
+            org.id,
+            AvailabilityProfileIn(
+                therapist_profile_id=therapist.id,
+                mode="hourly_grid",
+                start_step_minutes=60,
+            ),
+        )
+        updated = await svc.update_availability_profile(
+            org.id,
+            profile.id,
+            AvailabilityProfileIn(
+                therapist_profile_id=therapist.id,
+                mode="flexible_grid",
+                start_step_minutes=15,
+            ),
+        )
+        assert updated.mode == "flexible_grid"
+        assert updated.start_step_minutes == 15
+
+
+class TestManualAvailabilitySlots:
+    async def test_create_and_delete_manual_slot(self, db_session: AsyncSession) -> None:
+        suffix = uuid4().hex[:10]
+        org = await _seed_org(db_session, suffix)
+        therapist = await _seed_therapist(db_session, org, suffix)
+        svc = _svc(db_session)
+
+        profile = await svc.create_availability_profile(
+            org.id,
+            AvailabilityProfileIn(
+                therapist_profile_id=therapist.id,
+                mode="manual_slots",
+            ),
+        )
+        start = _now() + timedelta(days=1)
+        slot = await svc.create_manual_availability_slot(
+            org.id,
+            ManualAvailabilitySlotIn(
+                availability_profile_id=profile.id,
+                starts_at=start,
+                format="online",
+            ),
+        )
+        assert slot.availability_profile_id == profile.id
+
+        await svc.delete_manual_availability_slot(org.id, slot.id)
+
+    async def test_manual_slot_appears_in_available_slots(self, db_session: AsyncSession) -> None:
+        suffix = uuid4().hex[:10]
+        org = await _seed_org(db_session, suffix)
+        therapist = await _seed_therapist(db_session, org, suffix)
+        service = await _seed_service(db_session, org, suffix)
+        svc = _svc(db_session)
+
+        profile = await svc.create_availability_profile(
+            org.id,
+            AvailabilityProfileIn(
+                therapist_profile_id=therapist.id,
+                mode="manual_slots",
+            ),
+        )
+        # Use an explicit future slot on the query date
+        target_date = (_now() + timedelta(days=2)).date()
+        slot_start = datetime.combine(target_date, datetime.min.time(), tzinfo=UTC) + timedelta(
+            hours=10
+        )
+        await svc.create_manual_availability_slot(
+            org.id,
+            ManualAvailabilitySlotIn(
+                availability_profile_id=profile.id,
+                starts_at=slot_start,
+                format="online",
+            ),
+        )
+
+        # Per-offer duration (KOLIKO) — manual slot uses config duration
+        await svc.upsert_booking_config(
+            org.id,
+            ServiceBookingConfigIn(
+                service_id=service.id,
+                therapist_profile_id=therapist.id,
+                format="online",
+                booking_mode="slot_request",
+                duration_minutes=60,
+                availability_profile_id=profile.id,
+            ),
+        )
+
+        slots = await svc.get_available_slots(
+            org.id,
+            SlotQueryParams(
+                service_id=service.id,
+                therapist_profile_id=therapist.id,
+                format="online",
+                date_from=target_date,
+                date_until=target_date,
+            ),
+        )
+        assert any(s.start == slot_start for s in slots)
+
+
+# ── Weekly Generation & Copy (ADR-015 v2 §2.7.5) ─────────────────────────────
+
+
+class TestWeeklyOperations:
+    async def test_generate_week_materializes_rules(self, db_session: AsyncSession) -> None:
+        suffix = uuid4().hex[:10]
+        org = await _seed_org(db_session, suffix)
+        therapist = await _seed_therapist(db_session, org, suffix)
+        svc = _svc(db_session)
+
+        # Use a Monday as week start so a fixed weekday rule always lands inside
+        profile_id = await _seed_availability_profile(db_session, org, therapist, step=60)
+        week_start = date(2026, 8, 10)  # Monday
+        await svc.create_availability_rule(
+            org.id,
+            AvailabilityRuleIn(
+                availability_profile_id=profile_id,
+                day_of_week=0,  # Monday
+                start_local_time="08:00",
+                end_local_time="10:00",
+                valid_from=week_start,
+                format="online",
+            ),
+        )
+
+        created = await svc.generate_week(org.id, profile_id, week_start)
+        # 08:00 and 09:00 on Monday only
+        assert len(created) == 2
+        assert all(s.source == "weekly_generator" for s in created)
+        assert all(s.starts_at.date() == week_start for s in created)
+
+    async def test_copy_week_copies_manual_slots(self, db_session: AsyncSession) -> None:
+        suffix = uuid4().hex[:10]
+        org = await _seed_org(db_session, suffix)
+        therapist = await _seed_therapist(db_session, org, suffix)
+        svc = _svc(db_session)
+
+        profile_id = await _seed_availability_profile(
+            db_session, org, therapist, mode="manual_slots"
+        )
+        source_week = date(2026, 8, 10)  # Monday
+        slot_start = datetime.combine(source_week, datetime.min.time(), tzinfo=UTC) + timedelta(
+            hours=9
+        )
+        await svc.create_manual_availability_slot(
+            org.id,
+            ManualAvailabilitySlotIn(
+                availability_profile_id=profile_id,
+                starts_at=slot_start,
+                format="online",
+            ),
+        )
+
+        target_week = date(2026, 8, 17)  # next Monday
+        copied = await svc.copy_week(org.id, profile_id, source_week, target_week)
+        assert len(copied) == 1
+        assert copied[0].source == "copied_week"
+        assert copied[0].starts_at == slot_start + timedelta(days=7)
+
+    async def test_list_manual_slots_and_exceptions(self, db_session: AsyncSession) -> None:
+        suffix = uuid4().hex[:10]
+        org = await _seed_org(db_session, suffix)
+        therapist = await _seed_therapist(db_session, org, suffix)
+        svc = _svc(db_session)
+
+        profile_id = await _seed_availability_profile(
+            db_session, org, therapist, mode="manual_slots"
+        )
+        target_date = (_now() + timedelta(days=3)).date()
+        slot_start = datetime.combine(target_date, datetime.min.time(), tzinfo=UTC) + timedelta(
+            hours=10
+        )
+        await svc.create_manual_availability_slot(
+            org.id,
+            ManualAvailabilitySlotIn(
+                availability_profile_id=profile_id,
+                starts_at=slot_start,
+                format="online",
+            ),
+        )
+        exc_start = datetime.combine(target_date, datetime.min.time(), tzinfo=UTC) + timedelta(
+            hours=14
+        )
+        await svc.create_availability_exception(
+            org.id,
+            AvailabilityExceptionIn(
+                therapist_profile_id=therapist.id,
+                kind="unavailable",
+                starts_at=exc_start,
+                ends_at=exc_start + timedelta(hours=2),
+                reason_code="doctor",
+            ),
+        )
+
+        slots = await svc.list_manual_availability_slots(
+            org.id, profile_id, target_date, target_date
+        )
+        assert len(slots) == 1
+
+        exceptions = await svc.list_availability_exceptions(
+            org.id, therapist.id, target_date, target_date
+        )
+        assert len(exceptions) == 1
+        assert exceptions[0].reason_code == "doctor"
+
+
+# ── Minimum notice (D29 / migration 0022) ────────────────────────────────────
+
+
+class TestMinimumLeadTime:
+    """A free slot inside the notice window must not be offered at all.
+
+    The rule lives on the availability profile — per therapist, never per
+    organisation (CTO decision 2026-08-09).
+    """
+
+    async def _seed_open_week(
+        self, db: AsyncSession, lead_hours: int
+    ) -> tuple[Organization, TherapistMatchingProfile, UUID]:
+        suffix = uuid4().hex[:10]
+        org = await _seed_org(db, suffix)
+        therapist = await _seed_therapist(db, org, suffix)
+        profile_id = await _seed_availability_profile(
+            db, org, therapist, min_lead_time_hours=lead_hours
+        )
+        svc = _svc(db)
+        # Open every weekday so the query range always has candidate days.
+        for weekday in range(7):
+            await svc.create_availability_rule(
+                org.id,
+                AvailabilityRuleIn(
+                    availability_profile_id=profile_id,
+                    day_of_week=weekday,
+                    start_local_time="00:00",
+                    end_local_time="23:00",
+                    valid_from=(_now() - timedelta(days=1)).date(),
+                    format="online",
+                ),
+            )
+        return org, therapist, profile_id
+
+    async def _slots(
+        self,
+        db: AsyncSession,
+        org: Organization,
+        therapist: TherapistMatchingProfile,
+        days_ahead: int,
+        date_span_days: int = 0,
+    ) -> list[DerivedSlotOut]:
+        target = (_now() + timedelta(days=days_ahead)).date()
+        return await _svc(db).get_available_slots(
+            org.id,
+            SlotQueryParams(
+                service_id=uuid4(),
+                therapist_profile_id=therapist.id,
+                format="online",
+                date_from=target,
+                date_until=target + timedelta(days=date_span_days),
+            ),
+        )
+
+    async def test_no_lead_time_offers_today(self, db_session: AsyncSession) -> None:
+        org, therapist, _ = await self._seed_open_week(db_session, lead_hours=0)
+        assert len(await self._slots(db_session, org, therapist, days_ahead=0)) > 0
+
+    async def test_default_notice_hides_slots_inside_the_window(
+        self, db_session: AsyncSession
+    ) -> None:
+        org, therapist, _ = await self._seed_open_week(db_session, lead_hours=24)
+        assert await self._slots(db_session, org, therapist, days_ahead=0) == []
+
+    async def test_slots_beyond_the_window_stay_bookable(self, db_session: AsyncSession) -> None:
+        org, therapist, _ = await self._seed_open_week(db_session, lead_hours=24)
+        assert len(await self._slots(db_session, org, therapist, days_ahead=3)) > 0
+
+    async def test_forty_eight_hours_reaches_further_than_twenty_four(
+        self, db_session: AsyncSession
+    ) -> None:
+        org_a, therapist_a, _ = await self._seed_open_week(db_session, lead_hours=24)
+        org_b, therapist_b, _ = await self._seed_open_week(db_session, lead_hours=48)
+        # Across a multi-day horizon, 48h must hide strictly more starts than
+        # 24h. Unlike asserting about "tomorrow", this remains true late at
+        # night, when the final start tomorrow may already be under 24h away.
+        slots_24h = await self._slots(
+            db_session, org_a, therapist_a, days_ahead=0, date_span_days=3
+        )
+        slots_48h = await self._slots(
+            db_session, org_b, therapist_b, days_ahead=0, date_span_days=3
+        )
+        assert len(slots_24h) > len(slots_48h) > 0
+
+
+# ── Faza 1: generate_week timezone, bulk rules, summary, ownership ───────────
+
+
+class TestGenerateWeekTimezone:
+    """`generate_week` had the same defect D29 closed in `_grid_candidates`.
+
+    It stamped local wall-clock rule times as UTC, so every materialised start
+    was off by the zone offset and DST never applied.
+    """
+
+    async def _seed(self, db: AsyncSession, week_start: date) -> tuple[Organization, UUID]:
+        suffix = uuid4().hex[:10]
+        org = await _seed_org(db, suffix)
+        therapist = await _seed_therapist(db, org, suffix)
+        profile_id = await _seed_availability_profile(
+            db, org, therapist, timezone="Europe/Belgrade"
+        )
+        await _svc(db).create_availability_rule(
+            org.id,
+            AvailabilityRuleIn(
+                availability_profile_id=profile_id,
+                day_of_week=0,
+                start_local_time="08:00",
+                end_local_time="12:00",
+                valid_from=week_start,
+                format="online",
+            ),
+        )
+        return org, profile_id
+
+    async def test_summer_local_eight_is_six_utc(self, db_session: AsyncSession) -> None:
+        week_start = date(2026, 8, 10)  # Monday, CEST (+02)
+        org, profile_id = await self._seed(db_session, week_start)
+        created = await _svc(db_session).generate_week(org.id, profile_id, week_start)
+        assert created[0].starts_at == datetime(2026, 8, 10, 6, 0, tzinfo=UTC)
+
+    async def test_winter_local_eight_is_seven_utc(self, db_session: AsyncSession) -> None:
+        week_start = date(2026, 1, 12)  # Monday, CET (+01)
+        org, profile_id = await self._seed(db_session, week_start)
+        created = await _svc(db_session).generate_week(org.id, profile_id, week_start)
+        assert created[0].starts_at == datetime(2026, 1, 12, 7, 0, tzinfo=UTC)
+
+    async def test_same_number_of_starts_across_the_dst_boundary(
+        self, db_session: AsyncSession
+    ) -> None:
+        summer_org, summer_profile = await self._seed(db_session, date(2026, 8, 10))
+        winter_org, winter_profile = await self._seed(db_session, date(2026, 1, 12))
+        svc = _svc(db_session)
+        summer = await svc.generate_week(summer_org.id, summer_profile, date(2026, 8, 10))
+        winter = await svc.generate_week(winter_org.id, winter_profile, date(2026, 1, 12))
+        assert len(summer) == len(winter) == 4
+
+
+class TestBulkRuleReplacement:
+    async def test_replace_swaps_the_whole_week_in_one_call(self, db_session: AsyncSession) -> None:
+        suffix = uuid4().hex[:10]
+        org = await _seed_org(db_session, suffix)
+        therapist = await _seed_therapist(db_session, org, suffix)
+        profile_id = await _seed_availability_profile(db_session, org, therapist)
+        svc = _svc(db_session)
+        today = _now().date()
+
+        first = await svc.replace_availability_rules(
+            org.id,
+            AvailabilityRulesBulkIn(
+                availability_profile_id=profile_id,
+                rules=[
+                    AvailabilityRuleIn(
+                        availability_profile_id=profile_id,
+                        day_of_week=0,
+                        start_local_time="09:00",
+                        end_local_time="13:00",
+                        valid_from=today,
+                        format="online",
+                    )
+                ],
+            ),
+        )
+        assert len(first) == 1
+
+        second = await svc.replace_availability_rules(
+            org.id,
+            AvailabilityRulesBulkIn(
+                availability_profile_id=profile_id,
+                rules=[
+                    AvailabilityRuleIn(
+                        availability_profile_id=profile_id,
+                        day_of_week=day,
+                        start_local_time="10:00",
+                        end_local_time="16:00",
+                        valid_from=today,
+                        format="online",
+                    )
+                    for day in (1, 2)
+                ],
+            ),
+        )
+        assert len(second) == 2
+        # The old Monday rule is gone, not merely deactivated.
+        remaining = await svc.list_availability_rules(org.id, profile_id)
+        assert sorted(r.day_of_week for r in remaining) == [1, 2]
+
+    async def test_empty_list_clears_the_schedule(self, db_session: AsyncSession) -> None:
+        suffix = uuid4().hex[:10]
+        org = await _seed_org(db_session, suffix)
+        therapist = await _seed_therapist(db_session, org, suffix)
+        profile_id = await _seed_availability_profile(db_session, org, therapist)
+        svc = _svc(db_session)
+        await svc.replace_availability_rules(
+            org.id,
+            AvailabilityRulesBulkIn(
+                availability_profile_id=profile_id,
+                rules=[
+                    AvailabilityRuleIn(
+                        availability_profile_id=profile_id,
+                        day_of_week=0,
+                        start_local_time="09:00",
+                        end_local_time="13:00",
+                        valid_from=_now().date(),
+                        format="online",
+                    )
+                ],
+            ),
+        )
+        await svc.replace_availability_rules(
+            org.id,
+            AvailabilityRulesBulkIn(availability_profile_id=profile_id, rules=[]),
+        )
+        assert await svc.list_availability_rules(org.id, profile_id) == []
+
+
+class TestAvailabilitySummary:
+    async def test_therapist_without_a_profile_gets_a_usable_empty_answer(
+        self, db_session: AsyncSession
+    ) -> None:
+        suffix = uuid4().hex[:10]
+        org = await _seed_org(db_session, suffix)
+        therapist = await _seed_therapist(db_session, org, suffix)
+
+        summary = await _svc(db_session).availability_summary(org.id, therapist.id, _now().date())
+        # Empty, not an error: the card shows „radno vreme još nije uneto".
+        assert summary.availability_profile_id is None
+        assert summary.rules == []
+        assert summary.derived_slot_count == 0
+        assert summary.reserved_capacity == []
+
+    async def test_rules_and_policy_reach_the_cards(self, db_session: AsyncSession) -> None:
+        suffix = uuid4().hex[:10]
+        org = await _seed_org(db_session, suffix)
+        therapist = await _seed_therapist(db_session, org, suffix)
+        profile_id = await _seed_availability_profile(
+            db_session, org, therapist, min_lead_time_hours=48
+        )
+        svc = _svc(db_session)
+        await svc.create_availability_rule(
+            org.id,
+            AvailabilityRuleIn(
+                availability_profile_id=profile_id,
+                day_of_week=0,
+                start_local_time="09:00",
+                end_local_time="13:00",
+                valid_from=_now().date(),
+                format="online",
+            ),
+        )
+
+        summary = await svc.availability_summary(org.id, therapist.id, _now().date())
+        assert summary.availability_profile_id == profile_id
+        assert len(summary.rules) == 1
+        assert summary.min_lead_time_hours == 48
+        # No ServiceBookingConfig yet, so the card falls back to the same
+        # defaults the public slot endpoint uses.
+        assert summary.service_id is None
+        assert summary.duration_minutes == 60
+        assert summary.mixed_durations is False
+
+
+class TestScheduleOwnership:
+    """The remaining half of D33: staff membership is not schedule ownership."""
+
+    async def test_unassigned_therapist_profile_is_not_owned(
+        self, db_session: AsyncSession
+    ) -> None:
+        suffix = uuid4().hex[:10]
+        org = await _seed_org(db_session, suffix)
+        therapist = await _seed_therapist(db_session, org, suffix)
+        # A random staff user id owns nobody's schedule.
+        assert not await _svc(db_session).therapist_owns_profile(org.id, therapist.id, uuid4())
+
+    async def test_profile_resolves_back_to_its_therapist(self, db_session: AsyncSession) -> None:
+        suffix = uuid4().hex[:10]
+        org = await _seed_org(db_session, suffix)
+        therapist = await _seed_therapist(db_session, org, suffix)
+        profile_id = await _seed_availability_profile(db_session, org, therapist)
+        resolved = await _svc(db_session).therapist_of_availability_profile(org.id, profile_id)
+        assert resolved == therapist.id

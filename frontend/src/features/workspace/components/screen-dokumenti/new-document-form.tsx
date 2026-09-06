@@ -4,6 +4,7 @@ import { useState } from "react";
 
 import { RichTextEditor } from "@/components/content/rich-text-editor";
 import { emptyRichDoc, type RichDoc } from "@/lib/content-governance/rich-doc";
+import { useUserSafeError } from "@/lib/errors/use-user-safe-error";
 
 import {
   CAPABILITY_LABELS,
@@ -19,7 +20,6 @@ import {
 } from "../../legal-documents-api";
 import { reservedCustomDocumentSlugs } from "../../reserved-custom-document-slugs";
 import { ActionButton } from "./action-button";
-import { describeDocxImportError } from "./helpers";
 import { DocxImportFindings } from "./docx-import-findings";
 
 const CREATABLE_KINDS: LegalDocumentKind[] = [
@@ -50,6 +50,7 @@ export function NewDocumentForm({
   onCreate: (input: NewDocumentInput) => void | Promise<void>;
 }) {
   const [title, setTitle] = useState("");
+  const safeError = useUserSafeError();
   const [slug, setSlug] = useState("");
   const [slugTouched, setSlugTouched] = useState(false);
   const [body, setBody] = useState<RichDoc>(() => emptyRichDoc());
@@ -203,7 +204,7 @@ export function NewDocumentForm({
                     setDocxPreview({ fileName: file.name, result }),
                   )
                   .catch((error: unknown) =>
-                    setDocxError(describeDocxImportError(error)),
+                    setDocxError(safeError.text(error, "legal", "import")),
                   )
                   .finally(() => setDocxImporting(false));
               }}

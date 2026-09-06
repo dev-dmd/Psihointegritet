@@ -12,6 +12,7 @@ import {
 import type { ContentType } from "@/lib/content-governance/types";
 
 import type { ApiContentRevision } from "../content-api";
+import { useTranslations } from "next-intl";
 
 const STATUS_TONES: Record<string, StatusBadgeTone> = {
   draft: "neutral",
@@ -66,6 +67,7 @@ export function ContentEntryList({
   onOpen,
   openingIdentity,
   openError,
+  isInitialSync,
 }: {
   entries: ApiContentRevision[];
   catalogue: readonly SystemContentDefinition[];
@@ -79,7 +81,9 @@ export function ContentEntryList({
   ) => void | Promise<void>;
   openingIdentity: string | null;
   openError: string | null;
+  isInitialSync: boolean;
 }) {
+  const t = useTranslations("content");
   const shown = catalogue.filter(
     (definition) => definition.contentType === activeType,
   );
@@ -106,9 +110,7 @@ export function ContentEntryList({
           {activeLabel} ({shown.length})
         </h2>
         <p className="text-ink-55 mt-1 text-[12.5px] leading-[1.5]">
-          Zaštićeni sistemski sadržaj. Stavka bez CMS revizije koristi postojeći
-          tekst iz koda; izmena počinje praznim poljima i čuva samo unete
-          vrednosti.
+          {t("systemNotice")}
         </p>
       </div>
 
@@ -131,7 +133,9 @@ export function ContentEntryList({
             <button
               key={identity}
               type="button"
-              disabled={openingIdentity !== null || templateMismatch}
+              disabled={
+                isInitialSync || openingIdentity !== null || templateMismatch
+              }
               onClick={() => {
                 if (isSelected) {
                   onSelect(null);
@@ -155,11 +159,18 @@ export function ContentEntryList({
                 </div>
               </div>
               {templateMismatch ? (
-                <StatusBadge tone="danger">Pogrešan template</StatusBadge>
+                <StatusBadge tone="danger">{t("wrongTemplate")}</StatusBadge>
               ) : entry ? (
                 <StatusBadge tone={STATUS_TONES[entry.status] ?? "neutral"}>
                   {STATUS_LABELS[entry.status] ?? entry.status}
                 </StatusBadge>
+              ) : isInitialSync ? (
+                <span
+                  role="status"
+                  className="bg-coffee/8 text-ink-55 inline-flex animate-pulse rounded-full px-2.5 py-1 text-[11.5px]"
+                >
+                  {t("checkingStatus")}
+                </span>
               ) : (
                 <StatusBadge tone="soft">
                   {isOpening ? "Otvaranje…" : "Fallback iz koda"}

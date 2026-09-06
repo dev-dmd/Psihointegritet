@@ -1,6 +1,5 @@
 import type { Metadata, MetadataRoute } from "next";
 
-import { faqItems } from "@/content/homepage";
 import { siteSettings } from "@/content/site-settings";
 
 import { isSitemapEligible } from "./validation";
@@ -162,7 +161,7 @@ export function jsonLdForEntity(
       records.push({
         "@context": "https://schema.org",
         "@type": "FAQPage",
-        mainEntity: faqItems.map((item) => ({
+        mainEntity: (entity.faq ?? []).map((item) => ({
           "@type": "Question",
           name: item.question,
           acceptedAnswer: { "@type": "Answer", text: item.answer },
@@ -178,7 +177,13 @@ export function jsonLdForEntity(
       name: entity.source.name,
       description: entity.source.description,
       url: absolutePublicUrl(entity.route, origin),
-      areaServed: [...siteSettings.locations, "online"],
+      areaServed: [
+        ...siteSettings.locations.map(
+          (location) =>
+            `${location.city}, ${location.region}, ${siteSettings.country}`,
+        ),
+        "online",
+      ],
     });
   }
 

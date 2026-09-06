@@ -55,26 +55,28 @@ test("matching result hands off only safe booking context", async ({
   await expect(
     page.getByText("Predlog na osnovu vaših odgovora"),
   ).toBeVisible();
-  await expect(
-    page.getByText("Anja Stamenković", { exact: true }),
-  ).toBeVisible();
+  await expect(page.getByText("Maria Bullock", { exact: true })).toBeVisible();
 
   const bookingLink = page
     .getByRole("link", { name: "Zatražite termin" })
     .first();
   await expect(bookingLink).toHaveAttribute(
     "href",
-    "/zakazi?service=individualna-psihoterapija&therapist=anja-stamenkovic&format=online&source=matching",
+    "/zakazi?service=individualna-psihoterapija&therapist=maria-bullock&format=online&source=matching",
   );
   await bookingLink.click();
 
   await expect(page).toHaveURL(
-    /\/zakazi\?service=individualna-psihoterapija&therapist=anja-stamenkovic&format=online&source=matching$/,
+    /\/zakazi\?service=individualna-psihoterapija&therapist=maria-bullock&format=online&source=matching$/,
   );
-  await expect(page.getByLabel("Usluga")).toHaveValue(
-    "individualna-psihoterapija",
-  );
-  await expect(page.getByLabel("Terapeut")).toHaveValue("anja-stamenkovic");
+  // The matching hand-off locks the selection: the recommendation the person
+  // just accepted must not be re-opened as a catalogue.
+  await expect(page.getByText("Vaš izbor")).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Individualna psihoterapija" }),
+  ).toBeVisible();
+  await expect(page.getByText("Maria Bullock").first()).toBeVisible();
+  await expect(page.getByText("Ostali terapeuti")).toBeHidden();
 });
 
 test("a guardian request for someone under 16 remains a controlled team-review path", async ({

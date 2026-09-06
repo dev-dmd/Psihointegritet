@@ -59,6 +59,21 @@ class Settings(BaseSettings):
         return self.environment is Environment.PRODUCTION
 
     @property
+    def superadmin_may_act_as_therapist(self) -> bool:
+        """Whether a superadmin may edit a therapist's availability without being one.
+
+        Deliberately an **allowlist**, not ``not is_production``: a new or
+        misspelled environment must lose the privilege rather than silently
+        inherit it. Adding a QA environment means adding it to this set and to
+        ``Environment`` — one visible edit, not an accident.
+
+        This is a convenience for building and testing schedules before the team
+        has real accounts. It never applies in production, where a superadmin
+        must go through the therapist registry like everyone else.
+        """
+        return self.environment in {Environment.DEVELOPMENT, Environment.STAGING}
+
+    @property
     def intake_submission_ready(self) -> bool:
         """Sensitive Intake writes require both the flag and approved text versions."""
 

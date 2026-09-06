@@ -14,7 +14,7 @@ const homepageJsonLd = [
     name: "Psihointegritet",
     url: "https://psihointegritet.rs/",
     description:
-      "Centar za psihoterapiju i psihološku podršku u Nišu i Leskovcu — individualni rad, rad sa parovima i radionice, uživo i online.",
+      "Centar za psihoterapiju i psihološku podršku u Chicagu, Milwaukeeju i Madisonu — individualni rad, rad sa parovima i radionice, uživo i online.",
   },
   {
     "@context": "https://schema.org",

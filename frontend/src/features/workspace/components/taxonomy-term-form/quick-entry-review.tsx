@@ -4,6 +4,9 @@ import Link from "next/link";
 
 import type { TaxonomyTerm } from "../../taxonomy-api";
 import { TermGovernanceControls } from "../screen-kompas/term-governance-controls";
+import { localizedPath } from "@/lib/routes/localized-path";
+import { useUiLocale } from "@/i18n/use-ui-locale";
+
 import {
   AXIS_EDITOR_CONFIG,
   taxonomySeoWarnings,
@@ -29,6 +32,7 @@ export function QuickEntryReview({
   onBack: () => void;
   onExit: () => void;
 }) {
+  const locale = useUiLocale();
   const parent = registryTerms.find(
     (candidate) => candidate.termId === term.primaryParentTermId,
   );
@@ -125,7 +129,7 @@ export function QuickEntryReview({
           ovaj tok ne zloupotrebljava static page, program ili service tip.
         </p>
         <Link
-          href="/radni-prostor/sadrzaj"
+          href={localizedPath("workspace.content.list", { locale })}
           className="text-forest mt-3 inline-flex text-[12.5px] font-semibold underline underline-offset-4"
         >
           Otvori postojeći CMS tok
