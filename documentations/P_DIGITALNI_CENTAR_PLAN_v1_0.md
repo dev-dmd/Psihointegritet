@@ -591,6 +591,56 @@ pa ih unosi operator. Do tada build pada na `serverEnv` — isto kao D37, i to j
 Psihointegritetovu produkcijsku Clerk instancu. Radi, ali znači da tenanti dele identity provider —
 što auth/domain audit treba da razreši namerno, a ne po inerciji.
 
+##### Dopuna 2026-09-06 — Sanjin staging i njen nalog
+
+Tenant nije jedno okruženje nego **dva**, isto kao Psihointegritet: test okruženje mora da postoji
+pre nego što se bilo šta pokazuje, a njeno postoji na Vercel domenu jer njen domen još nije poznat.
+
+```
+Railway  valiant-cat-psihointegritet
+  ├ features          · Postgres tokaido:23438
+  ├ staging           · Postgres tokaido:38992
+  ├ production        · Postgres tokaido:19415
+  ├ sanja-staging     · Postgres maglev:38221     ← novo
+  └ sanja-production  · Postgres shuttle:57781
+
+Vercel  sanja-neuer
+  ├ staging grana → sanja-neuer-staging.vercel.app   ← test domen, radi
+  └ main    grana → sanja-neuer.vercel.app           ← čeka merge u main
+```
+
+| Backend | `sanja-neuer` | `psihointegritet` |
+| ------- | ------------- | ----------------- |
+| sanja-production | **200** | 200 |
+| sanja-staging | **200** | 200 |
+| production | **404** | 200 |
+| staging | **404** | 200 |
+| features | **404** | 200 |
+
+**Sanjin nalog je provisionovan** u obe njene baze: `user_3IxNmblGJWzd5JBmbgL8uUnEksz`,
+`sanjaneuer@gmail.com`, uloge `org_admin` + `therapist`. **Jedan identitet, dve uloge** — nema
+odvojenog „org_therapist naloga".
+
+`TherapistMatchingProfile` **nije** kreiran. Njen tenant nema katalog terapeuta ni „pronađi podršku"
+tok, pa bi red postojao u tabeli koju njen proizvod ne čita. Uloga otvara workspace površine i bez
+njega; profil se dodaje ako se ispostavi da treba.
+
+> **Clerk instanca: development, ne produkcijska.** Sanja se registrovala na
+> `inviting-escargot-8.clerk.accounts.dev`, a njeno okruženje je prvobitno bilo nameštено na
+> `clerk.psihointegritet.com` — **njen nalog se tamo nikad ne bi autentifikovao**. Oba njena
+> okruženja sada koriste dev instancu, uz `ENVIRONMENT=staging` da se `clerk_instance_for()` slaže.
+> Ime `sanja-production` je zato trenutno šire od sadržaja; prelazak na produkcijsku Clerk instancu
+> je deo njenog go-live-a, ne ovog slice-a.
+
+**Zamka pri dupliranju se ponovila i drugi put** i biće svaki put: `DATABASE_URL` i `REDIS_URL` se
+kopiraju kao literali sa lozinkom izvornog okruženja, dok nova baza jeste prazna. Provera pre svega
+ostalog: `select count(*) from information_schema.tables where table_schema='public'` mora da vrati
+**0**, pa tek onda migracije.
+
+**Vercel deployment protection je bio uključen** na novom projektu (`ssoProtection:
+all_except_custom_domains`) i vraćao `vercel.com/login` umesto stranice. Isključen — postojeći
+projekat ga nema. Svaki nov tenant projekat kreće sa njim uključenim.
+
 ### PDC-0D — Email identity
 
 Odmah ukloniti `https://psihointegritet.com` i sender `Psihointegritet` iz email infrastrukture
