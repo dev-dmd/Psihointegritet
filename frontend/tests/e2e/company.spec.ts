@@ -49,8 +49,11 @@ test("workshop request maps to the team workshop, priced on request", async ({
   await drawer.getByRole("button", { name: "Burnout" }).click();
   await drawer.getByRole("button", { name: "Stres" }).click();
   await drawer.getByRole("button", { name: "Dalje" }).click();
-  // Q4 — format.
-  await drawer.getByRole("button", { name: "Online", exact: true }).click();
+  // Q4 — format. The button shows the translated label ("Onlajn") while the
+  // answer stored is the raw option ("Online") from `content/company.ts` — the
+  // configurator renders `optionLabel(option)` and submits `option`. Assert the
+  // visible text, which is what a person clicks.
+  await drawer.getByRole("button", { name: "Onlajn", exact: true }).click();
 
   await expect(drawer).toContainText("Interaktivna radionica za tim");
   await expect(drawer).toContainText("Cena po ponudi");
