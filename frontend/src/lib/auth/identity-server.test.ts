@@ -29,7 +29,7 @@ describe("request-scoped server identity", () => {
       displayName: "Person",
       isSuperadmin: false,
       memberships: [
-        { organizationId: "psihointegritet", roles: ["org_admin"] },
+        { organizationSlug: "psihointegritet", roles: ["org_admin"] },
       ],
     };
     getClerkServerIdentityMock.mockResolvedValue(identity);

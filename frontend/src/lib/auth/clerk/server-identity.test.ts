@@ -96,7 +96,7 @@ describe("getClerkServerIdentity", () => {
           backendIdentity({
             userId: "user_3",
             memberships: [
-              { organizationId: "org-1", roles: ["org_admin", "therapist"] },
+              { organizationSlug: "org-1", roles: ["org_admin", "therapist"] },
             ],
           }),
         ),
@@ -104,7 +104,7 @@ describe("getClerkServerIdentity", () => {
     );
     const identity = await getClerkServerIdentity();
     expect(identity?.memberships).toEqual([
-      { organizationId: "org-1", roles: ["org_admin", "therapist"] },
+      { organizationSlug: "org-1", roles: ["org_admin", "therapist"] },
     ]);
   });
 

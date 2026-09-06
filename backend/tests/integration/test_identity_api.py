@@ -84,7 +84,10 @@ async def test_me_returns_only_active_postgresql_roles(
 
     assert result.user_id == identity.subject
     assert len(result.memberships) == 1
-    assert result.memberships[0].organization_id == organization.slug
+    # The field carries the slug and is now named for it — before B2-1 it was
+    # called `organization_id` while holding this exact value, which is what
+    # let a frontend guard compare the wrong two things.
+    assert result.memberships[0].organization_slug == organization.slug
     assert result.memberships[0].roles == [MembershipRole.ORG_ADMIN]
 
 

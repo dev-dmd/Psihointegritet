@@ -22,9 +22,12 @@ superadmin_router = APIRouter(prefix="/superadmin/organizations", tags=["identit
 class MembershipOut(BaseModel):
     model_config = ConfigDict(alias_generator=lambda value: value, populate_by_name=True)
 
-    # The frontend deployment boundary is keyed by the stable public slug, not
-    # by a database-local UUID (UUIDs intentionally differ per environment).
-    organization_id: str = Field(serialization_alias="organizationId")
+    # The stable public slug, not a database-local UUID — those intentionally
+    # differ per environment, so a UUID could not be compared against anything
+    # the frontend knows. The field was called `organization_id` until B2-1
+    # (2026-09-07) while carrying a slug; a name that contradicts its contents
+    # is how a frontend guard ends up comparing the wrong two values.
+    organization_slug: str = Field(serialization_alias="organizationSlug")
     roles: list[MembershipRole]
 
 
@@ -89,8 +92,8 @@ async def build_me_response(session: DatabaseSession, user: InternalUser) -> MeO
         display_name=user.display_name,
         is_superadmin=user.is_superadmin,
         memberships=[
-            MembershipOut(organization_id=org_id, roles=sorted(roles, key=str))
-            for org_id, roles in sorted(roles_by_org.items(), key=lambda item: str(item[0]))
+            MembershipOut(organization_slug=slug, roles=sorted(roles, key=str))
+            for slug, roles in sorted(roles_by_org.items(), key=lambda item: str(item[0]))
         ],
     )
 

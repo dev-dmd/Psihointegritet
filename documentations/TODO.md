@@ -810,7 +810,7 @@ BIĆE:  trusted hostname → domain registry → organizationSlug → /s/[organi
 | ID | Zadatak | Status | Napomena |
 | -- | ------- | ------ | -------- |
 | B2-0 | Spike: metadata rute, canonical, ISR pod rewrite-om | ✅ | 2026-09-07. Potvrđeno: statika ostaje, tri ograničenja u ADR-026 §9 |
-| B2-1 | **Tenant-scoped authorization guards** | ⬜ | **Bezbednosni gate.** `hasRole()` ne gleda `organizationId` — pod C2(a) prikriveno deployment izolacijom, pod B2 cross-tenant bug. **Mora pre B2-3** |
+| B2-1 | **Tenant-scoped authorization guards** | ✅ | **2026-09-07.** `hasRole(identity, organizationSlug, role)` — bez globalne varijante i bez podrazumevanog parametra. Guardovi razrešavaju aktivnu organizaciju kroz `getActiveOrganizationSlug()`, šav koji pod B2 čita route param bez izmene guard API-ja. Membership ugovor `organizationId → organizationSlug` na oba sloja. Usput popravljen `assertWorkspaceOrganization`, koji je gledao samo `memberships[0]` |
 | B2-2 | PDC-0D email identity | ⬜ | Nezavisno od routinga, može paralelno |
 | B2-3 | Domain registry + proxy rewrite + `useContent` tenant context | ⬜ | Vidi audit §8, koraci 1–7 |
 | B2-4 | PDC-1 Sanja Page Composer / njen sajt | ⬜ | Radi nad `organizationSlug`-om bez obzira odakle stiže — ne mora da čeka B2-3 |
