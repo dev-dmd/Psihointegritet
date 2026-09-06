@@ -35,11 +35,26 @@ function GlobeIcon() {
  * round icon-only circle on mobile, an icon+label pill from `lg:` up. Callers
  * supply only the surrounding topbar's existing button theme via `className`.
  */
-export function BackToSiteButton({ className }: { className?: string }) {
+export function BackToSiteButton({
+  className,
+  href = "/" as Route,
+}: {
+  className?: string;
+  /**
+   * Where "the site" is for whoever is looking.
+   *
+   * Defaults to this host's root, which was the only right answer while the
+   * panels lived on the same domain as the site. On the platform host they no
+   * longer do: an owner in the shared workspace must be sent to *their* tenant's
+   * domain, not to the platform's root. Callers that know the active
+   * organization pass its public URL.
+   */
+  href?: Route | string;
+}) {
   const t = useTranslations("common");
   return (
     <Link
-      href={"/" as Route}
+      href={href as Route}
       target="_blank"
       rel="noopener noreferrer"
       title={t("shell.backToSite")}

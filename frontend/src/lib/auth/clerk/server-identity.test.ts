@@ -1,10 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { authMock, currentUserMock, fetchMock } = vi.hoisted(() => ({
-  authMock: vi.fn(),
-  currentUserMock: vi.fn(),
-  fetchMock: vi.fn(),
-}));
+const { authMock, currentUserMock, fetchMock, headersMock } = vi.hoisted(
+  () => ({
+    authMock: vi.fn(),
+    currentUserMock: vi.fn(),
+    fetchMock: vi.fn(),
+    headersMock: vi.fn(),
+  }),
+);
 
 vi.mock("server-only", () => ({}));
 vi.mock("@clerk/nextjs/server", () => ({
@@ -14,8 +17,29 @@ vi.mock("@clerk/nextjs/server", () => ({
 vi.mock("@/lib/validation/env", () => ({
   serverEnv: { NEXT_PUBLIC_API_URL: "https://api.test" },
 }));
+vi.mock("next/headers", () => ({ headers: headersMock }));
 
 import { getClerkServerIdentity } from "./server-identity";
+import {
+  TENANT_DOMAINS,
+  TENANT_SLUG_HEADER,
+  TENANT_SURFACE_HEADER,
+  tenantForSlug,
+} from "@/lib/tenant/domain-registry";
+
+/** Stand in for what the proxy stamps; no headers means no proxy ran. */
+function onSurface(surface?: "tenant" | "platform", slug?: string) {
+  const values = new Map<string, string>();
+  if (surface) values.set(TENANT_SURFACE_HEADER, surface);
+  if (slug) values.set(TENANT_SLUG_HEADER, slug);
+  headersMock.mockResolvedValue({
+    get: (key: string) => values.get(key) ?? null,
+  });
+}
+
+function fetchedHosts() {
+  return fetchMock.mock.calls.map(([url]) => String(url));
+}
 
 function clerkUser(email = "test@test.rs") {
   return {
@@ -39,6 +63,8 @@ describe("getClerkServerIdentity", () => {
     authMock.mockReset();
     currentUserMock.mockReset();
     fetchMock.mockReset();
+    headersMock.mockReset();
+    onSurface();
     vi.stubGlobal("fetch", fetchMock);
   });
 
@@ -217,5 +243,118 @@ describe("display name", () => {
     await expect(getClerkServerIdentity()).resolves.toMatchObject({
       displayName: "Maria",
     });
+  });
+});
+
+describe("which backend answers", () => {
+  beforeEach(() => {
+    // This suite sits outside the block above, so it owns its own reset.
+    authMock.mockReset();
+    currentUserMock.mockReset();
+    fetchMock.mockReset();
+    headersMock.mockReset();
+    vi.stubGlobal("fetch", fetchMock);
+    authMock.mockResolvedValue({
+      userId: "user_1",
+      getToken: vi.fn().mockResolvedValue("token"),
+    });
+    currentUserMock.mockResolvedValue(clerkUser());
+    // A fresh Response per call: the platform surface calls several backends,
+    // and one body cannot be read twice.
+    fetchMock.mockImplementation(
+      async () => new Response(JSON.stringify(backendIdentity())),
+    );
+  });
+
+  it("asks only the tenant's own backend on a tenant surface", async () => {
+    onSurface("tenant", "sanja-neuer");
+    await getClerkServerIdentity();
+
+    const sanja = tenantForSlug("sanja-neuer")!;
+    const psiho = tenantForSlug("psihointegritet")!;
+    expect(fetchedHosts()).toEqual([`${sanja.apiBaseUrl}/api/v1/me`]);
+    // The isolation this whole slice exists for: her domain must not be able to
+    // reach another tenant's database, not even to ask who someone is.
+    expect(fetchedHosts().join(" ")).not.toContain(psiho.apiBaseUrl);
+  });
+
+  it("asks every backend on the shared platform surface", async () => {
+    onSurface("platform");
+    await getClerkServerIdentity();
+
+    // Each database holds only its own memberships, so no single backend can
+    // answer which organizations an owner belongs to.
+    expect(fetchedHosts().sort()).toEqual(
+      TENANT_DOMAINS.map((tenant) => `${tenant.apiBaseUrl}/api/v1/me`).sort(),
+    );
+  });
+
+  it("merges memberships the tenants report separately", async () => {
+    onSurface("platform");
+    const [first, second] = TENANT_DOMAINS;
+    fetchMock.mockImplementation(async (url: string) =>
+      String(url).startsWith(first!.apiBaseUrl)
+        ? new Response(
+            JSON.stringify(
+              backendIdentity({
+                memberships: [
+                  {
+                    organizationSlug: first!.organizationSlug,
+                    roles: ["org_admin"],
+                  },
+                ],
+              }),
+            ),
+          )
+        : new Response(
+            JSON.stringify(
+              backendIdentity({
+                memberships: [
+                  {
+                    organizationSlug: second!.organizationSlug,
+                    roles: ["therapist"],
+                  },
+                ],
+              }),
+            ),
+          ),
+    );
+
+    const identity = await getClerkServerIdentity();
+    expect(
+      identity?.memberships
+        .map((membership) => membership.organizationSlug)
+        .sort(),
+    ).toEqual([first!.organizationSlug, second!.organizationSlug].sort());
+  });
+
+  it("treats a backend that does not know the account as no memberships", async () => {
+    onSurface("platform");
+    const [first] = TENANT_DOMAINS;
+    fetchMock.mockImplementation(async (url: string) =>
+      String(url).startsWith(first!.apiBaseUrl)
+        ? new Response(JSON.stringify(backendIdentity()))
+        : new Response("", { status: 403 }),
+    );
+
+    // An owner of one practice simply has nothing from the other; 403 is an
+    // ordinary answer here, not a failure.
+    await expect(getClerkServerIdentity()).resolves.not.toBeNull();
+  });
+
+  it("still fails when a backend is genuinely broken", async () => {
+    onSurface("platform");
+    fetchMock.mockResolvedValue(new Response("", { status: 500 }));
+
+    // A silent empty identity would read as "no roles" and lock an owner out of
+    // their own workspace.
+    await expect(getClerkServerIdentity()).rejects.toThrow(/500/);
+  });
+
+  it("falls back to the configured API only when no proxy stamped a surface", async () => {
+    onSurface();
+    await getClerkServerIdentity();
+
+    expect(fetchedHosts()).toEqual(["https://api.test/api/v1/me"]);
   });
 });

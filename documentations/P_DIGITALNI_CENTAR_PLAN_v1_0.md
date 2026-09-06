@@ -819,6 +819,92 @@ taj ugovor je građen od `organization_id`, `affected_count` i `sample_rows` i o
 Prvi pokretanje na Sanjinim bazama je odmah uhvatilo cross-tenant email
 (`sender domain psihointegritet.com belongs to another tenant`) — to je PDC-0D.
 
+### B2 — frontend konsolidacija · isporučeno 2026-09-07
+
+Ovim je ciljna topologija iz `⚠ SUPERSEDED` bloka iznad **stvarna**, a ne planirana.
+Jedan Vercel projekat, više tenant domena, statika netaknuta.
+
+#### Površine su vezane za host, ne za deployment
+
+Ovo je ispravka ranijeg čitanja plana. Nije „tenant domen služi sve što tenant ima":
+
+| Host | Šta služi | Odakle organizacija |
+| ---- | --------- | ------------------- |
+| tenant domen | javni sajt + klijentski `/nalog` | hostname |
+| platformski domen (`PLATFORM_HOST`) | vlasnički `/radni-prostor` + `/superadmin` | membership |
+| host koji je oboje — danas `psihointegritet.com` | oboje, po površini | po površini |
+
+Razlog je jedan: **klijent i vlasnik ne postavljaju isto pitanje.** Klijent koji dođe na
+`sanjaneuer.com` je u njenom prostoru bez obzira ko je i da li je uopšte iko. Vlasnik koji radi u
+`/radni-prostor` je u organizaciji u kojoj ima membership — a vlasnici oba tenanta dele isti host,
+pa adresa to ne može da odgovori.
+
+Zato su to **dva imenovana resolvera**, ne jedan helper koji gleda oba izvora i vraća šta nađe:
+`resolveTenantSurfaceOrganization()` (header) i `resolveWorkspaceOrganization()` (membership).
+`getActiveOrganizationSlug()` bira eksplicitno, po žigu koji je proxy postavio, jer je proxy jedini
+sloj koji to već zna.
+
+#### Sve ostalo je 404 — fail-closed lista
+
+| Zahtev | Odgovor | Zašto |
+| ------ | ------- | ----- |
+| neregistrovan host | 404 | domen uperen u projekat ne sme da posluži bilo čiji sajt |
+| direktan `/s/<slug>` | 404 | interno stablo bi se indeksiralo paralelno sa pravim domenom |
+| `/radni-prostor` na tenant domenu | 404 | vlasnički prostor odgovara samo na platformskom hostu |
+| `/nalog` na platformskom hostu bez tenanta | 404 | klijent nema membership, pa bi jedini preostali odgovor bio founding tenant |
+
+404 pre auth gate-a, namerno: slanje na prijavu na domenu koji stranicu ionako neće poslužiti čita
+se kao pokvaren login, ne kao pogrešna adresa.
+
+#### `PLATFORM_HOST` je obavezan na deployed okruženjima
+
+Isti oblik pravila kao `DEFAULT_ORGANIZATION_SLUG`, i iz istog razloga: na laptopu je odsustvo
+udobnost, na deployment-u znači da je neko zaboravio. Cena zaborava je ovde specifična —
+`/radni-prostor` i `/superadmin` ne odgovaraju **nigde**. Zato pada na build-u
+(`MissingPlatformHostError`), gde se `serverEnv` učitava, a ne kod vlasnika koji ne može da uđe.
+
+```
+danas     PLATFORM_HOST=psihointegritet.com     # vlasnici tamo rade
+kasnije   PLATFORM_HOST=p-digital-center.com    # env izmena, ne refaktor
+lokalno   (prazno)                              # localhost i 127.0.0.1 su uvek platforma
+```
+
+> **Pre merge-a u produkciju:** postaviti `PLATFORM_HOST` na svakom Vercel target-u. Ovo je jedini
+> novi obavezni env u ovom slice-u.
+
+#### Backend se bira po tenantu, ne iz jedne env promenljive
+
+`apiBaseUrl` živi u domain registry-ju pored tenanta. Na tenant površini se zove **samo** njegov
+backend — Sanjin kontekst ne sme da dodirne Psiho bazu. Na platformskoj površini se pitaju svi
+registrovani backend-i i memberships se spajaju, jer svaka baza drži samo svoje; 401/403 tamo znači
+„ovaj backend te ne poznaje", a ne grešku. Kolabira u jedan poziv kad deljeni backend stigne.
+
+#### Prazan tenant je prazan, ne founding tenant
+
+Sanjina naslovna renderuje njeno ime i „Sajt je u pripremi." Provereno na build-u: **0 pojava**
+„Psihointegritet" u renderovanom markupu, uključujući `<title>`, canonical i Open Graph.
+Root layout i dalje nosi default-e founding tenanta (njegovih ~26 stranica su još u `app/(public)`),
+pa tenant stranica **prepisuje svako polje**, `title` kroz `absolute` — inače bi template iz root-a
+potpisao njenu stranicu tuđim imenom.
+
+Payload je zasebna priča i zaveden je kao **D40**: ceo `next-intl` katalog se serijalizuje u flight
+payload svake stranice na svakom hostu, i to je zatečeno ponašanje next-intl 4.x, ne B2 regresija.
+
+#### Statika je ostala statika
+
+```
+● /s/sanja-neuer     5m revalidate       ƒ samo Proxy (Middleware)
+.next/server/app/s/sanja-neuer.html      prerenderovan na disku
+x-nextjs-cache: HIT  ·  s-maxage=300     po tenantu, zasebni ključevi
+```
+
+#### Šta ostaje migracioni artefakt
+
+Zaseban `sanja-neuer` Vercel projekat. **Ne briše se** dok cutover ne prođe, i nije šablon za
+trećeg tenanta.
+
+---
+
 ### PDC-0D — Email identity
 
 Odmah ukloniti `https://psihointegritet.com` i sender `Psihointegritet` iz email infrastrukture
