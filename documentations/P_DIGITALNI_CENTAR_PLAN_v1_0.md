@@ -421,14 +421,17 @@ Deployment B   DEFAULT_ORGANIZATION_SLUG=sanja-neuer       → Sanja Neuer
 i kada na Sanjinom deployment-u važi **sve**:
 
 - [ ] nigde javno ne piše „Psihointegritet" osim ako je deo namerno unetog sadržaja
-- [ ] footer ima Sanjine podatke
-- [ ] legal/public config nema Psihointegritet podatke
-- [ ] SEO nema Psihointegritet identitet
+      — **prenosi se u PDC-1.** Posle PDC-0B preostala pojavljivanja nisu identitet nego
+      per-route SEO stringovi i marketing proza u katalogu sadržaja (vidi status PDC-0B).
+- [x] footer ima Sanjine podatke
+- [x] legal/public config nema Psihointegritet podatke
+- [ ] SEO nema Psihointegritet identitet — **JSON-LD jeste** tenant-scoped (PDC-0B);
+      per-route `title`/`description` još dolaze iz kataloga sadržaja, pa ostaje za PDC-1
 - [ ] email nema Psihointegritet sender ni linkove
 - [ ] `sanja-neuer` organizacija postoji u bazi, kreirana kroz bootstrap seam (ne kroz migraciju)
 - [ ] nema demo Psihointegritet podataka
-- [ ] tenant boundary testovi prolaze
-- [ ] **postojeći Psihointegritet demo nije regresiran**
+- [x] tenant boundary testovi prolaze
+- [x] **postojeći Psihointegritet demo nije regresiran**
 
 Tek tada se prelazi na PDC-1.
 
