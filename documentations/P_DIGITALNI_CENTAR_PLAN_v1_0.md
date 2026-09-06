@@ -641,6 +641,33 @@ ostalog: `select count(*) from information_schema.tables where table_schema='pub
 all_except_custom_domains`) i vraćao `vercel.com/login` umesto stranice. Isključen — postojeći
 projekat ga nema. Svaki nov tenant projekat kreće sa njim uključenim.
 
+##### Sanjini nalozi po Clerk instanci — 2026-09-06
+
+Ona ima **dva Clerk naloga**, po jedan po instanci, sa istom adresom. To nisu duplikati nego dva
+odvojena identiteta: dev token se ne verifikuje protiv produkcijskog issuer-a i obrnuto.
+
+| Okruženje | Clerk instanca | `external_auth_id` | Uloge |
+| --------- | -------------- | ------------------ | ----- |
+| sanja-staging | `inviting-escargot-8.clerk.accounts.dev` | `user_3IxNmblGJWzd5JBmbgL8uUnEksz` | `org_admin` · `therapist` — aktivne |
+| sanja-production | `clerk.psihointegritet.com` | `user_3Iy2Vp5BNrUCDKyXB3ZxkNPYZHt` | `org_admin` · `therapist` — aktivne |
+
+U produkcijskoj bazi njen **dev nalog je povučen** (`--revoke`, uloge `disabled`, red zadržan zbog
+audita). Postojao je iz faze kad je imala samo dev nalog; tamo se ionako nikad ne bi autentifikovao,
+a aktivan red za identitet koji ne može da se uloguje je tačno ona neurednost zbog koje roster modul
+i postoji.
+
+> **Roster je jednotenantski po konstrukciji.** `TeamMember` nema polje za organizaciju, a
+> `provision_staff.py` ima `DEFAULT_ORGANIZATION = "psihointegritet"`. Sanja zato **nije** u rosteru
+> — dodavanje vlasnika drugog tenanta u tabelu koja implicitno pripada Psihointegritetu spojilo bi
+> dva tenanta na mestu koje postoji baš da ih razdvaja. Posledica: njeni nalozi se provizioniraju
+> eksplicitnim `--external-id`, svaki put. Prihvatljivo za drugog tenanta; to je posao koji onboarding
+> UI preuzima.
+
+**Produkcijski Clerk ključevi za njen frontend još nisu postavljeni.** Njen Vercel projekat nosi dev
+ključeve (`pk_test_`) na oba targeta. Za `main` target trebaju produkcijski, ali to još ništa ne
+blokira: `main` nema `sanja-neuer` u registru, pa `sanja-neuer.vercel.app` ionako ne može da builduje
+dok se `staging` ne spoji u `main`. Tada trebaju i ključevi.
+
 ##### Kako se lokalno gleda drugi tenant
 
 **Nema URL-a koji menja tenanta** — to je C2(a), ne propust. Jedan dev server servisira jednu
