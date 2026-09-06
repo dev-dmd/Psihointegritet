@@ -1,4 +1,5 @@
 import { PLATFORM_DEFAULT_LOCALE, type UiLocale } from "@/i18n/locales";
+import { deploymentSlugFromEnv } from "@/lib/tenant/deployment-slug";
 import type { ContentPackId } from "@/content/pack-types";
 
 /**
@@ -241,7 +242,7 @@ export function findOrganizationPublicSite(
  * C2(a) reasoning, same throw-on-unknown posture as `resolveDeploymentOrganization`.
  */
 export function deploymentPublicSite(): OrganizationPublicSite {
-  const slug = process.env.DEFAULT_ORGANIZATION_SLUG ?? "psihointegritet";
+  const slug = deploymentSlugFromEnv();
   const publicSite = findOrganizationPublicSite(slug);
   if (publicSite === undefined) {
     throw new Error(

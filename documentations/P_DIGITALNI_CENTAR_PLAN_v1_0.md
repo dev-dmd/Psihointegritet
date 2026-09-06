@@ -732,6 +732,68 @@ docker compose --profile backend up -d backend
 Lokalna baza drži **obe** organizacije i naloge oba tenanta, pa prebacivanje ne traži nikakav
 provisioning — samo restart.
 
+### PDC-0 stabilization pass — 2026-09-06
+
+Sanjin onboarding je izložio tri kvara koji se **ne prijavljuju sami**. Nijedan nije uhvaćen greškom;
+sva tri su nađena tek kad se gledalo nešto drugo.
+
+| Kvar | Kako je izgledao | Zašto se nije video |
+| ---- | ---------------- | ------------------- |
+| `sanja-staging` backend je pratio `main` | njen staging frontend gađao backend koji izvršava produkcijski kod od 14. avgusta (`29ae344`) | deployment uspešan, health 200 |
+| Nijedno Psiho okruženje nije imalo `DEFAULT_ORGANIZATION_SLUG` | oslanjala se na `config.py` fallback | vrednost je slučajno bila tačna |
+| Kopirani `DATABASE_URL` pri dupliranju okruženja | `password authentication failed`, a `/health` 200 | health ne dodiruje bazu |
+
+#### `DEFAULT_ORGANIZATION_SLUG` je C2(a) deployment binding, ne onboarding
+
+Ovo razdvajanje je bilo zamućeno i vredi ga zapisati doslovno:
+
+```
+Organization data      → provision_organization()      "tenant postoji"
+Deployment binding     → DEFAULT_ORGANIZATION_SLUG     "ovaj runtime služi tog tenanta"
+Identity / staff       → provision_staff()             "ko sme da uđe"
+Capabilities           → email, media, domen…          "šta tenant može"
+```
+
+`provision_organization()` ostaje **kanonski application servis** koji će Superadmin onboarding
+kasnije zvati. Deployment binding nije njegov posao i obrnuto.
+
+#### Ukinut implicitni founding-tenant fallback
+
+Ranije su i frontend `serverEnvSchema` i backend `Settings` defaultovali na `psihointegritet`, uz
+obrazloženje da odsustvo ima jedan tačan odgovor. To je važilo dok je postojao jedan tenant. Sa
+drugim, odsustvo ne znači „osnivački tenant" nego „neko je zaboravio" — a default tada servira
+jednog tenanta iz deployment-a drugog, bez ijedne greške.
+
+| Okruženje | Bez `DEFAULT_ORGANIZATION_SLUG` |
+| --------- | ------------------------------- |
+| `development` | ✅ fallback na `psihointegritet` — laptop bez konfiguracije mora da radi |
+| `staging` · `production` | ⛔ **odbija start / build**, uz poruku koja imenuje promenljivu i okruženje |
+| bilo koje, sa nepoznatim slug-om | ⛔ i dalje fail-closed, nepromenjeno |
+
+Frontend je centralizovan u `lib/tenant/deployment-slug.ts`; četiri mesta su čitala env sa sopstvenim
+`?? "psihointegritet"` (`validation/env.ts`, `content/registry.ts`, `lib/tenant/organizations.ts`,
+`next.config.ts`). `next.config.ts` je najbolje mesto za pad — greška stiže na `next build`, pre nego
+što išta postoji da servira pogrešnog tenanta.
+
+> **Šta nije dirano, namerno:** `public-metadata.ts` `DEFAULT_ORG` (Clerk metadata fallback, druga
+> briga) i zakucani `ORGANIZATION_ID` u dva workspace ekrana. Oba su zaseban dug, ne ovaj.
+
+#### `scripts/tenant_doctor.py`
+
+PASS/WARN/FAIL provera deployment-a na kom se izvršava. **Nijedna tajna ne ulazi u izlaz** — proverava
+se prisustvo i, gde je bezbedno, oblik.
+
+Proverava: deployment binding je eksplicitan · ciljna baza (bez kredencijala) · organizacija postoji u
+toj bazi · migration head se poklapa sa kodom · Clerk konfiguracija i da li instanca odgovara okruženju ·
+CORS · email konfiguracija · locale rečnik · opciono da li upareni frontend odgovara.
+
+Izlazni kod je 1 samo na FAIL, pa se sme staviti ispred deploy-a. **Nije** u diagnostics engine-u:
+taj ugovor je građen od `organization_id`, `affected_count` i `sample_rows` i odgovara na pitanja o
+**redovima**; ovo su pitanja o **konfiguraciji**.
+
+Prvi pokretanje na Sanjinim bazama je odmah uhvatilo cross-tenant email
+(`sender domain psihointegritet.com belongs to another tenant`) — to je PDC-0D.
+
 ### PDC-0D — Email identity
 
 Odmah ukloniti `https://psihointegritet.com` i sender `Psihointegritet` iz email infrastrukture

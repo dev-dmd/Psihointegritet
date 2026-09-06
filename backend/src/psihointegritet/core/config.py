@@ -1,7 +1,7 @@
 from enum import StrEnum
 from functools import lru_cache
 
-from pydantic import Field
+from pydantic import Field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -9,6 +9,11 @@ class Environment(StrEnum):
     DEVELOPMENT = "development"
     STAGING = "staging"
     PRODUCTION = "production"
+
+
+#: The first tenant. Kept as a development convenience, never as a deployment
+#: default — see `Settings._bind_deployment_tenant`.
+FOUNDING_TENANT_SLUG = "psihointegritet"
 
 
 class Settings(BaseSettings):
@@ -38,7 +43,11 @@ class Settings(BaseSettings):
     clerk_jwks_url: str = ""
     clerk_audience: str = ""
 
-    default_organization_slug: str = "psihointegritet"
+    #: Which organization this deployment serves — the C2(a) deployment binding.
+    #: Empty means "not stated"; `_bind_deployment_tenant` then either supplies
+    #: the development convenience or refuses to start. It is never a tenant
+    #: onboarding step: creating an organization is `provision_organization`.
+    default_organization_slug: str = ""
     intake_matching_enabled: bool = False
     intake_sensitive_submission_enabled: bool = False
     intake_team_queue_enabled: bool = False
@@ -53,6 +62,32 @@ class Settings(BaseSettings):
     intake_review_public_max_business_days: int = Field(default=1, ge=1, le=30)
     intake_business_timezone: str = "Europe/Belgrade"
     slot_hold_ttl_seconds: int = Field(default=600, ge=30, le=3600)
+
+    @model_validator(mode="after")
+    def _bind_deployment_tenant(self) -> Settings:
+        """Refuse to start a deployed environment that has not named its tenant.
+
+        This used to default to the founding tenant everywhere, on the reasoning
+        that an absent value had one correct answer. That was true while one
+        tenant existed. With a second, absent means someone forgot — and the
+        default then answers every request for one organization out of another
+        organization's deployment, with nothing raised to say so.
+
+        Development keeps the convenience: a laptop with no `.env` should still
+        run. A deployment calling itself staging or production must say who it
+        serves.
+        """
+        if self.default_organization_slug.strip():
+            return self
+        if self.environment is Environment.DEVELOPMENT:
+            self.default_organization_slug = FOUNDING_TENANT_SLUG
+            return self
+        raise ValueError(
+            f"ENVIRONMENT is '{self.environment.value}' but DEFAULT_ORGANIZATION_SLUG is "
+            f"not set. A deployed environment must name the organization it serves; "
+            f"falling back to '{FOUNDING_TENANT_SLUG}' would serve one tenant out of "
+            f"another tenant's deployment. Set DEFAULT_ORGANIZATION_SLUG."
+        )
 
     @property
     def is_production(self) -> bool:

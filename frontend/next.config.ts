@@ -1,6 +1,8 @@
 import type { NextConfig } from "next";
 import createNextIntlPlugin from "next-intl/plugin";
 
+import { resolveDeploymentSlug } from "./src/lib/tenant/deployment-slug";
+
 const nextConfig: NextConfig = {
   /**
    * Inlined into the client bundle at build time.
@@ -16,8 +18,13 @@ const nextConfig: NextConfig = {
    * serves one organization, so the slug cannot change while the server runs.
    */
   env: {
-    DEFAULT_ORGANIZATION_SLUG:
-      process.env.DEFAULT_ORGANIZATION_SLUG ?? "psihointegritet",
+    // Throws on a deployed build with no tenant named, which makes `next build`
+    // the earliest and loudest place that mistake can surface — better than a
+    // running site quietly serving the founding tenant's content.
+    DEFAULT_ORGANIZATION_SLUG: resolveDeploymentSlug(
+      process.env.DEFAULT_ORGANIZATION_SLUG,
+      process.env.DEPLOYMENT_ENV,
+    ),
   },
   reactCompiler: true,
   poweredByHeader: false,
