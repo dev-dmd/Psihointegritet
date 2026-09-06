@@ -384,6 +384,48 @@ Sanja dobija **svoj FE i svoj BE deployment, iz istog koda**. Baza ne mora nužn
 
 Ovo je arhitektonski važno i zato stoji eksplicitno, a ne kao pretpostavka.
 
+#### Vercel env matrica — postavljeno 2026-09-06
+
+Do sada nigde zapisano, pa se rekonstruisalo iz build loga svaki put kad bi puklo. Ovo je
+zapis stvarnog stanja projekta `cikadrazas-projects/psihointegritet`, provereno kroz CLI.
+
+**Domeni → grane** (svi verifikovani, `Root Directory: frontend`):
+
+| Domen | Grana |
+| ----- | ----- |
+| `psihointegritet.com` · `psihointegritet.vercel.app` | Production |
+| `qa.psihointegritet.com` | `features` |
+| `staging.psihointegritet.com` | `staging` |
+
+**Promenljive po scope-u:**
+
+| Scope | `DEPLOYMENT_ENV` | `NEXT_PUBLIC_APP_URL` | `NEXT_PUBLIC_API_URL` |
+| ----- | ---------------- | --------------------- | --------------------- |
+| **Production** | `production` | `https://psihointegritet.com` | `https://diligent-serenity-production-1b3e.up.railway.app` |
+| **Preview — sve grane** | `preview` | `https://qa.psihointegritet.com` | `https://diligent-serenity-features.up.railway.app` |
+| **Preview — grana `staging`** | `staging` | `https://staging.psihointegritet.com` | `https://diligent-serenity-staging.up.railway.app` |
+
+Vercel bira **specifičniji** unos, pa branch-scoped `staging` gazi neograničeni Preview bez
+ikakve logike u kodu. Grana `features` namerno **nema** svoj unos — nasleđuje Preview, jer je
+duplikat vezan baš za `features` i bio uzrok zabune (svaka druga grana je ostajala bez ijedne
+promenljive i build je padao na `serverEnv`).
+
+**Tri pravila koja iz ovoga slede:**
+
+1. **Šema je obavezna.** `NEXT_PUBLIC_APP_URL` prolazi kroz `z.url()` i kroz
+   `new URL()` u `metadataBase`; gola vrednost `qa.psihointegritet.com` pada na oba mesta.
+   Uvek `https://`.
+2. **Ne vezivati promenljive za pojedinačnu feature granu.** Neograničen Preview + override
+   samo tamo gde se vrednost stvarno razlikuje (`staging`).
+3. **Tip `config`, ne `secret`.** Ništa od ovo troje nije tajna — dve su ionako `NEXT_PUBLIC_`.
+   Kao `secret` su nečitljive i za `env pull` i u dashboard-u, što je i produžilo dijagnostiku.
+
+> **Popravljen tihi kvar na produkciji.** `DEPLOYMENT_ENV` **nije postojao** u Production scope-u.
+> `env.ts` ga tada defaultuje na `development`, a `deploymentEnvironmentFromRuntime()` traži
+> tačan string `production` — pa je `isProductionEnvironment()` vraćao `false` i živi sajt je
+> emitovao **prazan sitemap uz `noindex`**. Nije se videlo ni u jednom build logu jer ništa ne
+> puca; samo se ne indeksira.
+
 ### PDC-0D — Email identity
 
 Odmah ukloniti `https://psihointegritet.com` i sender `Psihointegritet` iz email infrastrukture
