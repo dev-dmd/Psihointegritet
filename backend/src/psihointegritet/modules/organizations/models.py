@@ -82,19 +82,26 @@ class OrganizationAuditEvent(Base):
     __tablename__ = "organization_audit_events"
 
     __table_args__ = (
-        CheckConstraint("actor_kind IN ('operator', 'member')", name="actor_kind_supported"),
+        CheckConstraint(
+            "actor_kind IN ('operator', 'member', 'system')", name="actor_kind_supported"
+        ),
     )
 
     id: Mapped[UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid4)
     organization_id: Mapped[UUID] = mapped_column(
         Uuid(as_uuid=True), ForeignKey("organizations.id", ondelete="CASCADE"), index=True
     )
-    #: Null only when the actor's user row is later deleted; never null on write.
+    #: Null for two unrelated reasons, and both are legitimate: the actor was a
+    #: platform process (`actor_kind = 'system'`, null from the start), or a
+    #: human actor's user row was later deleted and the foreign key set it null.
+    #: `actor_kind` is what tells the two apart — which is why it is never null.
     actor_user_id: Mapped[UUID | None] = mapped_column(
         Uuid(as_uuid=True), ForeignKey("internal_users.id", ondelete="SET NULL"), nullable=True
     )
     #: `operator` — a platform superadmin acting from outside the organization.
     #: `member` — someone who belongs to it.
+    #: `system` — a controlled platform process with no human actor, such as
+    #: organization bootstrap.
     actor_kind: Mapped[str] = mapped_column(String(16))
     event_type: Mapped[str] = mapped_column(String(80))
     #: Old and new values, plus a reason where the contract requires one. Never

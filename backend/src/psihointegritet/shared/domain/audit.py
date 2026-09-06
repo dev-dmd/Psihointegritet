@@ -11,7 +11,9 @@ audit trail extends `OrganizationEventType` and calls `record_organization_event
 instead of creating a sixth table.
 """
 
+from dataclasses import dataclass
 from enum import StrEnum
+from typing import Final
 from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -34,10 +36,44 @@ class ActorKind(StrEnum):
     OPERATOR = "operator"
     #: Someone who belongs to the organization.
     MEMBER = "member"
+    #: A controlled platform process with no human actor — organization
+    #: bootstrap being the first. This is an extension of D-078 to non-human
+    #: actions, not an exemption from it: the alternative was letting tenant
+    #: creation, the largest event the platform has, leave no record at all.
+    SYSTEM = "system"
 
 
 class OrganizationEventType(StrEnum):
     LOCALES_CHANGED = "organization.locales_changed"
+    ORGANIZATION_CREATED = "organization.created"
+
+
+@dataclass(frozen=True)
+class AuditActor:
+    """Who to attribute a record to, independent of how they were authorized.
+
+    The recorder took a `StaffActor` before this existed, which made it
+    unreachable from anything without a signed-in person — provisioning
+    included. Widening the contract is better than the alternative that was
+    available: fabricating a `StaffActor` with a null user id purely to satisfy
+    a signature would put a fake human in the audit trail, which is worse than
+    no trail at all because it reads as real.
+    """
+
+    kind: ActorKind
+    #: `None` only for `SYSTEM`. Every human actor carries their own id, so a
+    #: record still says who acted even after they leave.
+    user_id: UUID | None
+
+
+def staff_audit_actor(actor: StaffActor, organization_id: UUID) -> AuditActor:
+    """Attribution for a signed-in person, in the capacity they were acting."""
+    return AuditActor(kind=actor_kind_for(actor, organization_id), user_id=actor.user_id)
+
+
+#: Attribution for platform processes: bootstrap commands and anything else
+#: that runs without a person behind it.
+SYSTEM_AUDIT_ACTOR: Final = AuditActor(kind=ActorKind.SYSTEM, user_id=None)
 
 
 def actor_kind_for(actor: StaffActor, organization_id: UUID) -> ActorKind:
@@ -47,6 +83,10 @@ def actor_kind_for(actor: StaffActor, organization_id: UUID) -> ActorKind:
     the elevated flag does not change whose team they are on, and labelling
     their everyday work as platform intervention would make the distinction
     useless exactly where it matters.
+
+    Kept separate from `staff_audit_actor` because the answer is also an
+    authorization input: `organizations/service.py` refuses an operator without
+    a stated reason before any record is written.
     """
     if actor.is_superadmin and actor.organization_id != organization_id:
         return ActorKind.OPERATOR
@@ -56,7 +96,7 @@ def actor_kind_for(actor: StaffActor, organization_id: UUID) -> ActorKind:
 async def record_organization_event(
     session: AsyncSession,
     *,
-    actor: StaffActor,
+    actor: AuditActor,
     organization_id: UUID,
     event_type: OrganizationEventType,
     details: dict[str, object],
@@ -65,7 +105,7 @@ async def record_organization_event(
     event = OrganizationAuditEvent(
         organization_id=organization_id,
         actor_user_id=actor.user_id,
-        actor_kind=actor_kind_for(actor, organization_id).value,
+        actor_kind=actor.kind.value,
         event_type=event_type.value,
         details=details,
     )

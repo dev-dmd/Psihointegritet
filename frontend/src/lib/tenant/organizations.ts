@@ -152,10 +152,19 @@ export interface OrganizationPublicSite {
  * caveats as `ORGANIZATION_LOCALE_SETTINGS` above.
  *
  * Checked-in for the same reason: it is read during static generation of every
- * public page, so it must be knowable without a request. The backend
- * `organizations` table holds `display_name` today and gains the rest with
- * PDC-0B's server slice; `getDeploymentOrganization()` is where a live value
- * will override this one, exactly as it already does for locales.
+ * public page, so it must be knowable without a request.
+ *
+ * This is the whole source today, not a cache in front of one. The backend
+ * `organizations` table carries `display_name` and the two locales and nothing
+ * else here — persisted, editable public-site configuration does not exist yet,
+ * and PDC-0B deliberately did not add it. Under C2(a) a deployment may own its
+ * public identity as build-time configuration, so nothing is missing until a
+ * tenant needs to edit these values from their own admin.
+ *
+ * When that lands, `getDeploymentOrganization()` is where a live value overrides
+ * this one, exactly as it already does for locales. Whether it arrives as
+ * columns on `organizations` or a separate settings table is decided then,
+ * alongside the screen that writes it — not pre-emptively here.
  */
 export const ORGANIZATION_PUBLIC_SITE: Record<string, OrganizationPublicSite> =
   {

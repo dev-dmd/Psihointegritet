@@ -168,8 +168,15 @@ pod statički poznatim organization id-em, **a pozivna mesta se ne menjaju**.
 **Zaključak:** to je tačno taj seam. Sve tenant-scoped konfiguracije (branding, site settings, kasnije
 sekcije stranica) idu kroz `OrganizationContext`, **nikad kroz paralelni mehanizam** i nikad kroz nov
 modul-level konstantu. Backend `organizations` tabela danas ima samo
-`id · slug · display_name · ui_locale · default_content_locale · created_at`, pa PDC-0B mora da doda
-javnu konfiguraciju kao kolone ili vezanu tabelu. `display_name` je već seed za `publicName`.
+`id · slug · display_name · ui_locale · default_content_locale · created_at`. `display_name` je već
+seed za `publicName`.
+
+> **Ispravka (2026-09-06).** Raniji tekst je ovde tvrdio da „PDC-0B mora da doda javnu konfiguraciju
+> kao kolone ili vezanu tabelu". PDC-0B to **nije uradio i nije trebalo** — pod C2(a) deployment
+> legitimno poseduje javni identitet kao build-time konfiguraciju. Persisted, editable public-site
+> konfiguracija ne postoji i ne označava se kao gotova. Gde će živeti (kolone na `organizations` vs.
+> zasebna settings tabela) odlučuje se **uz ekran koji je piše**, kad Sanja bude menjala te podatke
+> iz admina — ne unapred, i ne naduvavanjem centralne `organizations` tabele.
 
 ### 2.4 Šest mesta gde se domeni neprimetno hard-code-uju — stvarni nalaz
 
@@ -350,6 +357,12 @@ DEFAULT_ORGANIZATION_SLUG=psihointegritet  → „© 2026 Psihointegritet." · i
 
 Javne rute ostaju `○` static — SSG ugovor nije narušen. Gate: `tsc` · `lint` · `format:check` ·
 `architecture:check` · 92 test fajla / 766 testova, uz 10 novih u `lib/tenant/public-site.test.ts`.
+
+**Šta PDC-0B nije isporučio.** Persisted, editable public-site konfiguracija na backendu.
+`organizations` i dalje nosi samo `display_name` i dva locale-a; `publicSite` dolazi isključivo iz
+checked-in registra, a `getDeploymentOrganization()` iz backenda povlači i dalje samo `uiLocale` i
+`defaultContentLocale`. To nije nedostatak PDC-0B-a nego njegov namerni obim — treba tek kad tenant
+bude uređivao te vrednosti sam.
 
 **Šta PDC-0B namerno NIJE dirao.** Na Sanjinom build-u 24/25 stranica i dalje sadrži „Psihointegritet",
 ali **nijedno pojavljivanje nije identitet** — sve su:
