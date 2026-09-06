@@ -314,6 +314,61 @@ Nosilac je `OrganizationContext` iz `getDeploymentOrganization()` (§2.3.1) — 
 Footer, kontakt stranica, pravna dokumenta i SEO provider čitaju **isti** tenant-scoped izvor.
 To uklanja celu klasu grešaka odjednom.
 
+#### Status PDC-0B — isporučeno 2026-09-06 (commit `9145347`)
+
+`content/site-settings.ts` je **obrisan**. Javni identitet ide kroz
+`getDeploymentOrganization() → OrganizationContext.publicSite`, isti put kojim već ide locale.
+
+**Dva accessora**, po uzoru na postojeći locale split:
+
+| Accessor | Oblik | Za koga |
+| -------- | ----- | ------- |
+| `getPublicSiteSettings()` | async, `server-only` | render (footer, header, CTA, kontakt, o-nama, pravna) |
+| `deploymentPublicSite()` | sync, čita registar | `static-provider.ts` (module-level konstanta) i Content Health CLI (čist Node) |
+
+**Migrirano:** `site-footer` · `site-header` · `final-cta` · `kontakt` · `o-nama` ·
+`legal-document-page` · `discoverability.ts` (`jsonLdForEntity`/`jsonLdForRoute` primaju identitet
+kao parametar, kao i `provider`) · `static-provider.ts`.
+
+**Brend je bio i doslovan literal** u `site-header`, `site-footer` i `final-cta`, i **upečen u
+katalog poruka** (`footer.rights`, `footer.organizationGroup`). Postali su `{organization}`
+placeholderi iz tenant konfiguracije. Ključevi `footer.formats` i `pages.contact.formats` su
+**uklonjeni** — nosili su „online i uživo", što je činjenica o tenantu, ne platformski UI.
+
+**Prazne lokacije su nosivi slučaj, ne ivični.** `organizationLocationsLabel()` vraća prazan string
+za online-only tenanta, pozivaoci uz njega izbacuju i separator (inače linija počinje sa „ · "),
+a `areaServed` se svodi na `["online"]`.
+
+**Provereno stvarnim build-om oba deployment-a:**
+
+```
+DEFAULT_ORGANIZATION_SLUG=sanja-neuer      → „Sanja Neuer" ×11 · kontakt@sanjaneuer.com
+                                             „© 2026 Sanja Neuer." · formats linija: „online"
+DEFAULT_ORGANIZATION_SLUG=psihointegritet  → „© 2026 Psihointegritet." · info@psihointegritet.com
+                                             „Chicago, IL · Milwaukee, WI · Madison, WI · online i uživo"
+```
+
+Javne rute ostaju `○` static — SSG ugovor nije narušen. Gate: `tsc` · `lint` · `format:check` ·
+`architecture:check` · 92 test fajla / 766 testova, uz 10 novih u `lib/tenant/public-site.test.ts`.
+
+**Šta PDC-0B namerno NIJE dirao.** Na Sanjinom build-u 24/25 stranica i dalje sadrži „Psihointegritet",
+ali **nijedno pojavljivanje nije identitet** — sve su:
+
+1. **per-route SEO stringovi** u `static-provider.ts` (`seo: { title: "Psihointegritet", … }`,
+   opisi sa „u Chicagu, Milwaukeeju i Madisonu");
+2. **marketing proza** u katalogu poruka (`footer.description`, `pages.about.intro`,
+   „Upoznajte terapeute Psihointegriteta").
+
+To je **sadržaj, ne identitet**, i pripada modelu stranice — PDC-1 read-only Page Composer +
+zaseban content completion zadatak. Linija je namerna: identitet je činjenica o organizaciji koja
+važi bez obzira koja se stranica renderuje; proza pripada stranici.
+
+> **Posledica za kriterijume prihvatanja (§4.1).** Stavka „nigde javno ne piše Psihointegritet"
+> **nije zadovoljena PDC-0B-om i ne može biti** — traži PDC-1, jer izvor nije više identitetski
+> sloj nego katalog sadržaja. Stavke koje **jesu** zadovoljene: footer ima Sanjine podatke ·
+> legal/public config nema Psihointegritet podatke · Psihointegritet demo nije regresiran ·
+> tenant boundary testovi prolaze.
+
 ### PDC-0C — Backend deployment isolation
 
 ```
