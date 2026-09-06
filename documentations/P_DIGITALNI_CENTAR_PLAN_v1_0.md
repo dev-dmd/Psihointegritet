@@ -435,6 +435,48 @@ promenljive i build je padao na `serverEnv`).
 >
 > Ranija formulacija ovog pasusa pripisivala je prazan sitemap isključivo env-u — netačno.
 
+#### Provisioning je po bazi, ne po kodu — stanje 2026-09-06
+
+`ensure_internal_user` namerno pravi **neutralan** red na prvi verifikovan login i ne dodeljuje
+nijednu privilegiju („Register a verified person, but never grant a domain privilege implicitly").
+Zato svaka sredina traži svoj `provision_staff.py` / `provision_team.py`, a dok se ne pokrene,
+`resolveLandingRoute` sve šalje na `/nalog` — što izgleda kao kvar rutiranja, a nije.
+
+| Sredina | Clerk instanca | Superadmin | Tim | Status |
+| ------- | -------------- | ---------- | --- | ------ |
+| localhost | development | `milan-dmdevelon` | Maria · Elsa · John | ✅ |
+| features (QA) | development | oba Milanova naloga | ✅, stari tim `disabled` | ✅ zatečeno ispravno |
+| staging | development | `milan-dmdevelon` | Maria · Elsa · John | ✅ postavljeno |
+| production | **production** | ❌ **nijedan** | ✅ | ⛔ vidi ispod |
+
+**Zašto produkcija nije završena.** Roster drži Clerk ID po instanci. Tim od 2026-08-09
+(D-074) ima **oba** — dev i prod. **Nijedan Milanov nalog nema zabeležen produkcijski ID**,
+pa `--person` tamo ne prolazi. Roster to izričito kaže: *„Anything not recorded here must still
+be passed explicitly rather than guessed."* Superadmin na produkciji traži ID iz Clerk
+**production** dashboarda:
+
+```
+python scripts/provision_staff.py \
+    --external-id user_<prod_id> \
+    --email milan.drazic@dmdevelon.website \
+    --roles org_admin --superadmin
+```
+
+**Kako se izvršava na Railway-u.** `railway ssh` traži registrovan ključ, a `backend/.env.local`
+gađa `postgres.railway.internal` koji je nedostupan spolja — i skripta ga namerno ne čita
+(*„a script that auto-loaded it would take a command typed on a laptop and quietly apply it to
+production"*). Put koji radi: uzeti `DATABASE_PUBLIC_URL` iz Railway varijabli tog okruženja,
+prevesti šemu u `postgresql+asyncpg://` i proslediti je lokalnom backend kontejneru:
+
+```
+docker compose exec -e DATABASE_URL="<public url, asyncpg>" -e ENVIRONMENT=<staging|production> \
+  backend python scripts/provision_staff.py --person <key>
+```
+
+> **Tri okruženja dele proxy domen `tokaido.proxy.rlwy.net` i razlikuju se samo portom**
+> (features `23438`, staging `38992`, production `19415`). Uvek proveriti port pre izvršavanja —
+> jedina razlika između staging komande i produkcijske je pet cifara.
+
 ### PDC-0D — Email identity
 
 Odmah ukloniti `https://psihointegritet.com` i sender `Psihointegritet` iz email infrastrukture
