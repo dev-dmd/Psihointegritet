@@ -427,8 +427,10 @@ Sanja frontend            ↕  Sanja backend
                              DEFAULT_ORGANIZATION_SLUG=sanja-neuer
 ```
 
-Sanja dobija **svoj FE i svoj BE deployment, iz istog koda**. Baza ne mora nužno da bude druga ako je
-`organization_id` boundary ispravan, ali **application runtime je po C2(a) vezan za jednu organizaciju**.
+Sanja dobija **svoj FE i svoj BE deployment, iz istog koda**, i — po odluci od 2026-09-06 —
+**svoju bazu**. Raniji tekst je ovde ostavljao deljenu bazu kao opciju („ne mora nužno da bude druga
+ako je `organization_id` boundary ispravan"); merenje živog stanja je tu opciju zatvorilo. Vidi status
+ispod. **Application runtime je po C2(a) i dalje vezan za jednu organizaciju.**
 
 Ovo je arhitektonski važno i zato stoji eksplicitno, a ne kao pretpostavka.
 
@@ -519,6 +521,75 @@ docker compose exec -e DATABASE_URL="<public url, asyncpg>" -e ENVIRONMENT=<stag
 > **Tri okruženja dele proxy domen `tokaido.proxy.rlwy.net` i razlikuju se samo portom**
 > (features `23438`, staging `38992`, production `19415`). Uvek proveriti port pre izvršavanja —
 > jedina razlika između staging komande i produkcijske je pet cifara.
+
+#### Status PDC-0C — isporučeno 2026-09-06 (backend), frontend čeka Clerk ključeve
+
+**Odluka: Sanja dobija zasebnu bazu.** Plan je dopuštao deljenu („ne mora nužno da bude druga ako je
+`organization_id` boundary ispravan"), ali merenje živog stanja je tu ostavku obesmislilo:
+
+| Mera | Vrednost |
+| ---- | -------- |
+| Eksplicitni `organization_id` filteri u `modules/` | **111** (dokumentovano 42 na dan 2026-08-01) |
+| Tabele sa `organization_id` | **28** (dokumentovano 11) |
+| Tabele sa uključenim RLS-om | **0** |
+| Runtime DB uloga | `rolsuper=t`, **`rolbypassrls=t`** |
+
+Izolacija počiva isključivo na 111 ručno pisanih filtera, bez zaštite na nivou baze, a runtime uloga
+bi zaobišla RLS i da postoji. RLS milestone (§5E) je dokumentovan ali **kod nije počet**. Sanja unosi
+stvarne klijente; Psihointegritet je demo. Jedan promašen filter meša to dvoje, pa deljena baza nije
+ušteda nego odloženi incident.
+
+**Topologija:**
+
+```
+Railway  valiant-cat-psihointegritet
+  ├ features          → diligent-serenity-features         · Postgres tokaido:23438
+  ├ staging           → diligent-serenity-staging          · Postgres tokaido:38992
+  ├ production        → diligent-serenity-production-1b3e  · Postgres tokaido:19415
+  └ sanja-production  → diligent-serenity-sanja-production · Postgres shuttle:57781   ← novo
+
+Vercel
+  ├ psihointegritet  → psihointegritet.com · qa. · staging.
+  └ sanja-neuer      → sanja-neuer.vercel.app                                        ← novo
+```
+
+**Dokaz izolacije** (isti zahtev na sva četiri backenda):
+
+| Okruženje | `sanja-neuer` | `psihointegritet` |
+| --------- | ------------- | ----------------- |
+| sanja-production | **200** | 200 |
+| production | **404** | 200 |
+| staging | **404** | 200 |
+| features | **404** | 200 |
+
+Njena organizacija postoji samo u njenoj bazi — `f98958c8-5acd-4400-93c9-6f0e8c2a981a`, kreirana kroz
+`provision_organization.py`, ne kroz migraciju.
+
+**Dve zamke pri dupliranju Railway okruženja, obe pogođene:**
+
+1. **Baza se ne kopira, ali kredencijali se kopiraju doslovno.** Novi Postgres je prazan (0 tabela,
+   provereno pre bilo čega drugog), ali `DATABASE_URL` na backend servisu je ostao **literal sa
+   lozinkom starog okruženja** → `password authentication failed for user "postgres"`, uz `/health`
+   koji i dalje vraća 200. Isto za `REDIS_URL`. Razlog što uopšte jesu literali: aplikacija traži
+   `postgresql+asyncpg://` šemu, a Railway referenca `${{Postgres.DATABASE_URL}}` daje `postgresql://`
+   — pa se šema mora prepisati ručno i referenca se ne može koristiti.
+2. **`DEFAULT_ORGANIZATION_SLUG` nije bio postavljen nigde**, ni u produkciji. `config.py:41` ga
+   defaultuje na `psihointegritet`, pa bi njen backend tiho servisirao tuđi tenant. Sada je eksplicitan.
+
+> **Seed migracija pravi `psihointegritet` u svakoj novoj bazi.** Njena baza sadrži tu organizaciju sa
+> tri seedovana `therapist_matching_profiles` reda (Anja, Marija, Marjan), 0 korisnika, 0 sadržaja.
+> **Inertno je** — njen deployment razrešava `sanja-neuer` i taj slug nikad ne dodiruje. Ostavljeno
+> namerno: brisanje bi diralo pretpostavke migracionog lanca. Ali je isti obrazac koji je PDC-0A
+> upravo napustio — tenant podaci u migraciji — samo primenjen na osnivačkog tenanta. Vredi izmestiti
+> kad se bude diralo `20260722_0001`.
+
+**Šta još nije gotovo:** njen Vercel projekat nema `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` ni
+`CLERK_SECRET_KEY`. Oba su na postojećem projektu tipa `sensitive` i **ne mogu se pročitati preko API-ja**,
+pa ih unosi operator. Do tada build pada na `serverEnv` — isto kao D37, i to je ispravno ponašanje.
+
+**Napomena za PDC-0E:** njen backend koristi `CLERK_ISSUER=https://clerk.psihointegritet.com`, dakle
+Psihointegritetovu produkcijsku Clerk instancu. Radi, ali znači da tenanti dele identity provider —
+što auth/domain audit treba da razreši namerno, a ne po inerciji.
 
 ### PDC-0D — Email identity
 
