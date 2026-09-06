@@ -94,7 +94,8 @@ async def provision_staff(
     if organization is None:
         raise ProvisioningError(
             f"Organization '{request.organization_slug}' does not exist. "
-            "Apply migrations first; the seed creates it."
+            "Provision it first: scripts/provision_organization.py --slug "
+            f"{request.organization_slug} --display-name '...'."
         )
 
     user = await session.scalar(

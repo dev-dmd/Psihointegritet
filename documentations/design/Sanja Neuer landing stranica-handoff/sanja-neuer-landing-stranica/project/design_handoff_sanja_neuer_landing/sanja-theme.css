@@ -1,0 +1,71 @@
+/* Sanja Neuer tenant theme — retokenizes PsihointegritetUI to the Ivory / Burgundy / Lilac / Ink palette.
+   Unlayered on purpose: wins over Tailwind's @layer utilities without !important. */
+:root {
+  --sn-ivory: #f7f4ef;
+  --sn-burgundy: #5b1e2d;
+  --sn-lilac: #cbb7d6;
+  --sn-ink: #1a1a1f;
+
+  --color-canvas: #f7f4ef;
+  --color-surface: #fffdfa;
+  --color-panel-canvas: #f2ece4;
+
+  --color-forest: #5b1e2d;
+  --color-forest-hover: #6e2637;
+  --color-forest-soft: #7b3243;
+  --color-forest-lift: #6a2333;
+
+  --color-sage: #7c5a90;
+  --color-meadow: #cbb7d6;
+  --color-meadow-hover: #dbcbe4;
+
+  --color-warm: #cbb7d6;
+  --color-warm-shine: #a98cb8;
+  --color-warm-hover: #dbcbe4;
+
+  --color-coffee: #1a1a1f;
+  --color-coffee-hover: #33333c;
+
+  --color-line: rgba(26, 26, 31, 0.07);
+  --color-line-strong: rgba(26, 26, 31, 0.16);
+
+  --font-newsreader: "Playfair Display";
+  --font-serif: "Playfair Display", Georgia, serif;
+
+  --shadow-pill: 0 10px 30px rgba(26, 26, 31, 0.12);
+  --shadow-hero-card: 0 30px 70px rgba(26, 26, 31, 0.12);
+  --shadow-panel-modal: 0 40px 90px rgba(26, 26, 31, 0.22);
+  --shadow-panel-card: 0 14px 34px rgba(26, 26, 31, 0.09);
+}
+
+/* alpha utilities the bundle compiled against the old hexes */
+.text-coffee\/60 { color: rgba(26, 26, 31, 0.6); }
+.text-coffee\/65 { color: rgba(26, 26, 31, 0.65); }
+.text-coffee\/68 { color: rgba(26, 26, 31, 0.68); }
+.text-coffee\/72 { color: rgba(26, 26, 31, 0.72); }
+.text-coffee\/75 { color: rgba(26, 26, 31, 0.75); }
+.text-coffee\/82 { color: rgba(26, 26, 31, 0.82); }
+.bg-coffee\/8 { background-color: rgba(26, 26, 31, 0.08); }
+.bg-coffee\/10 { background-color: rgba(26, 26, 31, 0.1); }
+.bg-coffee\/18 { background-color: rgba(26, 26, 31, 0.18); }
+.bg-coffee\/50 { background-color: rgba(26, 26, 31, 0.5); }
+.border-coffee\/6 { border-color: rgba(26, 26, 31, 0.06); }
+.border-coffee\/8 { border-color: rgba(26, 26, 31, 0.08); }
+.border-coffee\/10 { border-color: rgba(26, 26, 31, 0.1); }
+.border-coffee\/12 { border-color: rgba(26, 26, 31, 0.12); }
+.border-coffee\/14 { border-color: rgba(26, 26, 31, 0.14); }
+.border-coffee\/18 { border-color: rgba(26, 26, 31, 0.18); }
+.border-coffee\/25 { border-color: rgba(26, 26, 31, 0.25); }
+.border-coffee\/30 { border-color: rgba(26, 26, 31, 0.3); }
+.border-coffee\/40 { border-color: rgba(26, 26, 31, 0.4); }
+.bg-meadow\/15 { background-color: rgba(203, 183, 214, 0.15); }
+.bg-meadow\/22 { background-color: rgba(203, 183, 214, 0.22); }
+.bg-meadow\/28 { background-color: rgba(203, 183, 214, 0.28); }
+.bg-meadow\/30 { background-color: rgba(203, 183, 214, 0.3); }
+.bg-meadow\/40 { background-color: rgba(203, 183, 214, 0.4); }
+.border-meadow\/60 { border-color: rgba(203, 183, 214, 0.6); }
+.border-sage\/25 { border-color: rgba(124, 90, 144, 0.25); }
+.bg-warm\/20 { background-color: rgba(203, 183, 214, 0.2); }
+.bg-warm\/28 { background-color: rgba(203, 183, 214, 0.28); }
+.bg-canvas\/14 { background-color: rgba(247, 244, 239, 0.14); }
+.bg-surface\/60 { background-color: rgba(255, 253, 250, 0.6); }

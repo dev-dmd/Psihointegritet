@@ -5,6 +5,7 @@ from uuid import uuid4
 import pytest
 from fastapi import HTTPException
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from psihointegritet.modules.guidance.authorization import StaffActor
@@ -205,3 +206,48 @@ async def test_an_unchanged_setting_writes_no_event(db_session: AsyncSession) ->
     )
 
     assert await _events(db_session, organization) == []
+
+
+@pytest.mark.parametrize("kind", ["member", "operator", "system"])
+async def test_the_database_accepts_every_actor_kind_the_code_can_write(
+    db_session: AsyncSession, kind: str
+) -> None:
+    """The CHECK constraint and `ActorKind` must not drift apart.
+
+    They live in different files and a migration owns one of them, so a value
+    the code is willing to write can be one the database refuses — which is how
+    `system` failed the first time it was tried, at write time rather than at
+    review time.
+    """
+    organization, _ = await _org(db_session, f"actor-kind-{kind}")
+
+    db_session.add(
+        OrganizationAuditEvent(
+            organization_id=organization.id,
+            # Null for `system` by design; the other two would normally carry a
+            # user id, but the constraint under test does not look at it.
+            actor_user_id=None,
+            actor_kind=kind,
+            event_type="organization.created",
+            details={},
+        )
+    )
+    await db_session.flush()
+
+    assert [event.actor_kind for event in await _events(db_session, organization)] == [kind]
+
+
+async def test_the_database_refuses_an_unknown_actor_kind(db_session: AsyncSession) -> None:
+    organization, _ = await _org(db_session, "actor-kind-bogus")
+
+    db_session.add(
+        OrganizationAuditEvent(
+            organization_id=organization.id,
+            actor_user_id=None,
+            actor_kind="robot",
+            event_type="organization.created",
+            details={},
+        )
+    )
+    with pytest.raises(IntegrityError):
+        await db_session.flush()

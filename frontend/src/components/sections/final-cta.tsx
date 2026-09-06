@@ -3,8 +3,11 @@ import { ButtonLink } from "@/components/ui/button-link";
 import { Eyebrow } from "@/components/ui/eyebrow";
 import { getTranslations } from "next-intl/server";
 
+import { getPublicSiteSettings } from "@/lib/tenant/public-site";
+
 export async function FinalCta() {
   const t = await getTranslations("public.home.finalCta");
+  const site = await getPublicSiteSettings();
   return (
     <section
       id="onama"
@@ -13,7 +16,7 @@ export async function FinalCta() {
       <div className="mx-auto max-w-[1536px] px-5 text-center md:px-8">
         <Reveal>
           <div className="mx-auto max-w-[760px]">
-            <Eyebrow className="mb-5">Psihointegritet</Eyebrow>
+            <Eyebrow className="mb-5">{site.publicName}</Eyebrow>
             <h2 className="text-forest mb-[22px] font-serif text-[clamp(30px,8.5vw,38px)] leading-[1.05] font-normal tracking-[-0.018em] text-pretty md:text-6xl">
               {t("title")}
             </h2>

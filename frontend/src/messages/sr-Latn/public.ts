@@ -29,10 +29,9 @@ export const publicUi: Widen<EnPublicUi> = {
   footer: {
     description:
       "Digitalni centar za mentalno zdravlje. Psihoterapija, savetovanje, radionice i edukativni sadržaji — na jednom mestu.",
-    formats: "{locations} · online i uživo",
     supportGroup: "Podrška",
-    organizationGroup: "Psihointegritet",
-    rights: "© 2026 Psihointegritet. Sva prava zadržana.",
+    organizationGroup: "{organization}",
+    rights: "© 2026 {organization}. Sva prava zadržana.",
     disclaimer:
       "Sadržaji na ovoj stranici imaju edukativnu svrhu i ne predstavljaju zamenu za individualni razgovor sa stručnom osobom.",
   },
@@ -62,7 +61,6 @@ export const publicUi: Widen<EnPublicUi> = {
       detailsHeading: "Kontakt podaci",
       detailsBody:
         "Za opšte pitanje možete nam pisati na ovu adresu. Za zahtev za termin koristite posebnu formu za zakazivanje.",
-      formats: "onlajn i uživo",
     },
     about: {
       title: "Digitalni centar za mentalno zdravlje",
