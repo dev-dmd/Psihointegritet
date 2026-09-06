@@ -668,6 +668,42 @@ ključeve (`pk_test_`) na oba targeta. Za `main` target trebaju produkcijski, al
 blokira: `main` nema `sanja-neuer` u registru, pa `sanja-neuer.vercel.app` ionako ne može da builduje
 dok se `staging` ne spoji u `main`. Tada trebaju i ključevi.
 
+##### Sanjin domen — `sanjaneuer.com`, dodat 2026-09-06
+
+Registrovan na Namecheap-u (`dns1/dns2.registrar-servers.com`), zatečen na parking stranici:
+apex `A 162.255.119.41`, `www` CNAME `parkingpage.namecheap.com`, https nije radio.
+
+Domen je dodat na njen Vercel projekat kao **produkcijski**, uz `www` koji 308-uje na apex. DNS se
+menja kod Namecheap-a jer nameserveri ostaju njihovi:
+
+| Zapis | Host | Vrednost | Zamenjuje |
+| ----- | ---- | -------- | --------- |
+| `A` | `@` | `216.150.1.1` | `162.255.119.41` (parking) |
+| `A` | `@` | `216.150.16.1` | — |
+| `CNAME` | `www` | `83fbfd6bf5b5539c.vercel-dns-016.com.` | `parkingpage.namecheap.com.` |
+
+Env matrica njenog projekta je uz to **razdvojena po targetima**, jer je ranije sve stajalo na
+`production,preview` bez opsega:
+
+| Scope | `NEXT_PUBLIC_APP_URL` | `NEXT_PUBLIC_API_URL` | `DEPLOYMENT_ENV` |
+| ----- | --------------------- | --------------------- | ---------------- |
+| production | `https://sanjaneuer.com` | sanja-production backend | `production` |
+| preview — sve grane | `https://sanja-neuer-staging.vercel.app` | sanja-staging backend | `preview` |
+| preview — grana `staging` | isto | isto | `staging` |
+
+> **Popravljen defekt uočen pri ovom razdvajanju.** `DEPLOYMENT_ENV=production` je stajao na
+> neopsegovanom `production,preview` unosu, pa bi **svaki preview sa grane koja nije `staging`**
+> razrešavao `production` → `robotsPolicy()` bi vratio `Allow: /` i preview build bi bio indeksabilan,
+> uz canonical na njen pravi domen. Ista klasa greške kao neopsegovane Preview promenljive na
+> Psihointegritet projektu, samo obrnutog smera.
+
+Backend `sanja-production` sada prima `CORS_ORIGINS=["https://sanjaneuer.com","https://www.sanjaneuer.com"]`.
+
+**Šta domen još ne servira i zašto:** `main` nema `sanja-neuer` u registru, pa produkcijski build pada
+na `resolveDeploymentOrganization` — namerno, fail-closed. Uz to su Clerk ključevi na njenom projektu
+i dalje **development** (`pk_test_`) na oba targeta, a produkcijski deployment treba produkcijske.
+Oba uslova padaju sa `staging → main` merge-om i unosom ta dva ključa.
+
 ##### Kako se lokalno gleda drugi tenant
 
 **Nema URL-a koji menja tenanta** — to je C2(a), ne propust. Jedan dev server servisira jednu
