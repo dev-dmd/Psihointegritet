@@ -447,20 +447,15 @@ Zato svaka sredina traži svoj `provision_staff.py` / `provision_team.py`, a dok
 | localhost | development | `milan-dmdevelon` | Maria · Elsa · John | ✅ |
 | features (QA) | development | oba Milanova naloga | ✅, stari tim `disabled` | ✅ zatečeno ispravno |
 | staging | development | `milan-dmdevelon` | Maria · Elsa · John | ✅ postavljeno |
-| production | **production** | ❌ **nijedan** | ✅ | ⛔ vidi ispod |
+| production | **production** | `milan-dmdevelon` | ✅ | ✅ postavljeno |
 
-**Zašto produkcija nije završena.** Roster drži Clerk ID po instanci. Tim od 2026-08-09
-(D-074) ima **oba** — dev i prod. **Nijedan Milanov nalog nema zabeležen produkcijski ID**,
-pa `--person` tamo ne prolazi. Roster to izričito kaže: *„Anything not recorded here must still
-be passed explicitly rather than guessed."* Superadmin na produkciji traži ID iz Clerk
-**production** dashboarda:
+**Produkcijski Clerk ID je sada u rosteru.** Roster drži Clerk ID po instanci, a tim od
+2026-08-09 (D-074) ima oba. Milanov produkcijski ID nije postojao, pa je superadmin tamo
+postavljen ručno kroz `--external-id`, a ID je odmah upisan u roster pod `CLERK_PRODUCTION`
+(2026-09-06). Od sada i produkcija prolazi kroz `--person milan-dmdevelon`.
 
-```
-python scripts/provision_staff.py \
-    --external-id user_<prod_id> \
-    --email milan.drazic@dmdevelon.website \
-    --roles org_admin --superadmin
-```
+Razlog za upis, a ne za ostavljanje ručnog koraka: jedina komanda koja vraća pristup platformi
+ne sme da bude ona koja prvo traži da se ID potraži u tuđem dashboardu.
 
 **Kako se izvršava na Railway-u.** `railway ssh` traži registrovan ključ, a `backend/.env.local`
 gađa `postgres.railway.internal` koji je nedostupan spolja — i skripta ga namerno ne čita
