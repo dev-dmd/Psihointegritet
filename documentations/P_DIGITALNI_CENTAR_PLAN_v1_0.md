@@ -641,6 +641,34 @@ ostalog: `select count(*) from information_schema.tables where table_schema='pub
 all_except_custom_domains`) i vraćao `vercel.com/login` umesto stranice. Isključen — postojeći
 projekat ga nema. Svaki nov tenant projekat kreće sa njim uključenim.
 
+##### Kako se lokalno gleda drugi tenant
+
+**Nema URL-a koji menja tenanta** — to je C2(a), ne propust. Jedan dev server servisira jednu
+organizaciju, isto kao jedan deployment. Next.js 16 uz to odbija drugi `next dev` iz istog
+direktorijuma („Another next dev server is already running"), pa ni dva porta nisu izlaz bez
+zasebnog worktree-a.
+
+Prebacivanje traži **oba sloja**, jer frontend i backend imaju svoje kopije slug-a:
+
+```
+# 1. frontend/.env.local
+DEFAULT_ORGANIZATION_SLUG=sanja-neuer      # pa restart dev servera
+
+# 2. backend
+DEFAULT_ORGANIZATION_SLUG=sanja-neuer docker compose --profile backend up -d backend
+
+# nazad
+docker compose --profile backend up -d backend
+```
+
+> **Neusklađenost je gora od bilo kog usklađenog stanja.** Ako frontend razrešava jednog tenanta a
+> backend drugog, panel prikazuje jednu organizaciju dok API odgovara za drugu — a ništa ne puca.
+> Zato `compose.yaml` sada čita `${DEFAULT_ORGANIZATION_SLUG:-psihointegritet}` umesto zakucane
+> vrednosti: prebacivanje je jedna promenljiva na oba mesta, ne izmena fajla na jednom.
+
+Lokalna baza drži **obe** organizacije i naloge oba tenanta, pa prebacivanje ne traži nikakav
+provisioning — samo restart.
+
 ### PDC-0D — Email identity
 
 Odmah ukloniti `https://psihointegritet.com` i sender `Psihointegritet` iz email infrastrukture

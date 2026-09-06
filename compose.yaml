@@ -36,6 +36,12 @@ services:
         required: false
     environment:
       ENVIRONMENT: development
+      # Which tenant this local backend serves (C2(a): one runtime, one
+      # organization). Override it to look at another tenant locally:
+      #   DEFAULT_ORGANIZATION_SLUG=sanja-neuer docker compose up -d backend
+      # The frontend has its own copy in frontend/.env.local and the two must
+      # agree, or the panel resolves one tenant while the API answers for another.
+      DEFAULT_ORGANIZATION_SLUG: ${DEFAULT_ORGANIZATION_SLUG:-psihointegritet}
       DATABASE_URL: postgresql+asyncpg://psihointegritet:local_only_change_me@postgres:5432/psihointegritet
       MIGRATION_DATABASE_URL: postgresql+psycopg://psihointegritet:local_only_change_me@postgres:5432/psihointegritet
       REDIS_URL: redis://redis:6379/0
