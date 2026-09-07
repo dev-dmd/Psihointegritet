@@ -1,5 +1,5 @@
-import { clerkMiddleware } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
 
 import { PROTECTED_ROUTE_PREFIXES, SIGN_IN_URL } from "@/lib/auth/routes";
 import {
@@ -65,7 +65,7 @@ function isPlatformPath(pathname: string): boolean {
   return hasRoutePrefix(pathname, PLATFORM_PATH_PREFIXES);
 }
 
-export default clerkMiddleware(async (auth, request) => {
+export default async function proxy(request: NextRequest) {
   // Captured before anything else: `NextResponse.rewrite` does not mutate
   // `request.nextUrl`, but relying on that leaves the invariant implicit. The
   // auth gate below must see what the visitor typed, not where we sent it.
@@ -143,25 +143,27 @@ export default clerkMiddleware(async (auth, request) => {
     return response;
   }
 
-  // **Auth before the response is constructed.** `auth.protect()` performs
-  // Clerk's session handshake and decorates the response the handler returns.
-  // Building the rewrite first and returning that object meant the handshake's
-  // headers were attached to something we then threw away: the first render
-  // after sign-in had no resolved session and the panel only appeared after a
-  // manual refresh, once the cookie had been set by some later response.
+  // Protected routes bounce to sign-in, unconditionally.
   //
-  // Nothing is rewritten for an unauthenticated visitor anyway — `protect`
-  // redirects, so the lines below never run.
+  // There is no session to check: Clerk is gone (D-083) and the PDC auth engine
+  // is a later slice. Until it lands, "is this person signed in" has one honest
+  // answer everywhere, and the redirect is what makes that visible instead of
+  // rendering an empty panel.
+  //
+  // The engine restores the condition here — `if (isProtectedPath(...) &&
+  // !(await hasSession(request)))` — and nothing else on this path changes.
   if (isProtectedPath(externalPath)) {
     const signInUrl = new URL(SIGN_IN_URL, request.url);
-    // Clerk's <SignIn/> reads `redirect_url` and returns the user there after
-    // a successful sign-in, overriding signInFallbackRedirectUrl. Without it
-    // every protected route bounced back to the account area regardless of
-    // where the visitor was actually headed (found during superadmin smoke
-    // testing, 2026-07-20). It must stay the **external** path, so the visitor
-    // lands back on their own URL rather than the rewrite target.
+    // The **external**, pre-rewrite path. `/prijava` reads `redirect_url` to
+    // return the visitor where they were actually headed; without it every
+    // protected route sent them to the account area instead (found during
+    // superadmin smoke testing, 2026-07-20).
     signInUrl.searchParams.set("redirect_url", externalPath + search);
-    await auth.protect({ unauthenticatedUrl: signInUrl.toString() });
+    const response = NextResponse.redirect(signInUrl);
+    // Same reason as the 308 above: the target depends on the host, and a
+    // shared CDN caching one host's bounce would hand it to another.
+    response.headers.set("Cache-Control", "private, no-store");
+    return response;
   }
 
   // Path after the locale layer has canonicalised it; the tenant rewrite goes
@@ -222,7 +224,7 @@ export default clerkMiddleware(async (auth, request) => {
     tenant.organizationSlug,
     host,
   );
-});
+}
 
 /**
  * Stamp which surface this request is on, and for a tenant surface, which one.

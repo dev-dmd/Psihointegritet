@@ -6,7 +6,6 @@ import { NextIntlClientProvider } from "next-intl";
 
 import { getUiLocale } from "@/i18n/locale-boundary";
 import { HTML_LANG_BY_LOCALE } from "@/i18n/locales";
-import { AuthProvider } from "@/lib/auth/clerk/auth-provider";
 import { serverEnv } from "@/lib/validation/env";
 import { ToastProvider } from "@/providers/toast-provider";
 
@@ -89,11 +88,14 @@ export default async function RootLayout({
           each, which is its own task (TODO D40). It belongs with PDC-1, where
           the catalogue stops being one platform-wide object anyway.
         */}
+        {/* No auth provider. Clerk is gone (D-083) and the PDC engine's
+            <SessionProvider> belongs here when it arrives — deliberately not
+            a placeholder context in the meantime, because mounting one would
+            re-introduce the client boundary around the whole public tree that
+            removing Clerk just took away. */}
         <NextIntlClientProvider locale={locale}>
-          <AuthProvider>
-            {children}
-            <ToastProvider />
-          </AuthProvider>
+          {children}
+          <ToastProvider />
         </NextIntlClientProvider>
       </body>
     </html>

@@ -1,9 +1,9 @@
 import "server-only";
 
-import { auth, currentUser } from "@clerk/nextjs/server";
+import { headers } from "next/headers";
 
 import type { Identity } from "@/lib/auth/identity";
-
+import { getServerToken } from "@/lib/auth/session/server-session";
 import {
   TENANT_DOMAINS,
   TENANT_SLUG_HEADER,
@@ -11,53 +11,24 @@ import {
   tenantForSlug,
 } from "@/lib/tenant/domain-registry";
 import { serverEnv } from "@/lib/validation/env";
-import { headers } from "next/headers";
 
 /**
- * Clerk exposes `fullName` only when both parts are set, so a user with just a
- * first name would otherwise be nameless. Assembled here rather than at the
- * call sites, so every surface agrees on what to call the same person.
+ * Server-side identity: the session says *who*, PostgreSQL says *what they may do*.
+ *
+ * Everything below the token was already provider-neutral — it only ever needed
+ * a bearer string — so removing Clerk moved this code rather than rewriting it.
+ * `GET /api/v1/me` remains the sole source of domain roles, and it creates the
+ * neutral `internal_users` row on first verified login.
  */
-function resolveDisplayName(
-  user: {
-    fullName?: string | null;
-    firstName?: string | null;
-    lastName?: string | null;
-  } | null,
-): string | null {
-  if (!user) return null;
-  const assembled = [user.firstName, user.lastName].filter(Boolean).join(" ");
-  return user.fullName ?? (assembled === "" ? null : assembled);
-}
-
-/**
- * Server-side identity adapter. Clerk authenticates the subject; FastAPI's
- * PostgreSQL-backed `/api/v1/me` is the sole source of domain roles. The
- * endpoint creates a neutral `internal_users` row on first verified login.
- */
-export async function getClerkServerIdentity(): Promise<Identity | null> {
-  const session = await auth();
-  const { userId } = session;
-  if (!userId) {
-    return null;
-  }
-
-  const token = await session.getToken();
+export async function getSessionIdentity(): Promise<Identity | null> {
+  const token = await getServerToken();
   if (!token) return null;
 
   const backend = await loadBackendIdentity(token);
-  // `/api/v1/me` is authoritative. Clerk's user profile is a fallback only;
-  // avoid a second provider request when the backend already returned both
-  // presentation fields.
-  const user =
-    backend.email === null || backend.displayName === null
-      ? await currentUser()
-      : null;
-
   return {
     userId: backend.userId,
-    email: backend.email ?? user?.primaryEmailAddress?.emailAddress ?? null,
-    displayName: backend.displayName ?? resolveDisplayName(user),
+    email: backend.email,
+    displayName: backend.displayName,
     isSuperadmin: backend.isSuperadmin,
     memberships: backend.memberships,
   };

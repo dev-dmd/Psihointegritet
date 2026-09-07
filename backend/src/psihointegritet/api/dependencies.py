@@ -7,10 +7,10 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from psihointegritet.core.config import Settings
 from psihointegritet.db.session import get_session
-from psihointegritet.infrastructure.auth.clerk.verifier import (
-    ClerkTokenVerificationError,
+from psihointegritet.infrastructure.auth.identity import (
+    IdentityClaims,
+    TokenVerificationError,
 )
-from psihointegritet.infrastructure.auth.identity import IdentityClaims
 from psihointegritet.modules.guidance.authorization import (
     IntakeAuthorizationError,
     StaffActor,
@@ -29,7 +29,7 @@ async def get_current_identity(
     request: Request,
     credentials: BearerCredentials,
 ) -> IdentityClaims:
-    """Verify Clerk identity first; domain authorization is resolved from PostgreSQL later."""
+    """Verify the bearer token first; domain authorization is resolved from PostgreSQL later."""
     if credentials is None or credentials.scheme.lower() != "bearer":
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -37,7 +37,7 @@ async def get_current_identity(
         )
     try:
         return await request.app.state.token_verifier.verify(credentials.credentials)
-    except ClerkTokenVerificationError as error:
+    except TokenVerificationError as error:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid bearer token",
@@ -70,7 +70,7 @@ async def require_superadmin(
 ) -> StaffActor:
     """Require superadmin access (D0 — Diagnostic Engine gate).
 
-    Resolves the staff actor from the verified Clerk identity and raises HTTP 403
+    Resolves the staff actor from the verified identity and raises HTTP 403
     when the internal user does not carry the ``is_superadmin`` flag.
 
     Placed here (not inside ``modules/diagnostics``) because this guard is the
@@ -114,8 +114,8 @@ async def require_staff(
     the check. Nothing further is needed to express "superadmin, org_admin or
     therapist".
 
-    Being authenticated by Clerk is deliberately **not** enough: a Clerk
-    account is any signed-in visitor, while these routes approve requests and
+    Being authenticated is deliberately **not** enough: an account is any
+    signed-in visitor, while these routes approve requests and
     cancel other people's appointments.
 
     Ownership rules (a therapist may only touch their own appointments) are a

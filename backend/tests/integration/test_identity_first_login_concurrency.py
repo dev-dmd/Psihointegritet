@@ -23,7 +23,8 @@ without the constraint that raises it.
 """
 
 import asyncio
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Callable, Iterator
+from typing import Any
 from uuid import uuid4
 
 import pytest
@@ -70,11 +71,18 @@ class _RaceSession(AsyncSession):
 
     barrier: asyncio.Barrier | None = None
 
-    async def scalar(self, *args: object, **kwargs: object) -> object:
-        result = await super().scalar(*args, **kwargs)
+    # `AsyncSession.scalar` is heavily overloaded; a passthrough cannot restate
+    # those overloads, so the forwarded arguments are deliberately `Any`. The
+    # only behaviour added is the rendezvous below.
+    async def scalar(self, *args: Any, **kwargs: Any) -> Any:
+        result: Any = await super().scalar(*args, **kwargs)
         if _RaceSession.barrier is not None and result is None:
             await _RaceSession.barrier.wait()
         return result
+
+
+#: Builds a session factory whose sessions rendezvous, for `parties` callers.
+RacingFactory = Callable[[int], async_sessionmaker[AsyncSession]]
 
 
 @pytest.fixture
@@ -83,7 +91,7 @@ def session_factory(engine: AsyncEngine) -> async_sessionmaker[AsyncSession]:
 
 
 @pytest.fixture
-def racing_session_factory(engine: AsyncEngine) -> AsyncIterator[object]:
+def racing_session_factory(engine: AsyncEngine) -> Iterator[RacingFactory]:
     """Builds a factory whose sessions all rendezvous at the existence check."""
 
     def factory(parties: int) -> async_sessionmaker[AsyncSession]:
@@ -123,7 +131,7 @@ async def _register(
 @pytest.mark.asyncio
 async def test_parallel_first_logins_register_one_user(
     session_factory: async_sessionmaker[AsyncSession],
-    racing_session_factory,
+    racing_session_factory: RacingFactory,
 ) -> None:
     subject = f"user_test_{uuid4().hex}"
     identity = IdentityClaims(subject=subject, email="maria@example.com", session_id=None)
@@ -170,7 +178,7 @@ async def test_parallel_first_logins_register_one_user(
 @pytest.mark.asyncio
 async def test_many_parallel_first_logins_still_register_one_user(
     session_factory: async_sessionmaker[AsyncSession],
-    racing_session_factory,
+    racing_session_factory: RacingFactory,
 ) -> None:
     """Two requests is the reported incident; the race is not limited to two."""
     subject = f"user_test_{uuid4().hex}"

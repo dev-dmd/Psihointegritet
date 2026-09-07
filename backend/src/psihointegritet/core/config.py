@@ -39,10 +39,6 @@ class Settings(BaseSettings):
 
     cors_origins: list[str] = Field(default_factory=lambda: ["http://localhost:3007"])
 
-    clerk_issuer: str = ""
-    clerk_jwks_url: str = ""
-    clerk_audience: str = ""
-
     #: Which organization this deployment serves — the C2(a) deployment binding.
     #: Empty means "not stated"; `_bind_deployment_tenant` then either supplies
     #: the development convenience or refuses to start. It is never a tenant

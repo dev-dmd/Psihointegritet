@@ -29,9 +29,6 @@ const nextConfig: NextConfig = {
   reactCompiler: true,
   poweredByHeader: false,
   typedRoutes: true,
-  images: {
-    remotePatterns: [{ protocol: "https", hostname: "img.clerk.com" }],
-  },
 };
 
 /**

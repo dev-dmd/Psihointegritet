@@ -6,6 +6,7 @@ export const publicUi = {
     mobileLabel: "Mobile navigation",
     menuLabel: "Menu",
     openMenu: "Open menu",
+    signIn: "Sign in",
     closeMenu: "Close menu",
     book: "Book an appointment",
     links: {

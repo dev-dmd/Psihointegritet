@@ -1,26 +1,23 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { authMock, currentUserMock, fetchMock, headersMock, serverEnvMock } =
-  vi.hoisted(() => ({
-    authMock: vi.fn(),
-    currentUserMock: vi.fn(),
-    fetchMock: vi.fn(),
-    headersMock: vi.fn(),
-    serverEnvMock: {
-      NEXT_PUBLIC_API_URL: "https://api.test",
-      DEPLOYMENT_ENV: "development",
-    },
-  }));
+const { tokenMock, fetchMock, headersMock, serverEnvMock } = vi.hoisted(() => ({
+  tokenMock: vi.fn(),
+  fetchMock: vi.fn(),
+  headersMock: vi.fn(),
+  serverEnvMock: {
+    NEXT_PUBLIC_API_URL: "https://api.test",
+    DEPLOYMENT_ENV: "development",
+  },
+}));
 
 vi.mock("server-only", () => ({}));
-vi.mock("@clerk/nextjs/server", () => ({
-  auth: authMock,
-  currentUser: currentUserMock,
+vi.mock("@/lib/auth/session/server-session", () => ({
+  getServerToken: tokenMock,
 }));
 vi.mock("@/lib/validation/env", () => ({ serverEnv: serverEnvMock }));
 vi.mock("next/headers", () => ({ headers: headersMock }));
 
-import { getClerkServerIdentity } from "./server-identity";
+import { getSessionIdentity } from "./server-identity";
 import {
   TENANT_DOMAINS,
   TENANT_SLUG_HEADER,
@@ -42,12 +39,6 @@ function fetchedHosts() {
   return fetchMock.mock.calls.map(([url]) => String(url));
 }
 
-function clerkUser(email = "test@test.rs") {
-  return {
-    primaryEmailAddress: { emailAddress: email },
-  };
-}
-
 function backendIdentity(overrides: object = {}) {
   return {
     userId: "user_1",
@@ -59,33 +50,30 @@ function backendIdentity(overrides: object = {}) {
   };
 }
 
-describe("getClerkServerIdentity", () => {
+describe("getSessionIdentity", () => {
   beforeEach(() => {
-    authMock.mockReset();
-    currentUserMock.mockReset();
+    tokenMock.mockReset();
     fetchMock.mockReset();
     headersMock.mockReset();
     serverEnvMock.DEPLOYMENT_ENV = "development";
     onSurface();
     vi.stubGlobal("fetch", fetchMock);
+    tokenMock.mockResolvedValue("token");
   });
 
-  it("returns null when signed out", async () => {
-    authMock.mockResolvedValue({ userId: null, getToken: vi.fn() });
-    expect(await getClerkServerIdentity()).toBeNull();
-    expect(currentUserMock).not.toHaveBeenCalled();
+  it("returns null when nobody is signed in", async () => {
+    // The state the whole platform is in until the auth engine lands: no
+    // session, and therefore no reason to ask any backend anything.
+    tokenMock.mockResolvedValue(null);
+    expect(await getSessionIdentity()).toBeNull();
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 
   it("returns identity and roles from the backend", async () => {
-    authMock.mockResolvedValue({
-      userId: "user_1",
-      getToken: vi.fn().mockResolvedValue("token"),
-    });
-    currentUserMock.mockResolvedValue(clerkUser());
     fetchMock.mockResolvedValue(
       new Response(JSON.stringify(backendIdentity())),
     );
-    expect(await getClerkServerIdentity()).toEqual({
+    expect(await getSessionIdentity()).toEqual({
       userId: "user_1",
       email: "test@test.rs",
       displayName: null,
@@ -95,11 +83,6 @@ describe("getClerkServerIdentity", () => {
   });
 
   it("maps the backend superadmin flag", async () => {
-    authMock.mockResolvedValue({
-      userId: "user_2",
-      getToken: vi.fn().mockResolvedValue("token"),
-    });
-    currentUserMock.mockResolvedValue(clerkUser());
     fetchMock.mockResolvedValue(
       new Response(
         JSON.stringify(
@@ -107,17 +90,12 @@ describe("getClerkServerIdentity", () => {
         ),
       ),
     );
-    const identity = await getClerkServerIdentity();
+    const identity = await getSessionIdentity();
     expect(identity?.isSuperadmin).toBe(true);
     expect(identity?.memberships).toEqual([]);
   });
 
   it("maps backend staff memberships", async () => {
-    authMock.mockResolvedValue({
-      userId: "user_3",
-      getToken: vi.fn().mockResolvedValue("token"),
-    });
-    currentUserMock.mockResolvedValue(clerkUser());
     fetchMock.mockResolvedValue(
       new Response(
         JSON.stringify(
@@ -130,17 +108,16 @@ describe("getClerkServerIdentity", () => {
         ),
       ),
     );
-    const identity = await getClerkServerIdentity();
-    expect(identity?.memberships).toEqual([
+    expect((await getSessionIdentity())?.memberships).toEqual([
       { organizationSlug: "org-1", roles: ["org_admin", "therapist"] },
     ]);
   });
 
-  it("skips Clerk user lookup when backend presentation fields are complete", async () => {
-    authMock.mockResolvedValue({
-      userId: "user_complete",
-      getToken: vi.fn().mockResolvedValue("token"),
-    });
+  it("takes presentation fields from PostgreSQL, with no provider fallback", async () => {
+    // The Clerk adapter fell back to the provider's user profile for the name
+    // and email. There is no provider now, and there does not need to be:
+    // `internal_users` already holds both, and one authoritative answer beats
+    // two that can disagree.
     fetchMock.mockResolvedValue(
       new Response(
         JSON.stringify(
@@ -152,26 +129,19 @@ describe("getClerkServerIdentity", () => {
         ),
       ),
     );
-
-    await expect(getClerkServerIdentity()).resolves.toMatchObject({
+    await expect(getSessionIdentity()).resolves.toMatchObject({
       email: "complete@example.test",
       displayName: "Complete Person",
     });
-    expect(currentUserMock).not.toHaveBeenCalled();
   });
 
-  it("tolerates a missing user record", async () => {
-    authMock.mockResolvedValue({
-      userId: "user_4",
-      getToken: vi.fn().mockResolvedValue("token"),
-    });
-    currentUserMock.mockResolvedValue(null);
+  it("tolerates a backend record with no name or email", async () => {
     fetchMock.mockResolvedValue(
       new Response(
         JSON.stringify(backendIdentity({ userId: "user_4", email: null })),
       ),
     );
-    expect(await getClerkServerIdentity()).toEqual({
+    expect(await getSessionIdentity()).toEqual({
       userId: "user_4",
       email: null,
       displayName: null,
@@ -181,88 +151,22 @@ describe("getClerkServerIdentity", () => {
   });
 
   it("explains that a 404 means the backend revision is stale", async () => {
-    authMock.mockResolvedValue({
-      userId: "user_5",
-      getToken: vi.fn().mockResolvedValue("token"),
-    });
     fetchMock.mockResolvedValue(new Response(null, { status: 404 }));
-
-    await expect(getClerkServerIdentity()).rejects.toThrow(
+    await expect(getSessionIdentity()).rejects.toThrow(
       "Restart or redeploy the backend from the same revision as the frontend",
     );
-    expect(currentUserMock).not.toHaveBeenCalled();
-  });
-});
-
-describe("display name", () => {
-  it("prefers the provider's full name", async () => {
-    currentUserMock.mockResolvedValue({
-      fullName: "Maria Bullock",
-      firstName: "Maria",
-      lastName: "Bullock",
-      primaryEmailAddress: { emailAddress: "maria@psihointegritet.com" },
-    });
-    authMock.mockResolvedValue({
-      userId: "user_9",
-      getToken: vi.fn().mockResolvedValue("token"),
-    });
-    fetchMock.mockResolvedValue(
-      new Response(
-        JSON.stringify(
-          backendIdentity({
-            userId: "user_9",
-            email: "maria@psihointegritet.com",
-          }),
-        ),
-      ),
-    );
-
-    await expect(getClerkServerIdentity()).resolves.toMatchObject({
-      displayName: "Maria Bullock",
-    });
-  });
-
-  it("assembles a name when the provider has only the parts", async () => {
-    // Clerk fills `fullName` only when both halves are set, so a user with a
-    // first name alone would otherwise be nameless — and the sidebar would show
-    // the generic label to someone who does have a name.
-    currentUserMock.mockResolvedValue({
-      fullName: null,
-      firstName: "Maria",
-      lastName: null,
-      primaryEmailAddress: null,
-    });
-    authMock.mockResolvedValue({
-      userId: "user_10",
-      getToken: vi.fn().mockResolvedValue("token"),
-    });
-    fetchMock.mockResolvedValue(
-      new Response(
-        JSON.stringify(backendIdentity({ userId: "user_10", email: null })),
-      ),
-    );
-
-    await expect(getClerkServerIdentity()).resolves.toMatchObject({
-      displayName: "Maria",
-    });
   });
 });
 
 describe("which backend answers", () => {
   beforeEach(() => {
-    // This suite sits outside the block above, so it owns its own reset.
-    authMock.mockReset();
-    currentUserMock.mockReset();
+    tokenMock.mockReset();
     fetchMock.mockReset();
     headersMock.mockReset();
     // The registry holds production URLs, so only production consults it.
     serverEnvMock.DEPLOYMENT_ENV = "production";
     vi.stubGlobal("fetch", fetchMock);
-    authMock.mockResolvedValue({
-      userId: "user_1",
-      getToken: vi.fn().mockResolvedValue("token"),
-    });
-    currentUserMock.mockResolvedValue(clerkUser());
+    tokenMock.mockResolvedValue("token");
     // A fresh Response per call: the platform surface calls several backends,
     // and one body cannot be read twice.
     fetchMock.mockImplementation(
@@ -272,7 +176,7 @@ describe("which backend answers", () => {
 
   it("asks only the tenant's own backend on a tenant surface", async () => {
     onSurface("tenant", "sanja-neuer");
-    await getClerkServerIdentity();
+    await getSessionIdentity();
 
     const sanja = tenantForSlug("sanja-neuer")!;
     const psiho = tenantForSlug("psihointegritet")!;
@@ -284,7 +188,7 @@ describe("which backend answers", () => {
 
   it("asks every backend on the shared platform surface", async () => {
     onSurface("platform");
-    await getClerkServerIdentity();
+    await getSessionIdentity();
 
     // Each database holds only its own memberships, so no single backend can
     // answer which organizations an owner belongs to.
@@ -326,7 +230,7 @@ describe("which backend answers", () => {
           ),
     );
 
-    const identity = await getClerkServerIdentity();
+    const identity = await getSessionIdentity();
     expect(
       identity?.memberships
         .map((membership) => membership.organizationSlug)
@@ -345,7 +249,7 @@ describe("which backend answers", () => {
 
     // An owner of one practice simply has nothing from the other; 403 is an
     // ordinary answer here, not a failure.
-    await expect(getClerkServerIdentity()).resolves.not.toBeNull();
+    await expect(getSessionIdentity()).resolves.not.toBeNull();
   });
 
   it("still fails when a backend is genuinely broken", async () => {
@@ -354,12 +258,12 @@ describe("which backend answers", () => {
 
     // A silent empty identity would read as "no roles" and lock an owner out of
     // their own workspace.
-    await expect(getClerkServerIdentity()).rejects.toThrow(/500/);
+    await expect(getSessionIdentity()).rejects.toThrow(/500/);
   });
 
   it("falls back to the configured API only when no proxy stamped a surface", async () => {
     onSurface();
-    await getClerkServerIdentity();
+    await getSessionIdentity();
 
     expect(fetchedHosts()).toEqual(["https://api.test/api/v1/me"]);
   });
@@ -373,7 +277,7 @@ describe("which backend answers", () => {
       serverEnvMock.DEPLOYMENT_ENV = env;
       fetchMock.mockClear();
       onSurface("platform");
-      await getClerkServerIdentity();
+      await getSessionIdentity();
 
       expect(fetchedHosts()).toEqual(["https://api.test/api/v1/me"]);
     }
@@ -382,7 +286,7 @@ describe("which backend answers", () => {
   it("keeps a tenant surface on the configured API outside production too", async () => {
     serverEnvMock.DEPLOYMENT_ENV = "development";
     onSurface("tenant", "sanja-neuer");
-    await getClerkServerIdentity();
+    await getSessionIdentity();
 
     expect(fetchedHosts()).toEqual(["https://api.test/api/v1/me"]);
   });

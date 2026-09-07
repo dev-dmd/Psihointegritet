@@ -4,6 +4,15 @@ import type { Widen } from "@/messages/types";
 /** Byte-identical to what these screens rendered before the extraction. */
 export const screens: Widen<EnScreens> = {
   platform: {
+    tenantsHeading: "Tenanti",
+    signInSoonTitle: "Prijava je u izradi",
+    signInSoonLead:
+      "P. Digital Centar prelazi na sopstvenu prijavu. Prijava i registracija biće ponovo dostupne uskoro.",
+    signUpSoonTitle: "Registracija je u izradi",
+    signUpSoonLead:
+      "P. Digital Centar prelazi na sopstvenu prijavu. Registracija će biti ponovo dostupna uskoro.",
+    headedFor: "Krenuli ste na: {path}",
+    backToSite: "Nazad na sajt",
     landingTitle: "Marketing P. Digital Centar",
     landingLead:
       "Platforma za psihologe, psihoterapeute, konsultante i edukatore.",
