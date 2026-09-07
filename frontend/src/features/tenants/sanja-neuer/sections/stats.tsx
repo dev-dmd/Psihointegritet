@@ -12,7 +12,10 @@ const { stats } = sanjaContent;
  */
 export function SanjaStats() {
   return (
-    <div className="relative mx-auto max-w-[1180px] px-6">
+    // `my-20` is 5rem, and it has to clear the strips rather than the banner:
+    // they reach 34px above and 14px below, so the visible gap is 46px and 66px.
+    // Margin, not padding — the strips are positioned against this box.
+    <div className="relative mx-auto my-20 max-w-[1180px] px-6">
       <span
         aria-hidden
         className="bg-sn-lilac absolute -top-[34px] right-6 z-0 block h-11 w-[132px] rounded-t-2xl"
