@@ -5,11 +5,13 @@ import {
   PLATFORM_NAME,
   TENANT_DOMAINS,
   isPlatformHost,
+  isTemporaryAccessHost,
   normalizeHost,
   resolveHostBinding,
   resolvePlatformHost,
   tenantForHost,
   tenantForSlug,
+  tenantSiteUrl,
 } from "./domain-registry";
 
 const originalPlatformHost = process.env.PLATFORM_HOST;
@@ -212,5 +214,84 @@ describe("host binding", () => {
 
     expect(binding?.tenant).toBeUndefined();
     expect(binding?.isPlatform).toBe(true);
+  });
+});
+
+describe("temporary access host (sanjaneuer.com DNS unavailable)", () => {
+  const production = { env: "production", slug: "psihointegritet" };
+
+  it("resolves the temporary host to its tenant, and only it", () => {
+    expect(tenantForHost("sanja-neuer.vercel.app")?.organizationSlug).toBe(
+      "sanja-neuer",
+    );
+    expect(tenantForHost("psihointegritet.com")?.organizationSlug).toBe(
+      "psihointegritet",
+    );
+    // The platform's own generated hostname belongs to no tenant.
+    expect(tenantForHost("psihointegritet.vercel.app")).toBeUndefined();
+  });
+
+  it("trusts one hostname, never the `.vercel.app` suffix", () => {
+    // A wildcard here would make every preview URL on the account a trusted
+    // route into somebody's tenant. Only the listed host resolves.
+    for (const host of [
+      "unknown.vercel.app",
+      "sanja-neuer.vercel.app.evil.com",
+      "evil-sanja-neuer.vercel.app",
+      "sanja-neuer.vercel.app.",
+    ]) {
+      expect(tenantForHost(host)).toBeUndefined();
+    }
+    expect(resolveHostBinding("unknown.vercel.app", production)).toBeNull();
+  });
+
+  it("keeps canonical on the real domain while the stand-in serves", () => {
+    // The whole point of splitting the two fields: Google must not be asked to
+    // index the temporary address as this practice's identity.
+    const sanja = tenantForSlug("sanja-neuer");
+    expect(sanja?.publicUrl).toBe("https://sanjaneuer.com");
+    expect(sanja?.temporaryAccessUrl).toBe("https://sanja-neuer.vercel.app");
+    expect(sanja?.publicUrl).not.toContain("vercel.app");
+  });
+
+  it("sends a person to where the site actually answers", () => {
+    const sanja = tenantForSlug("sanja-neuer");
+    const psiho = tenantForSlug("psihointegritet");
+    expect(tenantSiteUrl(sanja!)).toBe("https://sanja-neuer.vercel.app");
+    // A tenant whose own domain works is untouched by any of this.
+    expect(tenantSiteUrl(psiho!)).toBe("https://psihointegritet.com");
+  });
+
+  it("marks only the stand-in as unindexable", () => {
+    expect(isTemporaryAccessHost("sanja-neuer.vercel.app")).toBe(true);
+    expect(isTemporaryAccessHost("SANJA-NEUER.VERCEL.APP:443")).toBe(true);
+    for (const host of [
+      "sanjaneuer.com",
+      "www.sanjaneuer.com",
+      "psihointegritet.com",
+      "unknown.vercel.app",
+      "",
+      null,
+    ]) {
+      expect(isTemporaryAccessHost(host)).toBe(false);
+    }
+  });
+
+  it("keeps every temporary host listed in `domains`", () => {
+    // The invariant that stops the two from drifting: a host that can be
+    // reached must be a host that resolves, or the stand-in 404s.
+    for (const tenant of TENANT_DOMAINS) {
+      if (!tenant.temporaryAccessUrl) continue;
+      const host = new URL(tenant.temporaryAccessUrl).hostname;
+      expect(tenant.domains).toContain(host);
+    }
+  });
+
+  it("gives the stand-in the same tenant surface as the real domain", () => {
+    // B2 invariants do not soften because the hostname is temporary: owner
+    // surfaces stay off it, the client area stays on it.
+    const binding = resolveHostBinding("sanja-neuer.vercel.app", production);
+    expect(binding?.tenant?.organizationSlug).toBe("sanja-neuer");
+    expect(binding?.isPlatform).toBe(false);
   });
 });

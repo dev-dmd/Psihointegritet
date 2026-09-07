@@ -6,6 +6,7 @@ import {
   TENANT_ROUTE_PREFIX,
   TENANT_SLUG_HEADER,
   TENANT_SURFACE_HEADER,
+  isTemporaryAccessHost,
   resolveHostBinding,
 } from "@/lib/tenant/domain-registry";
 import {
@@ -182,6 +183,7 @@ export default clerkMiddleware(async (auth, request) => {
         : NextResponse.next(),
       "platform",
       null,
+      host,
     );
   }
 
@@ -207,6 +209,7 @@ export default clerkMiddleware(async (auth, request) => {
         : NextResponse.next(),
       "tenant",
       tenant.organizationSlug,
+      host,
     );
   }
 
@@ -218,6 +221,7 @@ export default clerkMiddleware(async (auth, request) => {
     NextResponse.rewrite(tenantUrl),
     "tenant",
     tenant.organizationSlug,
+    host,
   );
 });
 
@@ -232,9 +236,20 @@ function withSurface(
   response: NextResponse,
   surface: "tenant" | "platform",
   slug: string | null,
+  host: string | null,
 ): NextResponse {
   response.headers.set(TENANT_SURFACE_HEADER, surface);
   if (slug) response.headers.set(TENANT_SLUG_HEADER, slug);
+  // A temporary stand-in host must not compete with the domain it stands in
+  // for. The tenant placeholder already carries `robots: noindex`, but that is
+  // one page's metadata; the header covers every response this host returns,
+  // including the ones that are not HTML and never get a `<meta>` tag.
+  //
+  // Stamped from the registry rather than from a hostname literal, so deleting
+  // `temporaryAccessUrl` retires it automatically.
+  if (isTemporaryAccessHost(host)) {
+    response.headers.set("X-Robots-Tag", "noindex, nofollow");
+  }
   return response;
 }
 
