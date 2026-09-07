@@ -2,17 +2,18 @@ import "server-only";
 
 import { cache } from "react";
 
-import { getClerkServerIdentity } from "@/lib/auth/clerk/server-identity";
+import { getSessionIdentity } from "@/lib/auth/session/server-identity";
 
 /**
  * Provider-neutral server identity seam. Guards and pages import ONLY from
- * this module — never from the Clerk adapter directly.
+ * this module — never from the session adapter directly.
  *
- * The Clerk adapter verifies the session then reads PostgreSQL roles through
- * `GET /api/v1/me`; callers remain provider-neutral.
+ * The adapter resolves the session then reads PostgreSQL roles through
+ * `GET /api/v1/me`; callers remain provider-neutral. That separation is what
+ * made removing Clerk a one-line change here (D-083).
  */
 async function loadServerIdentity() {
-  return getClerkServerIdentity();
+  return getSessionIdentity();
 }
 
 /**
