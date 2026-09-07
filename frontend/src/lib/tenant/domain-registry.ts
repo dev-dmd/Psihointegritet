@@ -153,6 +153,47 @@ export function resolvePlatformHost(
 }
 
 /**
+ * What a host resolves to, once every rule has been applied.
+ *
+ * `null` means nobody's — the request is refused.
+ */
+export interface HostBinding {
+  tenant: TenantDomainConfig | undefined;
+  isPlatform: boolean;
+}
+
+/**
+ * Which tenant and which surfaces this host may serve.
+ *
+ * Three answers, in order of how specific they are:
+ *
+ * 1. A **registered domain** names its tenant, and separately may also be the
+ *    platform host — the founding tenant's domain is both today.
+ * 2. A **deployment URL without a custom domain** — every Vercel preview gets
+ *    one — names nothing, because no table can list a hostname that is minted
+ *    per deployment. There the deployment's own tenant binding is still true
+ *    and still the answer, which is C2(a) surviving exactly where it remains
+ *    correct rather than as a general fallback. Such a host serves both
+ *    surfaces, so a branch can be reviewed end to end from its preview link.
+ * 3. **Production refuses anything else.** A host nobody registered must not
+ *    reach a tenant's site, and on production there is no deployment URL to
+ *    excuse: the domain is either ours or it is somebody pointing DNS at us.
+ */
+export function resolveHostBinding(
+  host: string | null | undefined,
+  deployment: { env: string | null | undefined; slug: string },
+): HostBinding | null {
+  const tenant = tenantForHost(host);
+  const isPlatform = isPlatformHost(host);
+  if (tenant || isPlatform) return { tenant, isPlatform };
+
+  if (deployment.env === "production") return null;
+
+  const bound = tenantForSlug(deployment.slug);
+  return bound ? { tenant: bound, isPlatform: true } : null;
+}
+
+/**
  * What the platform calls itself.
  *
  * The product name, not a domain — safe to state here, unlike the host. It is

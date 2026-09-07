@@ -1,0 +1,6 @@
+# Written by `vercel link`, narrowed by hand.
+#
+# Its default `.env*` also covers `.env.example`, which is tracked on purpose —
+# it is how a new machine learns which variables exist.
+.vercel
+/.env.local

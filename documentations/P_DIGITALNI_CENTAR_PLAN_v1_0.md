@@ -863,14 +863,33 @@ udobnost, na deployment-u znači da je neko zaboravio. Cena zaborava je ovde spe
 `/radni-prostor` i `/superadmin` ne odgovaraju **nigde**. Zato pada na build-u
 (`MissingPlatformHostError`), gde se `serverEnv` učitava, a ne kod vlasnika koji ne može da uđe.
 
-```
-danas     PLATFORM_HOST=psihointegritet.com     # vlasnici tamo rade
-kasnije   PLATFORM_HOST=p-digital-center.com    # env izmena, ne refaktor
-lokalno   (prazno)                              # localhost i 127.0.0.1 su uvek platforma
-```
+**Postavljeno na Vercel-u 2026-09-07** (projekat `psihointegritet`, tip `Config`, ne `Secret` —
+hostname nije tajna i mora ostati čitljiv za proveru):
 
-> **Pre merge-a u produkciju:** postaviti `PLATFORM_HOST` na svakom Vercel target-u. Ovo je jedini
-> novi obavezni env u ovom slice-u.
+| Target | `PLATFORM_HOST` |
+| ------ | --------------- |
+| Production | `psihointegritet.com` |
+| Preview | `qa.psihointegritet.com` |
+| Preview (grana `staging`) | `staging.psihointegritet.com` |
+| lokalno | prazno — `localhost` i `127.0.0.1` su uvek platforma |
+
+Kasnije: `p-digital-center.com`, kao env izmena a ne refaktor.
+
+#### Preview deployment nema custom domen
+
+Ovo je propust iz prve verzije slice-a, uhvaćen na prvom staging build-u. Svaki Vercel preview
+dobija `*.vercel.app` hostname koji nijedna tabela ne može da nabroji, pa bi fail-closed pravilo
+oborilo **ceo** preview u 404 — a `features`/QA tok se oslanja baš na te linkove.
+
+`resolveHostBinding()` zato ima tri odgovora, po specifičnosti:
+
+1. registrovan domen → njegov tenant (i, ako jeste, platformski host)
+2. deployment URL bez custom domena → **deployment-ov sopstveni tenant binding**, obe površine.
+   Ovo je C2(a) koji preživljava tačno tamo gde je i dalje tačan, ne opšti fallback
+3. **produkcija odbija sve ostalo** — tamo nema preview URL-a kao izgovora: domen je ili naš ili
+   neko upire DNS u nas
+
+Provereno uživo u oba oblika: `pdc-abc123.vercel.app` → 200 na staging-u, **404 na produkciji**.
 
 #### Backend se bira po tenantu, ne iz jedne env promenljive
 

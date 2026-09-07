@@ -6,8 +6,7 @@ import {
   TENANT_ROUTE_PREFIX,
   TENANT_SLUG_HEADER,
   TENANT_SURFACE_HEADER,
-  isPlatformHost,
-  tenantForHost,
+  resolveHostBinding,
 } from "@/lib/tenant/domain-registry";
 import {
   clientRoutePrefixes,
@@ -19,6 +18,7 @@ import {
   decideProxyRoute,
   proxyFallbackLocale,
 } from "@/lib/routes/proxy-locale";
+import { deploymentSlugFromEnv } from "@/lib/tenant/deployment-slug";
 
 /**
  * Next.js 16 renamed the `middleware` convention to `proxy`; Clerk v7 supports
@@ -77,14 +77,18 @@ export default clerkMiddleware(async (auth, request) => {
     return new NextResponse("Not found", { status: 404 });
   }
 
-  const tenant = tenantForHost(host);
-  const onPlatformHost = isPlatformHost(host);
-
-  // A host in neither table is nobody's. Failing closed here is what stops a
-  // stray domain pointed at this project from serving some tenant's site.
-  if (!tenant && !onPlatformHost) {
+  // A host that resolves to nobody is refused. That is what stops a stray
+  // domain pointed at this project from serving some tenant's site — and on a
+  // preview deployment, whose hostname no table can list, it is what lets the
+  // deployment's own tenant binding still answer.
+  const binding = resolveHostBinding(host, {
+    env: process.env.DEPLOYMENT_ENV,
+    slug: deploymentSlugFromEnv(),
+  });
+  if (!binding) {
     return new NextResponse("Not found", { status: 404 });
   }
+  const { tenant, isPlatform: onPlatformHost } = binding;
 
   // Each surface answers on the host that owns it, and nowhere else. Checked
   // before the auth gate on purpose: sending someone to sign in on a domain

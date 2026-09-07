@@ -6,6 +6,7 @@ import {
   TENANT_DOMAINS,
   isPlatformHost,
   normalizeHost,
+  resolveHostBinding,
   resolvePlatformHost,
   tenantForHost,
   tenantForSlug,
@@ -131,5 +132,72 @@ describe("PLATFORM_HOST on a deployed environment", () => {
     // Local development already treats localhost as the platform.
     expect(resolvePlatformHost("", "development")).toBe("");
     expect(resolvePlatformHost(undefined, undefined)).toBe("");
+  });
+});
+
+describe("host binding", () => {
+  const preview = { env: "preview", slug: "psihointegritet" };
+  const production = { env: "production", slug: "psihointegritet" };
+
+  it("binds a registered domain to its tenant", () => {
+    expect(
+      resolveHostBinding("sanjaneuer.com", production)?.tenant
+        ?.organizationSlug,
+    ).toBe("sanja-neuer");
+  });
+
+  it("refuses an unregistered host in production", () => {
+    // The whole point of the registry: a domain someone points at this project
+    // must not serve a tenant's site, and production has no preview URL to
+    // excuse an unknown name.
+    expect(resolveHostBinding("nepoznat.com", production)).toBeNull();
+  });
+
+  it("falls back to the deployment's own tenant on a preview URL", () => {
+    // Every Vercel preview gets a hostname minted per deployment, which no
+    // table can list. Without this a feature branch 404s in full and the
+    // fail-closed rule reads as a broken deploy.
+    const binding = resolveHostBinding("pdc-abc123.vercel.app", preview);
+
+    expect(binding?.tenant?.organizationSlug).toBe("psihointegritet");
+    // Both surfaces, so a branch can be reviewed end to end from one link.
+    expect(binding?.isPlatform).toBe(true);
+  });
+
+  it("does not let the preview fallback reach production", () => {
+    expect(resolveHostBinding("pdc-abc123.vercel.app", production)).toBeNull();
+  });
+
+  it("refuses a preview bound to a tenant nobody registered", () => {
+    expect(
+      resolveHostBinding("pdc-abc123.vercel.app", {
+        env: "preview",
+        slug: "ne-postoji",
+      }),
+    ).toBeNull();
+  });
+
+  it("prefers the registered domain over the deployment binding", () => {
+    // A preview aliased to a tenant's own domain is that tenant, not whatever
+    // the deployment happens to be bound to.
+    const binding = resolveHostBinding("sanjaneuer.com", preview);
+
+    expect(binding?.tenant?.organizationSlug).toBe("sanja-neuer");
+  });
+
+  it("reports a host that is both tenant and platform as both", () => {
+    process.env.PLATFORM_HOST = "psihointegritet.com";
+    const binding = resolveHostBinding("psihointegritet.com", production);
+
+    expect(binding?.tenant?.organizationSlug).toBe("psihointegritet");
+    expect(binding?.isPlatform).toBe(true);
+  });
+
+  it("reports a platform-only host as owning no tenant", () => {
+    process.env.PLATFORM_HOST = "p-digital-center.com";
+    const binding = resolveHostBinding("p-digital-center.com", production);
+
+    expect(binding?.tenant).toBeUndefined();
+    expect(binding?.isPlatform).toBe(true);
   });
 });

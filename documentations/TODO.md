@@ -831,9 +831,12 @@ platformskom hostu bez tenanta, direktan `/s/*`.
 **Redosled je obavezujući za B2-1 → B2-3.** Ostalo se sme preklapati.
 Sledeće po redu: **PDC-0D (email identity) → PDC-1 (Sanjin sajt / Page Composer)**.
 
-**Uslov za deploy B2-3:** `PLATFORM_HOST` mora biti postavljen na svakom Vercel target-u pre
-merge-a u produkciju — danas `psihointegritet.com`, jer vlasnici tamo rade. Build pada bez njega
-(`MissingPlatformHostError`), što je namerno: tiho bi značilo nedostupan `/radni-prostor`.
+**`PLATFORM_HOST` postavljen 2026-09-07** na sva tri Vercel target-a: Production
+`psihointegritet.com`, Preview `qa.psihointegritet.com`, Preview/`staging`
+`staging.psihointegritet.com`. Build pada bez njega (`MissingPlatformHostError`) — namerno, jer bi
+tiho značilo nedostupan `/radni-prostor`. Prvi staging build je i pao baš tako, što je i otkrilo da
+preview deployment-i bez custom domena nemaju host koji registar može da nabroji; rešeno kroz
+`resolveHostBinding()`, koji van produkcije pada na deployment-ov tenant binding.
 
 > **Merilo da je PDC postao platforma:** treći tenant ne sme tražiti novu arhitektonsku fazu.
 > Onboarding mora biti `create organization → add domain → assign owner → select capabilities →
