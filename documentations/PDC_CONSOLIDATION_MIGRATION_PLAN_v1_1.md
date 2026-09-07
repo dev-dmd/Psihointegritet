@@ -597,6 +597,71 @@ neregistrovana putanja                       → 404  (fail-closed je default gr
 **Nula promene za `psihointegritet.com`**, koji je i dalje i tenant i platforma — provereno na
 produkciji posle deploy-a, svih 19 putanja identično kao pre.
 
+### 8.3 `sanja-neuer.vercel.app` — TEMPORARY ACCESS HOST
+
+```
+sanja-neuer.vercel.app
+  = TEMPORARY ACCESS HOST
+  = NIJE tenant arhitektura
+  = uklanja se nakon sanjaneuer.com DNS cutover-a
+```
+
+**Povod.** Namecheap pristup trenutno ne postoji (M1), a `sanjaneuer.com` je nedostupan od kupovine.
+Sanjin tenant time blokira posao koji sa DNS-om nema veze. Rešenje je hostname koji odgovara danas —
+**na istom projektu `psihointegritet`, kao još jedan red u registru.**
+
+**Šta ovo NIJE.** Nije povratak na project-per-tenant. Nije novi Vercel projekat. Ne menja ciljnu
+topologiju iz §4, ne dira Railway, ne uklanja `sanjaneuer.com` iz registra i ne menja Namecheap.
+
+#### Razdvajanje koje je moralo da nastane
+
+Jedno polje je nosilo dva različita pitanja. Od sada ih nosi dva:
+
+| Polje | Pitanje | Vrednost |
+| --- | --- | --- |
+| `publicUrl` | šta sajt **jeste** — canonical, SEO, adresa koju Sanja štampa | `https://sanjaneuer.com` |
+| `temporaryAccessUrl` | gde sajt **odgovara** danas | `https://sanja-neuer.vercel.app` |
+
+`publicUrl` **namerno ostaje mrtav domen.** Upisivanje `.vercel.app` hosta u canonical tražilo bi od
+Google-a da privremenu adresu indeksira kao njen identitet, a čišćenje posle toga bilo bi migracija
+domena umesto obrisanog polja.
+
+#### SEO režim
+
+| Sloj | Ponašanje |
+| --- | --- |
+| tenant placeholder stranica | `robots: { index: false, follow: false }` — **već postojalo** |
+| canonical | `https://sanjaneuer.com/` — pokazuje na budući domen, ne na stand-in |
+| openGraph `url` | `publicUrl`, ne stand-in |
+| proxy, svaki odgovor sa tog hosta | `X-Robots-Tag: noindex, nofollow` — **novo** |
+
+Header pokriva i odgovore koji nikad ne dobiju `<meta>` tag. Žigoše se iz registra, ne iz literala,
+pa brisanje `temporaryAccessUrl` povlači i njega.
+
+#### Bezbednost
+
+Host je naveden **doslovno**, nikad kao `*.vercel.app` wildcard — wildcard bi svaki preview hostname
+na nalogu pretvorio u poverljivu rutu u nečiji tenant. Test to tvrdi eksplicitno
+(`unknown.vercel.app`, `sanja-neuer.vercel.app.evil.com`, `evil-sanja-neuer.vercel.app` → sve
+`undefined`), uz invariant da je svaki `temporaryAccessUrl` host i u `domains`.
+
+**B2 invarijante se ne omekšavaju zato što je hostname privremen:** owner površine ostaju van njega,
+klijentska ostaje na njemu, `/s/*` ostaje 404.
+
+#### Šta se briše na `sanjaneuer.com` cutover-u (Faza 4b)
+
+```
+1. temporaryAccessUrl iz sanja-neuer unosa
+2. "sanja-neuer.vercel.app" iz domains
+3. Vercel project domain sanja-neuer.vercel.app
+4. testovi koji ga imenuju
+```
+
+Posle toga `tenantSiteUrl()` sam vraća `publicUrl`, a `isTemporaryAccessHost()` nema nijedan host —
+`X-Robots-Tag` nestaje bez ijedne dodatne izmene. **Nijedan drugi kod ne zna da je ovo postojalo.**
+
+**M1 (Namecheap) ostaje otvoren, ali više nije blocker** ni za jednu fazu.
+
 ---
 
 ## 9. Clerk — samo ono što domain cutover dodiruje
@@ -707,6 +772,7 @@ audit   (organization_audit_events, notification_outbox)
 | --- | --- | --- |
 | Railway environment `sanja-production` + Postgres volume | Faza 10 | Faza 9 zelena ≥7 dana **i** verifikovan offline dump |
 | Railway environment `sanja-staging` + Postgres volume | Faza 10 | isto |
+| `temporaryAccessUrl` + `sanja-neuer.vercel.app` (registry, Vercel domain, testovi) | **Faza 4b** | `sanjaneuer.com` razrešava i servira Sanjin sajt — vidi §8.3 |
 | `productionApiBaseUrl` iz `domain-registry.ts` | Faza 11 | Faza 10 gotova |
 | `DEFAULT_ORGANIZATION_SLUG` kao **production** env | Faza 5 | GATE A (ostaje za local-dev) |
 | Backend tajne na Vercel projektu (N3) | Faza 10 | higijena; ne blokira nijednu fazu |
@@ -722,7 +788,7 @@ audit   (organization_audit_events, notification_outbox)
 
 | # | Akcija | Faza | Zašto ne može automatski |
 | --- | --- | --- | --- |
-| M1 | **Namecheap Advanced DNS** za `sanjaneuer.com` (§3.5) | 4b | Nema Namecheap API kredencijala u okruženju |
+| M1 | **Namecheap Advanced DNS** za `sanjaneuer.com` (§3.5) | 4b | Nema Namecheap API kredencijala u okruženju. **Više nije blocker** — §8.3 daje privremeni host |
 | M2 | **Clerk Dashboard** — origins, redirect URL-ovi, ključevi (§9) | pre 3 | Nema Clerk admin pristupa |
 | M3 | **Railway re-auth** (`railway login`) — token istekao | pre 5 | Interaktivni OAuth |
 | M4 | Odluka o `www.p-digital-center.com` (redirect na apex ili ne) | 3 | Proizvodna odluka |
