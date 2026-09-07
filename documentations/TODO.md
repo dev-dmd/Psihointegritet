@@ -827,6 +827,7 @@ platformskom hostu bez tenanta, direktan `/s/*`.
 | B2-3a | Tenant page model (`useContent` nad tenant kontekstom) | ⬜ | Deo PDC-1. Danas tenant bez sadržaja renderuje prazno stanje, nikad founding-tenant fallback |
 | B2-4 | PDC-1 Sanja Page Composer / njen sajt | ⬜ | Radi nad `organizationSlug`-om bez obzira odakle stiže — ne mora da čeka B2-3 |
 | B2-5 | Deljeni backend runtime + RLS | ⬜ | **Mnogo kasnije.** Odvojene baze ostaju bezbednosna granica dok RLS ne bude isporučen |
+| B2-6 | **Merge `staging` → `main`, pa tek onda DNS za `sanjaneuer.com`** | ⬜ | **Blokira Sanjin sajt.** Domen je na PDC projektu, ali production gradi `main`, koji nema host routing — upereni DNS pre merge-a servira Psiho sajt na njenom domenu. Posle merge-a: A zapis `sanjaneuer.com → 76.76.21.21` na Namecheap-u |
 
 **Redosled je obavezujući za B2-1 → B2-3.** Ostalo se sme preklapati.
 Sledeće po redu: **PDC-0D (email identity) → PDC-1 (Sanjin sajt / Page Composer)**.

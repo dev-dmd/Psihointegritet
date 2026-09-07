@@ -917,10 +917,24 @@ payload svake stranice na svakom hostu, i to je zatečeno ponašanje next-intl 4
 x-nextjs-cache: HIT  ·  s-maxage=300     po tenantu, zasebni ključevi
 ```
 
-#### Šta ostaje migracioni artefakt
+#### Cutover izveden 2026-09-07
 
-Zaseban `sanja-neuer` Vercel projekat. **Ne briše se** dok cutover ne prođe, i nije šablon za
-trećeg tenanta.
+Zaseban `sanja-neuer` Vercel projekat je **obrisan**. `sanjaneuer.com` i `www.sanjaneuer.com` su
+prebačeni na projekat `psihointegritet` (budući PDC). Ništa jedinstveno nije izgubljeno:
+`DEFAULT_ORGANIZATION_SLUG` i njen `apiBaseUrl` žive u domain registry-ju, Clerk ključevi u samom
+Clerk-u, a **njen Railway backend i baza nisu dirani**.
+
+> `www` je morao prvi — apex se nije dao skinuti dok je na njega postojao redirect.
+
+> ### ⚠ DNS se NE sme upreti pre merge-a u `main`
+>
+> Domen je vezan za **production** target projekta, a production gradi `main`, koji **nema** host
+> routing (provereno: `domain-registry.ts` ne postoji na `origin/main`). Upereni DNS pre merge-a
+> znači **Psihointegritet sajt na `sanjaneuer.com`** — tačno ono što D-080 zabranjuje.
+>
+> Redosled: `staging` → `main` → tek onda A zapis `sanjaneuer.com → 76.76.21.21` na Namecheap-u.
+> Danas su nameserveri još uvek `dns1/dns2.registrar-servers.com`, pa domen ne razrešava — ništa
+> nije živo i ništa nije pokvareno.
 
 ---
 
