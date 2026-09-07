@@ -1,10 +1,9 @@
 "use client";
 
-import { useClerk, useUser } from "@clerk/nextjs";
-import Image from "next/image";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 
+import { useSignOut } from "@/lib/auth/session/use-sign-out";
 import { Toggle } from "@/components/panel/toggle";
 import { useUiLocale } from "@/i18n/use-ui-locale";
 import { localizedPublicPath } from "@/lib/routes/public-path";
@@ -52,29 +51,17 @@ export function ScreenProfil({
   const t = useTranslations("account.profile");
   const common = useTranslations("common");
   const locale = useUiLocale();
-  const { user } = useUser();
-  const { signOut } = useClerk();
-
-  // Clerk generates a default avatar for everyone; `hasImage` is what tells a
-  // real upload from that placeholder.
-  const avatarUrl = user?.hasImage ? user.imageUrl : null;
+  const signOut = useSignOut();
 
   return (
     <section className="animate-fade-up flex flex-col gap-3.5">
       <div className="flex items-center gap-4 px-0.5 py-1.5">
-        {avatarUrl ? (
-          <Image
-            src={avatarUrl}
-            alt=""
-            width={64}
-            height={64}
-            className="h-16 w-16 shrink-0 rounded-full object-cover"
-          />
-        ) : (
-          <span className="bg-meadow/45 text-forest flex h-16 w-16 shrink-0 items-center justify-center rounded-full font-serif text-[23px]">
-            {initials}
-          </span>
-        )}
+        {/* Initials, always. The photo came from the auth provider's profile
+            and there has never been an upload flow of our own, so removing the
+            provider removes the only source a picture ever had. */}
+        <span className="bg-meadow/45 text-forest flex h-16 w-16 shrink-0 items-center justify-center rounded-full font-serif text-[23px]">
+          {initials}
+        </span>
         <div className="min-w-0">
           <h1 className="text-forest mb-[3px] font-serif text-[26px] font-normal">
             {displayName ?? t("title")}
@@ -130,7 +117,7 @@ export function ScreenProfil({
 
       <button
         type="button"
-        onClick={() => signOut({ redirectUrl: "/" })}
+        onClick={() => void signOut()}
         className="text-danger hover:bg-danger/10 min-h-[46px] cursor-pointer rounded-full border-0 bg-transparent p-3 text-sm font-bold transition-colors"
       >
         {common("shell.signOut")}

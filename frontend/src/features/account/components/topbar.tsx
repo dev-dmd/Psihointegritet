@@ -1,12 +1,10 @@
 "use client";
 
-import { useUser } from "@clerk/nextjs";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 
 import { BackToSiteMenuItem } from "@/components/shared/back-to-site-button";
 import { LogoutAvatarMenu } from "@/components/shared/logout-avatar-menu";
-import { getInitials } from "@/lib/auth/initials";
 
 /**
  * Client panel header („KP header" in the design handoff): wordmark, the
@@ -24,12 +22,8 @@ import { getInitials } from "@/lib/auth/initials";
  * The wordmark hides at `lg`, where the sidebar already carries it, exactly as
  * the Control Center topbar does.
  */
-export function AccountTopbar() {
-  const { user } = useUser();
+export function AccountTopbar({ initials }: { initials: string }) {
   const t = useTranslations("account.topbar");
-
-  const email = user?.primaryEmailAddress?.emailAddress;
-  const initials = getInitials(user?.firstName, user?.lastName, email);
 
   return (
     <header className="bg-panel-canvas/92 border-coffee/8 sticky top-0 z-40 flex items-center gap-3 border-b px-[22px] py-3.5 backdrop-blur-md lg:px-8">

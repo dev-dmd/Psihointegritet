@@ -20,11 +20,9 @@
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "content:check": "vitest run --reporter verbose src/lib/content-governance/content-health.cli.test.ts",
-    "api:generate": "openapi-typescript ../backend/openapi.json -o src/types/api.generated.ts",
-    "roles:assign": "node scripts/set-clerk-roles.mjs"
+    "api:generate": "openapi-typescript ../backend/openapi.json -o src/types/api.generated.ts"
   },
   "dependencies": {
-    "@clerk/nextjs": "^7.5.17",
     "@headlessui/react": "^2.2.10",
     "@heroicons/react": "^2.2.0",
     "@hookform/resolvers": "^5.4.0",

@@ -1,12 +1,10 @@
 "use client";
 
-import { useClerk, useUser } from "@clerk/nextjs";
 import { Menu, MenuButton, MenuItem, MenuItems } from "@headlessui/react";
 import { PowerIcon } from "@heroicons/react/24/outline";
-import Image from "next/image";
 import type { ReactNode } from "react";
 
-import { cn } from "@/helpers/cn";
+import { useSignOut } from "@/lib/auth/session/use-sign-out";
 import { useTranslations } from "next-intl";
 
 interface LogoutAvatarMenuProps {
@@ -27,10 +25,10 @@ interface LogoutAvatarMenuProps {
  * sidebar below `lg`, so this is the mobile-topbar equivalent — same action,
  * reached by tapping the avatar instead.
  *
- * Shows the signed-in Clerk user's real uploaded photo when there is one
- * (`user.hasImage` — Clerk's auto-generated default doesn't count), falling
- * back to `initials` otherwise. There's no upload flow yet; this only reads
- * whatever Clerk already has for the session.
+ * Shows the person's initials. A photo used to come from the auth provider's
+ * profile; with the provider gone there is no source for one, because an upload
+ * flow of our own has never existed. When it does, it belongs here — as a prop
+ * from the guarded parent, not as a client read.
  */
 export function LogoutAvatarMenu({
   initials,
@@ -39,31 +37,12 @@ export function LogoutAvatarMenu({
   children,
 }: LogoutAvatarMenuProps) {
   const t = useTranslations("common");
-  const { signOut } = useClerk();
-  const { user } = useUser();
-  const avatarUrl = user?.hasImage ? user.imageUrl : null;
+  const signOut = useSignOut();
 
   return (
     <Menu as="div" className="relative">
-      <MenuButton
-        aria-label={label}
-        title={label}
-        className={cn(
-          triggerClassName,
-          avatarUrl && "relative overflow-hidden p-0",
-        )}
-      >
-        {avatarUrl ? (
-          <Image
-            src={avatarUrl}
-            alt=""
-            fill
-            sizes="40px"
-            className="rounded-full object-cover"
-          />
-        ) : (
-          initials
-        )}
+      <MenuButton aria-label={label} title={label} className={triggerClassName}>
+        {initials}
       </MenuButton>
 
       <MenuItems
@@ -79,7 +58,7 @@ export function LogoutAvatarMenu({
         <MenuItem>
           <button
             type="button"
-            onClick={() => signOut({ redirectUrl: "/" })}
+            onClick={() => void signOut()}
             className="text-danger data-[focus]:bg-danger/10 flex w-full cursor-pointer items-center gap-2.5 rounded-xl px-3.5 py-2.5 text-[13.5px] font-bold transition-colors"
           >
             <PowerIcon className="size-4 shrink-0" />

@@ -1,11 +1,11 @@
 "use client";
 
-import { useClerk } from "@clerk/nextjs";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
 import type { ComponentType, SVGProps } from "react";
 
+import { useSignOut } from "@/lib/auth/session/use-sign-out";
 import { cn } from "@/helpers/cn";
 import type { UiLocale } from "@/i18n/locales";
 import { localizedPath } from "@/lib/routes/localized-path";
@@ -64,7 +64,7 @@ export function SuperadminSidebar() {
   const pathname = usePathname();
   const locale = useUiLocale();
   const t = useTranslations("workspace");
-  const { signOut } = useClerk();
+  const signOut = useSignOut();
 
   return (
     <aside className="bg-coffee fixed top-0 bottom-0 left-0 z-50 hidden w-[264px] flex-col lg:flex">

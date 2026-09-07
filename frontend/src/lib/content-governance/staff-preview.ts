@@ -1,8 +1,7 @@
 import "server-only";
 
-import { auth } from "@clerk/nextjs/server";
-
 import type { ApiContentRevision } from "@/features/workspace/content-api";
+import { getServerToken } from "@/lib/auth/session/server-session";
 import { serverEnv } from "@/lib/validation/env";
 
 /**
@@ -13,8 +12,7 @@ export async function getStaffContentPreview(
   entryId: string,
   revisionId: string,
 ): Promise<ApiContentRevision | null> {
-  const session = await auth();
-  const token = await session.getToken();
+  const token = await getServerToken();
   if (!token) {
     throw new Error("Prijava je obavezna za pregled nacrta.");
   }

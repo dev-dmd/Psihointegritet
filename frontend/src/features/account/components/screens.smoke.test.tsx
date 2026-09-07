@@ -24,9 +24,8 @@ vi.mock("../hooks/use-my-appointment-requests", () => ({
   useMyAppointmentRequests,
 }));
 
-vi.mock("@clerk/nextjs", () => ({
-  useUser: () => ({ user: null }),
-  useClerk: () => ({ signOut: vi.fn() }),
+vi.mock("@/lib/auth/session/use-sign-out", () => ({
+  useSignOut: () => vi.fn(),
 }));
 
 vi.mock("next/navigation", () => ({

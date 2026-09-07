@@ -1,11 +1,11 @@
 "use client";
 
-import { useClerk } from "@clerk/nextjs";
 import { PowerIcon } from "@heroicons/react/24/outline";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
 
+import { useSignOut } from "@/lib/auth/session/use-sign-out";
 import { cn } from "@/helpers/cn";
 import { useUiLocale } from "@/i18n/use-ui-locale";
 import { localizedPath } from "@/lib/routes/localized-path";
@@ -41,7 +41,7 @@ export function AccountSidebar({
   const locale = useUiLocale();
   const t = useTranslations("account");
   const common = useTranslations("common");
-  const { signOut } = useClerk();
+  const signOut = useSignOut();
 
   return (
     <aside className="bg-forest fixed top-0 bottom-0 left-0 z-50 hidden w-[264px] flex-col lg:flex">
@@ -96,7 +96,7 @@ export function AccountSidebar({
           type="button"
           title={common("shell.signOut")}
           aria-label={common("shell.signOut")}
-          onClick={() => signOut({ redirectUrl: "/" })}
+          onClick={() => void signOut()}
           className="text-canvas/45 hover:bg-danger/25 hover:text-canvas flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-full border-0 bg-transparent transition-colors"
         >
           <PowerIcon className="size-4" />

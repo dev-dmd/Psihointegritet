@@ -1,10 +1,10 @@
 "use client";
 
-import { useClerk } from "@clerk/nextjs";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
 
+import { useSignOut } from "@/lib/auth/session/use-sign-out";
 import { cn } from "@/helpers/cn";
 import { localizedPath } from "@/lib/routes/localized-path";
 import { isRouteActive } from "@/lib/routes/match";
@@ -34,7 +34,7 @@ export function WorkspaceSidebar() {
   const pathname = usePathname();
   const locale = useUiLocale();
   const t = useTranslations("workspace");
-  const { signOut } = useClerk();
+  const signOut = useSignOut();
   const { isAdmin, isTherapist, displayName, roleLabelKey } = useWorkspace();
   const { hasErrorFor } = usePanelErrors();
   const sections = visibleNav({ isAdmin, isTherapist });

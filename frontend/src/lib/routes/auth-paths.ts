@@ -27,3 +27,6 @@ export const ACCESS_DENIED_PATH = "/pristup-odbijen";
 
 /** Where Clerk sends someone once signed in; the destination is decided there. */
 export const POST_AUTH_LANDING_PATH = "/api/auth/landing";
+
+/** Where the browser posts to end a session; clears the cookie and redirects. */
+export const SIGN_OUT_PATH = "/api/auth/sign-out";

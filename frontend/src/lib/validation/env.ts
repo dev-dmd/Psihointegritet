@@ -8,9 +8,10 @@ import { resolvePlatformHost } from "@/lib/tenant/domain-registry";
 /**
  * Server-side environment validation. Imported from the root layout so an
  * invalid environment fails fast at build/startup instead of at request time.
- * The Clerk keys are required now that the auth milestone (Milestone 1) is
- * active: the publishable key is needed by ClerkProvider and the secret key by
- * `clerkMiddleware` in `proxy.ts`.
+ *
+ * No auth keys any more (D-083). The PDC auth engine signs its own sessions, so
+ * what it needs is a signing secret rather than a provider's key pair — added
+ * here when it lands, not carried empty in the meantime.
  */
 const serverEnvSchema = z.object({
   NEXT_PUBLIC_APP_URL: z.url(),
@@ -18,10 +19,6 @@ const serverEnvSchema = z.object({
   DEPLOYMENT_ENV: z
     .enum(["development", "preview", "staging", "production"])
     .default("development"),
-  NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: z
-    .string()
-    .min(1, "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY is required"),
-  CLERK_SECRET_KEY: z.string().min(1, "CLERK_SECRET_KEY is required"),
   /**
    * Which organization this deployment serves (D-077) — the C2(a) deployment
    * binding, not a tenant onboarding step.
@@ -61,9 +58,6 @@ function loadServerEnv(): ServerEnv {
     NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
     NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
     DEPLOYMENT_ENV: process.env.DEPLOYMENT_ENV,
-    NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY:
-      process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY,
-    CLERK_SECRET_KEY: process.env.CLERK_SECRET_KEY,
     DEFAULT_ORGANIZATION_SLUG: process.env.DEFAULT_ORGANIZATION_SLUG,
     PLATFORM_HOST: process.env.PLATFORM_HOST,
   });
