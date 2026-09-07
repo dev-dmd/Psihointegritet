@@ -111,6 +111,7 @@ BAZA
 | **N6** | ADR-023 inventar meri 31 tabelu; danas ih je **51** | 🟠 srednja — RLS inventar se mora ponoviti pre pisanja polisa, inače 20 tabela ostaje neklasifikovano | Faza 6 (gate) |
 | **N7** | `TODO.md` B2-6 preporučuje A zapis `76.76.21.21` | 🟡 niska — Vercel danas kao rank-1 preporučuje `216.150.1.1`; `76.76.21.21` je rank-2 legacy | §4 |
 | **N8** | `isSurfaceAllowedOnHost` završava sa `host.isTenant \|\| host.isPlatform`, pa na platform-only hostu propušta ceo tenant public tree — `p-digital-center.com/` bi renderovao Psiho početnu | 🔴 **visoka — blocker za Fazu 3** | **Faza 2b, zatvoreno 2026-09-07** |
+| **N9** | Root layout obavija i tenant segment, pa Sanjina stranica u payload-u nosi **ceo `sr-Latn` katalog poruka** (uključujući Psiho javnu kopiju) i **`clerk.psihointegritet.com`** kao Clerk Frontend API domen. **Renderovan tekst je čist** — „Sanja Neuer / Sajt je u pripremi.", 0 pominjanja | 🟡 niska danas (stranica je `noindex`), 🟠 pre PDC-1 javnog sajta | katalog: PDC-1 (tenant-authored sadržaj) · Clerk domen: §9 |
 
 ---
 
@@ -659,6 +660,32 @@ klijentska ostaje na njemu, `/s/*` ostaje 404.
 
 Posle toga `tenantSiteUrl()` sam vraća `publicUrl`, a `isTemporaryAccessHost()` nema nijedan host —
 `X-Robots-Tag` nestaje bez ijedne dodatne izmene. **Nijedan drugi kod ne zna da je ovo postojalo.**
+
+#### Mereno na produkciji 2026-09-07 (`ac152f9`)
+
+```
+http            200
+x-pdc-tenant    sanja-neuer
+x-pdc-surface   tenant
+X-Robots-Tag    noindex, nofollow
+title           Sanja Neuer
+canonical       https://sanjaneuer.com          ← ne stand-in
+og:url          https://sanjaneuer.com          ← ne stand-in
+robots meta     noindex, nofollow
+vidljiv tekst   "Sanja Neuer  Sajt je u pripremi."   ← 0 pominjanja Psihointegriteta
+
+/radni-prostor · /workspace · /superadmin   404
+/s/sanja-neuer · /s/psihointegritet         404
+/kompas · /o-nama · /usluge · /tim          404      ← Psiho javni tree nedostupan
+/nalog                                      307 → /prijava   ← klijentska površina radi
+```
+
+Bez regresije: `psihointegritet.com` svih pet putanja nepromenjeno, **bez** `X-Robots-Tag`.
+
+> **Nalaz N9 otkriven pri ovom smoke testu.** Renderovan sadržaj je čist, ali *payload* nije:
+> root layout obavija i tenant segment, pa nosi ceo `sr-Latn` katalog poruka i Clerk-ov
+> `clerk.psihointegritet.com`. Ne blokira — stranica je dvostruko `noindex` — ali mora biti
+> zatvoreno pre nego što tenant dobije stvarni javni sajt (PDC-1).
 
 **M1 (Namecheap) ostaje otvoren, ali više nije blocker** ni za jednu fazu.
 
