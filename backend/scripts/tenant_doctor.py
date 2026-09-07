@@ -33,7 +33,6 @@ import os
 from dataclasses import dataclass
 from enum import StrEnum
 from pathlib import Path
-from urllib.parse import urlparse
 
 import httpx
 from sqlalchemy import select, text
@@ -155,28 +154,20 @@ def check_database_target(settings: Settings) -> Check:
     )
 
 
-def check_clerk(settings: Settings) -> Check:
-    missing = [
-        name
-        for name, value in (
-            ("CLERK_ISSUER", settings.clerk_issuer),
-            ("CLERK_JWKS_URL", settings.clerk_jwks_url),
-        )
-        if not _present(value)
-    ]
-    if missing:
-        return Check("clerk configuration", Verdict.FAIL, f"missing: {', '.join(missing)}")
-    instance = urlparse(settings.clerk_issuer).netloc or settings.clerk_issuer
-    expected_dev = settings.environment is not Environment.PRODUCTION
-    looks_dev = instance.endswith(".clerk.accounts.dev")
-    if expected_dev != looks_dev:
-        return Check(
-            "clerk configuration",
-            Verdict.WARN,
-            f"issuer {instance} does not match environment {settings.environment.value}; "
-            f"an account from the other instance cannot sign in here",
-        )
-    return Check("clerk configuration", Verdict.PASS, f"issuer {instance}")
+def check_authentication(settings: Settings) -> Check:
+    """Report that nobody can sign in, and why.
+
+    Replaces the provider configuration check rather than dropping it. This
+    script exists so an operator can find out why a deployment cannot be signed
+    into; silence about the answer would be worse than the old failure.
+    """
+    _ = settings
+    return Check(
+        "authentication",
+        Verdict.WARN,
+        "no provider configured (D-083) — authenticated endpoints answer 401 "
+        "until the PDC auth engine lands",
+    )
 
 
 def check_cors(settings: Settings) -> Check:
@@ -263,7 +254,7 @@ async def run(args: argparse.Namespace) -> int:
     checks: list[Check] = [
         check_deployment_binding(settings),
         check_database_target(settings),
-        check_clerk(settings),
+        check_authentication(settings),
         check_cors(settings),
         check_email(settings),
         check_locales(settings),

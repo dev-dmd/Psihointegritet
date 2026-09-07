@@ -11,7 +11,7 @@ from psihointegritet.core.config import Settings, get_settings
 from psihointegritet.core.logging import configure_logging, get_logger
 from psihointegritet.core.observability import CorrelationIdMiddleware
 from psihointegritet.db.session import create_engine, create_session_factory
-from psihointegritet.infrastructure.auth.clerk.verifier import ClerkTokenVerifier
+from psihointegritet.infrastructure.auth.unavailable import UnavailableTokenVerifier
 
 
 @asynccontextmanager
@@ -44,7 +44,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         lifespan=lifespan,
     )
     app.state.settings = settings
-    app.state.token_verifier = ClerkTokenVerifier(settings)
+    # No provider (D-083). Every bearer token is refused, so authenticated
+    # endpoints answer 401 instead of raising on a verifier that is not there.
+    app.state.token_verifier = UnavailableTokenVerifier()
 
     app.add_middleware(CorrelationIdMiddleware)
     app.add_middleware(
