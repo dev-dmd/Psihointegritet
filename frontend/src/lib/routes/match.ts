@@ -1,4 +1,5 @@
 import { SUPPORTED_UI_LOCALES, type UiLocale } from "@/i18n/locales";
+import { SIGN_IN_PATH, SIGN_UP_PATH } from "@/lib/routes/auth-paths";
 import {
   PLATFORM_ROUTES,
   type PlatformRouteId,
@@ -212,13 +213,49 @@ export function hasRoutePrefix(
 }
 
 /**
+ * Paths whose meaning does not depend on which host they arrive on.
+ *
+ * **Auth pages** are how somebody reaches any surface at all, on the platform
+ * host and on every tenant domain alike. **Route Handlers** (`/api/...`) are
+ * server endpoints rather than pages: the workspace and the operator console
+ * call them from the platform host while a tenant's public site calls them from
+ * its own domain, so refusing them by host would break the very surface that is
+ * otherwise allowed. What they return is decided by the session and the tenant
+ * context inside them — never by which hostname reached them.
+ */
+const HOST_NEUTRAL_PREFIXES: readonly string[] = [
+  SIGN_IN_PATH,
+  SIGN_UP_PATH,
+  "/api",
+];
+
+export function isHostNeutralPath(pathname: string): boolean {
+  return hasRoutePrefix(pathname, HOST_NEUTRAL_PREFIXES);
+}
+
+/**
  * Which host may serve `pathname` (B2).
  *
- * Owner surfaces answer on the platform host, client surfaces on a tenant's own
- * domain, and everything else — the public site — on a tenant's domain too.
- * A host can be both: the founding tenant's domain is the platform host until
- * `p-digital-center.com` exists, and it keeps serving both surfaces because it
- * is genuinely both, not because the rule is loose.
+ * Four answers, and the last one is the whole point:
+ *
+ * 1. **Host-neutral paths** — auth and Route Handlers — answer anywhere we
+ *    serve at all.
+ * 2. **Owner surfaces** answer on the platform host.
+ * 3. **Client surfaces** answer on a tenant's own domain.
+ * 4. **Everything else is some tenant's public site**, so it answers only on a
+ *    host that owns a tenant.
+ *
+ * Rule 4 used to read `host.isTenant || host.isPlatform`, which was true while
+ * the platform host was also the founding tenant's domain and became a hole the
+ * moment it stopped being: a platform-only host owns no tenant, so there is no
+ * correct public page to serve, and the incorrect one — whichever tenant's tree
+ * happens to sit in `app/(public)` — is precisely the "Psihointegritet is the
+ * platform" identity D-080 retired. The platform host gets its public root from
+ * `proxy.ts` instead, explicitly.
+ *
+ * Stated as a property rather than as a list of slugs: **no tenant, no public
+ * site.** Adding a page to the public tree cannot widen what a platform-only
+ * host serves, because nothing here enumerates that tree.
  *
  * Refusing rather than redirecting is deliberate. The alternative sends someone
  * to sign in on a domain that will not serve the page afterwards, which reads
@@ -228,7 +265,8 @@ export function isSurfaceAllowedOnHost(
   pathname: string,
   host: { isTenant: boolean; isPlatform: boolean },
 ): boolean {
+  if (isHostNeutralPath(pathname)) return host.isTenant || host.isPlatform;
   if (hasRoutePrefix(pathname, platformRoutePrefixes())) return host.isPlatform;
   if (hasRoutePrefix(pathname, clientRoutePrefixes())) return host.isTenant;
-  return host.isTenant || host.isPlatform;
+  return host.isTenant;
 }
