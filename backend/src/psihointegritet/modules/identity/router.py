@@ -5,6 +5,7 @@ from uuid import UUID
 from fastapi import APIRouter, HTTPException, status
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import select
+from sqlalchemy.dialects.postgresql import insert as pg_insert
 
 from psihointegritet.api.dependencies import CurrentIdentity, DatabaseSession, RequireSuperadmin
 from psihointegritet.modules.identity.models import (
@@ -59,17 +60,53 @@ class MembershipRolesUpdate(BaseModel):
 
 
 async def ensure_internal_user(session: DatabaseSession, identity: CurrentIdentity) -> InternalUser:
-    """Register a verified person, but never grant a domain privilege implicitly."""
-    user = await session.scalar(
-        select(InternalUser).where(InternalUser.external_auth_id == identity.subject)
-    )
+    """Register a verified person, but never grant a domain privilege implicitly.
+
+    First login has to be safe to run twice at once. The frontend asks every
+    production backend for the identity in parallel, and a browser that opens
+    the workspace and the account area together produces the same shape — two
+    `GET /api/v1/me` calls for a subject that has no row yet.
+
+    Read-then-insert lost that race in production on 2026-09-07: both calls saw
+    `None`, both inserted, and the second came back 500 with
+
+        UniqueViolationError: duplicate key value violates unique constraint
+        "uq_internal_users_external_auth_id"
+
+    which failed the whole sign-in even though the other backend had answered
+    200. So the write is `ON CONFLICT DO NOTHING` and the row is then read back
+    authoritatively — whoever won, the answer is the same row.
+
+    The constraint stays exactly as it was. It is the thing making this correct,
+    not the thing in the way: PostgreSQL arbitrates, the application does not
+    guess. Under READ COMMITTED the conflicting insert waits for the winner to
+    commit and the following SELECT sees the committed row, which is why the
+    read has to come after the write rather than be reused from above.
+    """
+    user = await _find_internal_user(session, identity.subject)
     if user is None:
-        user = InternalUser(external_auth_id=identity.subject, email=identity.email)
-        session.add(user)
-        await session.flush()
-    elif identity.email and user.email != identity.email:
+        await session.execute(
+            pg_insert(InternalUser)
+            .values(external_auth_id=identity.subject, email=identity.email)
+            .on_conflict_do_nothing(index_elements=["external_auth_id"])
+        )
+        user = await _find_internal_user(session, identity.subject)
+        if user is None:  # pragma: no cover - the row exists or the insert raised
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Identity could not be registered.",
+            )
+    # Applies to the row we ended up with, including one a racing request wrote
+    # a moment ago, so a stale email cannot survive the race that created it.
+    if identity.email and user.email != identity.email:
         user.email = identity.email
     return user
+
+
+async def _find_internal_user(session: DatabaseSession, subject: str) -> InternalUser | None:
+    return await session.scalar(
+        select(InternalUser).where(InternalUser.external_auth_id == subject)
+    )
 
 
 async def build_me_response(session: DatabaseSession, user: InternalUser) -> MeOut:
