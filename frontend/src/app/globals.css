@@ -9,6 +9,8 @@
 @theme inline {
   --font-sans: var(--font-instrument-sans), system-ui, sans-serif;
   --font-serif: var(--font-newsreader), Georgia, serif;
+  /* Sanja Neuer tenant display face; only her subtree sets --font-playfair. */
+  --font-sn-display: var(--font-playfair), Georgia, serif;
 }
 
 @theme {
@@ -43,6 +45,27 @@
    * design_handoff_paneli (Tailwind v3 config → v4 @theme). Namespaced so the
    * public site is untouched; the shared brand palette above is reused as-is.
    */
+  /*
+   * Sanja Neuer tenant palette (`sn-`), from `design/Sanja Neuer landing
+   * stranica-handoff`. Namespaced for the same reason the panel tokens above
+   * are: one tenant's brand must not leak into the platform or into another
+   * tenant. Only this tenant's components may use `sn-*`.
+   *
+   * D-077 keeps tenant identity out of platform chrome; these tokens are the
+   * colour half of that boundary.
+   */
+  --color-sn-ivory: #f7f4ef; /* page ground */
+  --color-sn-surface: #fffdfa; /* cards, tiles, inputs */
+  --color-sn-burgundy: #5b1e2d; /* primary button, filled cards, CTA band */
+  --color-sn-lilac: #cbb7d6; /* ornaments, numerals, secondary outline */
+  --color-sn-lilac-deep: #7c5a90; /* eyebrow and tag text — readable lilac */
+  --color-sn-ink: #1a1a1f; /* body text, dark banners, footer */
+
+  --shadow-sn-cta: 0 14px 34px rgba(91, 30, 45, 0.18);
+  --shadow-sn-modal: 0 40px 90px rgba(26, 26, 31, 0.28);
+  --shadow-sn-drawer: -30px 0 70px rgba(26, 26, 31, 0.25);
+  --shadow-sn-bar-ring: 0 0 0 1px #5b1e2d, 0 0 0 5px rgba(91, 30, 45, 0.28);
+
   --color-panel-canvas: #faf8f3; /* panel app background (site canvas stays #f0f0f0) */
   --color-line: rgba(58, 46, 40, 0.06); /* card border */
   --color-line-strong: rgba(58, 46, 40, 0.14); /* pill/input border */
@@ -294,4 +317,40 @@ body {
   color: var(--color-ink-45);
   content: "Unesite tekst dokumenta…";
   pointer-events: none;
+}
+
+/*
+ * Sanja Neuer tenant motion.
+ *
+ * Namespaced like her colour tokens. Every use site is wrapped in
+ * `motion-safe:`, so `prefers-reduced-motion` skips the transform rather than
+ * replaying it — which the handoff asks for explicitly.
+ */
+@keyframes sn-rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes sn-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes sn-slide-in {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: none;
+  }
 }

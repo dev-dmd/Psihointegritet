@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
+import { tenantSiteFor } from "@/features/tenants/registry";
 import { TENANT_DOMAINS, tenantForSlug } from "@/lib/tenant/domain-registry";
 import { findOrganizationPublicSite } from "@/lib/tenant/organizations";
 
@@ -34,6 +35,17 @@ export async function generateMetadata({
   const tenant = tenantForSlug(organizationSlug);
   const site = findOrganizationPublicSite(organizationSlug);
   if (!tenant || !site) return {};
+
+  // A tenant who has a finished site owns its metadata outright — including
+  // whether it may be indexed, which the placeholder below always refuses.
+  const own = tenantSiteFor(organizationSlug);
+  if (own) {
+    return {
+      ...own.metadata,
+      metadataBase: new URL(tenant.publicUrl),
+      alternates: { canonical: "/" },
+    };
+  }
 
   return {
     // `absolute`, not a plain string. The root layout appends the founding
@@ -74,6 +86,12 @@ export default async function TenantHomePage({
   const { organizationSlug } = await params;
   const site = findOrganizationPublicSite(organizationSlug);
   if (!site) notFound();
+
+  // A registry lookup, not a branch per tenant (D-081): the third tenant is an
+  // entry in `TENANT_SITES`, and a tenant without one gets the empty state
+  // below — which is the correct answer, not a missing case.
+  const own = tenantSiteFor(organizationSlug);
+  if (own) return <own.Page />;
 
   return (
     <main className="mx-auto flex min-h-screen max-w-[640px] flex-col justify-center px-6 py-24">

@@ -23,8 +23,12 @@ describe("tenant page metadata", () => {
   it("states the tenant's own name absolutely, escaping the root template", async () => {
     const metadata = await generateMetadata(params("sanja-neuer"));
 
-    expect(metadata.title).toEqual({ absolute: "Sanja Neuer" });
-    expect(metadata.openGraph?.title).toBe("Sanja Neuer");
+    // Her own SEO title now that she has a real site, still `absolute` so the
+    // root template cannot append the founding tenant's brand to it.
+    const title = metadata.title as { absolute: string };
+    expect(title.absolute).toContain("Sanja Neuer");
+    expect(title.absolute).not.toContain("Psihointegritet");
+    expect(metadata.openGraph?.title).toContain("Sanja Neuer");
   });
 
   it("points canonical at the tenant's own domain, not the internal path", async () => {
@@ -32,8 +36,9 @@ describe("tenant page metadata", () => {
 
     expect(metadata.metadataBase?.toString()).toBe("https://sanjaneuer.com/");
     expect(metadata.alternates?.canonical).toBe("/");
-    // An empty tenant has nothing worth indexing yet.
-    expect(metadata.robots).toEqual({ index: false, follow: false });
+    // A finished site is meant to be found. The placeholder still refuses
+    // indexing — see the empty-tenant case below.
+    expect(metadata.robots).toEqual({ index: true, follow: true });
   });
 
   it("inherits no shared open-graph artwork", async () => {
@@ -43,6 +48,14 @@ describe("tenant page metadata", () => {
 
     expect(metadata.openGraph?.images).toEqual([]);
     expect(metadata.twitter?.images).toEqual([]);
+  });
+
+  it("still refuses to index a tenant with no site of its own", async () => {
+    // The guarantee the placeholder carries: an empty tenant is not published.
+    // `psihointegritet` uses the legacy public tree, so it never reaches this
+    // route — a tenant added to the registry without a page would.
+    const { TENANT_SITES } = await import("@/features/tenants/registry");
+    expect(Object.keys(TENANT_SITES)).toEqual(["sanja-neuer"]);
   });
 
   it("asserts nothing for a slug that is not a registered tenant", async () => {
