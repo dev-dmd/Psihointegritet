@@ -14,7 +14,7 @@ import { useWorkspace } from "../workspace-context";
 import { usePanelErrors } from "../panel-errors";
 import { visibleNav } from "../nav";
 import { PowerIcon } from "./icons";
-import { getInitials } from "@/lib/auth/clerk/initials";
+import { getInitials } from "@/lib/auth/initials";
 
 /**
  * `getInitials` takes name parts, and the identity contract carries one string —

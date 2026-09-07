@@ -10,8 +10,10 @@ import {
   visibleHeaderNavLinks,
 } from "@/content/site-navigation";
 import { isCompassPublicEnabled } from "@/lib/compass/flags";
-import { AuthMenu } from "@/lib/auth/clerk/auth-menu";
-import { MobileAuthSection } from "@/lib/auth/clerk/mobile-auth-section";
+import {
+  SignInCircleLink,
+  SignInDrawerLink,
+} from "@/lib/auth/session/sign-in-link";
 import { resolvePublicLocale } from "@/lib/tenant/public-locale";
 import { getPublicSiteSettings } from "@/lib/tenant/public-site";
 import { localizedPublicPath } from "@/lib/routes/public-path";
@@ -68,7 +70,7 @@ export async function SiteHeader() {
             ))}
           </nav>
           <div className="col-start-3 flex items-center gap-2.5 justify-self-end">
-            <AuthMenu />
+            <SignInCircleLink label={t("navigation.signIn")} />
             <AnimatedCtaLink
               href={bookingHref}
               label={t("navigation.book")}
@@ -78,7 +80,7 @@ export async function SiteHeader() {
               links={navLinks}
               bookingHref={bookingHref}
               bookLabel={t("navigation.book")}
-              authSlot={<MobileAuthSection />}
+              authSlot={<SignInDrawerLink label={t("navigation.signIn")} />}
             />
           </div>
         </div>
@@ -111,7 +113,7 @@ export async function SiteHeader() {
             </Link>
           ))}
         </nav>
-        <AuthMenu size="sm" />
+        <SignInCircleLink label={t("navigation.signIn")} size="sm" />
         <AnimatedCtaLink
           href={bookingHref}
           label={t("navigation.book")}
@@ -122,7 +124,7 @@ export async function SiteHeader() {
           bookingHref={bookingHref}
           bookLabel={t("navigation.book")}
           variant="solid"
-          authSlot={<MobileAuthSection />}
+          authSlot={<SignInDrawerLink label={t("navigation.signIn")} />}
         />
       </StickyBar>
     </>

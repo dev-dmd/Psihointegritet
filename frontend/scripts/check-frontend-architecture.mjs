@@ -493,9 +493,6 @@ const inlineSerbianBaseline = new Map([
     "src/features/workspace/components/taxonomy-term-form/technical-details.tsx",
     1,
   ],
-  ["src/lib/auth/clerk/auth-avatar-menu.tsx", 3],
-  ["src/lib/auth/clerk/identity-card.tsx", 3],
-  ["src/lib/auth/clerk/mobile-auth-section.tsx", 1],
 ]);
 
 const serbianDiacritics = /[šđčćžŠĐČĆŽ]/g;

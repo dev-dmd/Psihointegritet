@@ -9,6 +9,7 @@ export const publicUi: Widen<EnPublicUi> = {
     mobileLabel: "Mobilna navigacija",
     menuLabel: "Meni",
     openMenu: "Otvori meni",
+    signIn: "Prijava",
     closeMenu: "Zatvori meni",
     book: "Zakaži termin",
     links: {

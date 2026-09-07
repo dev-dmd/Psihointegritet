@@ -6,7 +6,7 @@ import { toast } from "sonner";
 
 import { BackToSiteMenuItem } from "@/components/shared/back-to-site-button";
 import { LogoutAvatarMenu } from "@/components/shared/logout-avatar-menu";
-import { getInitials } from "@/lib/auth/clerk/initials";
+import { getInitials } from "@/lib/auth/initials";
 
 /**
  * Client panel header („KP header" in the design handoff): wordmark, the

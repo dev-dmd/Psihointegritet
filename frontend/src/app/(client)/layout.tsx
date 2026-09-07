@@ -7,7 +7,7 @@ import { AccountBottomNav } from "@/features/account/components/bottom-nav";
 import { AccountSidebar } from "@/features/account/components/sidebar";
 import { AccountTopbar } from "@/features/account/components/topbar";
 import { profileNameOf } from "@/features/account/identity-display";
-import { getInitials } from "@/lib/auth/clerk/initials";
+import { getInitials } from "@/lib/auth/initials";
 import { requireClient } from "@/lib/auth/guards";
 import { resolveWorkspaceLocale } from "@/lib/tenant/workspace-locale";
 import { getPlatformMessages } from "@/messages";
