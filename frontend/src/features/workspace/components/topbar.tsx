@@ -4,7 +4,11 @@ import { useFormatter, useTranslations } from "next-intl";
 import { toast } from "sonner";
 
 import { BackToSiteButton } from "@/components/shared/back-to-site-button";
-import { PLATFORM_NAME, tenantForSlug } from "@/lib/tenant/domain-registry";
+import {
+  PLATFORM_NAME,
+  tenantForSlug,
+  tenantSiteUrl,
+} from "@/lib/tenant/domain-registry";
 import { findOrganizationPublicSite } from "@/lib/tenant/organizations";
 import { LogoutAvatarMenu } from "@/components/shared/logout-avatar-menu";
 import { useFallbackContent } from "@/content/use-content";
@@ -105,7 +109,10 @@ export function WorkspaceTopbar() {
         </button>
       ) : null}
       <BackToSiteButton
-        href={tenant?.publicUrl ?? "/"}
+        // Where the site *answers*, not what it is called. Sanja's canonical
+        // domain has no DNS yet, and a "go to site" button that opens a dead
+        // address is the one thing this button must never do.
+        href={tenant ? tenantSiteUrl(tenant) : "/"}
         className="border-coffee/12 text-coffee hover:border-sage bg-surface"
       />
       <button

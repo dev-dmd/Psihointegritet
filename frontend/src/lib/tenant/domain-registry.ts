@@ -61,6 +61,30 @@ export interface TenantDomainConfig {
    */
   productionApiBaseUrl: string;
   /**
+   * Where this tenant's site can actually be reached **today**, when that is
+   * not yet its canonical domain.
+   *
+   * Two different questions were one field until Sanja's DNS became
+   * unavailable, and they are not the same:
+   *
+   * ```
+   * publicUrl           what the site IS      canonical, SEO, the address she prints
+   * temporaryAccessUrl  where it ANSWERS      a link that works this week
+   * ```
+   *
+   * `publicUrl` deliberately stays `https://sanjaneuer.com` while that domain
+   * is dead. Pointing canonical at a `.vercel.app` host would ask Google to
+   * index the temporary address as the real one, and the cleanup afterwards is
+   * a domain migration rather than a deleted line.
+   *
+   * **Temporary by construction.** It is deleted the day `sanjaneuer.com`
+   * resolves — together with the host in `domains` and the `X-Robots-Tag` the
+   * proxy stamps for it. Nothing else in the registry knows it exists.
+   *
+   * Plan: `PDC_CONSOLIDATION_MIGRATION_PLAN_v1_1.md` §8.3.
+   */
+  temporaryAccessUrl?: string;
+  /**
    * **Transitional.** The founding tenant's ~26 public pages still live in
    * `app/(public)` with their copy written for that one organization. Moving
    * them under `app/s/[organizationSlug]` is PDC-1's job, together with the
@@ -89,8 +113,12 @@ export const TENANT_DOMAINS: readonly TenantDomainConfig[] = [
   },
   {
     organizationSlug: "sanja-neuer",
-    domains: ["sanjaneuer.com", "www.sanjaneuer.com"],
+    // `sanja-neuer.vercel.app` is listed explicitly, never as a `*.vercel.app`
+    // wildcard: a wildcard would make every preview hostname on the platform a
+    // trusted route into this tenant.
+    domains: ["sanjaneuer.com", "www.sanjaneuer.com", "sanja-neuer.vercel.app"],
     publicUrl: "https://sanjaneuer.com",
+    temporaryAccessUrl: "https://sanja-neuer.vercel.app",
     productionApiBaseUrl:
       "https://diligent-serenity-sanja-production.up.railway.app",
   },
@@ -108,6 +136,45 @@ export function tenantForHost(
   const normalized = normalizeHost(host);
   if (normalized === "") return undefined;
   return TENANT_DOMAINS.find((tenant) => tenant.domains.includes(normalized));
+}
+
+/**
+ * The address to *send someone to* for this tenant's site.
+ *
+ * Prefers the temporary host precisely because the canonical one may not
+ * resolve yet: "Idi na sajt" has to open a page, and a link to a dead domain
+ * is worse than a link to an ugly one. Falls back to `publicUrl`, which is
+ * what every tenant with a working domain uses — and what Sanja goes back to
+ * the moment `temporaryAccessUrl` is deleted.
+ *
+ * Never use this for canonical, sitemaps or anything an indexer reads. That is
+ * `publicUrl`, always.
+ */
+export function tenantSiteUrl(tenant: TenantDomainConfig): string {
+  return tenant.temporaryAccessUrl ?? tenant.publicUrl;
+}
+
+/**
+ * Is this host a temporary stand-in rather than a tenant's real domain?
+ *
+ * Derived from `temporaryAccessUrl` rather than listed a second time, so the
+ * two cannot drift apart — deleting that one field retires the host, the
+ * `noindex` the proxy stamps for it, and this predicate together.
+ *
+ * The proxy uses it to keep the stand-in out of search results while
+ * `publicUrl` keeps naming the domain that should eventually be there.
+ */
+export function isTemporaryAccessHost(
+  host: string | null | undefined,
+): boolean {
+  const normalized = normalizeHost(host);
+  if (normalized === "") return false;
+  return TENANT_DOMAINS.some((tenant) => {
+    if (!tenant.temporaryAccessUrl) return false;
+    return (
+      normalizeHost(new URL(tenant.temporaryAccessUrl).hostname) === normalized
+    );
+  });
 }
 
 /** The tenant with this slug, or `undefined` when it is not registered. */
