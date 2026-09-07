@@ -831,7 +831,21 @@ platformskom hostu bez tenanta, direktan `/s/*`.
 | B2-7 | **PDC konsolidacija — jedan backend i jedna baza po okruženju** | ⬜ | **D-081. `p-digital-center.com` je kupljen i živ (2026-09-07) — okidač je ispunjen.** Ceo redosled u `PDC_CONSOLIDATION_MIGRATION_PLAN_v1_1.md` (v1.0 je superseded). **Ispravka terminologije:** ne postoji poseban Sanjin backend servis — postoji **jedan** Railway servis `diligent-serenity` u projektu `valiant-cat-psihointegritet`, raspoređen kroz pet environment-a; `sanja-production` i `sanja-staging` su **environment-i**, ne servisi. Do konsolidacije se **ne razvijaju** četiri API-ja (Psiho prod, Sanja prod, Psiho staging, Sanja staging) |
 
 **Redosled je obavezujući za B2-1 → B2-3.** Ostalo se sme preklapati.
-Sledeće po redu: **PDC-0D (email identity) → PDC-1 (Sanjin sajt / Page Composer)**.
+**Sledeće po redu (D-082, 2026-09-07):** infrastruktura se završava, ne širi.
+
+```
+1. platform infrastructure cutover (Faza 3)      ← blokira M2 Clerk Dashboard
+2. request-scoped tenant context + RLS (5–6)     ← poslednja ozbiljna infra stavka
+3. jedna production baza, jedan backend (7–8)
+4. DELETE sanja-production + sanja-staging (10)  ← imenovan milestone, izlaz iz infra faze
+5. PDC-ONBOARD-1 — Sanja radi svoj posao u PDC-u
+6. Content Engine SA Sanjom, prvi vertikalni slice
+```
+
+**Scope gate:** svaki infrastrukturni zadatak mora odgovoriti „da li nas ovo približava Sanjinom
+onboarding-u?". Ako ne — debt/TODO, ne rad. Detalji: `PDC_CONSOLIDATION_MIGRATION_PLAN_v1_1.md` §17.
+
+PDC-0D (email identity) i PDC-1 (Page Composer) **nisu blokeri za `PDC-ONBOARD-1`** i ne ulaze pre njega.
 
 **`PLATFORM_HOST` postavljen 2026-09-07** na sva tri Vercel target-a: Production
 `psihointegritet.com`, Preview `qa.psihointegritet.com`, Preview/`staging`
