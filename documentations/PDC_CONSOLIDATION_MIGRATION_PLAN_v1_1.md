@@ -1,7 +1,7 @@
 # PDC konsolidacija — objedinjen migracioni plan v1.1
 
 **Datum:** 2026-09-07 · **Vlasnik:** Milan Dražić (CTO) · **Status:** audit + plan, **ne izvodi se**
-**Odluka:** D-081 · **Prethodi:** D-077 A7/A8, D-080, ADR-023 (Amandman 2), `PDC_B2_SPIKE_RESULT_v1_0.md`, `PDC_TENANT_ROUTING_AUDIT_v1_0.md`
+**Odluka:** D-081, **D-082 (scope gate — §17)** · **Prethodi:** D-077 A7/A8, D-080, ADR-023 (Amandman 2), `PDC_B2_SPIKE_RESULT_v1_0.md`, `PDC_TENANT_ROUTING_AUDIT_v1_0.md`
 **Merena osnova:** `20c3d59` (`staging`), origin fetch 2026-09-07
 
 ---
@@ -1210,3 +1210,35 @@ Nepromenjeno. Kad ovo prođe, treći tenant nije infrastrukturna faza nego:
 ```
 create organization → add domain → assign owner → configure tenant → publish
 ```
+
+---
+
+## 17. Scope gate (D-082) — kada ovaj plan prestaje
+
+Ovaj dokument opisuje **infrastrukturnu fazu i njen kraj**, ne otvoreni pravac.
+
+**Sledeći proizvodni milestone je `PDC-ONBOARD-1`:** Sanja može da radi svoj svakodnevni posao
+unutar P. Digitalnog Centra. Infrastruktura postoji da bi se do njega stiglo, i završava se kad
+`sanja-production` i `sanja-staging` budu obrisani (Faza 10).
+
+Od 2026-09-07 svaki zadatak koji traži ulazak u ovaj plan mora odgovoriti na jedno pitanje:
+
+> **Da li nas ovo približava Sanjinom onboarding-u?**
+
+| Zadatak | Odgovor |
+| --- | --- |
+| Clerk PDC cutover (Faza 3) | **DA** |
+| Request-scoped tenant context (Faza 5) | **DA** |
+| RLS + DB uloge (Faza 6) | **DA** |
+| Jedna production baza (Faze 7–8) | **DA** |
+| Gašenje `sanja-*` (Faza 10) | **DA** — izlaz iz infrastrukturne faze |
+| Diagnostics | koristan, **nije blocker** |
+| Marketing landing | **NE** |
+| Pun Page Composer | **NE još** |
+| Napredni Kompas · veliki Program Builder · AI | **NE** |
+
+**Posle Faze 11 nije dozvoljen nov infrastrukturni krug pre `PDC-ONBOARD-1`.**
+
+Content Engine se ne pravi unapred. Prvi slice je jedan model — `type`, `visibility`, `status`,
+`title`, `description/content`, `media`, `author`, `publish data` — pa se širi na osnovu Sanjine
+stvarne upotrebe, ne na osnovu pretpostavke o njoj.
