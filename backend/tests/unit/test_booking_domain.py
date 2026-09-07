@@ -616,7 +616,13 @@ class TestSuperadminMayActAsTherapist:
     """
 
     def _settings(self, environment: str) -> Settings:
-        return Settings(environment=Environment(environment))
+        # The slug is passed because a deployed environment must name its
+        # tenant; without it `Settings` refuses to construct, which is the point
+        # of that rule and not something for this test to work around.
+        return Settings(
+            environment=Environment(environment),
+            default_organization_slug="psihointegritet",
+        )
 
     def test_development_and_staging_may(self) -> None:
         assert self._settings("development").superadmin_may_act_as_therapist

@@ -26,10 +26,9 @@ export const publicUi = {
   footer: {
     description:
       "A digital center for mental health. Psychotherapy, counselling, workshops and educational resources in one place.",
-    formats: "{locations} · online and in person",
     supportGroup: "Support",
-    organizationGroup: "Psihointegritet",
-    rights: "© 2026 Psihointegritet. All rights reserved.",
+    organizationGroup: "{organization}",
+    rights: "© 2026 {organization}. All rights reserved.",
     disclaimer:
       "The resources on this site are educational and do not replace an individual conversation with a qualified professional.",
   },
@@ -59,7 +58,6 @@ export const publicUi = {
       detailsHeading: "Contact details",
       detailsBody:
         "You can email general questions to this address. For an appointment request, use the dedicated booking form.",
-      formats: "online and in person",
     },
     about: {
       title: "Digital center for mental health",

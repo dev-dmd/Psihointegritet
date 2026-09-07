@@ -145,3 +145,90 @@ export function protectedRoutePrefixes(): string[] {
   }
   return [...prefixes].sort();
 }
+
+/**
+ * Root prefixes of the surfaces that belong to the platform rather than to any
+ * tenant: the owners' workspace and the operator console.
+ *
+ * Derived from the registry rather than written out, for the same reason
+ * `protectedRoutePrefixes` is: a literal can name only one locale's spelling,
+ * and the proxy sees whichever one the visitor arrived on — `/radni-prostor`
+ * and `/workspace` are the same surface and must both be recognised before the
+ * locale layer has canonicalised anything.
+ *
+ * The client area is deliberately absent. `/nalog` belongs to a tenant: a
+ * client who signs in on a practitioner's domain stays in that practitioner's
+ * space, and never needs to know the platform exists.
+ */
+export function platformRoutePrefixes(): string[] {
+  const prefixes = new Set<string>();
+  for (const [routeId, definition] of Object.entries(PLATFORM_ROUTES)) {
+    if (
+      !routeId.startsWith("workspace.") &&
+      !routeId.startsWith("superadmin.")
+    ) {
+      continue;
+    }
+    for (const path of Object.values(definition.paths)) {
+      const root = path.split("/")[1];
+      if (root) prefixes.add(`/${root}`);
+    }
+  }
+  return [...prefixes].sort();
+}
+
+/**
+ * Root prefixes of the client area — the surface that belongs to a *tenant's*
+ * clients rather than to the platform.
+ *
+ * Separate from `platformRoutePrefixes` because they answer opposite questions:
+ * which organization a client is in comes from the domain they arrived at,
+ * while which organization an owner is working in comes from their membership.
+ */
+export function clientRoutePrefixes(): string[] {
+  const prefixes = new Set<string>();
+  for (const [routeId, definition] of Object.entries(PLATFORM_ROUTES)) {
+    if (!routeId.startsWith("account.")) continue;
+    for (const path of Object.values(definition.paths)) {
+      const root = path.split("/")[1];
+      if (root) prefixes.add(`/${root}`);
+    }
+  }
+  return [...prefixes].sort();
+}
+
+/**
+ * Does `pathname` sit under one of `prefixes`?
+ *
+ * Whole segments only: `/nalogodavac` is not under `/nalog`.
+ */
+export function hasRoutePrefix(
+  pathname: string,
+  prefixes: readonly string[],
+): boolean {
+  return prefixes.some(
+    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
+  );
+}
+
+/**
+ * Which host may serve `pathname` (B2).
+ *
+ * Owner surfaces answer on the platform host, client surfaces on a tenant's own
+ * domain, and everything else — the public site — on a tenant's domain too.
+ * A host can be both: the founding tenant's domain is the platform host until
+ * `p-digital-center.com` exists, and it keeps serving both surfaces because it
+ * is genuinely both, not because the rule is loose.
+ *
+ * Refusing rather than redirecting is deliberate. The alternative sends someone
+ * to sign in on a domain that will not serve the page afterwards, which reads
+ * as a broken login rather than as the wrong address.
+ */
+export function isSurfaceAllowedOnHost(
+  pathname: string,
+  host: { isTenant: boolean; isPlatform: boolean },
+): boolean {
+  if (hasRoutePrefix(pathname, platformRoutePrefixes())) return host.isPlatform;
+  if (hasRoutePrefix(pathname, clientRoutePrefixes())) return host.isTenant;
+  return host.isTenant || host.isPlatform;
+}

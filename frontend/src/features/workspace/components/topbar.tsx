@@ -4,6 +4,8 @@ import { useFormatter, useTranslations } from "next-intl";
 import { toast } from "sonner";
 
 import { BackToSiteButton } from "@/components/shared/back-to-site-button";
+import { PLATFORM_NAME, tenantForSlug } from "@/lib/tenant/domain-registry";
+import { findOrganizationPublicSite } from "@/lib/tenant/organizations";
 import { LogoutAvatarMenu } from "@/components/shared/logout-avatar-menu";
 import { useFallbackContent } from "@/content/use-content";
 import type { Therapist } from "@/types/therapist";
@@ -35,8 +37,19 @@ export function WorkspaceTopbar() {
     null,
     ...therapists.map((therapist) => therapist.slug),
   ];
-  const { isAdmin, selectedTherapistSlug, setSelectedTherapistSlug } =
-    useWorkspace();
+  const {
+    isAdmin,
+    organization,
+    selectedTherapistSlug,
+    setSelectedTherapistSlug,
+  } = useWorkspace();
+  // Resolved from the active organization, never from a hardcoded branch: a
+  // third tenant is a registry entry, not another `if`.
+  const tenant = tenantForSlug(organization.slug);
+  const organizationName =
+    findOrganizationPublicSite(organization.slug)?.publicName ??
+    organization.slug;
+
   const t = useTranslations("workspace");
   const format = useFormatter();
 
@@ -60,14 +73,19 @@ export function WorkspaceTopbar() {
 
   return (
     <header className="bg-panel-canvas/88 border-coffee/8 sticky top-0 z-40 flex items-center gap-3.5 border-b px-4 py-2.5 backdrop-blur-md md:px-8 md:py-3">
-      <span className="flex items-baseline lg:hidden">
-        <span className="text-forest font-serif text-xl font-medium">
-          Psihointegritet
+      {/*
+        Two identities, deliberately both shown. The platform is what the owner
+        signed in to; the organization is whose data they are looking at. They
+        were the same thing while one tenant existed, and conflating them now
+        would put one practice's name above another practitioner's workspace.
+      */}
+      <span className="flex flex-col leading-tight lg:hidden">
+        <span className="text-ink-45 text-[10.5px] font-semibold tracking-[0.12em] uppercase">
+          {PLATFORM_NAME}
         </span>
-        <span
-          aria-hidden
-          className="bg-warm ml-1 h-[5px] w-[5px] rounded-full"
-        />
+        <span className="text-forest font-serif text-lg font-medium">
+          {organizationName}
+        </span>
       </span>
       <span className="text-ink-55 hidden text-[13px] lg:inline">{today}</span>
       <span className="flex-1" />
@@ -86,7 +104,10 @@ export function WorkspaceTopbar() {
           <ChevronDownIcon />
         </button>
       ) : null}
-      <BackToSiteButton className="border-coffee/12 text-coffee hover:border-sage bg-surface" />
+      <BackToSiteButton
+        href={tenant?.publicUrl ?? "/"}
+        className="border-coffee/12 text-coffee hover:border-sage bg-surface"
+      />
       <button
         type="button"
         title={t("topbar.notifications")}

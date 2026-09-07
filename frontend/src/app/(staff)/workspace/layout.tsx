@@ -34,8 +34,8 @@ export default async function WorkspaceLayout({
   children: ReactNode;
 }) {
   const { identity, organization } = await getWorkspaceBootstrap();
-  const isAdmin = isWorkspaceAdmin(identity);
-  const isTherapist = isWorkspaceTherapist(identity);
+  const isAdmin = isWorkspaceAdmin(identity, organization.slug);
+  const isTherapist = isWorkspaceTherapist(identity, organization.slug);
 
   // Only the namespaces this subtree renders. The root provider carries the
   // locale alone, so a public marketing page never ships the Control Center

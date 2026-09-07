@@ -54,3 +54,6 @@ ds-bundle/
 # old files
 frontend-old/
 frontend-for-revision-reviewed/
+# Vercel CLI
+.vercel
+/.env.local

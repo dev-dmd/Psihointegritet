@@ -7,6 +7,7 @@ import { hasRole, type Identity } from "@/lib/auth/identity";
 import { getServerIdentity } from "@/lib/auth/identity-server";
 import type { UiLocale } from "@/i18n/locales";
 import { localizedPath } from "@/lib/routes/localized-path";
+import { getActiveOrganizationSlug } from "@/lib/tenant/active-organization";
 import { resolveWorkspaceLocale } from "@/lib/tenant/workspace-locale";
 import { SIGN_IN_URL } from "@/lib/auth/routes";
 
@@ -18,8 +19,15 @@ import { SIGN_IN_URL } from "@/lib/auth/routes";
  * `redirect()` throws — never call these inside try/catch.
  */
 
-function isStaff(identity: Identity): boolean {
-  return hasRole(identity, "org_admin") || hasRole(identity, "therapist");
+/**
+ * Staff **in this organization**. Being staff somewhere else is not staff here
+ * — that distinction is the whole point of B2-1.
+ */
+export function isStaff(identity: Identity, organizationSlug: string): boolean {
+  return (
+    hasRole(identity, organizationSlug, "org_admin") ||
+    hasRole(identity, organizationSlug, "therapist")
+  );
 }
 
 /**
@@ -28,12 +36,22 @@ function isStaff(identity: Identity): boolean {
  * per-page guards below and the role-derived navigation in the workspace shell
  * — the guard is the authority, the nav only mirrors it.
  */
-export function isWorkspaceAdmin(identity: Identity): boolean {
-  return identity.isSuperadmin || hasRole(identity, "org_admin");
+export function isWorkspaceAdmin(
+  identity: Identity,
+  organizationSlug: string,
+): boolean {
+  return (
+    identity.isSuperadmin || hasRole(identity, organizationSlug, "org_admin")
+  );
 }
 
-export function isWorkspaceTherapist(identity: Identity): boolean {
-  return identity.isSuperadmin || hasRole(identity, "therapist");
+export function isWorkspaceTherapist(
+  identity: Identity,
+  organizationSlug: string,
+): boolean {
+  return (
+    identity.isSuperadmin || hasRole(identity, organizationSlug, "therapist")
+  );
 }
 
 /**
@@ -65,12 +83,15 @@ export function isWorkspaceTherapist(identity: Identity): boolean {
  */
 export function resolveLandingRoute(
   identity: Identity,
+  organizationSlug: string,
   locale: UiLocale,
 ): Route {
   if (identity.isSuperadmin) {
     return localizedPath("superadmin.home", { locale });
   }
-  if (isStaff(identity)) {
+  // Staff *here*. The same person can be an owner at one tenant and a client at
+  // another, and must land in a different place on each of their domains.
+  if (isStaff(identity, organizationSlug)) {
     return localizedPath("workspace.home", { locale });
   }
   return localizedPath("account.home", { locale });
@@ -86,20 +107,30 @@ export async function requireSuperadmin(): Promise<Identity> {
     redirect(SIGN_IN_URL as Route); // proxy already covers this; defense in depth
   }
   if (!identity.isSuperadmin) {
-    redirect(resolveLandingRoute(identity, await resolveWorkspaceLocale()));
+    redirect(
+      resolveLandingRoute(
+        identity,
+        await getActiveOrganizationSlug(),
+        await resolveWorkspaceLocale(),
+      ),
+    );
   }
   return identity;
 }
 
 /**
- * Allows staff (org_admin/therapist) and superadmins; clients go to /nalog.
+ * Allows staff **of this organization** and superadmins; everyone else goes to
+ * /nalog — including staff of a different tenant, who are not staff here.
  */
 export async function requireStaff(): Promise<Identity> {
   const identity = await getServerIdentity();
   if (!identity) {
     redirect(SIGN_IN_URL as Route);
   }
-  if (!identity.isSuperadmin && !isStaff(identity)) {
+  if (
+    !identity.isSuperadmin &&
+    !isStaff(identity, await getActiveOrganizationSlug())
+  ) {
     redirect(
       localizedPath("account.home", { locale: await resolveWorkspaceLocale() }),
     );
@@ -117,8 +148,11 @@ export async function requireOrgAdmin(): Promise<Identity> {
   if (!identity) {
     redirect(SIGN_IN_URL as Route);
   }
-  if (!isWorkspaceAdmin(identity)) {
-    redirect(resolveLandingRoute(identity, await resolveWorkspaceLocale()));
+  const adminSlug = await getActiveOrganizationSlug();
+  if (!isWorkspaceAdmin(identity, adminSlug)) {
+    redirect(
+      resolveLandingRoute(identity, adminSlug, await resolveWorkspaceLocale()),
+    );
   }
   return identity;
 }
@@ -133,8 +167,15 @@ export async function requireTherapist(): Promise<Identity> {
   if (!identity) {
     redirect(SIGN_IN_URL as Route);
   }
-  if (!isWorkspaceTherapist(identity)) {
-    redirect(resolveLandingRoute(identity, await resolveWorkspaceLocale()));
+  const therapistSlug = await getActiveOrganizationSlug();
+  if (!isWorkspaceTherapist(identity, therapistSlug)) {
+    redirect(
+      resolveLandingRoute(
+        identity,
+        therapistSlug,
+        await resolveWorkspaceLocale(),
+      ),
+    );
   }
   return identity;
 }
@@ -154,8 +195,14 @@ export async function requireClient(): Promise<Identity> {
   if (!identity) {
     redirect(SIGN_IN_URL as Route);
   }
-  if (identity.isSuperadmin || isStaff(identity)) {
-    redirect(resolveLandingRoute(identity, await resolveWorkspaceLocale()));
+  // Staff of *another* tenant belongs here, not in this tenant's workspace.
+  // Checking staff globally would bounce an ordinary client away from their own
+  // account page purely because they run a different organization elsewhere.
+  const clientSlug = await getActiveOrganizationSlug();
+  if (identity.isSuperadmin || isStaff(identity, clientSlug)) {
+    redirect(
+      resolveLandingRoute(identity, clientSlug, await resolveWorkspaceLocale()),
+    );
   }
   return identity;
 }

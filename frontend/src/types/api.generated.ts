@@ -3603,8 +3603,8 @@ export interface components {
         };
         /** MembershipOut */
         MembershipOut: {
-            /** Organizationid */
-            organizationId: string;
+            /** Organizationslug */
+            organizationSlug: string;
             /** Roles */
             roles: components["schemas"]["MembershipRole"][];
         };

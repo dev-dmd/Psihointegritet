@@ -1,4 +1,5 @@
 import type { UiLocale } from "@/i18n/locales";
+import { deploymentSlugFromEnv } from "@/lib/tenant/deployment-slug";
 import { findOrganizationLocaleSettings } from "@/lib/tenant/organizations";
 
 import { blankPack } from "./packs/blank";
@@ -43,9 +44,7 @@ export function contentPackForOrganizationSlug(slug: string): ContentPackId {
 }
 
 function deploymentContentPack(): ContentPackId {
-  return contentPackForOrganizationSlug(
-    process.env.DEFAULT_ORGANIZATION_SLUG ?? "psihointegritet",
-  );
+  return contentPackForOrganizationSlug(deploymentSlugFromEnv());
 }
 
 /** Pure locale boundary with the current deployment's verified pack. */

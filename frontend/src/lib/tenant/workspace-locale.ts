@@ -61,10 +61,22 @@ export function assertWorkspaceOrganization(
   identity: Identity | null,
   organization: OrganizationContext,
 ): void {
-  const membership = identity?.memberships[0];
-  if (membership && membership.organizationId !== organization.slug) {
+  const memberships = identity?.memberships ?? [];
+  // No memberships at all is legitimate — a superadmin holds none (D-051), and
+  // a fresh sign-up has none yet. `requireStaff` has already decided whether
+  // this person may be here; this only catches the mismatch case.
+  if (memberships.length === 0) return;
+
+  // Checked across every membership, not `memberships[0]`. With one tenant the
+  // first entry was the only entry; with two, reading position zero compares
+  // the active organization against whichever membership happened to sort
+  // first — a mismatch thrown for the wrong reason, or none thrown at all.
+  const belongsHere = memberships.some(
+    (membership) => membership.organizationSlug === organization.slug,
+  );
+  if (!belongsHere) {
     throw new OrganizationMismatchError(
-      membership.organizationId,
+      memberships.map((membership) => membership.organizationSlug).join(", "),
       organization.slug,
     );
   }

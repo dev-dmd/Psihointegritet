@@ -63,6 +63,8 @@ async def test_env_versions_never_override_the_registry_outside_development() ->
     response = await _get_capabilities(
         IsolatedSettings(
             environment=Environment.STAGING,
+            # A staging environment has to name its tenant, same as a real one.
+            default_organization_slug="psihointegritet",
             intake_matching_enabled=True,
             intake_sensitive_submission_enabled=True,
             intake_data_processing_notice_version="notice-v1",

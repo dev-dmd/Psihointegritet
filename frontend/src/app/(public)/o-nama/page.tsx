@@ -2,7 +2,7 @@ import { PublicLink as Link } from "@/components/ui/public-link";
 import { getTranslations } from "next-intl/server";
 
 import { PageHero } from "@/components/shared/page-hero";
-import { siteSettings } from "@/content/site-settings";
+import { getPublicSiteSettings } from "@/lib/tenant/public-site";
 import { metadataForRoute } from "@/lib/content-governance/discoverability";
 import { getContentProvider } from "@/lib/content-governance/provider-resolver";
 
@@ -12,12 +12,13 @@ export async function generateMetadata() {
 
 export default async function AboutPage() {
   const t = await getTranslations("public.pages.about");
+  const site = await getPublicSiteSettings();
   return (
     <>
       <PageHero id="o-nama">
         <div className="max-w-[760px]">
           <p className="text-sage mb-4 text-[12px] font-semibold tracking-[0.14em] uppercase">
-            {siteSettings.name}
+            {site.publicName}
           </p>
           <h1 className="text-forest mb-4 font-serif text-[clamp(32px,8.5vw,52px)] leading-[1.06] font-normal">
             {t("title")}

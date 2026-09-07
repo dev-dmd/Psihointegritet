@@ -24,6 +24,20 @@ const instrumentSans = Instrument_Sans({
   weight: ["400", "500", "600"],
 });
 
+/**
+ * Defaults for the founding tenant's pages, which still live in `app/(public)`.
+ *
+ * **These name one tenant and this layout now serves several** — the platform
+ * host and every tenant host share it. Tenant surfaces under
+ * `app/s/[organizationSlug]` therefore override every field here, `title`
+ * included, with `absolute` so the template below cannot append someone else's
+ * brand to their page.
+ *
+ * The proper fix is for this to assert nothing and for the founding tenant's
+ * pages to carry their own defaults — which happens when they move under the
+ * tenant segment in PDC-1. Removing it now would strip the demo tenant's page
+ * titles for no gain, so it stays, scoped by override rather than by hope.
+ */
 export const metadata: Metadata = {
   metadataBase: new URL(serverEnv.NEXT_PUBLIC_APP_URL),
   title: {
@@ -57,12 +71,23 @@ export default async function RootLayout({
     >
       <body className="flex min-h-full flex-col">
         {/*
-          Locale only, deliberately without `messages`. `useLocale()` then works
-          in every Client Component — which is what lets navigation build
-          localized hrefs — while no catalogue crosses the server/client
-          boundary from here. Message-bearing providers are scoped to the
-          subtrees that render text, so the public pages never ship the
-          workspace catalogue.
+          Passed locale only, on the assumption that omitting `messages` keeps
+          the catalogue on the server. **That is not what happens.** next-intl
+          4.x has this provider inherit configuration from `getRequestConfig`
+          when it renders inside a Server Component, so the whole platform
+          catalogue — workspace and superadmin strings included — is serialized
+          into every page's flight payload, public pages among them.
+
+          Measured, not assumed: on a tenant home page the rendered markup is
+          ~3 KB and the payload ~62 KB, and it carries the founding tenant's
+          marketing copy on a *different* tenant's domain. Nothing renders from
+          it, no metadata comes from it, and it predates B2 — the legacy public
+          tree ships the identical payload — so this is a payload defect, not a
+          content fallback.
+
+          Narrowing it means giving ~71 client components a scoped provider
+          each, which is its own task (TODO D40). It belongs with PDC-1, where
+          the catalogue stops being one platform-wide object anyway.
         */}
         <NextIntlClientProvider locale={locale}>
           <AuthProvider>

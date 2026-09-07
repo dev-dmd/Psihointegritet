@@ -59,6 +59,26 @@ Automatska RLS detekcija iz generičkog `CLEAN_PROJECT_ARCHITECTURE_PYTHON_POSTG
 
 RLS **ne** zamenjuje Clerk autentifikaciju, membership proveru, role/capability autorizaciju, niti eksplicitan `organization_id` u repository upitima. RLS štiti od jedne konkretne klase greške: zaboravljenog filtera.
 
+### 2.2.1 Amandman 2 — RLS je od D-081 gate, ne milestone
+
+**2026-09-07.** Dok je svaki tenant imao svoju bazu, RLS je bio poboljšanje: izolacija je već
+postojala, na nivou infrastrukture. D-081 to menja — ciljno stanje je **jedna production baza za
+sve stvarne klijente**, pa `organization_id` prestaje da bude *dodatna* granica i postaje **jedina**.
+
+Zato tri sloja iz §2.2 od sada moraju stajati zajedno **pre** spajanja podataka, ne posle:
+
+```
+API authorization  +  explicit organization_id repository scope  +  PostgreSQL RLS
+```
+
+Konkretno, ovo su preduslovi za migraciju Sanjinih podataka u zajedničku bazu, ne posao koji je
+prati: runtime uloga bez `BYPASSRLS` i bez vlasništva nad tabelama (§4), polise za svaku
+`ORGANIZATION_SCOPED` i `DERIVED_CHILD` tabelu (§7), i dokaz da namerno izostavljen filter vraća
+**0 redova** umesto tuđih.
+
+Do tada odvojene baze **ostaju** bezbednosna granica i gase se poslednje —
+`PDC_CONSOLIDATION_MIGRATION_PLAN_v1_0.md` §5, koraci 4 i 9.
+
 ### 2.3 Granica odgovornosti RLS-a
 
 RLS nosi **isključivo** organization izolaciju. U polise se ne stavlja publication status, capability autorizacija, poslovna ni klinička pravila. `published` filtriranje ostaje u public provider sloju (ADR-016/CG-D2); RLS garantuje samo da taj provider ni greškom ne može da vidi tuđu organizaciju.
@@ -251,6 +271,21 @@ settings.default_organization_slug = "psihointegritet"
 12 poziva, i javni i staff put — `modules/privacy/router.py:50,74,99,143`, `modules/content/router.py:63,74`, `modules/content/taxonomy_router.py:62,465,491`, `modules/guidance/router.py:172`, `modules/privacy/service.py:698`.
 
 Praviti domain routing tabelu sada bilo bi kršenje Rules §25 („empty placeholder abstractions added 'for future use' without a current contract"). Domain resolver ostaje **opisan budući korak**, van prvog PR-a; ulazi kad postoji druga organizacija sa sopstvenim domenom.
+
+> **Amandman 1 (2026-09-07) — uslov aktivacije je ispunjen.**
+>
+> Gornji tekst kaže da domain resolver „ulazi kad postoji **druga organizacija sa sopstvenim
+> domenom**". Taj uslov je sada ispunjen: organizacija `sanja-neuer` postoji, a njen domen je
+> `sanjaneuer.com`. Domain resolver time prelazi iz **opisanog budućeg koraka** u **aktivnu
+> frontend arhitekturu**, po modelu B2 (`D-077 A7`, `ADR-026 §9`).
+>
+> Rules §25 se time ne krši — abstrakcija više nije „for future use", ima potrošača.
+>
+> **Šta se ovim amandmanom NE aktivira.** `organization_id` ostaje kanonska granica izolacije,
+> nepromenjeno. Deljeni backend runtime i RLS **nisu** aktivirani ovom odlukom: frontend se
+> konsoliduje u jedan Vercel projekat, dok tenanti privremeno zadržavaju **odvojene baze** kao
+> bezbednosnu granicu dok RLS milestone (§5, §7) ne bude isporučen. Frontend konsolidacija nije
+> konsolidacija baza.
 
 Stvarni šavovi danas:
 
