@@ -5,6 +5,30 @@
 
 **Okidač:** kupovina `p-digital-center.com`. Do tada se ništa iz ovog plana ne izvodi.
 
+> ---
+>
+> ## ⚠️ SUPERSEDED — 2026-09-07
+>
+> **Ovaj dokument je istorijski zapis i ostaje neizmenjen.** Zamenjuje ga
+> **`PDC_CONSOLIDATION_MIGRATION_PLAN_v1_1.md`**, napisan posle audita žive infrastrukture
+> (Git · Vercel API · DNS · kod). Okidač iz gornjeg reda je **ispunjen**:
+> `p-digital-center.com` je kupljen, priključen projektu i živ.
+>
+> Ciljna topologija (§1), model (§2) i status migration artifact-a (§4) **ostaju na snazi
+> nepromenjeni**. Audit je opovrgao tri činjenične tvrdnje, i samo njih:
+>
+> | Ovde piše | Mereno 2026-09-07 |
+> | --- | --- |
+> | §3 „Frontend deo cutover-a je **iza nas**" | Važi za granu `staging`. **Produkcija gradi `29ae344` (`main`), bez ijednog B2 commita** — `tree(main) == tree(merge-base)` |
+> | §3 „`sanjaneuer.com` + `www` na PDC projektu ✅" | Domeni jesu priključeni i `verified`, ali `misconfigured: true` — DNS i dalje pokazuje na Namecheap parking. Sajt je nedostupan |
+> | §5 korak 1 „platform domain na PDC Vercel projekat" | Već izvršeno. Ostaje samo `PLATFORM_HOST` |
+>
+> Zbog prve stavke v1.1 dodaje **Fazu 0–1 (git reconcile) ispred svega ostalog**.
+> Redosled u §5 ispod **ne počinje** više od koraka 1.
+>
+> ---
+
+
 ---
 
 ## 0. Zašto ovaj dokument postoji
