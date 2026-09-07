@@ -120,7 +120,7 @@ BAZA
 | **N3** | Backend tajne (`DATABASE_URL`, `MIGRATION_DATABASE_URL`, `PGPASSWORD`, `POSTGRES_PASSWORD`, `REDIS_URL`, `REDIS_PASSWORD`, `DATABASE_PUBLIC_URL`) postoje kao env na **Vercel frontend** projektu | 🟠 srednja — nisu `NEXT_PUBLIC_`, pa ne cure u browser bundle, ali su kopija produkcionih kredencijala u sistemu koji ih ne koristi; proširuju površinu i rotaciju | Faza 10 (higijena), ne blokira |
 | **N4** | `p-digital-center.com` je **živ** i servira `Psihointegritet` naslov | 🟠 srednja — kanonski platformski domen trenutno tvrdi tenant identitet koji je D-080 povukao | Faza 3 |
 | **N5** | `www.p-digital-center.com` nije u projektu; sertifikat ga ne pokriva | 🟡 niska | Faza 3 |
-| **N6** | ADR-023 inventar meri 31 tabelu; danas ih je **51** | 🟠 srednja — RLS inventar se mora ponoviti pre pisanja polisa, inače 20 tabela ostaje neklasifikovano | Faza 6 (gate) |
+| **N6** | ADR-023 inventar meri 31 tabelu; danas ih je **52** | ✅ **zatvoreno 2026-09-07** — `RLS_MIGRATION_INVENTORY_v0_2.md` klasifikuje svih 52. Opasni skup je narastao brže od bezopasnog: deca mešanih roditelja 2 → **7**, višeroditeljske tabele 1 → **8** | C5 gotov; Faza 6 |
 | **N7** | `TODO.md` B2-6 preporučuje A zapis `76.76.21.21` | 🟡 niska — Vercel danas kao rank-1 preporučuje `216.150.1.1`; `76.76.21.21` je rank-2 legacy | §4 |
 | **N8** | `isSurfaceAllowedOnHost` završava sa `host.isTenant \|\| host.isPlatform`, pa na platform-only hostu propušta ceo tenant public tree — `p-digital-center.com/` bi renderovao Psiho početnu | 🔴 **visoka — blocker za Fazu 3** | **Faza 2b, zatvoreno 2026-09-07** |
 | **N9** | Root layout obavija i tenant segment, pa Sanjina stranica u payload-u nosi **ceo `sr-Latn` katalog poruka** (uključujući Psiho javnu kopiju) i **`clerk.psihointegritet.com`** kao Clerk Frontend API domen. **Renderovan tekst je čist** — „Sanja Neuer / Sajt je u pripremi.", 0 pominjanja | 🟡 niska danas (stranica je `noindex`), 🟠 pre PDC-1 javnog sajta | katalog: PDC-1 (tenant-authored sadržaj) · Clerk domen: §9 |
@@ -500,8 +500,10 @@ Dva gate-a. Nijedan destruktivni ili konsolidacioni korak ne prolazi pre njih.
 **Polazno mereno stanje:** 0 polisa u 33 migracije · runtime uloga `rolsuper=t`, `rolbypassrls=t`,
 vlasnik tabela · 51 tabela naspram 31 u ADR-023 inventaru.
 
-- [ ] **inventar ponovljen na 51 tabeli** (N6) — svaka klasifikovana kao `GLOBAL` /
-      `BOOTSTRAP` / `ORGANIZATION_SCOPED` / `ORGANIZATION_SCOPED_WITH_GLOBAL` / `DERIVED_CHILD`
+- [x] **inventar ponovljen na 52 tabele** (N6) — `RLS_MIGRATION_INVENTORY_v0_2.md`, 2026-09-07
+- [ ] 7 tabela sa **mešanim roditeljem** dobija stvarni enforcement (§3.1 inventara), ne komentar
+- [ ] 8 **višeroditeljskih** tabela ima odlučen izvor organizacije i ograničenje protiv razilaženja
+- [ ] rešen nullable composite FK za `taxonomy_term_revisions` (§3.3 inventara) — **nije pokriveno ADR-023**
 - [ ] 24 tabele bez `organization_id` denormalizovane po ADR-023 §5 (7 koraka, redom)
 - [ ] tri uloge postoje: `_owner` (NOLOGIN), `_migrator`, `_app`
 - [ ] `DATABASE_URL` → `_app`; `MIGRATION_DATABASE_URL` → `_migrator`; **različiti principali**
@@ -1001,6 +1003,48 @@ posle popravke    32 static / 125 dynamic     ← +2 stranice, +1 route handler,
 > ili uvesti build-time gate na broj prerenderovanih ruta. Danas je jedina odbrana što je neko
 > uporedio dva build-a.
 
+#### Ispravka — SSG **nije** blocker za multi-domain Clerk
+
+**Povučeno 2026-09-07.** Prva verzija ovog odeljka je zaključila da se satellite konfiguracija ne
+može spojiti bez žrtvovanja statike. **To nije tačno**, i razlika je važna jer bi kao zapisana
+opravdavala odlaganje koje nema osnov.
+
+Aktuelni Clerk Next.js API podržava **request-zavisne opcije bez čitanja zahteva u render stablu**:
+
+```
+ClerkProvider    isSatellite={(url) => …}   domain={(url) => …}
+clerkMiddleware  request-dependent options   ← proxy je ionako van render stabla
+```
+
+Obe forme dobijaju host tamo gde je stvarno poznat, pa nijedna ne obara prerender.
+
+Šta je onda zaista blokiralo: **pogrešan šav, dvaput.** Prvo `headers()` u provider-u — koji je
+oborio statiku. Zatim prosleđivanje funkcije iz **Server Component-a** u `ClerkProvider`, koji je
+Client Component, pa je build pao sa `Functions cannot be passed directly to Client Components`.
+Nijedan od ta dva neuspeha nije svojstvo Clerk API-ja; oba su posledica mesta na koje je
+konfiguracija stavljena.
+
+Ispravan oblik, za cutover PR (§9.2 korak 9):
+
+```
+provider se mount-uje kao client component
+      ↓
+isSatellite / domain kao (url) => …          ← host odatle, ne iz headers()
+      ↓
+primarni host iz NEXT_PUBLIC_CLERK_PRIMARY_HOST   ← mora biti public: funkcije se izvršavaju u browseru
+      ↓
+clerkMiddleware dobija istu odluku iz lib/auth/clerk/multi-domain.ts
+```
+
+> `CLERK_PRIMARY_HOST` je u `multi-domain.ts` danas **server-side** promenljiva. Kad provider pređe
+> na klijent, mora postati `NEXT_PUBLIC_` — inače funkcija u browseru vidi prazan primary i svaki
+> host se razreši u samog sebe. To je jedina izmena koju cutover PR nosi pored deklaracije.
+
+**Ostaje nepromenjeno:** satellite se **ne aktivira pre Dashboard cutover-a.** Ne zbog statike, nego
+zato što deklarisanje satellita dok je primary još `psihointegritet.com` obara prijavu na svim
+hostovima odjednom. Logika i testovi u `lib/auth/clerk/multi-domain.ts` već postoje i inertni su dok
+je primary host nepostavljen.
+
 ---
 
 ## 10. DATA MIGRATION — Sanja → zajednička production baza (Faza 8)
@@ -1112,7 +1156,7 @@ audit   (organization_audit_events, notification_outbox)
 | C2 | Vercel env izmene (`PLATFORM_HOST`, `ENVIRONMENT`, `CORS_ORIGINS`, `NEXT_PUBLIC_APP_URL`) | 2–3 |
 | C3 | Dodavanje `www.p-digital-center.com` + redirect, po M4 | 3 |
 | C4 | DNS/SSL verifikacija posle M1 (`dig`, `/v6/domains/*/config`, `curl`) | 4b |
-| C5 | **Ponovljeni RLS inventar na 51 tabeli** (N6) | pre 6 |
+| C5 | ~~Ponovljeni RLS inventar~~ ✅ **gotovo 2026-09-07** — `RLS_MIGRATION_INVENTORY_v0_2.md` | pre 6 |
 | C6 | `api/tenancy.py` + migracija 18 `MUST MIGRATE` mesta (§6.1) | 5 |
 | C7 | Alembic migracije: denormalizacija, uloge, polise, `FORCE RLS` | 6 |
 | C8 | Negativni testovi GATE A i GATE B | 5–6 |
