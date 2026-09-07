@@ -889,11 +889,30 @@ oborilo **ceo** preview u 404 — a `features`/QA tok se oslanja baš na te link
 3. **produkcija odbija sve ostalo** — tamo nema preview URL-a kao izgovora: domen je ili naš ili
    neko upire DNS u nas
 
+Isto pravilo pokriva i `localhost`. On **jeste** platformski host, ali je i jedini host koji
+developer ima, pa mora biti i tenant — inače `/nalog` odgovara 404 na sopstvenoj mašini, što se i
+desilo.
+
 Provereno uživo u oba oblika: `pdc-abc123.vercel.app` → 200 na staging-u, **404 na produkciji**.
 
-#### Backend se bira po tenantu, ne iz jedne env promenljive
+#### Backend se bira po tenantu — **samo u produkciji**
 
-`apiBaseUrl` živi u domain registry-ju pored tenanta. Na tenant površini se zove **samo** njegov
+`productionApiBaseUrl` živi u domain registry-ju pored tenanta, i ime nosi `production` jer prva
+verzija nije, pa je lokalna prijava tiho zvala produkcijski API. Token iz dev Clerk instance je
+odbijen, memberships su stigli prazni, i rezultat je bio prijavljen korisnik **bez ijednog panela**
+— ni superadmin, ni tenant admin, ni klijentski — bez ijedne greške koja bi to objasnila.
+
+**Produkcija je jedino okruženje koje služi više od jednog tenanta**, pa je jedino koje ne može da
+imenuje svoj backend jednom promenljivom. Svako drugo je vezano za jedan tenant i jedan backend:
+
+| Okruženje | Backend |
+| --------- | ------- |
+| production | registry (`productionApiBaseUrl`), po tenantu |
+| staging | `diligent-serenity-staging` |
+| preview / qa | `diligent-serenity-features` |
+| lokalno | `localhost:8001` |
+
+Ostatak pravila važi u produkciji. Na tenant površini se zove **samo** njegov
 backend — Sanjin kontekst ne sme da dodirne Psiho bazu. Na platformskoj površini se pitaju svi
 registrovani backend-i i memberships se spajaju, jer svaka baza drži samo svoje; 401/403 tamo znači
 „ovaj backend te ne poznaje", a ne grešku. Kolabira u jedan poziv kad deljeni backend stigne.

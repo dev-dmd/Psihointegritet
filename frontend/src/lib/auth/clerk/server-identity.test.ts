@@ -1,22 +1,23 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { authMock, currentUserMock, fetchMock, headersMock } = vi.hoisted(
-  () => ({
+const { authMock, currentUserMock, fetchMock, headersMock, serverEnvMock } =
+  vi.hoisted(() => ({
     authMock: vi.fn(),
     currentUserMock: vi.fn(),
     fetchMock: vi.fn(),
     headersMock: vi.fn(),
-  }),
-);
+    serverEnvMock: {
+      NEXT_PUBLIC_API_URL: "https://api.test",
+      DEPLOYMENT_ENV: "development",
+    },
+  }));
 
 vi.mock("server-only", () => ({}));
 vi.mock("@clerk/nextjs/server", () => ({
   auth: authMock,
   currentUser: currentUserMock,
 }));
-vi.mock("@/lib/validation/env", () => ({
-  serverEnv: { NEXT_PUBLIC_API_URL: "https://api.test" },
-}));
+vi.mock("@/lib/validation/env", () => ({ serverEnv: serverEnvMock }));
 vi.mock("next/headers", () => ({ headers: headersMock }));
 
 import { getClerkServerIdentity } from "./server-identity";
@@ -64,6 +65,7 @@ describe("getClerkServerIdentity", () => {
     currentUserMock.mockReset();
     fetchMock.mockReset();
     headersMock.mockReset();
+    serverEnvMock.DEPLOYMENT_ENV = "development";
     onSurface();
     vi.stubGlobal("fetch", fetchMock);
   });
@@ -253,6 +255,8 @@ describe("which backend answers", () => {
     currentUserMock.mockReset();
     fetchMock.mockReset();
     headersMock.mockReset();
+    // The registry holds production URLs, so only production consults it.
+    serverEnvMock.DEPLOYMENT_ENV = "production";
     vi.stubGlobal("fetch", fetchMock);
     authMock.mockResolvedValue({
       userId: "user_1",
@@ -272,10 +276,10 @@ describe("which backend answers", () => {
 
     const sanja = tenantForSlug("sanja-neuer")!;
     const psiho = tenantForSlug("psihointegritet")!;
-    expect(fetchedHosts()).toEqual([`${sanja.apiBaseUrl}/api/v1/me`]);
+    expect(fetchedHosts()).toEqual([`${sanja.productionApiBaseUrl}/api/v1/me`]);
     // The isolation this whole slice exists for: her domain must not be able to
     // reach another tenant's database, not even to ask who someone is.
-    expect(fetchedHosts().join(" ")).not.toContain(psiho.apiBaseUrl);
+    expect(fetchedHosts().join(" ")).not.toContain(psiho.productionApiBaseUrl);
   });
 
   it("asks every backend on the shared platform surface", async () => {
@@ -285,7 +289,9 @@ describe("which backend answers", () => {
     // Each database holds only its own memberships, so no single backend can
     // answer which organizations an owner belongs to.
     expect(fetchedHosts().sort()).toEqual(
-      TENANT_DOMAINS.map((tenant) => `${tenant.apiBaseUrl}/api/v1/me`).sort(),
+      TENANT_DOMAINS.map(
+        (tenant) => `${tenant.productionApiBaseUrl}/api/v1/me`,
+      ).sort(),
     );
   });
 
@@ -293,7 +299,7 @@ describe("which backend answers", () => {
     onSurface("platform");
     const [first, second] = TENANT_DOMAINS;
     fetchMock.mockImplementation(async (url: string) =>
-      String(url).startsWith(first!.apiBaseUrl)
+      String(url).startsWith(first!.productionApiBaseUrl)
         ? new Response(
             JSON.stringify(
               backendIdentity({
@@ -332,7 +338,7 @@ describe("which backend answers", () => {
     onSurface("platform");
     const [first] = TENANT_DOMAINS;
     fetchMock.mockImplementation(async (url: string) =>
-      String(url).startsWith(first!.apiBaseUrl)
+      String(url).startsWith(first!.productionApiBaseUrl)
         ? new Response(JSON.stringify(backendIdentity()))
         : new Response("", { status: 403 }),
     );
@@ -353,6 +359,29 @@ describe("which backend answers", () => {
 
   it("falls back to the configured API only when no proxy stamped a surface", async () => {
     onSurface();
+    await getClerkServerIdentity();
+
+    expect(fetchedHosts()).toEqual(["https://api.test/api/v1/me"]);
+  });
+
+  it("never consults the registry outside production", async () => {
+    // A laptop, a preview and staging each have exactly one backend, and it is
+    // not the production one. Reading the registry here sent a development
+    // session to the production API, which rejected the token and returned no
+    // memberships — a workspace with no panels and nothing logged to explain it.
+    for (const env of ["development", "preview", "staging"]) {
+      serverEnvMock.DEPLOYMENT_ENV = env;
+      fetchMock.mockClear();
+      onSurface("platform");
+      await getClerkServerIdentity();
+
+      expect(fetchedHosts()).toEqual(["https://api.test/api/v1/me"]);
+    }
+  });
+
+  it("keeps a tenant surface on the configured API outside production too", async () => {
+    serverEnvMock.DEPLOYMENT_ENV = "development";
+    onSurface("tenant", "sanja-neuer");
     await getClerkServerIdentity();
 
     expect(fetchedHosts()).toEqual(["https://api.test/api/v1/me"]);

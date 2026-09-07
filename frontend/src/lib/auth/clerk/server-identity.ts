@@ -71,8 +71,22 @@ interface BackendIdentity {
   memberships: Identity["memberships"];
 }
 
-/** Which backends can answer for this request, and why more than one might. */
+/**
+ * Which backends can answer for this request, and why more than one might.
+ *
+ * **Only production has more than one.** Every other environment — staging, a
+ * preview, a laptop — is bound to a single tenant and a single backend, named
+ * by `NEXT_PUBLIC_API_URL`: the staging frontend talks to the staging backend,
+ * a developer's to `localhost:8001`. The registry holds *production* URLs, so
+ * consulting it anywhere else sends a development session to the production API,
+ * which rejects the token and answers with no memberships — a signed-in
+ * workspace containing no panels, and no error to explain it.
+ */
 async function apiBaseUrlsForRequest(): Promise<string[]> {
+  if (serverEnv.DEPLOYMENT_ENV !== "production") {
+    return [serverEnv.NEXT_PUBLIC_API_URL];
+  }
+
   const requestHeaders = await headers();
   const surface = requestHeaders.get(TENANT_SURFACE_HEADER);
   const slug = requestHeaders.get(TENANT_SLUG_HEADER);
@@ -81,7 +95,7 @@ async function apiBaseUrlsForRequest(): Promise<string[]> {
     const tenant = tenantForSlug(slug);
     // One tenant, one backend. A request on Sanja's domain must never reach
     // another tenant's API — that is the isolation this whole slice is for.
-    if (tenant) return [tenant.apiBaseUrl];
+    if (tenant) return [tenant.productionApiBaseUrl];
   }
 
   if (surface === "platform") {
@@ -91,7 +105,7 @@ async function apiBaseUrlsForRequest(): Promise<string[]> {
     // and merging is the honest answer while the databases stay separate —
     // deliberately, because RLS does not exist yet. It collapses to a single
     // call once a shared backend lands.
-    return TENANT_DOMAINS.map((tenant) => tenant.apiBaseUrl);
+    return TENANT_DOMAINS.map((tenant) => tenant.productionApiBaseUrl);
   }
 
   return [serverEnv.NEXT_PUBLIC_API_URL];

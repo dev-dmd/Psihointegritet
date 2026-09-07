@@ -68,7 +68,7 @@ describe("tenant configuration", () => {
     expect(psiho?.publicUrl).toBe("https://psihointegritet.com");
     // The reason the API target lives here rather than in one env variable:
     // one project, two backends, two databases.
-    expect(sanja?.apiBaseUrl).not.toBe(psiho?.apiBaseUrl);
+    expect(sanja?.productionApiBaseUrl).not.toBe(psiho?.productionApiBaseUrl);
   });
 
   it("names the platform as itself, never as a tenant", () => {
@@ -188,6 +188,19 @@ describe("host binding", () => {
   it("reports a host that is both tenant and platform as both", () => {
     process.env.PLATFORM_HOST = "psihointegritet.com";
     const binding = resolveHostBinding("psihointegritet.com", production);
+
+    expect(binding?.tenant?.organizationSlug).toBe("psihointegritet");
+    expect(binding?.isPlatform).toBe(true);
+  });
+
+  it("gives a laptop both roles at once", () => {
+    // `localhost` is the platform host, but it is also where the developer's
+    // own tenant is served. Treating it as platform-only left /nalog answering
+    // 404 on a machine that has no other host to offer.
+    const binding = resolveHostBinding("localhost:3007", {
+      env: "development",
+      slug: "psihointegritet",
+    });
 
     expect(binding?.tenant?.organizationSlug).toBe("psihointegritet");
     expect(binding?.isPlatform).toBe(true);

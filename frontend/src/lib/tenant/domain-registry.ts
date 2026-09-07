@@ -36,13 +36,19 @@ export interface TenantDomainConfig {
   /** Canonical public origin — the value canonical tags and sitemaps use. */
   publicUrl: string;
   /**
-   * Which backend answers for this tenant.
+   * Which backend answers for this tenant **in production**.
    *
-   * One frontend project cannot carry one API URL in an environment variable
-   * any more, and the tenants still have separate databases (deliberately —
-   * RLS does not exist yet), so the API target belongs next to the tenant.
+   * Production is the only environment that serves more than one tenant, so it
+   * is the only one that cannot name its backend in a single environment
+   * variable. Every other environment is bound to one tenant and one backend
+   * (`NEXT_PUBLIC_API_URL`): staging talks to the staging backend, a laptop to
+   * `localhost:8001`.
+   *
+   * The name says `production` because the first version of it did not, and a
+   * local sign-in silently called the production API, got a 401 for a
+   * development token, and rendered a workspace with no panels in it.
    */
-  apiBaseUrl: string;
+  productionApiBaseUrl: string;
   /**
    * **Transitional.** The founding tenant's ~26 public pages still live in
    * `app/(public)` with their copy written for that one organization. Moving
@@ -66,14 +72,16 @@ export const TENANT_DOMAINS: readonly TenantDomainConfig[] = [
       "qa.psihointegritet.com",
     ],
     publicUrl: "https://psihointegritet.com",
-    apiBaseUrl: "https://diligent-serenity-production-1b3e.up.railway.app",
+    productionApiBaseUrl:
+      "https://diligent-serenity-production-1b3e.up.railway.app",
     usesLegacyPublicTree: true,
   },
   {
     organizationSlug: "sanja-neuer",
     domains: ["sanjaneuer.com", "www.sanjaneuer.com"],
     publicUrl: "https://sanjaneuer.com",
-    apiBaseUrl: "https://diligent-serenity-sanja-production.up.railway.app",
+    productionApiBaseUrl:
+      "https://diligent-serenity-sanja-production.up.railway.app",
   },
 ];
 
@@ -185,12 +193,22 @@ export function resolveHostBinding(
 ): HostBinding | null {
   const tenant = tenantForHost(host);
   const isPlatform = isPlatformHost(host);
-  if (tenant || isPlatform) return { tenant, isPlatform };
+  if (tenant) return { tenant, isPlatform };
 
-  if (deployment.env === "production") return null;
+  // Production is literal: a host that names no tenant serves no tenant. The
+  // platform host legitimately owns none, and anything else is refused.
+  if (deployment.env === "production") {
+    return isPlatform ? { tenant: undefined, isPlatform } : null;
+  }
 
+  // Everywhere else the deployment is bound to one tenant, and no host names
+  // it — `localhost` and a preview URL are both unlistable. Note this applies
+  // to `localhost` *even though it is the platform host*: a laptop is the
+  // platform and the tenant at once, and treating it as platform-only left
+  // `/nalog` answering 404 on a developer's own machine.
   const bound = tenantForSlug(deployment.slug);
-  return bound ? { tenant: bound, isPlatform: true } : null;
+  if (bound) return { tenant: bound, isPlatform: true };
+  return isPlatform ? { tenant: undefined, isPlatform } : null;
 }
 
 /**
