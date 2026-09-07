@@ -826,8 +826,9 @@ platformskom hostu bez tenanta, direktan `/s/*`.
 | B2-3 | Domain registry + proxy rewrite + tenant-scoped `apiBaseUrl` | ✅ | **2026-09-07.** Jedan Vercel projekat, `lib/tenant/domain-registry.ts` kao jedino mesto mapiranja host→tenant. Proxy žigoše površinu (`x-pdc-surface`/`x-pdc-tenant`), `getActiveOrganizationSlug()` grana po žigu. `PLATFORM_HOST` postao **obavezan** na deployed okruženjima — bez njega vlasnički prostor ne odgovara nigde |
 | B2-3a | Tenant page model (`useContent` nad tenant kontekstom) | ⬜ | Deo PDC-1. Danas tenant bez sadržaja renderuje prazno stanje, nikad founding-tenant fallback |
 | B2-4 | PDC-1 Sanja Page Composer / njen sajt | ⬜ | Radi nad `organizationSlug`-om bez obzira odakle stiže — ne mora da čeka B2-3 |
-| B2-5 | Deljeni backend runtime + RLS | ⬜ | **Mnogo kasnije.** Odvojene baze ostaju bezbednosna granica dok RLS ne bude isporučen |
+| B2-5 | Deljeni backend runtime + RLS | ⬜ | **Više nije „mnogo kasnije".** D-081: jedna baza po okruženju je target, pa RLS ulazi u consolidation gate. Odvojene baze ostaju bezbednosna granica **dok** RLS ne bude isporučen — vidi `PDC_CONSOLIDATION_MIGRATION_PLAN_v1_0.md` |
 | B2-6 | **Merge `staging` → `main`, pa tek onda DNS za `sanjaneuer.com`** | ⬜ | **Blokira Sanjin sajt.** Domen je na PDC projektu, ali production gradi `main`, koji nema host routing — upereni DNS pre merge-a servira Psiho sajt na njenom domenu. Posle merge-a: A zapis `sanjaneuer.com → 76.76.21.21` na Namecheap-u |
+| B2-7 | **PDC konsolidacija — jedan backend i jedna baza po okruženju** | ⬜ | **D-081, čeka `p-digital-center.com`.** Ceo redosled u `PDC_CONSOLIDATION_MIGRATION_PLAN_v1_0.md`. Do tada se **ne razvijaju** četiri API-ja (Psiho prod, Sanja prod, Psiho staging, Sanja staging) |
 
 **Redosled je obavezujući za B2-1 → B2-3.** Ostalo se sme preklapati.
 Sledeće po redu: **PDC-0D (email identity) → PDC-1 (Sanjin sajt / Page Composer)**.
@@ -839,6 +840,11 @@ tiho značilo nedostupan `/radni-prostor`. Prvi staging build je i pao baš tako
 preview deployment-i bez custom domena nemaju host koji registar može da nabroji; rešeno kroz
 `resolveHostBinding()`, koji van produkcije pada na deployment-ov tenant binding.
 
+> **Zaustavljeno svesno 2026-09-07 (D-081).** Frontend zna da su tenanti podatak, backend još misli
+> da su deployment; šav je `productionApiBaseUrl` u registru. To nije stabilna međutačka, ali jeste
+> bolja tačka za pauzu nego pola sledeće faze. Nastavak ide kroz jedan objedinjen plan koji frontend
+> i backend rešava zajedno, i počinje kupovinom platformskog domena.
+>
 > **Merilo da je PDC postao platforma:** treći tenant ne sme tražiti novu arhitektonsku fazu.
 > Onboarding mora biti `create organization → add domain → assign owner → select capabilities →
 > theme/content → publish`, a ne ponavljanje Clerk/Vercel/Railway infrastrukture svaki put.

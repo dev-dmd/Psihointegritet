@@ -47,6 +47,17 @@ export interface TenantDomainConfig {
    * The name says `production` because the first version of it did not, and a
    * local sign-in silently called the production API, got a 401 for a
    * development token, and rendered a workspace with no panels in it.
+   *
+   * **Transitional, and the wrong shape on purpose (D-081).** An API base
+   * belongs to an *environment*, not to a tenant — one production API, one
+   * staging API, with the tenant arriving per request as
+   * `organizationSlug → organization_id → scoped query`. This field exists only
+   * because two production backends genuinely exist today, each with its own
+   * database, which is the only tenant isolation there is until RLS lands. It
+   * is deleted when they become one; the rest of this table
+   * (`organizationSlug`, `domains`, `publicUrl`) is the part that stays.
+   *
+   * Plan: `documentations/PDC_CONSOLIDATION_MIGRATION_PLAN_v1_0.md`.
    */
   productionApiBaseUrl: string;
   /**

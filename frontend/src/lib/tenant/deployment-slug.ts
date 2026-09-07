@@ -14,6 +14,11 @@
  * to. Creating a tenant is `provision_organization`; binding a deployment to
  * one is this value.
  *
+ * **And it stops answering even that (D-081).** Once the backend takes its
+ * tenant from the request rather than from its own configuration, this survives
+ * only as a local-development convenience — which tenant a laptop shows — and
+ * ceases to be a source of production tenancy at all.
+ *
  * **Why the founding-tenant fallback is now conditional.** Four call sites read
  * `DEFAULT_ORGANIZATION_SLUG` and each defaulted to `"psihointegritet"`, on the
  * reasoning that absence had one correct answer. That reasoning held while one

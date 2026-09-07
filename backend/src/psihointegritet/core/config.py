@@ -47,6 +47,15 @@ class Settings(BaseSettings):
     #: Empty means "not stated"; `_bind_deployment_tenant` then either supplies
     #: the development convenience or refuses to start. It is never a tenant
     #: onboarding step: creating an organization is `provision_organization`.
+    #:
+    #: **Transitional (D-081).** One backend per tenant is a migration artifact,
+    #: not the target: production becomes one API over one database where the
+    #: tenant arrives per request as
+    #: `organizationSlug -> organization_id -> scoped query`. `resolve_staff_actor`
+    #: is already scoped to a concrete `organization.id`; the only thing wrong is
+    #: that the organization comes from this setting instead of from the request.
+    #: When that changes, this survives as a local-development convenience only.
+    #: See `documentations/PDC_CONSOLIDATION_MIGRATION_PLAN_v1_0.md`.
     default_organization_slug: str = ""
     intake_matching_enabled: bool = False
     intake_sensitive_submission_enabled: bool = False

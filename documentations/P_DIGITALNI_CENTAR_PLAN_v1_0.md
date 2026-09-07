@@ -443,6 +443,11 @@ važi bez obzira koja se stranica renderuje; proza pripada stranici.
 > RLS milestone ne bude isporučen (danas: 0 polisa, 111 ručnih filtera, `rolbypassrls=t`).
 > **Frontend konsolidacija nije konsolidacija baza.** Backend runtime sme privremeno da ostane na
 > C2(a) modelu.
+>
+> **Dopuna D-081 (2026-09-07):** „privremeno" je od danas imenovano. Odvojen backend i odvojena
+> baza po tenantu su **migration artifact**, istog statusa kakav je imao Sanjin Vercel projekat —
+> ne razvijaju se dalje. Ciljno stanje je jedan backend i jedna baza **po okruženju**, sa
+> `organization_id` kao jedinom granicom. Redosled i gate: `PDC_CONSOLIDATION_MIGRATION_PLAN_v1_0.md`.
 
 ```
 Psihointegritet frontend  ↕  Psihointegritet backend
@@ -907,12 +912,17 @@ imenuje svoj backend jednom promenljivom. Svako drugo je vezano za jedan tenant 
 
 | Okruženje | Backend |
 | --------- | ------- |
-| production | registry (`productionApiBaseUrl`), po tenantu |
+| production | registry (`productionApiBaseUrl`), po tenantu — **prelazno, vidi D-081** |
 | staging | `diligent-serenity-staging` |
 | preview / qa | `diligent-serenity-features` |
 | lokalno | `localhost:8001` |
 
-Ostatak pravila važi u produkciji. Na tenant površini se zove **samo** njegov
+Ostatak pravila važi u produkciji.
+
+> **`apiBaseUrl` ne pripada tenantu nego okruženju (D-081).** Ovaj oblik — `tenant →
+> productionApiBaseUrl` — postoji zato što danas stvarno postoje dva production backend-a. Kad ih
+> bude jedan, polje se briše iz registra, a registar ostaje na onome što jeste njegovo:
+> `{organizationSlug, domains, publicUrl}`. Na tenant površini se zove **samo** njegov
 backend — Sanjin kontekst ne sme da dodirne Psiho bazu. Na platformskoj površini se pitaju svi
 registrovani backend-i i memberships se spajaju, jer svaka baza drži samo svoje; 401/403 tamo znači
 „ovaj backend te ne poznaje", a ne grešku. Kolabira u jedan poziv kad deljeni backend stigne.
