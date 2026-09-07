@@ -532,7 +532,8 @@ vlasnik tabela · 51 tabela naspram 31 u ADR-023 inventaru.
 | **2** | Production deploy `main`; `ENVIRONMENT=production` (N1) | Faza 1 | `psihointegritet.com` 200; `x-pdc-surface` prisutan; `/radni-prostor` radi | Vercel *Instant Rollback* na `29ae344` | **Ne** |
 | **2b** | **Platform-host surface fix** — public tree fail-closed bez tenanta; `/` → 307 `/prijava` | Faza 2 | 11 testova u `surface-access.test.ts`; nula regresije na `psihointegritet.com` | revert PR (pravilo je jedna grana) | **Ne** |
 | **2c** | **`/api/v1/me` first-login race** (N10) — `ON CONFLICT DO NOTHING` + autoritativan read | Faza 2b | concurrency test pada pre / prolazi posle; **Maria realna prijava bez error boundary-ja** | revert PR; DB nepromenjena | **Ne** |
-| **3** | `PLATFORM_HOST=p-digital-center.com`; `NEXT_PUBLIC_APP_URL`; `CORS_ORIGINS` (N2); `www` politika (N5) | **Faza 2b + 2c deployovane**; **Maria smoke zelen**; Clerk (§9) **spreman** — vidi §9.1; `NEXT_PUBLIC_APP_URL` **se NE menja** (§8.5) | `p-digital-center.com/radni-prostor` traži prijavu i radi; `psihointegritet.com` je **samo** tenant | vrati `PLATFORM_HOST` na `psihointegritet.com` + redeploy | **Ne** (reverzibilno) |
+| **2d** | **Platform shell** — landing, surface-aware `/prijava`, post-auth dispatcher, staff-scoped workspace org | Faza 2c | 857 testova; build diff = +3 rute, statika 32 vs baseline 30 | revert PR | **Ne** |
+| **3** | `PLATFORM_HOST=p-digital-center.com`; `NEXT_PUBLIC_APP_URL`; `CORS_ORIGINS` (N2); `www` politika (N5) | **Faze 2b–2d deployovane**; **Maria smoke zelen ✅**; **Clerk cutover §9.2 izveden**; `NEXT_PUBLIC_APP_URL` **se NE menja** (§8.5) | `p-digital-center.com/radni-prostor` traži prijavu i radi; `psihointegritet.com` je **samo** tenant | vrati `PLATFORM_HOST` na `psihointegritet.com` + redeploy | **Ne** (reverzibilno) |
 | **4a** | `psihointegritet.com` → tenant-only | Faza 3 | `/` = Psiho sajt; `/radni-prostor` na njemu **404** | isto kao Faza 3 | **Ne** |
 | **4b** | **Namecheap DNS za `sanjaneuer.com`** (§3.5) | **Faza 1 MORA biti gotova** | `dig +short A sanjaneuer.com` = `216.150.1.1`; `misconfigured:false`; LE cert; sajt = Sanjin | vrati parking zapise | **Ne** (ali vidljivo javno) |
 | **5** | Request-scoped tenant context | Faza 4 | **GATE A** u celosti | revert PR; `settings` fallback se vraća | **Ne** |
@@ -866,6 +867,139 @@ Bez toga vlasnik može da se prijavi i **ne dobije sesiju** na novom hostu.
 Odluka između dve opcije (`p-digital-center.com` postaje primarni domen instance, ili ostaje
 satellite) je otvorena i pripada `PDC_TENANT_ROUTING_AUDIT_v1_0.md` §6.2. **Faza 3 je blokirana dok
 se ne donese.**
+
+### 9.2 Clerk primary domain cutover — ručni checklist (NIJE izvršen)
+
+**Odluka (zaključana 2026-09-07):** `p-digital-center.com` postaje **primary** Clerk domen;
+`psihointegritet.com`, `sanjaneuer.com` i budući tenant domeni postaju **satelliti**.
+
+Razlog nije branding: primary domen drži centralni auth state, a kod satellite modela se
+sign-in/sign-up **izvršava na primary domenu**. Dugoročno je pogrešno da to bude domen jednog tenanta.
+
+#### Posledica koja se ne skriva
+
+Standardni Clerk satellite flow vodi korisnika na primary domen i vraća ga natrag:
+
+```
+klijent na sanjaneuer.com → klik "Prijava"
+    → p-digital-center.com/prijava        ← URL privremeno napušta tenant domen
+    → nazad na sanjaneuer.com/nalog
+```
+
+Time raniji cilj „klijent nikad ne vidi PDC domen" **nije kompatibilan** sa modelom jedna instanca +
+satelliti. Za MVP se prihvata. Ublažavanje je prezentaciono — login ekran se brendira prema
+povratnom kontekstu — ne URL trik. Ako URL nikad ne sme napustiti tenant domen, to je druga auth
+arhitektura (instanca po tenantu) i ne komplikuje se B2 zbog nje.
+
+> ⚠️ **Production satellite domains su plaćena funkcija.** Proveriti plan **pre** cutover-a.
+
+#### Korak po korak
+
+**A. Clerk Dashboard**
+
+1. Production instanca → **Domains → Change domain** → `p-digital-center.com`.
+2. Preuzeti **tačne DNS zapise koje Dashboard prikaže** (Frontend API i Account Portal CNAME).
+   **Ne izmišljati `clerk.` / `accounts.` vrednosti** — koristi se doslovno ono što Clerk da.
+3. Uneti ih u **Vercel DNS** za `p-digital-center.com` (domen je na Vercel nameserverima).
+4. Sačekati verifikaciju i izdavanje sertifikata.
+5. Preuzeti **nov production publishable key** (`pk_live_…` — menja se jer kodira Frontend API domen).
+6. Proveriti da li **secret key** ostaje isti; ako Dashboard izda nov, preuzeti i njega.
+7. **Satellites:** dodati `psihointegritet.com`, `www.psihointegritet.com`, `sanjaneuer.com`,
+   `www.sanjaneuer.com`, `sanja-neuer.vercel.app`.
+8. **Allowed redirect origins / paths:** svi gornji + `https://p-digital-center.com`,
+   uz `/prijava`, `/registracija`, `/api/auth/landing`.
+
+**B. Kod (ide u istom PR-u kao Dashboard promena, ne pre)**
+
+9. `ClerkProvider` prelazi u client component i dobija `isSatellite` + `domain` iz
+   `clerkSatelliteDomainFor` (logika i testovi već postoje — §9.3). **Ne pre cutover-a:** deklarisanje
+   satellita dok je primary još Psiho obara prijavu na svim hostovima odjednom.
+
+**C. Vercel env**
+
+| Ključ | Pre | Posle |
+| --- | --- | --- |
+| `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` (production) | `pk_live_` za `clerk.psihointegritet.com` | **nov** `pk_live_` iz koraka 5 |
+| `CLERK_SECRET_KEY` (production) | postojeći | isti, osim ako korak 6 kaže drugačije |
+| `CLERK_PRIMARY_HOST` (production) | **ne postoji** | `p-digital-center.com` |
+| `PLATFORM_HOST` (production) | `psihointegritet.com` | `p-digital-center.com` |
+| `NEXT_PUBLIC_APP_URL` | `https://psihointegritet.com` | **NE MENJA SE** — §8.5 |
+
+**D. Railway env — `production` i `sanja-production` (isti Clerk ugovor dok su backendi odvojeni)**
+
+| Ključ | Pre | Posle |
+| --- | --- | --- |
+| `CLERK_ISSUER` | `https://clerk.psihointegritet.com` | nov issuer iz Dashboard-a |
+| `CLERK_JWKS_URL` | `…/.well-known/jwks.json` na starom issuer-u | isto, na novom |
+| `CLERK_AUDIENCE` | postojeći | proveriti da li se menja |
+| `CLERK_SECRET_KEY` | postojeći | uskladiti sa C |
+
+> Backend verifikuje token po `CLERK_ISSUER`/`CLERK_JWKS_URL`. Ako se oni ne promene zajedno sa
+> ključevima, **svaki** API poziv posle cutover-a vraća 401 — i to na oba backend-a.
+
+#### Redosled i rollback
+
+```
+1. Dashboard Change domain + DNS + sertifikat        ← reverzibilno (vrati domen)
+2. Satellites + allowed origins                       ← reverzibilno
+3. Railway production + sanja-production Clerk env    ← reverzibilno (stare vrednosti)
+4. Vercel Clerk ključevi + CLERK_PRIMARY_HOST         ← reverzibilno (redeploy)
+5. Kod: satellite deklaracija                         ← revert PR
+6. PLATFORM_HOST → p-digital-center.com               ← Faza 3, poslednja
+```
+
+**Rollback ide obrnutim redosledom.** Kritično: koraci 3 i 4 moraju biti **blizu jedan drugom** —
+između njih frontend i backend govore o različitim Clerk instancama i prijava ne radi. Zato se
+Railway menja **pre** Vercel-a: backend koji prihvata **oba** issuer-a nakratko je bezbedniji od
+frontenda koji šalje token koji backend ne prepoznaje.
+
+**Rollback trigger:** bilo koja prijava vraća 401 ili sesija se ne uspostavlja na novom hostu.
+
+### 9.3 Faza 2d — platform shell i post-auth routing (isporučeno `36e2489`)
+
+Kod koji Fazu 3 pretvara u env promenu. Ništa od ovoga ne menja ponašanje postojećih hostova.
+
+| Isporučeno | Šta rešava |
+| --- | --- |
+| `app/platform-home/` + proxy rewrite | Platform host dobija **svoju** stranicu. Do sada je nije imao — zato je N8 rupa i postojala. Direktan `/platform-home` je 404 |
+| `features/auth/auth-surface-layout.tsx` | `/prijava` dvokolonski na platform površini, običan okvir na tenant površini. Površina dolazi iz proxy žiga, **ne** iz poređenja hostname-a u komponenti |
+| `lib/auth/post-auth-landing.ts` | Role-aware odredište posle prijave; `app/api/auth/landing/route.ts` je tanak izvršilac |
+| `app/pristup-odbijen/` | Vidljivo odbijanje umesto 404 za nalog sa validnom sesijom i bez uloge |
+| `staffMemberships()` + `resolveWorkspaceOrganization()` | Radni prostor bira **staff** membership, ne abecedno prvi |
+| `lib/auth/clerk/multi-domain.ts` | Odluka primary/satellite, testirana, **još nedeklarisana** — vidi §9.2 korak 9 |
+
+#### Post-auth routing matrica
+
+| Ko | Gde se prijavio | Odredište |
+| --- | --- | --- |
+| superadmin | bilo gde | `/superadmin` na platformi |
+| org_admin / therapist | bilo gde | `/radni-prostor` na platformi |
+| klijent | tenant host | `/nalog` na **tom** hostu |
+| klijent | platform host, membership imenuje **jedan** tenant | `https://<tenant>/nalog` |
+| klijent | platform host, **nula ili više** tenanata | `/pristup-odbijen` |
+| bez uloge | bilo gde | `/pristup-odbijen` |
+
+Nikad: `p-digital-center.com/nalog`. Test to tvrdi eksplicitno, za sve četiri vrste identiteta.
+
+#### Nalaz koji je zamalo prošao — rendering contract nema stražara nad auth provider-om
+
+Prva verzija je čitala `headers()` u `AuthProvider` da bi bila host-aware. Provider stoji u root
+layout-u i obavija **svaku** stranicu, pa je build pao sa **30 prerenderovanih ruta na 3** — ceo
+javni sajt na SSR. To je tačno ono što D-077 rendering ugovor zabranjuje.
+
+`check-frontend-architecture.mjs` to **nije uhvatio**: skenira pet imenovanih SSG-safe modula, a
+`lib/auth/clerk/auth-provider.tsx` nije među njima. Otkriveno je poređenjem broja statičkih ruta sa
+baseline build-om.
+
+```
+baseline          30 static / 124 dynamic
+sa headers()       3 static / 147 dynamic     ← regresija
+posle popravke    32 static / 125 dynamic     ← +2 stranice, +1 route handler, diff prazan inače
+```
+
+> **Preporuka za zaseban zadatak:** proširiti statičku proveru na root layout i sve što on obavija,
+> ili uvesti build-time gate na broj prerenderovanih ruta. Danas je jedina odbrana što je neko
+> uporedio dva build-a.
 
 ---
 
