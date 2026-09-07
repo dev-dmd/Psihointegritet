@@ -27,6 +27,30 @@ export const MEMBERSHIP_ROLE_LABELS: Record<MembershipRole, string> = {
   org_admin: "Administrator organizacije",
 };
 
+/**
+ * Roles that make somebody *staff* of an organization rather than its client.
+ *
+ * The distinction decides which surface a person belongs on: staff work in the
+ * platform workspace, clients stay in their practitioner's own space. Someone
+ * can be both — a client of one practice and a therapist at another — which is
+ * exactly why "has any membership" is not the same question as "works here".
+ */
+export const STAFF_ROLES: readonly MembershipRole[] = [
+  "org_admin",
+  "therapist",
+];
+
+/** Memberships that grant a workspace, in a stable order. */
+export function staffMemberships(
+  memberships: readonly OrganizationMembership[],
+): OrganizationMembership[] {
+  return memberships
+    .filter((membership) =>
+      membership.roles.some((role) => STAFF_ROLES.includes(role)),
+    )
+    .sort((a, b) => a.organizationSlug.localeCompare(b.organizationSlug));
+}
+
 export interface OrganizationMembership {
   /**
    * The organization's stable public slug — `"psihointegritet"`, not a UUID.

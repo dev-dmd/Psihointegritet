@@ -303,6 +303,16 @@ export const PLATFORM_NAME = "P. Digital Centar";
 export const TENANT_ROUTE_PREFIX = "/s";
 
 /**
+ * Internal path holding the platform's own front page.
+ *
+ * A plain segment, not a `_`-prefixed folder: App Router treats `_name` as a
+ * private folder and produces no route at all, which the B2 spike found the
+ * hard way. Refused from outside by the proxy for the same reason the tenant
+ * tree is — one page must not be reachable at two addresses.
+ */
+export const PLATFORM_HOME_ROUTE = "/platform-home";
+
+/**
  * Headers the proxy stamps so request-time code knows which surface it is on
  * without re-deriving it.
  *
