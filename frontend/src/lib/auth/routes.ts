@@ -23,8 +23,10 @@ import { protectedRoutePrefixes } from "@/lib/routes/match";
  * incident waiting to happen. The pages behind them are still translated — it
  * is the *path* that stays stable, not the copy.
  */
-export const SIGN_IN_URL = "/prijava";
-export const SIGN_UP_URL = "/registracija";
+export {
+  SIGN_IN_PATH as SIGN_IN_URL,
+  SIGN_UP_PATH as SIGN_UP_URL,
+} from "@/lib/routes/auth-paths";
 
 /**
  * URL prefixes that require an authenticated session.

@@ -12,6 +12,7 @@ import {
   clientRoutePrefixes,
   hasRoutePrefix,
   isSurfaceAllowedOnHost,
+  normalizePathname,
   platformRoutePrefixes,
 } from "@/lib/routes/match";
 import {
@@ -89,6 +90,29 @@ export default clerkMiddleware(async (auth, request) => {
     return new NextResponse("Not found", { status: 404 });
   }
   const { tenant, isPlatform: onPlatformHost } = binding;
+
+  // The platform host owns no public site of its own yet, so its root has no
+  // page to render. It must not borrow one: `app/(public)` still holds the
+  // founding tenant's ~26 pages, and serving those here would put
+  // Psihointegritet's home page on the platform's address — the exact identity
+  // D-080 retired and this whole slice exists to undo.
+  //
+  // The door in is the honest answer until PDC-1 builds a real landing. A host
+  // that is *also* a tenant keeps its own home page; only a platform-only host
+  // is redirected, which is why this reads `!tenant` rather than the host name.
+  //
+  // **307, not 308.** This is temporary by construction and a permanent
+  // redirect would be cached by browsers long after the landing page replaces
+  // it. Never cached publicly either: the answer depends on the host, and a
+  // shared CDN entry would hand one host's redirect to another.
+  if (onPlatformHost && !tenant && normalizePathname(externalPath) === "/") {
+    const response = NextResponse.redirect(
+      new URL(SIGN_IN_URL, request.url),
+      307,
+    );
+    response.headers.set("Cache-Control", "private, no-store");
+    return response;
+  }
 
   // Each surface answers on the host that owns it, and nowhere else. Checked
   // before the auth gate on purpose: sending someone to sign in on a domain
