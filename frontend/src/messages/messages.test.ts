@@ -73,6 +73,7 @@ describe("catalogue parity", () => {
    * translated.
    */
   const PROPER_NOUNS = new Set([
+    "screens.platform.landingTitle", // the platform's own name, plus the placeholder label standing in for PDC-1's landing copy
     "workspace.brand.name", // the centre's own name
     "public.footer.organizationGroup", // the centre's own name
     "workspace.brand.panel", // "Control Center" — product name, used as-is in Serbian

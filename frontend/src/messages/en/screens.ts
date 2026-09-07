@@ -5,6 +5,15 @@
  * panel does. Demo data and anything a tenant writes stays where it is.
  */
 export const screens = {
+  platform: {
+    landingTitle: "Marketing P. Digital Centar",
+    landingLead:
+      "Platform for psychologists, psychotherapists, consultants and educators.",
+    signIn: "Sign in",
+    accessDeniedTitle: "This account has no access yet",
+    accessDeniedLead:
+      "Sign-in succeeded, but this account has not been given a role or an organization yet. Please contact your organization's administrator.",
+  },
   overview: {
     morning: "Good morning",
     afternoon: "Good afternoon",

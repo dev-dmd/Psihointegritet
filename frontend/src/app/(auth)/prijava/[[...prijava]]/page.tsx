@@ -2,14 +2,17 @@ import type { Metadata } from "next";
 
 import { SignIn } from "@clerk/nextjs";
 
+import { AuthSurfaceLayout } from "@/features/auth/auth-surface-layout";
+import { surfaceOfRequest } from "@/lib/tenant/active-organization";
+
 export const metadata: Metadata = {
   title: "Prijava",
 };
 
-export default function SignInPage() {
+export default async function SignInPage() {
   return (
-    <main className="flex min-h-screen items-center justify-center px-4 py-16">
+    <AuthSurfaceLayout surface={(await surfaceOfRequest()) ?? "tenant"}>
       <SignIn />
-    </main>
+    </AuthSurfaceLayout>
   );
 }

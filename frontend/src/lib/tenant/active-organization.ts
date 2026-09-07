@@ -2,6 +2,7 @@ import "server-only";
 
 import { headers } from "next/headers";
 
+import { staffMemberships } from "@/lib/auth/identity";
 import { getServerIdentity } from "@/lib/auth/identity-server";
 import {
   TENANT_SLUG_HEADER,
@@ -43,6 +44,11 @@ import { getDeploymentOrganization } from "@/lib/tenant/org-context";
  * are all behind authentication and request-time already.
  */
 
+/** Which surface the proxy stamped on this request, if any. */
+export async function surfaceOfRequest(): Promise<Surface | null> {
+  return surface();
+}
+
 async function surface(): Promise<Surface | null> {
   const value = (await headers()).get(TENANT_SURFACE_HEADER);
   return value === "tenant" || value === "platform" ? value : null;
@@ -58,20 +64,22 @@ export async function resolveTenantSurfaceOrganization(): Promise<
 /**
  * The organization the signed-in person is working in. Platform surface only.
  *
- * With one membership there is nothing to choose. With several — an operator,
- * or someone who owns one practice and attends another — this takes the first
- * by slug and stays deterministic. A real selector belongs with the workspace
- * organization switcher and is not part of this slice; until it exists, holding
- * memberships in two organizations means seeing the alphabetically first one.
+ * **Staff memberships only.** This used to sort every membership by slug and
+ * take the first, which is wrong for anyone who is a client somewhere and staff
+ * somewhere else: a therapist at `psihointegritet` who is also a client of
+ * `alpha-praksa` would open the workspace of a practice where they have no
+ * staff role at all, purely because the slug sorts earlier. Filtering first
+ * makes the answer "where do you work", which is the question being asked.
+ *
+ * With several staff memberships this stays deterministic — first by slug — and
+ * that is a placeholder, not a decision. The real answer is an organization
+ * switcher in the workspace; until it exists, someone who is staff at two
+ * practices sees the alphabetically first one and has no way to change it.
  */
 export async function resolveWorkspaceOrganization(): Promise<string | null> {
   const identity = await getServerIdentity();
   if (!identity) return null;
-
-  const slugs = identity.memberships
-    .map((membership) => membership.organizationSlug)
-    .sort();
-  return slugs[0] ?? null;
+  return staffMemberships(identity.memberships)[0]?.organizationSlug ?? null;
 }
 
 /**

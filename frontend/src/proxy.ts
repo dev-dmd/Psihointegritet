@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 
 import { PROTECTED_ROUTE_PREFIXES, SIGN_IN_URL } from "@/lib/auth/routes";
 import {
+  PLATFORM_HOME_ROUTE,
   TENANT_ROUTE_PREFIX,
   TENANT_SLUG_HEADER,
   TENANT_SURFACE_HEADER,
@@ -75,7 +76,10 @@ export default clerkMiddleware(async (auth, request) => {
   // The internal tenant tree must never be reachable as a URL of its own — it
   // would be the same pages served a second time, indexable beside the real
   // domain. Refused before anything else so no later branch can undo it.
-  if (externalPath.startsWith(`${TENANT_ROUTE_PREFIX}/`)) {
+  if (
+    externalPath.startsWith(`${TENANT_ROUTE_PREFIX}/`) ||
+    normalizePathname(externalPath) === PLATFORM_HOME_ROUTE
+  ) {
     return new NextResponse("Not found", { status: 404 });
   }
 
@@ -92,27 +96,22 @@ export default clerkMiddleware(async (auth, request) => {
   }
   const { tenant, isPlatform: onPlatformHost } = binding;
 
-  // The platform host owns no public site of its own yet, so its root has no
-  // page to render. It must not borrow one: `app/(public)` still holds the
-  // founding tenant's ~26 pages, and serving those here would put
-  // Psihointegritet's home page on the platform's address — the exact identity
-  // D-080 retired and this whole slice exists to undo.
+  // The platform host serves its own front page, never a tenant's. `app/(public)`
+  // still holds the founding tenant's ~26 pages, and falling through to those
+  // here would put Psihointegritet's home page on the platform's address — the
+  // identity D-080 retired and the hole phase 2b closed.
   //
-  // The door in is the honest answer until PDC-1 builds a real landing. A host
-  // that is *also* a tenant keeps its own home page; only a platform-only host
-  // is redirected, which is why this reads `!tenant` rather than the host name.
-  //
-  // **307, not 308.** This is temporary by construction and a permanent
-  // redirect would be cached by browsers long after the landing page replaces
-  // it. Never cached publicly either: the answer depends on the host, and a
-  // shared CDN entry would hand one host's redirect to another.
+  // A rewrite rather than a redirect, so the platform answers 200 at its own
+  // root instead of bouncing every visitor to sign-in. A host that is *also* a
+  // tenant keeps its own home page, which is why this reads `!tenant` rather
+  // than naming a hostname.
   if (onPlatformHost && !tenant && normalizePathname(externalPath) === "/") {
-    const response = NextResponse.redirect(
-      new URL(SIGN_IN_URL, request.url),
-      307,
+    return withSurface(
+      NextResponse.rewrite(new URL(PLATFORM_HOME_ROUTE + search, request.url)),
+      "platform",
+      null,
+      host,
     );
-    response.headers.set("Cache-Control", "private, no-store");
-    return response;
   }
 
   // Each surface answers on the host that owns it, and nowhere else. Checked

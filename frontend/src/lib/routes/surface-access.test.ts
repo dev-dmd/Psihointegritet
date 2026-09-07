@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { PUBLIC_ROUTES } from "./platform-routes";
+import { PLATFORM_HOME_ROUTE } from "@/lib/tenant/domain-registry";
 import {
   hasRoutePrefix,
   isHostNeutralPath,
@@ -121,5 +122,26 @@ describe("which host may serve which surface", () => {
     expect(hasRoutePrefix("/nalogodavac", ["/nalog"])).toBe(false);
     expect(hasRoutePrefix("/nalog", ["/nalog"])).toBe(true);
     expect(hasRoutePrefix("/nalog/termini", ["/nalog"])).toBe(true);
+  });
+
+  it("keeps the platform's own internal route unreachable from outside", () => {
+    // Refused in the proxy before any host rule, like the tenant tree: one page
+    // must not answer at two addresses.
+    expect(PLATFORM_HOME_ROUTE).toBe("/platform-home");
+    expect(PLATFORM_HOME_ROUTE.startsWith("/_")).toBe(false);
+  });
+
+  it("lets an access-denied outcome answer on every host", () => {
+    // A signed-in person with no role reaches it from the platform and from a
+    // tenant domain alike, so it cannot belong to either surface.
+    for (const host of [platformOnly, tenantOnly, both]) {
+      expect(isSurfaceAllowedOnHost("/pristup-odbijen", host)).toBe(true);
+    }
+  });
+
+  it("lets the post-auth dispatcher answer on every host", () => {
+    for (const host of [platformOnly, tenantOnly, both]) {
+      expect(isSurfaceAllowedOnHost("/api/auth/landing", host)).toBe(true);
+    }
   });
 });

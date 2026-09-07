@@ -3,6 +3,15 @@ import type { Widen } from "@/messages/types";
 
 /** Byte-identical to what these screens rendered before the extraction. */
 export const screens: Widen<EnScreens> = {
+  platform: {
+    landingTitle: "Marketing P. Digital Centar",
+    landingLead:
+      "Platforma za psihologe, psihoterapeute, konsultante i edukatore.",
+    signIn: "Prijava",
+    accessDeniedTitle: "Nalog još nema dodeljen pristup",
+    accessDeniedLead:
+      "Prijava je uspela, ali ovom nalogu još nije dodeljena uloga ni organizacija. Obratite se administratoru vaše organizacije.",
+  },
   overview: {
     morning: "Dobro jutro",
     afternoon: "Dobar dan",
