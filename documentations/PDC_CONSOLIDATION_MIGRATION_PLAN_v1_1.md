@@ -38,9 +38,21 @@ Ciljna topologija se u ovom dokumentu **ne otvara ponovo** — samo se izvodi.
 | Kod | `grep`/čitanje repozitorijuma na `20c3d59` | ✅ direktno |
 | **Railway** | **CLI token istekao 2026-09-06 22:06 UTC** — GraphQL vraća `Not Authorized` | ⚠️ **izvedeno**, vidi §5 |
 
-**Jedina rupa u auditu je Railway.** Stanje u §5 je rekonstruisano iz `~/.railway/config.json`,
-iz Vercel env vrednosti i iz `domain-registry.ts` — ne iz živog Railway API-ja. To je označeno svuda
-gde se pojavljuje i **mora se potvrditi pre Faze 7**.
+**Railway rupa je zatvorena 2026-09-07** — Milan je proverio uživo. `production`, `staging`,
+`features`, `sanja-production` i `sanja-staging` postoje u **istom projektu**; backend, Postgres i
+Redis su u `SUCCESS` stanju. Production backend je startovan sa `environment="production"`.
+§5 time prelazi iz „izvedeno" u **potvrđeno**.
+
+### 1.5 Dva nalaza koja je živi Railway audit oborio
+
+| Nalaz | Šta je plan tvrdio | Šta je izmereno | Ispravna klasifikacija |
+| --- | --- | --- | --- |
+| **N1** | `ENVIRONMENT=staging` na Vercel production targetu je runtime blocker | Railway production backend **jeste** startovan sa `environment="production"`. Frontend `serverEnv` **nikad ne čita** `ENVIRONMENT` — čita `DEPLOYMENT_ENV` (provereno: 0 pojavljivanja `process.env.ENVIRONMENT` u `frontend/src`) | 🟡 **stale env hygiene.** Vercel kopija ne opisuje nijedan runtime; briše se kad se čisti N3 |
+| **N2** | production `CORS_ORIGINS` je pogrešan | Ta vrednost živi na **Vercel** projektu i ne konfiguriše Railway. Potvrđena arhitektura je `browser → Next.js → FastAPI`; nijedna klijentska komponenta ne zove FastAPI direktno (§6.4) | 🟡 **nije uzrok nijednog incidenta.** Stvarnu Railway vrednost tek treba auditovati, i to odvojeno |
+
+> **Pouka koja se prenosi:** env promenljiva na Vercel projektu nije dokaz o Railway runtime-u.
+> Prvobitni audit je čitao Vercel jer Railway nije bio dostupan, i obe pogrešne klasifikacije potiču
+> odatle. Nalaz o infrastrukturi koja nije očitana mora nositi tu ogradu, ne ozbiljnost.
 
 ### 1.2 Dijagram — stvarno stanje, ne ciljno
 
@@ -103,8 +115,8 @@ BAZA
 
 | # | Nalaz | Ozbiljnost | Gde se rešava |
 | --- | --- | --- | --- |
-| **N1** | `ENVIRONMENT=staging` na **production** targetu | 🔴 visoka — ADR-023 §4.3 startup guard se aktivira samo za `staging`/`production`; pogrešna vrednost menja koje se provere i koja grana konfiguracije primenjuju | Faza 2 |
-| **N2** | `CORS_ORIGINS` u produkciji dozvoljava **samo** `qa.psihointegritet.com` | 🟠 srednja — ne pokriva nijedan produkcioni origin; posle cutover-a mora da nabroji sva tri | Faza 3 |
+| **N1** | ~~`ENVIRONMENT=staging` na production targetu je runtime blocker~~ **— POVUČENO 2026-09-07** | 🟡 niska — **stale env hygiene**, ne blocker | vidi §1.5 |
+| **N2** | `CORS_ORIGINS` na **Vercel** projektu dozvoljava samo `qa.psihointegritet.com` | 🟡 niska — **to je frontend kopija, ne Railway konfiguracija**; browser ne zove FastAPI direktno, pa nije uzrok nijednog poznatog incidenta. Stvarna Railway vrednost nije auditovana | vidi §1.5 |
 | **N3** | Backend tajne (`DATABASE_URL`, `MIGRATION_DATABASE_URL`, `PGPASSWORD`, `POSTGRES_PASSWORD`, `REDIS_URL`, `REDIS_PASSWORD`, `DATABASE_PUBLIC_URL`) postoje kao env na **Vercel frontend** projektu | 🟠 srednja — nisu `NEXT_PUBLIC_`, pa ne cure u browser bundle, ali su kopija produkcionih kredencijala u sistemu koji ih ne koristi; proširuju površinu i rotaciju | Faza 10 (higijena), ne blokira |
 | **N4** | `p-digital-center.com` je **živ** i servira `Psihointegritet` naslov | 🟠 srednja — kanonski platformski domen trenutno tvrdi tenant identitet koji je D-080 povukao | Faza 3 |
 | **N5** | `www.p-digital-center.com` nije u projektu; sertifikat ga ne pokriva | 🟡 niska | Faza 3 |
@@ -112,6 +124,7 @@ BAZA
 | **N7** | `TODO.md` B2-6 preporučuje A zapis `76.76.21.21` | 🟡 niska — Vercel danas kao rank-1 preporučuje `216.150.1.1`; `76.76.21.21` je rank-2 legacy | §4 |
 | **N8** | `isSurfaceAllowedOnHost` završava sa `host.isTenant \|\| host.isPlatform`, pa na platform-only hostu propušta ceo tenant public tree — `p-digital-center.com/` bi renderovao Psiho početnu | 🔴 **visoka — blocker za Fazu 3** | **Faza 2b, zatvoreno 2026-09-07** |
 | **N9** | Root layout obavija i tenant segment, pa Sanjina stranica u payload-u nosi **ceo `sr-Latn` katalog poruka** (uključujući Psiho javnu kopiju) i **`clerk.psihointegritet.com`** kao Clerk Frontend API domen. **Renderovan tekst je čist** — „Sanja Neuer / Sajt je u pripremi.", 0 pominjanja | 🟡 niska danas (stranica je `noindex`), 🟠 pre PDC-1 javnog sajta | katalog: PDC-1 (tenant-authored sadržaj) · Clerk domen: §9 |
+| **N10** | **`/api/v1/me` first-login race** — `ensure_internal_user()` radi SELECT → INSERT bez atomarnosti; dva paralelna zahteva za nov `external_auth_id` oba vide `None` i oba INSERT-uju. Loser dobija `UniqueViolationError: uq_internal_users_external_auth_id` → 500. Frontend pita **oba** production backend-a kroz `Promise.all()`, pa jedan 500 obara ceo sign-in | 🔴 **BLOCKER — bio uzrok Maria login greške** | **Faza 2c, kod zatvoren `e206730`** |
 
 ---
 
@@ -518,7 +531,8 @@ vlasnik tabela · 51 tabela naspram 31 u ADR-023 inventaru.
 | **1** | `merge --no-ff staging → main` | Faza 0; staging zelen | `tree(main) == tree(origin/staging)`; CI zelen | `git revert -m 1 <merge>` | **Ne** |
 | **2** | Production deploy `main`; `ENVIRONMENT=production` (N1) | Faza 1 | `psihointegritet.com` 200; `x-pdc-surface` prisutan; `/radni-prostor` radi | Vercel *Instant Rollback* na `29ae344` | **Ne** |
 | **2b** | **Platform-host surface fix** — public tree fail-closed bez tenanta; `/` → 307 `/prijava` | Faza 2 | 11 testova u `surface-access.test.ts`; nula regresije na `psihointegritet.com` | revert PR (pravilo je jedna grana) | **Ne** |
-| **3** | `PLATFORM_HOST=p-digital-center.com`; `NEXT_PUBLIC_APP_URL`; `CORS_ORIGINS` (N2); `www` politika (N5) | **Faza 2b deployovana**; Faza 2 zelena **24h**; Clerk (§9) unapred | `p-digital-center.com/radni-prostor` traži prijavu i radi; `psihointegritet.com` je **samo** tenant | vrati `PLATFORM_HOST` na `psihointegritet.com` + redeploy | **Ne** (reverzibilno) |
+| **2c** | **`/api/v1/me` first-login race** (N10) — `ON CONFLICT DO NOTHING` + autoritativan read | Faza 2b | concurrency test pada pre / prolazi posle; **Maria realna prijava bez error boundary-ja** | revert PR; DB nepromenjena | **Ne** |
+| **3** | `PLATFORM_HOST=p-digital-center.com`; `NEXT_PUBLIC_APP_URL`; `CORS_ORIGINS` (N2); `www` politika (N5) | **Faza 2b + 2c deployovane**; **Maria smoke zelen**; Clerk (§9) **spreman** — vidi §9.1; `NEXT_PUBLIC_APP_URL` **se NE menja** (§8.5) | `p-digital-center.com/radni-prostor` traži prijavu i radi; `psihointegritet.com` je **samo** tenant | vrati `PLATFORM_HOST` na `psihointegritet.com` + redeploy | **Ne** (reverzibilno) |
 | **4a** | `psihointegritet.com` → tenant-only | Faza 3 | `/` = Psiho sajt; `/radni-prostor` na njemu **404** | isto kao Faza 3 | **Ne** |
 | **4b** | **Namecheap DNS za `sanjaneuer.com`** (§3.5) | **Faza 1 MORA biti gotova** | `dig +short A sanjaneuer.com` = `216.150.1.1`; `misconfigured:false`; LE cert; sajt = Sanjin | vrati parking zapise | **Ne** (ali vidljivo javno) |
 | **5** | Request-scoped tenant context | Faza 4 | **GATE A** u celosti | revert PR; `settings` fallback se vraća | **Ne** |
@@ -689,6 +703,111 @@ Bez regresije: `psihointegritet.com` svih pet putanja nepromenjeno, **bez** `X-R
 
 **M1 (Namecheap) ostaje otvoren, ali više nije blocker** ni za jednu fazu.
 
+### 8.4 Faza 2c — `/api/v1/me` first-login race (N10)
+
+**Incident.** Maria Bullock se prijavljuje, stiže na `/radni-prostor`, i dobija global error boundary
+sa potpuno validnom sesijom. Railway log `sanja-production` u tom trenutku:
+
+```
+GET /api/v1/me → 200
+GET /api/v1/me → 500
+UniqueViolationError: duplicate key value violates unique constraint
+                      "uq_internal_users_external_auth_id"
+```
+
+**Lanac uzroka — dva defekta, ne jedan.**
+
+```
+ensure_internal_user():  SELECT → None → INSERT        ← nije atomarno
+        ↓
+dva paralelna zahteva za nov subject oba vide None, oba INSERT-uju
+        ↓
+loser → UniqueViolationError → HTTP 500
+        ↓
+frontend apiBaseUrlsForRequest() na platform surface pita OBA production backenda
+        ↓
+Promise.all([Psiho 200, Sanja 500]) → reject
+        ↓
+global error boundary — iako je Psiho odgovorio ispravno
+```
+
+**Zašto baš sada.** Račun je postojao u Psiho bazi, ali **ne** u Sanjinoj. Njena baza je za Mariju
+bila „prva prijava", i to je jedini put na kojem se INSERT uopšte dešava.
+
+**Ispravka (`e206730`).** `INSERT ... ON CONFLICT DO NOTHING` pa autoritativan `SELECT`:
+
+```python
+user = await _find_internal_user(session, identity.subject)
+if user is None:
+    await session.execute(
+        pg_insert(InternalUser)
+        .values(external_auth_id=identity.subject, email=identity.email)
+        .on_conflict_do_nothing(index_elements=["external_auth_id"])
+    )
+    user = await _find_internal_user(session, identity.subject)
+```
+
+Unique constraint **ostaje** — on arbitrira, aplikacija ne pogađa. Čitanje mora doći **posle** upisa:
+pod `READ COMMITTED` gubitnički INSERT čeka da pobednik commit-uje, a tek nov `SELECT` vidi
+commit-ovan red. Odbačeno je: hvatanje `IntegrityError`, frontend retry, ignorisanje 500,
+uklanjanje constraint-a, application lock.
+
+Semantika nepromenjena: prva prijava pravi **neutralnog** korisnika bez membershipa, promenjen email
+se ažurira. Email grana se sada primenjuje na red koji je preživeo, pa zastareo email ne može da
+nadživi race koji ga je upisao.
+
+**Test (`test_identity_first_login_concurrency.py`).** Vredi utoliko što **prvo pada**. Običan
+`asyncio.gather` prolazi i protiv pokvarenog koda — event loop sme da završi jedan zahtev pre nego
+što drugi počne — pa se sesije sinhronizuju na barijeri tačno na proveri postojanja, i tek onda
+insert-uju. To je interleaving koji je produkcija imala.
+
+```
+protiv starog koda:  2 failed  ← reprodukovan tačan UniqueViolationError
+protiv novog koda:   3 passed
+ceo backend suite:   574 passed, 1 skipped
+```
+
+> **Preostali frontend rizik, svesno van ovog slice-a.** `Promise.all()` u
+> `loadBackendIdentity()` i dalje znači da jedan pokvaren backend obara sign-in. To prestaje da
+> bude problem sam od sebe kad backend postane jedan (Faza 7). Do tada je uzrok zatvoren, ne
+> simptom — kako je i traženo.
+
+### 8.5 `NEXT_PUBLIC_APP_URL` — auditovano, **NE menja se u Fazi 3**
+
+Zadatak je tražio da se env ne menja naslepo. Audit kaže: **ne menjati ga uopšte u ovom slice-u.**
+
+Runtime potrošači (`frontend/src`, bez testova):
+
+| Mesto | Upotreba |
+| --- | --- |
+| `app/layout.tsx:42` | `metadataBase: new URL(serverEnv.NEXT_PUBLIC_APP_URL)` — root layout obavija i legacy `(public)` tree |
+| `lib/content-governance/discoverability.ts:17` | `publicOrigin(origin = process.env.NEXT_PUBLIC_APP_URL)` |
+| ↳ koristi se kao **default argument** u `absolutePublicUrl`, `sitemapEntries`, `robotsPolicy`, `jsonLdForEntity` (+ `compassBreadcrumbJsonLd`, `compassSitemapEntries`) |
+
+**Odlučujuće:** pozivaoci ga **ne prosleđuju**.
+
+```
+app/(public)/usluge/[slug]/page.tsx:75   jsonLdForEntity(contentEntity)          ← bez origin-a
+app/(public)/tim/[slug]/page.tsx:57      jsonLdForEntity(contentEntity)          ← bez origin-a
+app/(public)/radionice/[slug]/page.tsx:48 jsonLdForEntity(contentEntity)         ← bez origin-a
+app/sitemap.ts:21,29                     sitemapEntries(provider, undefined, …)  ← eksplicitno undefined
+```
+
+Zato bi `NEXT_PUBLIC_APP_URL=https://p-digital-center.com` proizvelo:
+
+```
+psihointegritet.com/usluge/x
+  canonical  → https://p-digital-center.com/usluge/x     ZABRANJENO
+  JSON-LD    → https://p-digital-center.com/...          ZABRANJENO
+  sitemap    → https://p-digital-center.com/...          ZABRANJENO
+```
+
+**Presuda:** uslov „tenant-origin je već eksplicitno prosleđen svuda" **nije ispunjen**, pa se env
+ne menja. Platform URL u Fazi 3 dolazi iz `PLATFORM_HOST`, koji je već konfiguracija.
+
+Prelazak `publicOrigin()` sa env default-a na `tenant.publicUrl` je **PDC-1 posao** (isti šav kao
+N9 i legacy `(public)` tree), ne deo domain cutover-a.
+
 ---
 
 ## 9. Clerk — samo ono što domain cutover dodiruje
@@ -720,6 +839,33 @@ sanjaneuer.com/nalog · psihointegritet.com/nalog                → klijenti
 `review@psihointegritet.com` i posle cutover-a je tenant vrednost, ne platformska — ali ta odluka
 pripada PDC-0D. **Platform/domain migracija ne sme usput hardcode-ovati nove email odluke.**
 Faze 1–4 ne diraju `EMAIL_FROM`.
+
+### 9.1 Clerk readiness za `p-digital-center.com` — **NIJE spreman, traži Dashboard izmenu**
+
+Mereno 2026-09-07, bez menjanja ijedne Clerk postavke.
+
+```
+clerk.psihointegritet.com      CNAME  frontend-api.clerk.services.    ← custom Frontend API
+accounts.psihointegritet.com   CNAME  accounts.clerk.services.        ← Account Portal
+
+clerk.p-digital-center.com     (nema zapisa)
+accounts.p-digital-center.com  (nema zapisa)
+```
+
+Clerk production instanca je vezana za **`psihointegritet.com` kao primarni domen**, sa custom FAPI
+poddomenima ispod njega. N9 to potvrđuje sa druge strane: `clerk.psihointegritet.com` se već pojavljuje
+u payload-u **svakog** tenant hosta.
+
+**Posledica za Fazu 3.** Prijava na `p-digital-center.com` gađala bi FAPI na tuđem domenu. To nije
+samo pitanje allowed origins — Clerk sesijski kolačić se postavlja u odnosu na primarni domen
+instance, pa domen koji nije primarni traži **satellite** konfiguraciju ili promenu primarnog domena.
+Bez toga vlasnik može da se prijavi i **ne dobije sesiju** na novom hostu.
+
+> **STOP pred cutover-om.** Ovo se ne menja naslepo — vidi M2 u §13.1 za tačan spisak.
+
+Odluka između dve opcije (`p-digital-center.com` postaje primarni domen instance, ili ostaje
+satellite) je otvorena i pripada `PDC_TENANT_ROUTING_AUDIT_v1_0.md` §6.2. **Faza 3 je blokirana dok
+se ne donese.**
 
 ---
 
@@ -816,11 +962,12 @@ audit   (organization_audit_events, notification_outbox)
 | # | Akcija | Faza | Zašto ne može automatski |
 | --- | --- | --- | --- |
 | M1 | **Namecheap Advanced DNS** za `sanjaneuer.com` (§3.5) | 4b | Nema Namecheap API kredencijala u okruženju. **Više nije blocker** — §8.3 daje privremeni host |
-| M2 | **Clerk Dashboard** — origins, redirect URL-ovi, ključevi (§9) | pre 3 | Nema Clerk admin pristupa |
-| M3 | **Railway re-auth** (`railway login`) — token istekao | pre 5 | Interaktivni OAuth |
+| M2 | **Clerk Dashboard** — vidi §9.1. Konkretno: (a) odluka da li `p-digital-center.com` postaje **primarni domen** instance ili **satellite**; (b) `p-digital-center.com` u allowed origins; (c) redirect/callback za `/prijava` i `/registracija`; (d) ako primarni — DNS `clerk.` i `accounts.` CNAME na Clerk vrednosti | **blokira Fazu 3** | Nema Clerk admin pristupa |
+| M3 | **Railway re-auth** (`railway login`) — token istekao 2026-09-06 22:06 UTC | **blokira verifikaciju Faze 2c deploy-a** | Interaktivni OAuth; bez njega se ne može ni pokrenuti ni potvrditi backend deploy, ni čitati logovi |
 | M4 | Odluka o `www.p-digital-center.com` (redirect na apex ili ne) | 3 | Proizvodna odluka |
 | M5 | Odluka o sudbini `features` environment-a | posle 11 | Zavisi od stvarnog workflow-a |
 | M6 | **Odobrenje pre Faze 8 i Faze 10** | 8, 10 | Jedina dva nepovratna koraka |
+| M8 | **Maria realna prijava** posle 2c deploy-a — HARD GATE Faze 3 | pre 3 | Traži njene Clerk kredencijale; Claude se ne može prijaviti kao ona |
 | M7 | Offline dump `sanja-production` pre Faze 10 | 10 | Vlasništvo nad backup-om |
 
 ### 13.2 Claude može da izvede (uz odobrenje po fazi)
