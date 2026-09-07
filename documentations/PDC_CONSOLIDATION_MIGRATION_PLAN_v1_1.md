@@ -110,6 +110,7 @@ BAZA
 | **N5** | `www.p-digital-center.com` nije u projektu; sertifikat ga ne pokriva | 🟡 niska | Faza 3 |
 | **N6** | ADR-023 inventar meri 31 tabelu; danas ih je **51** | 🟠 srednja — RLS inventar se mora ponoviti pre pisanja polisa, inače 20 tabela ostaje neklasifikovano | Faza 6 (gate) |
 | **N7** | `TODO.md` B2-6 preporučuje A zapis `76.76.21.21` | 🟡 niska — Vercel danas kao rank-1 preporučuje `216.150.1.1`; `76.76.21.21` je rank-2 legacy | §4 |
+| **N8** | `isSurfaceAllowedOnHost` završava sa `host.isTenant \|\| host.isPlatform`, pa na platform-only hostu propušta ceo tenant public tree — `p-digital-center.com/` bi renderovao Psiho početnu | 🔴 **visoka — blocker za Fazu 3** | **Faza 2b, zatvoreno 2026-09-07** |
 
 ---
 
@@ -515,7 +516,8 @@ vlasnik tabela · 51 tabela naspram 31 u ADR-023 inventaru.
 | **0** | Audit (ovaj dokument) | — | dokument izglasan | — | **Ne** |
 | **1** | `merge --no-ff staging → main` | Faza 0; staging zelen | `tree(main) == tree(origin/staging)`; CI zelen | `git revert -m 1 <merge>` | **Ne** |
 | **2** | Production deploy `main`; `ENVIRONMENT=production` (N1) | Faza 1 | `psihointegritet.com` 200; `x-pdc-surface` prisutan; `/radni-prostor` radi | Vercel *Instant Rollback* na `29ae344` | **Ne** |
-| **3** | `PLATFORM_HOST=p-digital-center.com`; `NEXT_PUBLIC_APP_URL`; `CORS_ORIGINS` (N2); `www` politika (N5) | Faza 2 zelena **24h**; Clerk (§9) unapred | `p-digital-center.com/radni-prostor` traži prijavu i radi; `psihointegritet.com` je **samo** tenant | vrati `PLATFORM_HOST` na `psihointegritet.com` + redeploy | **Ne** (reverzibilno) |
+| **2b** | **Platform-host surface fix** — public tree fail-closed bez tenanta; `/` → 307 `/prijava` | Faza 2 | 11 testova u `surface-access.test.ts`; nula regresije na `psihointegritet.com` | revert PR (pravilo je jedna grana) | **Ne** |
+| **3** | `PLATFORM_HOST=p-digital-center.com`; `NEXT_PUBLIC_APP_URL`; `CORS_ORIGINS` (N2); `www` politika (N5) | **Faza 2b deployovana**; Faza 2 zelena **24h**; Clerk (§9) unapred | `p-digital-center.com/radni-prostor` traži prijavu i radi; `psihointegritet.com` je **samo** tenant | vrati `PLATFORM_HOST` na `psihointegritet.com` + redeploy | **Ne** (reverzibilno) |
 | **4a** | `psihointegritet.com` → tenant-only | Faza 3 | `/` = Psiho sajt; `/radni-prostor` na njemu **404** | isto kao Faza 3 | **Ne** |
 | **4b** | **Namecheap DNS za `sanjaneuer.com`** (§3.5) | **Faza 1 MORA biti gotova** | `dig +short A sanjaneuer.com` = `216.150.1.1`; `misconfigured:false`; LE cert; sajt = Sanjin | vrati parking zapise | **Ne** (ali vidljivo javno) |
 | **5** | Request-scoped tenant context | Faza 4 | **GATE A** u celosti | revert PR; `settings` fallback se vraća | **Ne** |
@@ -537,6 +539,63 @@ Polazni redosled je proveren. **Tri izmene**, sve zbog merenih činjenica:
 | **Clerk provera pomerena ispred Faze 3, ne posle** | Faza 3 uvodi **nov host na kojem se ljudi prijavljuju**. Ako Clerk ne zna za `p-digital-center.com`, cutover obara prijavu vlasnicima — jedini korak koji može da zaključa i tebe samog (§9) |
 
 **Nepromenjeno i neotvoreno:** GATE A pre GATE B; GATE B pre Faze 7–8; Faza 10 poslednja.
+
+### 8.2 Faza 2b — zašto Faza 3 nije smela da krene bez nje (N8)
+
+Nalaz otkriven pri pregledu plana, **pre** cutover-a. Nije ga našao prvobitni audit jer se ne vidi
+ni u jednom merenju žive infrastrukture — dok je `PLATFORM_HOST=psihointegritet.com`, taj host je
+**i tenant i platforma**, pa se rupa ne manifestuje.
+
+**Uzrok.** `isSurfaceAllowedOnHost()` je završavao sa:
+
+```ts
+return host.isTenant || host.isPlatform;   // sve što nije owner ni client surface
+```
+
+Ta grana pokriva **ceo javni tree**. Bila je tačna dok je platform host ujedno bio i domen
+osnivačkog tenanta — host je stvarno posedovao stranice koje servira. Prestaje da bude tačna u
+trenutku kad se to razdvoji.
+
+**Posledica koja bi nastupila u Fazi 3.** Postavljanje `PLATFORM_HOST=p-digital-center.com` pravi
+prvi **platform-only** host. Zahtev za `/` bi prošao proveru (`host.isPlatform === true`), pao na
+`proxy.ts` granu `onPlatformHost && !tenant` → `NextResponse.next()` → renderovao `app/(public)`,
+gde i dalje stoji ~26 stranica Psihointegriteta.
+
+```
+p-digital-center.com/  →  Psihointegritet početna     ❌
+```
+
+Kanonski platformski domen bi tvrdio tenant identitet koji je D-080 povukao — i to bez ijedne
+izmene koda, samo promenom env vrednosti.
+
+**Popravka.** Poslednja grana je sada `host.isTenant` — *nema tenanta, nema javnog sajta*. Pravilo
+je izraženo kao svojstvo, ne kao spisak: ništa u njemu ne nabraja javni tree, pa dodavanje stranice
+ne može da proširi ono što platform host servira. Dve kategorije su izuzete kao **host-neutral**,
+jer bi ih pravilo inače oborilo zajedno sa javnim sajtom:
+
+| Kategorija | Zašto mora da radi na oba hosta |
+| --- | --- |
+| `/prijava`, `/registracija` | jedini ulaz na bilo koju površinu; Clerk drži te putanje u svojoj konfiguraciji |
+| `/api/...` | Route Handler-i su serverski endpoint-i — radni prostor i superadmin ih zovu sa platform hosta |
+
+**Root platform hosta** više nije fallback nego eksplicitan odgovor: `307 → /prijava`, uz
+`Cache-Control: private, no-store`. **307, ne 308** — privremeno je po konstrukciji, a trajni
+redirect bi ostao keširan u browser-ima i posle PDC-1 landing stranice.
+
+**Ponašanje po kategoriji na platform-only hostu:**
+
+```
+/workspace · /radni-prostor · /superadmin   → serve
+/prijava · /registracija · /api/*           → serve
+/                                            → 307 → /prijava
+/nalog · /account                            → 404
+/kompas · /o-nama · /usluge · /tim · …       → 404
+/robots.txt · /sitemap.xml                   → 404
+neregistrovana putanja                       → 404  (fail-closed je default grana)
+```
+
+**Nula promene za `psihointegritet.com`**, koji je i dalje i tenant i platforma — provereno na
+produkciji posle deploy-a, svih 19 putanja identično kao pre.
 
 ---
 
