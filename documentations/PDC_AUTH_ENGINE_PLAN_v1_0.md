@@ -598,7 +598,38 @@ u roster je promena pristupa koju niko nije pregledao; tu bi se videla.
 > članstava i bez claimed slučajeva) → `provision_staff.py --revoke --delete
 > --external-id <id> --dry-run` → bez `--dry-run`.
 
-### 14.6 Redosled na produkciji
+### 14.6 Nalaz sa produkcije (2026-09-08)
+
+`--list` na produkcionoj bazi Psihointegriteta vraća **četiri** identiteta sa
+adresom — elsa, john, maria, milan-dmdevelon — i četiri bez adrese. **Sanje nema.**
+
+To je očekivano i nije greška: produkcija ima **dve baze** (D-081 ih spaja tek u
+Fazi 7–8), a Sanjin identitet živi u bazi `sanja-production` okruženja. Aktivacija
+se zato pušta **dva puta, po jednom u svakom okruženju**.
+
+Ali iz toga sledi stvar koju treba znati pre nego što joj se preda link:
+
+> ⚠️ **Prijava na platformu pita tačno jedan backend.** `platform-auth.ts` koristi
+> `NEXT_PUBLIC_API_URL`, namerno — izdavanje sesije u više baza nije ispravno.
+> `/api/v1/me` se posle toga grana po svim backend-ovima i spaja članstva, ali
+> *prijava* se dešava na jednom mestu. Dakle Sanjin `platform_credentials` red
+> mora postojati u bazi na koju `NEXT_PUBLIC_API_URL` pokazuje, čak i ako njena
+> članstva ostaju u njenoj bazi.
+>
+> Proveriti pre aktivacije: `--list` u `sanja-production` okruženju, pa uporediti
+> `external_auth_id` sa onim što `NEXT_PUBLIC_API_URL` baza zna. Ako je Sanja samo
+> u svojoj bazi, prijava na `p-digital-center.com` joj neće raditi dok se baze ne
+> spoje (Faza 7–8) ili dok joj identitet ne postoji i u platformskoj bazi.
+
+`drazic.milan@gmail.com` (D-084) **na produkciji ne postoji** — roster nikada nije
+imao produkcioni Clerk id za taj nalog, i nijedan od četiri reda bez adrese ne nosi
+ni email ni članstvo. Nema šta da se briše; stavka je zatvorena odsustvom.
+
+Domen je proveren uživo: `p-digital-center.com/nova-lozinka` vraća 200, pa je
+podrazumevani `--base-url` ispravan. `psihointegritet.com/radni-prostor` vraća 404,
+što potvrđuje da je `PLATFORM_HOST` prebačen (Faza 3 + 4a zatvorene).
+
+### 14.7 Redosled na produkciji
 
 Redosled: `--list` → uporediti sa očekivanih pet → `--dry-run` →
 `--activate` po osobi → predati linkove → `--list` dok svih pet ne bude `ready`.
