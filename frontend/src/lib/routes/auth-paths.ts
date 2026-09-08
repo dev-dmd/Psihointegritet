@@ -16,6 +16,16 @@ export const SIGN_IN_PATH = "/prijava";
 export const SIGN_UP_PATH = "/registracija";
 
 /**
+ * Where a reset or activation link lands.
+ *
+ * Beside the other two and for the same reason: the link is generated on a
+ * server, mailed, and opened days later, so the path it names must not shift
+ * with anybody's language. It carries the one-time token in the query string
+ * and is `noindex`.
+ */
+export const RESET_PASSWORD_PATH = "/nova-lozinka";
+
+/**
  * Where a signed-in person lands when no surface will have them.
  *
  * An auth *outcome*, so it belongs with the auth paths rather than with either

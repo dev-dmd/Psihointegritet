@@ -5,52 +5,38 @@ import { cookies } from "next/headers";
 import { PLATFORM_SESSION_COOKIE } from "@/lib/auth/session/cookies";
 
 /**
- * The server's answer to "who is making this request, and what may I send to the
- * backend on their behalf".
+ * The server's answer to "who is making this request, and what may I send to
+ * the backend on their behalf".
  *
- * # Why this module exists before it does anything
+ * # The token never leaves the server
  *
- * Clerk is being removed (D-083) and the PDC auth engine is a later slice, so
- * right now the honest answer to both questions is "nobody". That is a real
- * state, not a stub: the platform has no sign-in until the engine lands, and
- * every caller has to behave correctly while that is true.
+ * It arrives as an `HttpOnly` cookie, is read here, and travels onward as an
+ * `Authorization: Bearer` header to FastAPI. Browser JavaScript is never given
+ * it — not in a response body, not in `localStorage`, not in a readable cookie
+ * — so a cross-site script has nothing to steal. That is the entire reason the
+ * five call sites that need a token ask this module instead of holding one.
  *
- * Naming it now means the engine fills a seam instead of threading a new
- * concept through five call sites later. The five places that used to each
- * write `const session = await auth(); const token = await session.getToken();`
- * — `lib/auth/session/server-identity.ts`, the booking, intake and superadmin
- * backend proxies, and the staff content preview — all ask here instead.
- *
- * # What the auth engine replaces
- *
- * `getServerToken()` reads the session cookie, looks the session up in
- * `auth_sessions`, and returns a value the backend can verify. Nothing else in
- * the codebase changes shape when it does, which is the point of writing it
- * this way round.
+ * Reading the cookie also marks the request request-time, which is what keeps
+ * Next from trying to *prerender* a page whose first statement is
+ * `redirect(SIGN_IN_URL)`.
  */
 
 /**
  * The bearer token for the current request, or `null` when nobody is signed in.
  *
  * `null` is not an error. Callers must treat it as "this request is anonymous"
- * and answer accordingly — a public endpoint proceeds, a staff endpoint refuses.
+ * and answer accordingly — a public endpoint proceeds, a staff endpoint
+ * refuses. Throwing here would take the public site down with the auth service.
+ *
+ * The value is passed to the backend and verified there against
+ * `auth_sessions`; nothing about it is trusted on this side. An expired,
+ * revoked or forged cookie is simply a token the backend does not know, which
+ * comes back as a 401 and reads as "not signed in".
  */
 export async function getServerToken(): Promise<string | null> {
-  // The cookie the auth engine will set. Read now, and always absent, for a
-  // reason that is easy to miss: Clerk's `auth()` read cookies, which is what
-  // marked every caller request-time. Returning a literal `null` would drop
-  // that marker and let Next try to *prerender* pages whose first statement is
-  // `redirect(SIGN_IN_URL)` — a build-time failure with no obvious cause.
-  //
-  // Reading it also means the engine's arrival changes what this cookie
-  // *contains*, not where anything looks for it.
   const store = await cookies();
-  void store.get(PLATFORM_SESSION_COOKIE);
-
-  // Deliberately not throwing: an anonymous request is the normal case on every
-  // public page, and throwing here would take the public site down along with
-  // the auth provider.
-  return null;
+  const token = store.get(PLATFORM_SESSION_COOKIE)?.value;
+  return token && token.length > 0 ? token : null;
 }
 
 /** Whether the current request carries a session at all. */

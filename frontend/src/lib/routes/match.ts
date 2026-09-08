@@ -1,6 +1,7 @@
 import { SUPPORTED_UI_LOCALES, type UiLocale } from "@/i18n/locales";
 import {
   ACCESS_DENIED_PATH,
+  RESET_PASSWORD_PATH,
   SIGN_IN_PATH,
   SIGN_UP_PATH,
 } from "@/lib/routes/auth-paths";
@@ -230,6 +231,7 @@ export function hasRoutePrefix(
 const HOST_NEUTRAL_PREFIXES: readonly string[] = [
   SIGN_IN_PATH,
   SIGN_UP_PATH,
+  RESET_PASSWORD_PATH,
   ACCESS_DENIED_PATH,
   "/api",
 ];

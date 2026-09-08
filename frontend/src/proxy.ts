@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 import { PROTECTED_ROUTE_PREFIXES, SIGN_IN_URL } from "@/lib/auth/routes";
+import { PLATFORM_SESSION_COOKIE } from "@/lib/auth/session/cookies";
 import {
   PLATFORM_HOME_ROUTE,
   TENANT_ROUTE_PREFIX,
@@ -143,16 +144,23 @@ export default async function proxy(request: NextRequest) {
     return response;
   }
 
-  // Protected routes bounce to sign-in, unconditionally.
+  // Protected routes bounce to sign-in when no session cookie is present.
   //
-  // There is no session to check: Clerk is gone (D-083) and the PDC auth engine
-  // is a later slice. Until it lands, "is this person signed in" has one honest
-  // answer everywhere, and the redirect is what makes that visible instead of
-  // rendering an empty panel.
+  // **Presence, not verification, and deliberately so.** The proxy runs on every
+  // request and cannot reach the database; asking it to validate would mean a
+  // network round trip per navigation, or a token it could check itself — which
+  // is a JWT, which is a session nobody can revoke. So this is a coarse gate
+  // that saves an obvious round trip, and nothing more.
   //
-  // The engine restores the condition here — `if (isProtectedPath(...) &&
-  // !(await hasSession(request)))` — and nothing else on this path changes.
-  if (isProtectedPath(externalPath)) {
+  // A forged cookie gets past it and reaches the page, where `getServerIdentity`
+  // presents the token to the backend, the backend finds no live row in
+  // `auth_sessions`, and the guard redirects. Authorization is the backend's
+  // answer, never the proxy's (rules v0.3 §5.4) — the proxy is an optimisation
+  // that must never be the thing standing between somebody and a panel.
+  if (
+    isProtectedPath(externalPath) &&
+    !request.cookies.has(PLATFORM_SESSION_COOKIE)
+  ) {
     const signInUrl = new URL(SIGN_IN_URL, request.url);
     // The **external**, pre-rewrite path. `/prijava` reads `redirect_url` to
     // return the visitor where they were actually headed; without it every
