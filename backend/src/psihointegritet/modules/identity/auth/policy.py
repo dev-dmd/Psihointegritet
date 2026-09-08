@@ -15,6 +15,26 @@ them stays cheap.
 from dataclasses import dataclass
 from datetime import timedelta
 
+#: How long an account is locked after each tier of consecutive failures.
+#:
+#: Read as "at 5 failures wait a minute, at 10 wait five, from 20 on wait a
+#: quarter of an hour". Ordered by threshold; `lock_duration_for` matches the
+#: highest one reached.
+#:
+#: **The shape is what defends against the denial-of-service, not the numbers.**
+#: A single hard threshold — the usual "5 wrong passwords, locked for an hour" —
+#: hands anyone who knows an address a way to keep its owner out indefinitely
+#: for the price of five requests an hour. Escalating from a delay short enough
+#: to be a nuisance, and capping where it stops growing, means the worst an
+#: attacker can impose is a fixed wait, never an outage. Meanwhile the guess
+#: rate collapses: past the cap an attacker gets four attempts an hour, which
+#: ends brute force just as firmly as a permanent lock would.
+LOCKOUT_TIERS: tuple[tuple[int, timedelta], ...] = (
+    (5, timedelta(minutes=1)),
+    (10, timedelta(minutes=5)),
+    (20, timedelta(minutes=15)),
+)
+
 
 @dataclass(frozen=True, slots=True)
 class AuthPolicy:
@@ -29,6 +49,11 @@ class AuthPolicy:
     argon2_parallelism: int = 4
     argon2_hash_length: int = 32
     argon2_salt_length: int = 16
+
+    #: The shortest password accepted. Length is the only requirement, on
+    #: purpose: composition rules ("one digit, one symbol") measurably push
+    #: people towards `Password1!` and are no longer recommended by NIST.
+    min_password_length: int = 12
 
     # ── Sessions ─────────────────────────────────────────────────────────────
     session_ttl: timedelta = timedelta(days=14)
@@ -46,8 +71,22 @@ class AuthPolicy:
     one_time_token_bytes: int = 32
 
     # ── Lockout ──────────────────────────────────────────────────────────────
-    max_failed_attempts: int = 10
-    lockout_duration: timedelta = timedelta(minutes=15)
+    lockout_tiers: tuple[tuple[int, timedelta], ...] = LOCKOUT_TIERS
+
+    @property
+    def first_lockout_threshold(self) -> int:
+        """Failures before the first delay. The lowest tier, by definition."""
+        return min(threshold for threshold, _ in self.lockout_tiers)
+
+    def lock_duration_for(self, failed_attempts: int) -> timedelta | None:
+        """How long to lock after this many consecutive failures.
+
+        `None` below the first tier — an ordinary typo costs nothing.
+        """
+        reached = [
+            duration for threshold, duration in self.lockout_tiers if failed_attempts >= threshold
+        ]
+        return max(reached, default=None)
 
 
 #: The policy the application runs with. Services take a policy argument so a

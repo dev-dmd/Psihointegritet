@@ -1,4 +1,9 @@
-"""Throttling: counting failures, locking, and letting a correct password out."""
+"""Throttling: counting failures, escalating the delay, and letting it lift.
+
+The tiers are compressed here so a test can reach the second one. The shape is
+what is under test, not the production numbers: a first failure costs nothing,
+the threshold applies a delay, a further tier lengthens it, and it expires.
+"""
 
 from collections.abc import AsyncIterator
 from datetime import UTC, datetime, timedelta
@@ -20,7 +25,10 @@ from psihointegritet.modules.identity.auth_models import PlatformCredential
 from psihointegritet.modules.identity.models import InternalUser
 from tests.integration.conftest import test_database_url as _test_database_url
 
-POLICY = AuthPolicy(max_failed_attempts=3, lockout_duration=timedelta(minutes=15))
+POLICY = AuthPolicy(
+    lockout_tiers=((3, timedelta(minutes=1)), (5, timedelta(minutes=15))),
+)
+THRESHOLD = POLICY.first_lockout_threshold
 
 
 @pytest.fixture
@@ -84,13 +92,13 @@ async def test_failures_accumulate_and_lock_at_the_threshold(
 ) -> None:
     service = LockoutService(POLICY)
 
-    for _ in range(POLICY.max_failed_attempts - 1):
+    for _ in range(THRESHOLD - 1):
         async with sessions() as session:
             await service.record_failure(session, user_id=account.id)
             await session.commit()
 
     before = await _credential(sessions, account.id)
-    assert before.failed_attempts == POLICY.max_failed_attempts - 1
+    assert before.failed_attempts == THRESHOLD - 1
     # Not locked yet: the budget is spent *at* the threshold, not before it.
     assert service.check(before).allowed
 
@@ -99,7 +107,7 @@ async def test_failures_accumulate_and_lock_at_the_threshold(
         await session.commit()
 
     after = await _credential(sessions, account.id)
-    assert after.failed_attempts == POLICY.max_failed_attempts
+    assert after.failed_attempts == THRESHOLD
     verdict = service.check(after)
     assert not verdict.allowed
     assert verdict.retry_after is not None
@@ -111,7 +119,7 @@ async def test_a_correct_password_clears_the_streak(
 ) -> None:
     service = LockoutService(POLICY)
 
-    for _ in range(POLICY.max_failed_attempts):
+    for _ in range(THRESHOLD):
         async with sessions() as session:
             await service.record_failure(session, user_id=account.id)
             await session.commit()
@@ -119,6 +127,75 @@ async def test_a_correct_password_clears_the_streak(
 
     async with sessions() as session:
         await service.record_success(session, user_id=account.id)
+        await session.commit()
+
+    cleared = await _credential(sessions, account.id)
+    assert cleared.failed_attempts == 0
+    assert cleared.locked_until is None
+    assert service.check(cleared).allowed
+
+
+@pytest.mark.asyncio
+async def test_the_delay_lengthens_at_the_next_tier_and_then_stops(
+    sessions: async_sessionmaker[AsyncSession], account: InternalUser
+) -> None:
+    """Escalation, and its ceiling.
+
+    A single fixed lock duration is what turns per-account throttling into a
+    denial-of-service against a known address. Growing from a delay nobody
+    notices, and stopping at a ceiling, bounds what an attacker can impose while
+    still collapsing a guess rate to nothing.
+    """
+    service = LockoutService(POLICY)
+    first_tier, second_tier = (duration for _, duration in POLICY.lockout_tiers)
+
+    for _ in range(THRESHOLD):
+        async with sessions() as session:
+            await service.record_failure(session, user_id=account.id)
+            await session.commit()
+
+    at_first_tier = await _credential(sessions, account.id)
+    assert at_first_tier.locked_until is not None
+    assert at_first_tier.locked_until - datetime.now(UTC) <= first_tier
+
+    while (await _credential(sessions, account.id)).failed_attempts < 5:
+        async with sessions() as session:
+            await service.record_failure(session, user_id=account.id)
+            await session.commit()
+
+    at_second_tier = await _credential(sessions, account.id)
+    assert at_second_tier.locked_until is not None
+    assert at_second_tier.locked_until - datetime.now(UTC) > first_tier
+
+    # Far past the last tier, and the wait is still the last tier.
+    for _ in range(20):
+        async with sessions() as session:
+            await service.record_failure(session, user_id=account.id)
+            await session.commit()
+
+    capped = await _credential(sessions, account.id)
+    assert capped.locked_until is not None
+    assert capped.locked_until - datetime.now(UTC) <= second_tier
+
+
+@pytest.mark.asyncio
+async def test_a_reset_clears_the_streak_without_a_successful_sign_in(
+    sessions: async_sessionmaker[AsyncSession], account: InternalUser
+) -> None:
+    """The escape hatch. `clear` is what a completed password reset calls.
+
+    Without it, an attacker hammering a known address keeps its owner waiting
+    indefinitely; with it, whoever can read the mailbox is back in at once.
+    """
+    service = LockoutService(POLICY)
+    for _ in range(THRESHOLD):
+        async with sessions() as session:
+            await service.record_failure(session, user_id=account.id)
+            await session.commit()
+    assert not service.check(await _credential(sessions, account.id)).allowed
+
+    async with sessions() as session:
+        await service.clear(session, user_id=account.id)
         await session.commit()
 
     cleared = await _credential(sessions, account.id)
@@ -139,7 +216,7 @@ async def test_a_lock_lifts_once_it_has_expired(
             update(PlatformCredential)
             .where(PlatformCredential.user_id == account.id)
             .values(
-                failed_attempts=POLICY.max_failed_attempts,
+                failed_attempts=THRESHOLD,
                 locked_until=datetime.now(UTC) - timedelta(seconds=1),
             )
         )
