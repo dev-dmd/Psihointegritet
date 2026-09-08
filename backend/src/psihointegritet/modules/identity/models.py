@@ -33,6 +33,11 @@ class InternalUser(Base):
 
     id: Mapped[UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid4)
     external_auth_id: Mapped[str] = mapped_column(String(191), index=True)
+    #: The Clerk subject this row was provisioned with, kept only so the
+    #: migration off Clerk (D-083) is auditable — `external_auth_id` becomes a
+    #: PDC-issued value and the old one would otherwise vanish silently.
+    #: Dropped once every account has signed in with a password of its own.
+    legacy_clerk_id: Mapped[str | None] = mapped_column(String(191), nullable=True)
     email: Mapped[str | None] = mapped_column(String(320), nullable=True)
     display_name: Mapped[str | None] = mapped_column(String(160), nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, server_default="true")
