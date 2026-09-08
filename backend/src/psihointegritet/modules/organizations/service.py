@@ -14,6 +14,7 @@ from psihointegritet.shared.domain.audit import (
     OrganizationEventType,
     actor_kind_for,
     record_organization_event,
+    staff_audit_actor,
 )
 
 
@@ -126,7 +127,7 @@ async def update_locales(
 
     await record_organization_event(
         session,
-        actor=actor,
+        actor=staff_audit_actor(actor, organization_id),
         organization_id=organization_id,
         event_type=OrganizationEventType.LOCALES_CHANGED,
         details=details,

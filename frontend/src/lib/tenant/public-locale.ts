@@ -38,11 +38,14 @@ import { getDeploymentOrganization } from "@/lib/tenant/org-context";
  *
  * # Tier 2 seam
  *
- * If host-shared multi-tenancy is ever approved (ADR-023 §6.3 + RLS, its own
- * milestone), it does NOT arrive by adding `headers()` here — that would take
- * the public site down to SSR. It arrives as model B2: a proxy rewrite to an
- * internal tenant-scoped pathname, so each tenant keeps its own static/ISR
- * output. This interface is the named seam; nothing behind it is built.
+ * Host-shared multi-tenancy **has been approved** — D-077 A7, 2026-09-07, after
+ * a spike confirmed the shape this comment predicted. It does NOT arrive by
+ * adding `headers()` here; that would still take the public site down to SSR.
+ * It arrives as model B2: a proxy rewrite to an internal tenant-scoped pathname
+ * (`/s/[organizationSlug]/…`), so each tenant keeps its own static/ISR output.
+ *
+ * This interface is the named seam. Nothing behind it is built yet — the
+ * migration is TODO §5K, gated on tenant-scoped authorization landing first.
  */
 export interface PublicDeploymentLocaleResolver {
   resolve(): Promise<UiLocale>;

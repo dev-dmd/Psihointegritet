@@ -1,12 +1,12 @@
 import { describe, expect, it, vi } from "vitest";
 
-const { getClerkServerIdentityMock } = vi.hoisted(() => ({
-  getClerkServerIdentityMock: vi.fn(),
+const { getSessionIdentityMock } = vi.hoisted(() => ({
+  getSessionIdentityMock: vi.fn(),
 }));
 
 vi.mock("server-only", () => ({}));
-vi.mock("@/lib/auth/clerk/server-identity", () => ({
-  getClerkServerIdentity: getClerkServerIdentityMock,
+vi.mock("@/lib/auth/session/server-identity", () => ({
+  getSessionIdentity: getSessionIdentityMock,
 }));
 vi.mock("react", async (importOriginal) => {
   const actual = await importOriginal<typeof import("react")>();
@@ -29,10 +29,10 @@ describe("request-scoped server identity", () => {
       displayName: "Person",
       isSuperadmin: false,
       memberships: [
-        { organizationId: "psihointegritet", roles: ["org_admin"] },
+        { organizationSlug: "psihointegritet", roles: ["org_admin"] },
       ],
     };
-    getClerkServerIdentityMock.mockResolvedValue(identity);
+    getSessionIdentityMock.mockResolvedValue(identity);
 
     const [layout, locale, page] = await Promise.all([
       getServerIdentity(),
@@ -43,6 +43,6 @@ describe("request-scoped server identity", () => {
     expect(layout).toBe(identity);
     expect(locale).toBe(identity);
     expect(page).toBe(identity);
-    expect(getClerkServerIdentityMock).toHaveBeenCalledTimes(1);
+    expect(getSessionIdentityMock).toHaveBeenCalledTimes(1);
   });
 });

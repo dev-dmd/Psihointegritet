@@ -30,7 +30,7 @@ export const superadmin: Widen<EnSuperadmin> = {
     loadError: "Korisnici nisu učitani.",
     saveError: "Uloga nije sačuvana.",
     description:
-      "Korisnik se pojavljuje ovde nakon prve proverene prijave. Uloge se čuvaju u platformi, ne u Clerk-u.",
+      "Korisnik se pojavljuje ovde nakon prve proverene prijave. Uloge se čuvaju u platformi, nikada kod provajdera identiteta.",
     adminRole: "Administrator",
     therapistRole: "Terapeut",
   },

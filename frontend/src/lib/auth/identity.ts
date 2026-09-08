@@ -27,8 +27,41 @@ export const MEMBERSHIP_ROLE_LABELS: Record<MembershipRole, string> = {
   org_admin: "Administrator organizacije",
 };
 
+/**
+ * Roles that make somebody *staff* of an organization rather than its client.
+ *
+ * The distinction decides which surface a person belongs on: staff work in the
+ * platform workspace, clients stay in their practitioner's own space. Someone
+ * can be both — a client of one practice and a therapist at another — which is
+ * exactly why "has any membership" is not the same question as "works here".
+ */
+export const STAFF_ROLES: readonly MembershipRole[] = [
+  "org_admin",
+  "therapist",
+];
+
+/** Memberships that grant a workspace, in a stable order. */
+export function staffMemberships(
+  memberships: readonly OrganizationMembership[],
+): OrganizationMembership[] {
+  return memberships
+    .filter((membership) =>
+      membership.roles.some((role) => STAFF_ROLES.includes(role)),
+    )
+    .sort((a, b) => a.organizationSlug.localeCompare(b.organizationSlug));
+}
+
 export interface OrganizationMembership {
-  organizationId: string;
+  /**
+   * The organization's stable public slug — `"psihointegritet"`, not a UUID.
+   *
+   * Named `organizationId` until B2-1 while carrying a slug. The backend chose
+   * the slug deliberately (UUIDs differ per environment, so nothing on this
+   * side could compare against one); only the name was wrong, and a field whose
+   * name contradicts its contents is how a guard ends up comparing the wrong
+   * two values.
+   */
+  organizationSlug: string;
   roles: MembershipRole[];
 }
 
@@ -59,9 +92,27 @@ export interface IdentityState {
   identity: Identity | null;
 }
 
-/** True when the identity holds `role` in any organization membership. */
-export function hasRole(identity: Identity, role: MembershipRole): boolean {
-  return identity.memberships.some((membership) =>
-    membership.roles.includes(role),
+/**
+ * True when the identity holds `role` **in this organization**.
+ *
+ * The organization is required and has no default, deliberately. This function
+ * used to answer "in any membership", which was invisible while one deployment
+ * only ever served one organization — and became a cross-tenant authorization
+ * bug the moment one runtime could serve two: an `org_admin` at one tenant
+ * would pass an `org_admin` guard on another tenant's domain.
+ *
+ * There is no global variant and no optional parameter. A default would let a
+ * call site opt back into the old behaviour by omission, which is exactly how
+ * the bug would return — silently, and only in the tenant it hurts.
+ */
+export function hasRole(
+  identity: Identity,
+  organizationSlug: string,
+  role: MembershipRole,
+): boolean {
+  return identity.memberships.some(
+    (membership) =>
+      membership.organizationSlug === organizationSlug &&
+      membership.roles.includes(role),
   );
 }

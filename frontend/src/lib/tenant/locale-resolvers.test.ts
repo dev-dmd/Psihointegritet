@@ -64,7 +64,7 @@ describe("ActiveWorkspaceLocaleResolver", () => {
       email: null,
       isSuperadmin: false,
       memberships: [
-        { organizationId: "psihointegritet", roles: ["org_admin"] },
+        { organizationSlug: "psihointegritet", roles: ["org_admin"] },
       ],
     });
 
@@ -93,7 +93,7 @@ describe("ActiveWorkspaceLocaleResolver", () => {
       userId: "user_3",
       email: null,
       isSuperadmin: false,
-      memberships: [{ organizationId: "druga-organizacija", roles: [] }],
+      memberships: [{ organizationSlug: "druga-organizacija", roles: [] }],
     });
 
     await expect(resolveWorkspaceLocale()).rejects.toThrow(

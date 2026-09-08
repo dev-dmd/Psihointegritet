@@ -493,9 +493,6 @@ const inlineSerbianBaseline = new Map([
     "src/features/workspace/components/taxonomy-term-form/technical-details.tsx",
     1,
   ],
-  ["src/lib/auth/clerk/auth-avatar-menu.tsx", 3],
-  ["src/lib/auth/clerk/identity-card.tsx", 3],
-  ["src/lib/auth/clerk/mobile-auth-section.tsx", 1],
 ]);
 
 const serbianDiacritics = /[šđčćžŠĐČĆŽ]/g;
@@ -540,7 +537,14 @@ for (const file of walk(sourceRoot)) {
  * build-time env, a cached organization config under a statically known
  * organization id, a static/ISR route param, or an explicit locale argument.
  * It may never come from the `Host` header, an `X-Organization-*` header, a
- * browser cookie, or `Accept-Language`.
+ * browser cookie, or `Accept-Language` — **inside these modules**.
+ *
+ * That qualifier is the whole rule. `proxy.ts` is middleware, not part of any
+ * render tree, and reading the hostname there has always been allowed: under B2
+ * (D-077 A7) it does exactly that and rewrites to `/s/[organizationSlug]/…`, so
+ * the page receives the tenant as a route param — the fourth allowed source
+ * above. What this check forbids is a module in the render path asking the
+ * request who the tenant is, which is what silently drops the site to SSR.
  */
 const ssgSafeModules = [
   // The one that matters most: `getRequestConfig` runs inside every translated

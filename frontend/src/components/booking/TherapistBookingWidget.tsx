@@ -2,7 +2,6 @@
 
 import { useMemo, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { useUser } from "@clerk/nextjs";
 import { useLocale, useTranslations } from "next-intl";
 
 import { useFallbackContent } from "@/content/use-content";
@@ -127,13 +126,10 @@ export function TherapistBookingWidget({
   const [selectedPayload, setSelectedPayload] =
     useState<BookingWidgetSubmitPayload | null>(null);
 
-  // ── Clerk user data for auto-fill ───────────────────────────────────────
-
-  const { user, isSignedIn } = useUser();
-  const clerkName = isSignedIn ? (user?.fullName ?? "") : "";
-  const clerkEmail = isSignedIn
-    ? (user?.primaryEmailAddress?.emailAddress ?? "")
-    : "";
+  // No auto-fill. The contact fields used to be prefilled from the signed-in
+  // provider profile, which is the one thing a *public* booking widget must not
+  // depend on: anonymous booking has always been the primary path, and the
+  // prefill was a convenience for a session this surface never required.
 
   const handleSlotSelected = useCallback(
     (payload: BookingWidgetSubmitPayload) => {
@@ -252,8 +248,6 @@ export function TherapistBookingWidget({
           onSubmit={handleContactSubmit}
           isSubmitting={isSubmitting}
           error={submitError}
-          initialName={clerkName || undefined}
-          initialEmail={clerkEmail || undefined}
         />
       ) : flowState === "confirming" ? (
         <BookingWidgetConfirmationOverlay

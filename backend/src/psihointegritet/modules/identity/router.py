@@ -5,6 +5,7 @@ from uuid import UUID
 from fastapi import APIRouter, HTTPException, status
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import select
+from sqlalchemy.dialects.postgresql import insert as pg_insert
 
 from psihointegritet.api.dependencies import CurrentIdentity, DatabaseSession, RequireSuperadmin
 from psihointegritet.modules.identity.models import (
@@ -22,9 +23,12 @@ superadmin_router = APIRouter(prefix="/superadmin/organizations", tags=["identit
 class MembershipOut(BaseModel):
     model_config = ConfigDict(alias_generator=lambda value: value, populate_by_name=True)
 
-    # The frontend deployment boundary is keyed by the stable public slug, not
-    # by a database-local UUID (UUIDs intentionally differ per environment).
-    organization_id: str = Field(serialization_alias="organizationId")
+    # The stable public slug, not a database-local UUID — those intentionally
+    # differ per environment, so a UUID could not be compared against anything
+    # the frontend knows. The field was called `organization_id` until B2-1
+    # (2026-09-07) while carrying a slug; a name that contradicts its contents
+    # is how a frontend guard ends up comparing the wrong two values.
+    organization_slug: str = Field(serialization_alias="organizationSlug")
     roles: list[MembershipRole]
 
 
@@ -56,17 +60,53 @@ class MembershipRolesUpdate(BaseModel):
 
 
 async def ensure_internal_user(session: DatabaseSession, identity: CurrentIdentity) -> InternalUser:
-    """Register a verified person, but never grant a domain privilege implicitly."""
-    user = await session.scalar(
-        select(InternalUser).where(InternalUser.external_auth_id == identity.subject)
-    )
+    """Register a verified person, but never grant a domain privilege implicitly.
+
+    First login has to be safe to run twice at once. The frontend asks every
+    production backend for the identity in parallel, and a browser that opens
+    the workspace and the account area together produces the same shape — two
+    `GET /api/v1/me` calls for a subject that has no row yet.
+
+    Read-then-insert lost that race in production on 2026-09-07: both calls saw
+    `None`, both inserted, and the second came back 500 with
+
+        UniqueViolationError: duplicate key value violates unique constraint
+        "uq_internal_users_external_auth_id"
+
+    which failed the whole sign-in even though the other backend had answered
+    200. So the write is `ON CONFLICT DO NOTHING` and the row is then read back
+    authoritatively — whoever won, the answer is the same row.
+
+    The constraint stays exactly as it was. It is the thing making this correct,
+    not the thing in the way: PostgreSQL arbitrates, the application does not
+    guess. Under READ COMMITTED the conflicting insert waits for the winner to
+    commit and the following SELECT sees the committed row, which is why the
+    read has to come after the write rather than be reused from above.
+    """
+    user = await _find_internal_user(session, identity.subject)
     if user is None:
-        user = InternalUser(external_auth_id=identity.subject, email=identity.email)
-        session.add(user)
-        await session.flush()
-    elif identity.email and user.email != identity.email:
+        await session.execute(
+            pg_insert(InternalUser)
+            .values(external_auth_id=identity.subject, email=identity.email)
+            .on_conflict_do_nothing(index_elements=["external_auth_id"])
+        )
+        user = await _find_internal_user(session, identity.subject)
+        if user is None:  # pragma: no cover - the row exists or the insert raised
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Identity could not be registered.",
+            )
+    # Applies to the row we ended up with, including one a racing request wrote
+    # a moment ago, so a stale email cannot survive the race that created it.
+    if identity.email and user.email != identity.email:
         user.email = identity.email
     return user
+
+
+async def _find_internal_user(session: DatabaseSession, subject: str) -> InternalUser | None:
+    return await session.scalar(
+        select(InternalUser).where(InternalUser.external_auth_id == subject)
+    )
 
 
 async def build_me_response(session: DatabaseSession, user: InternalUser) -> MeOut:
@@ -89,8 +129,8 @@ async def build_me_response(session: DatabaseSession, user: InternalUser) -> MeO
         display_name=user.display_name,
         is_superadmin=user.is_superadmin,
         memberships=[
-            MembershipOut(organization_id=org_id, roles=sorted(roles, key=str))
-            for org_id, roles in sorted(roles_by_org.items(), key=lambda item: str(item[0]))
+            MembershipOut(organization_slug=slug, roles=sorted(roles, key=str))
+            for slug, roles in sorted(roles_by_org.items(), key=lambda item: str(item[0]))
         ],
     )
 

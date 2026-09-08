@@ -23,7 +23,7 @@ DEFAULT_MIGRATION_URL = (
 #: assert that `upgrade head` lands on the revision we *expect*, which is the
 #: thing the Railway incident got wrong. Bump it in the same commit as any new
 #: migration.
-HEAD_REVISION = "f1a7c9d2e4b6"
+HEAD_REVISION = "9fad3f7e8e54"
 
 
 def _alembic_config() -> Config:

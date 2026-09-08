@@ -34,7 +34,7 @@ export const superadmin = {
     loadError: "Users could not be loaded.",
     saveError: "The role could not be saved.",
     description:
-      "A user appears here after their first verified sign-in. Roles are stored by the platform, not in Clerk.",
+      "A user appears here after their first verified sign-in. Roles are stored by the platform, never by the identity provider.",
     adminRole: "Organization admin",
     therapistRole: "Therapist",
   },

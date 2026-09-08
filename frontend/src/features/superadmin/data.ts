@@ -36,7 +36,6 @@ export const healthServices: HealthService[] = [
   { name: "Redis", meta: "Upstash · 3 ms", status: "op" },
   { name: "QStash", meta: "queue prazan", status: "op" },
   { name: "Resend", meta: "retry aktivan", status: "deg" },
-  { name: "Clerk", meta: "96 ms", status: "op" },
 ];
 
 export const psihointegritetTenant: Tenant = {

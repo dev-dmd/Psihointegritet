@@ -177,7 +177,14 @@ TEAM: Mapping[str, TeamMember] = {
         email="milan.drazic@dmdevelon.website",
         roles=frozenset({MembershipRole.ORG_ADMIN}),
         therapist_slug=None,
-        clerk_ids={CLERK_DEVELOPMENT: "user_3GpXyBDgdjBWaKDixwvc01Dlr6c"},
+        # Production id recorded 2026-09-06, after provisioning it by hand: the
+        # operator account must be reachable through `--person` like everyone
+        # else, or the one command that restores platform access is the one
+        # that needs an id looked up in a dashboard first.
+        clerk_ids={
+            CLERK_DEVELOPMENT: "user_3GpXyBDgdjBWaKDixwvc01Dlr6c",
+            CLERK_PRODUCTION: "user_3Ix2Lvk9fRmqY0EnkTe6eGh2oep",
+        },
         superadmin=True,
     ),
 }

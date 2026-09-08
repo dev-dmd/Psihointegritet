@@ -6,7 +6,7 @@ import {
 import { groupPrograms } from "@/content/programs";
 import { getFallbackContentForLocale } from "@/content/registry";
 import type { ServiceCatalogItem } from "@/content/services";
-import { siteSettings } from "@/content/site-settings";
+import { deploymentPublicSite } from "@/lib/tenant/organizations";
 import { PLATFORM_DEFAULT_LOCALE, type UiLocale } from "@/i18n/locales";
 
 import type {
@@ -163,6 +163,7 @@ function serviceSeoDescription(service: ServiceCatalogItem): string {
 }
 
 function buildStaticContent(locale: UiLocale) {
+  const site = deploymentPublicSite();
   const {
     homepage: { faqItems },
     services: { serviceCatalog, sessionPackages },
@@ -178,14 +179,14 @@ function buildStaticContent(locale: UiLocale) {
       indexingPolicy: "index",
       template: "static_information",
       slots: ["hero", "intro", "prose", "cta", "faq"],
-      h1: siteSettings.name,
+      h1: site.publicName,
       seo: {
         title: "Psihointegritet",
         description:
           "Psihoterapija, savetovanje i programi podrške online i uživo u Chicagu, Milwaukeeju i Madisonu.",
       },
       textFields: [
-        { field: "h1", value: siteSettings.name, limit: "pageH1" },
+        { field: "h1", value: site.publicName, limit: "pageH1" },
         {
           field: "heroLead",
           value:

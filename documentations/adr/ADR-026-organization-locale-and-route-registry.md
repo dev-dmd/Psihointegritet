@@ -1,7 +1,7 @@
 # ADR-026 — Jezik organizacije, rendering ugovor i registar ruta
 
 **Status:** Accepted · **Datum:** 2026-08-11 · **Poslednja izmena:** 2026-08-14
-**Odluke:** D-077 (+ Amandmani 1–6)
+**Odluke:** D-077 (+ Amandmani 1–7) · **§9 amandman 2026-09-07:** B2 je kanonski frontend tenancy model
 **Menja:** D-067, O-27, T9 · **Ne dira:** D-055, ADR-023 granicu izolacije
 **Aktivni plan isporuke:** `documentations/i18n/03_I18N_DEMO_CONTENT_IMPLEMENTATION_PLAN_v1_0.md`
 
@@ -272,3 +272,65 @@ prihvatljivo, pa mutacija koristi `{ expire: 0 }`. (Čisto rešenje je Server Ac
   Persistent auth cache nije uveden; Faza 10 ručni/browser QA i dalje ostaje otvoren.
 - **Klijentski panel** je premešten na `/account`, ali njegovi ekrani po dizajnu još nisu
   izgrađeni; `account.programs` je nova ruta koju tabela nije imala.
+
+---
+
+## 9. Amandman (2026-09-07) — B2 postaje kanonski frontend tenancy model
+
+**Status:** Accepted · **Odluka:** D-077 A7 · **Dokaz:** `PDC_B2_SPIKE_RESULT_v1_0.md`
+
+C2(a) — *jedan deployment = jedna organizacija* — **prestaje da bude produkcijski cilj za frontend**.
+Ostaje kao istorijski bootstrap model i sme privremeno da stoji za odvojene backende.
+
+Kanonski model je **B2**, koji je ovaj ADR i D-077 A1 već opisali kao mogućnost:
+
+```
+trusted hostname → domain registry → organizationSlug → rewrite /s/[organizationSlug]/...
+```
+
+### 9.1 Ispravka imena internog puta
+
+Raniji tekst je pisao `/_sites/[organization]/[locale]/...`. **To ime ne radi.** U App Router-u je
+folder sa prefiksom `_` *private folder* i isključen je iz rutiranja — `app/_sites/[tenant]/` proizvodi
+**nula ruta**, tiho, bez greške u build-u. Naziv je nasleđen iz Pages Router konvencije.
+
+Kanonski interni put je **`/s/[organizationSlug]/...`**.
+
+### 9.2 Invarijante potvrđene spike-om
+
+| Invarijanta | Zašto |
+| ----------- | ----- |
+| **Proxy/middleware je jedini request-time sloj** | On nije deo render stabla, pa čitanje `Host` tamo ne obara statiku |
+| **Tenant stranice ostaju static/ISR** | Tenant stiže kao route param — izvor koji §5 već dozvoljava |
+| **Cache ključevi su odvojeni internim putem** | `/s/sanja-neuer/...` i `/s/psihointegritet/...` su različiti ključevi |
+| **Nepoznat hostname → 404** | Bez unosa u registru nema rewrite-a; fail-closed |
+| **Direktan `/s/*` spolja → 404** | Inače je interno stablo duplirani sadržaj pored pravog domena |
+| **`Host` nikad nije organization ID ni SQL ulaz** | Prolazi kroz registar koji vraća verifikovan slug |
+
+### 9.3 Metadata rute — dokazano ponašanje Next.js 16.3
+
+`robots.ts` i `sitemap.ts` **nisu upotrebljivi** u ovom dinamičkom tenant segmentu. Ne primaju
+`params` iz `generateStaticParams`, i to različito:
+
+- `sitemap.ts` **obara build** (`Cannot destructure property 'params' of 'undefined'`, uz pokušaj
+  prerendera placeholder rute `/s/-/sitemap.xml`);
+- `robots.ts` **tiho ne proizvodi ništa** — build prolazi, izlaza nema.
+
+Imena ostaju rezervisana i kada se napišu kao Route Handler (`sitemap.xml/route.ts` daje isti
+placeholder). Zato:
+
+```
+interno:  /s/[organizationSlug]/tenant-robots      ← Route Handler + generateStaticParams
+          /s/[organizationSlug]/tenant-sitemap
+
+proxy:    /robots.txt   → /s/<slug>/tenant-robots
+          /sitemap.xml  → /s/<slug>/tenant-sitemap
+```
+
+**Canonical i sitemap URL-ovi koriste tenant-ov `publicUrl`, nikada interni `/s/...` put.**
+
+### 9.4 Šta ovaj amandman ne menja
+
+Rendering ugovor iz §5 **ostaje na snazi** — zabrana `headers()`/`cookies()` u SSG-safe modulima i
+statička provera koja je sprovodi. B2 ne dolazi njihovim ukidanjem nego kroz route param, koji je
+među dozvoljenim izvorima od početka.

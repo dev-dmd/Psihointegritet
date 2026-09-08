@@ -1,7 +1,6 @@
 import "server-only";
 
-import { auth } from "@clerk/nextjs/server";
-
+import { getServerToken } from "@/lib/auth/session/server-session";
 import { serverEnv } from "@/lib/validation/env";
 
 const MAX_PUBLIC_INTAKE_BYTES = 12_000;
@@ -32,8 +31,7 @@ export async function forwardStaffIntake(
   path: string,
   init: RequestInit,
 ): Promise<Response> {
-  const session = await auth();
-  const token = await session.getToken();
+  const token = await getServerToken();
   if (!token) {
     return Response.json({ error: "Prijava je obavezna." }, { status: 401 });
   }

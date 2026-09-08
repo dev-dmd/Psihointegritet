@@ -11,6 +11,7 @@ from psihointegritet.modules.compass import models as compass_models
 from psihointegritet.modules.content import models as content_models
 from psihointegritet.modules.content import taxonomy_models
 from psihointegritet.modules.guidance import models as guidance_models
+from psihointegritet.modules.identity import auth_models as identity_auth_models
 from psihointegritet.modules.identity import models as identity_models
 from psihointegritet.modules.organizations import models as organization_models
 from psihointegritet.modules.privacy import models as privacy_models
@@ -25,6 +26,7 @@ MODEL_MODULES = (
     compass_models,
     taxonomy_models,
     guidance_models,
+    identity_auth_models,
     identity_models,
     organization_models,
     privacy_models,

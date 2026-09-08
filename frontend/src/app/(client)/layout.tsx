@@ -7,7 +7,7 @@ import { AccountBottomNav } from "@/features/account/components/bottom-nav";
 import { AccountSidebar } from "@/features/account/components/sidebar";
 import { AccountTopbar } from "@/features/account/components/topbar";
 import { profileNameOf } from "@/features/account/identity-display";
-import { getInitials } from "@/lib/auth/clerk/initials";
+import { getInitials } from "@/lib/auth/initials";
 import { requireClient } from "@/lib/auth/guards";
 import { resolveWorkspaceLocale } from "@/lib/tenant/workspace-locale";
 import { getPlatformMessages } from "@/messages";
@@ -67,7 +67,9 @@ export default async function ClientLayout({
             initials={getInitials(firstName, lastName, identity.email)}
           />
           <div className="bg-panel-canvas relative flex min-h-screen w-full max-w-[480px] flex-col shadow-[0_30px_80px_-30px_rgba(58,46,40,0.35)] lg:ml-[264px] lg:max-w-none lg:shadow-none">
-            <AccountTopbar />
+            <AccountTopbar
+              initials={getInitials(firstName, lastName, identity.email)}
+            />
             <main className="w-full flex-1 self-center px-[22px] pt-[22px] pb-8 lg:max-w-[780px] lg:px-8 lg:pt-8 lg:pb-14">
               {children}
             </main>
