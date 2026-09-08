@@ -6,7 +6,7 @@ how one of the two ends up without an expiry.
 """
 
 from dataclasses import dataclass
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from typing import Any, cast
 from uuid import UUID
 
@@ -64,7 +64,9 @@ class OneTimeTokenService:
     def __init__(self, policy: AuthPolicy = DEFAULT_AUTH_POLICY) -> None:
         self._policy = policy
 
-    def _ttl_for(self, purpose: TokenPurpose) -> datetime:
+    def _ttl_for(self, purpose: TokenPurpose, ttl: timedelta | None) -> datetime:
+        if ttl is not None:
+            return datetime.now(UTC) + ttl
         span = (
             self._policy.password_reset_ttl
             if purpose is TokenPurpose.PASSWORD_RESET
@@ -78,7 +80,18 @@ class OneTimeTokenService:
         *,
         purpose: TokenPurpose,
         user_id: UUID,
+        ttl: timedelta | None = None,
     ) -> IssuedToken:
+        """`ttl` overrides the purpose's default lifetime.
+
+        Used by activation (AUTH-5), which issues a `PASSWORD_RESET` token with
+        a week behind it rather than an hour. There is deliberately no separate
+        `ACTIVATION` purpose: setting the first password and replacing a
+        forgotten one are the same operation, spend the same token, and land on
+        the same page — a second purpose would be a second code path to keep
+        correct for no behavioural difference. The lifetime is the only thing
+        that genuinely differs, so the lifetime is the only thing passed.
+        """
         return await self._issue(
             session,
             purpose=purpose,
@@ -86,6 +99,7 @@ class OneTimeTokenService:
             user_id=user_id,
             client_id=None,
             organization_id=None,
+            ttl=ttl,
         )
 
     async def issue_for_client(
@@ -114,9 +128,10 @@ class OneTimeTokenService:
         user_id: UUID | None,
         client_id: UUID | None,
         organization_id: UUID | None,
+        ttl: timedelta | None = None,
     ) -> IssuedToken:
         token = generate_one_time_token(self._policy)
-        expires_at = self._ttl_for(purpose)
+        expires_at = self._ttl_for(purpose, ttl)
         row = AuthToken(
             purpose=purpose,
             kind=kind,

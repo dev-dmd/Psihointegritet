@@ -68,6 +68,12 @@ class AuthPolicy:
     #: Deliberately shorter than verification: a live reset link is a live
     #: account takeover if a mailbox is exposed.
     password_reset_ttl: timedelta = timedelta(hours=1)
+    #: An account that has never had a password gets much longer. The activation
+    #: link is the *only* way in for somebody migrated off Clerk (AUTH-5), it is
+    #: handed over out of band rather than requested, and an hour is not enough
+    #: time for five people to each notice and act. It is still a one-time token
+    #: on an account with no password to steal.
+    activation_ttl: timedelta = timedelta(days=7)
     one_time_token_bytes: int = 32
 
     # ── Lockout ──────────────────────────────────────────────────────────────

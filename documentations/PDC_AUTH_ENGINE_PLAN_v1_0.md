@@ -395,7 +395,7 @@ AUTH-1  DB migracije: 4 tabele + legacy_clerk_id           bez potrošača
 AUTH-2  backend engine: argon2, tokeni, sesije, servisi    testovi, bez ruta
 AUTH-3  PdcSessionVerifier + /api/v1/auth/platform/*       ✅ 2026-09-08
 AUTH-4  platform login/register UI na p-digital-center.com  ✅ 2026-09-08
-AUTH-5  migracija 5 identiteta + activation                svih 5 potvrdi prijavu
+AUTH-5  migracija 5 identiteta + activation                ✅ 2026-09-08 (alat + proba)
 AUTH-6  ── GATE ── Clerk se isključuje na platformi
 AUTH-7  tenant client: /api/v1/auth/client/* + tenant-branded UI
 AUTH-8  cross-tenant negativni testovi (§10)
@@ -510,3 +510,81 @@ dobije saobraćaj.
 **Registracija je otvorena.** Nalog koji otvara nema nijedno članstvo ni
 superadmin flag, pa `resolve_staff_actor` odbija — privilegija dolazi iz
 `organization_memberships`, nikada iz činjenice da je neko prijavljen.
+
+
+---
+
+## 14. AUTH-5 — aktivacija postojećih identiteta (2026-09-08)
+
+### 14.1 Šta se menja, a šta ne
+
+| | |
+| --- | --- |
+| **menja se** | dodaje se `platform_credentials` red sa `password_hash = NULL` |
+| **ne menja se** | `internal_users.id`, `external_auth_id`, `display_name`, `is_superadmin`, sva članstva, i svaki red koji na njih pokazuje |
+
+`internal_users.id` je strani ključ ispod termina, intake slučajeva, vlasništva
+nad sadržajem, publication event-ova i audit redova. Migracija koja bi „ponovo
+kreirala" naloge tiho bi odvojila terapeuta od sopstvenog caseload-a dok bi svi
+ekrani i dalje renderovali. Zato ovde ništa ne upisuje `internal_users` red i
+ništa ne dira `organization_memberships`.
+
+**Clerk lozinke se ne prenose.** Nikada nisu bile naše da ih čitamo. Svako
+dobija jednokratni link i bira lozinku koju niko drugi nikada nije držao.
+
+### 14.2 Zašto `external_auth_id` ostaje u `user_…` obliku
+
+Namerno, iako `legacy_clerk_id` kolona postoji za preimenovanje.
+
+`external_auth_id` je sada neproziran subject koji engine čita iz reda koji je
+već učitao — njegov istorijski oblik ne košta ništa. Ali `roster.py`,
+`provision_staff.py` i `provision_team.py` i dalje **traže nalog po toj
+vrednosti**. Preimenovanje danas znači da sledeći
+`provision_staff.py --person maria` ne nalazi ništa i pravi **drugu** Mariju.
+
+Preimenovanje ide zajedno sa uklanjanjem Clerk ključeva iz ta tri modula —
+dakle AUTH-9, ne AUTH-5.
+
+### 14.3 Alat
+
+Jedna komanda, `backend/scripts/platform_accounts.py`, zamenila je
+`issue_platform_reset.py`:
+
+```
+python scripts/platform_accounts.py --list
+python scripts/platform_accounts.py --activate --person maria --dry-run
+python scripts/platform_accounts.py --activate --email sanjaneuer@gmail.com
+python scripts/platform_accounts.py --activate --all
+python scripts/platform_accounts.py --reset  --email drazic.milan@gmail.com
+```
+
+`--list` daje ceo cutover kao tabelu (`needs activation` / `link sent, unused` /
+`ready` / `no address` / `deactivated`), sortiranu tako da nezavršeno ide prvo —
+čitanje ime po ime je način da peta osoba bude zaboravljena.
+
+**Link se štampa jednom i ne upisuje se u log.** Dok nije potrošen, on je
+kredencijal.
+
+Aktivacioni link traje **7 dana** (`AuthPolicy.activation_ttl`), za razliku od
+sata koliko traje običan reset: predaje se van kanala, osobi koja ga ne
+očekuje. Nema zasebnog `TokenPurpose.ACTIVATION` — „postavi prvu lozinku" i
+„zameni zaboravljenu" su ista operacija, troše isti token i sleću na istu
+stranicu; razlikuje se samo trajanje, pa se samo trajanje prosleđuje.
+
+### 14.4 Proba izvedena na lokalnoj bazi
+
+`--dry-run` → aktivacija → link → `/nova-lozinka` → prijava → `/api/v1/me`
+vratio `userId = user_3IxNmb…` (nepromenjen Clerk subject) i članstvo
+`sanja-neuer: org_admin, therapist`. Ponovljeni link → 422. Proba je zatim
+poništena; lozinku koju sam izmislio Sanja ne nasleđuje.
+
+### 14.5 Otvoreno pre produkcije
+
+> ⚠️ `drazic.milan@gmail.com` — u lokalnoj bazi taj red (`user_3GXrf2…`) **nema
+> email**, pa se ne može aktivirati. Ako isto važi na produkciji, Milan ili
+> koristi `milan.drazic@dmdevelon.website`, ili se toj identity vrsti prvo
+> upiše adresa preko `provision_staff.py`. `--list` to prikazuje kao
+> `no address`.
+
+Redosled na produkciji: `--list` → uporediti sa očekivanih pet → `--dry-run` →
+`--activate` po osobi → predati linkove → `--list` dok svih pet ne bude `ready`.
