@@ -12,7 +12,6 @@ import {
   resolveHostBinding,
 } from "@/lib/tenant/domain-registry";
 import {
-  clientRoutePrefixes,
   hasRoutePrefix,
   isSurfaceAllowedOnHost,
   normalizePathname,
@@ -22,6 +21,7 @@ import {
   decideProxyRoute,
   proxyFallbackLocale,
 } from "@/lib/routes/proxy-locale";
+import { servedFromTenantSegment } from "@/lib/routes/tenant-rewrite";
 import { deploymentSlugFromEnv } from "@/lib/tenant/deployment-slug";
 
 /**
@@ -55,12 +55,7 @@ function isProtectedPath(pathname: string): boolean {
  * rewritten onto a tenant segment, because which organization an owner is
  * working in comes from their membership rather than from the address bar.
  */
-const CLIENT_PATH_PREFIXES = clientRoutePrefixes();
 const PLATFORM_PATH_PREFIXES = platformRoutePrefixes();
-
-function isClientPath(pathname: string): boolean {
-  return hasRoutePrefix(pathname, CLIENT_PATH_PREFIXES);
-}
 
 function isPlatformPath(pathname: string): boolean {
   return hasRoutePrefix(pathname, PLATFORM_PATH_PREFIXES);
@@ -198,20 +193,16 @@ export default async function proxy(request: NextRequest) {
 
   if (!tenant) return NextResponse.next();
 
-  // The client area stays where it is and is scoped by the stamp instead of by
-  // a rewrite. These routes are behind authentication and request-time already,
-  // so the guard can read which tenant the visitor arrived at; moving five
-  // pages under the tenant segment would buy nothing this slice needs.
+  // Not everything on a tenant host lives under that tenant's segment: the auth
+  // pages and the Route Handlers are top-level files, the client area is scoped
+  // by the stamp instead, and the founding tenant's public tree has not moved
+  // yet. `servedFromTenantSegment` states all three in one place, beside the
+  // reason each one is there.
   //
-  // What matters is that it is the *host* that decides: a client who signs in
-  // on `sanjaneuer.com` stays in Sanja's space and never meets another
-  // tenant's account page.
-  const isClientSurface = isClientPath(internalPath);
-
-  // The founding tenant's ~26 public pages still live in `app/(public)` with
-  // copy written for that one organization; PDC-1 moves them under the tenant
-  // segment together with the page model. Until then they pass through.
-  if (isClientSurface || tenant.usesLegacyPublicTree) {
+  // What matters either way is that the *host* decides the tenant: a client who
+  // signs in on `sanjaneuer.com` stays in Sanja's space and never meets another
+  // tenant's account page. The stamp carries that, not the URL shape.
+  if (!servedFromTenantSegment(internalPath, tenant)) {
     return withSurface(
       decision.kind === "rewrite"
         ? NextResponse.rewrite(new URL(internalPath + search, request.url))

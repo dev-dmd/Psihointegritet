@@ -9,6 +9,9 @@ export const screens: Widen<EnScreens> = {
     landingLead:
       "Platforma za psihologe, psihoterapeute, konsultante i edukatore.",
     signIn: "Prijava",
+    backToSite: "Vrati se na sajt",
+    showPassword: "Prikaži lozinku",
+    hidePassword: "Sakrij lozinku",
     signInTitle: "Prijava",
     signInLead: "Vaš radni prostor na P. Digital Centru.",
     signUpTitle: "Otvorite nalog",

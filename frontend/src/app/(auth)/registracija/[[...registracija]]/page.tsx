@@ -57,6 +57,8 @@ export default async function SignUpPage({
             submitLabel: t("signUpAction"),
             workingLabel: t("working"),
             unreachable: t("authUnreachable"),
+            showPassword: t("showPassword"),
+            hidePassword: t("hidePassword"),
           }}
         />
 

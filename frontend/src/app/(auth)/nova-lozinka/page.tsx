@@ -66,6 +66,8 @@ export default async function ResetPasswordPage({
               submitLabel: t("resetAction"),
               workingLabel: t("working"),
               unreachable: t("authUnreachable"),
+              showPassword: t("showPassword"),
+              hidePassword: t("hidePassword"),
             }}
           />
         ) : null}

@@ -4,6 +4,8 @@ import type { Route } from "next";
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 
+import { EyeIcon, EyeSlashIcon } from "@heroicons/react/24/outline";
+
 import { submitAuth } from "@/features/auth/submit";
 
 /**
@@ -32,6 +34,8 @@ export interface CredentialsFormCopy {
   submitLabel: string;
   workingLabel: string;
   unreachable: string;
+  showPassword: string;
+  hidePassword: string;
 }
 
 export function CredentialsForm({
@@ -61,6 +65,9 @@ export function CredentialsForm({
   const router = useRouter();
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Off on every render, and never remembered. Somebody who reveals their
+  // password on a shared screen should not find it revealed again next time.
+  const [revealed, setRevealed] = useState(false);
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -127,14 +134,39 @@ export function CredentialsForm({
 
       <label className="flex flex-col gap-1.5">
         <span className="text-coffee/70 text-[14px]">{copy.passwordLabel}</span>
-        <input
-          name="password"
-          type="password"
-          required
-          minLength={minPasswordLength}
-          autoComplete={passwordAutoComplete}
-          className="border-coffee/15 focus:border-sage text-coffee rounded-xl border bg-white px-4 py-3 text-[16px] outline-none"
-        />
+        {/* The field and its toggle share one box, so the eye sits inside the
+            border rather than beside it. `pr-12` keeps the typed value from
+            running underneath the button. */}
+        <span className="relative flex">
+          <input
+            name="password"
+            type={revealed ? "text" : "password"}
+            required
+            minLength={minPasswordLength}
+            autoComplete={passwordAutoComplete}
+            className="border-coffee/15 focus:border-sage text-coffee w-full rounded-xl border bg-white px-4 py-3 pr-12 text-[16px] outline-none"
+          />
+          {/* `type="button"`, or every click submits the form.
+
+              Toggling `type` rather than a CSS trick is what lets a password
+              manager keep treating the field as a password. The `aria-pressed`
+              pair is what a screen reader needs to know the state changed —
+              the icon alone says nothing. */}
+          <button
+            type="button"
+            onClick={() => setRevealed((shown) => !shown)}
+            aria-pressed={revealed}
+            aria-label={revealed ? copy.hidePassword : copy.showPassword}
+            title={revealed ? copy.hidePassword : copy.showPassword}
+            className="text-coffee/45 hover:text-coffee absolute inset-y-0 right-0 flex cursor-pointer items-center px-4 transition-colors"
+          >
+            {revealed ? (
+              <EyeSlashIcon className="size-5" aria-hidden />
+            ) : (
+              <EyeIcon className="size-5" aria-hidden />
+            )}
+          </button>
+        </span>
       </label>
 
       {/* `role="alert"` so the refusal is announced. Somebody using a screen

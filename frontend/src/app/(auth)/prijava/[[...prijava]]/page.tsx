@@ -62,6 +62,8 @@ export default async function SignInPage({
             submitLabel: t("signInAction"),
             workingLabel: t("working"),
             unreachable: t("authUnreachable"),
+            showPassword: t("showPassword"),
+            hidePassword: t("hidePassword"),
           }}
         />
 

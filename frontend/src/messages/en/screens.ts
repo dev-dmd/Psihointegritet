@@ -11,6 +11,9 @@ export const screens = {
     landingLead:
       "Platform for psychologists, psychotherapists, consultants and educators.",
     signIn: "Sign in",
+    backToSite: "Back to the site",
+    showPassword: "Show password",
+    hidePassword: "Hide password",
     signInTitle: "Sign in",
     signInLead: "Your workspace on P. Digital Centar.",
     signUpTitle: "Open an account",
