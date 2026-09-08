@@ -135,17 +135,19 @@ def test_known_keys_are_sorted_and_complete() -> None:
         "maria",
         "marija",
         "marjan",
-        "milan",
         "milan-dmdevelon",
     )
 
 
-def test_the_same_person_may_hold_two_accounts_with_distinct_ids() -> None:
-    # Both of Milan's addresses live on the development instance, so they are
-    # separate entries. The ids must still differ, or one entry would provision
-    # over the other.
-    milan = member("milan")
-    dmdevelon = member("milan-dmdevelon")
-    assert milan is not None and dmdevelon is not None
-    assert milan.email != dmdevelon.email
-    assert milan.clerk_id_for(CLERK_DEVELOPMENT) != dmdevelon.clerk_id_for(CLERK_DEVELOPMENT)
+def test_the_operator_has_exactly_one_way_in() -> None:
+    """`drazic.milan@gmail.com` was retired 2026-09-08 (D-084).
+
+    It was the development login that stood in until the dmdevelon account
+    existed (D-026), and it is gone rather than carried into the PDC auth
+    engine. Asserted rather than merely deleted: a superadmin account that
+    reappears in the roster is an access change nobody reviewed, and this is
+    where it would show up.
+    """
+    assert member("milan") is None
+    operators = [person for person in TEAM.values() if person.superadmin]
+    assert [person.email for person in operators] == ["milan.drazic@dmdevelon.website"]

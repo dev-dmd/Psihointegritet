@@ -555,7 +555,7 @@ python scripts/platform_accounts.py --list
 python scripts/platform_accounts.py --activate --person maria --dry-run
 python scripts/platform_accounts.py --activate --email sanjaneuer@gmail.com
 python scripts/platform_accounts.py --activate --all
-python scripts/platform_accounts.py --reset  --email drazic.milan@gmail.com
+python scripts/platform_accounts.py --reset  --email milan.drazic@dmdevelon.website
 ```
 
 `--list` daje ceo cutover kao tabelu (`needs activation` / `link sent, unused` /
@@ -578,13 +578,27 @@ vratio `userId = user_3IxNmb…` (nepromenjen Clerk subject) i članstvo
 `sanja-neuer: org_admin, therapist`. Ponovljeni link → 422. Proba je zatim
 poništena; lozinku koju sam izmislio Sanja ne nasleđuje.
 
-### 14.5 Otvoreno pre produkcije
+### 14.5 `drazic.milan@gmail.com` je povučen (D-084)
 
-> ⚠️ `drazic.milan@gmail.com` — u lokalnoj bazi taj red (`user_3GXrf2…`) **nema
-> email**, pa se ne može aktivirati. Ako isto važi na produkciji, Milan ili
-> koristi `milan.drazic@dmdevelon.website`, ili se toj identity vrsti prvo
-> upiše adresa preko `provision_staff.py`. `--list` to prikazuje kao
-> `no address`.
+Taj nalog je bio development login koji je stajao dok dmdevelon nalog ne
+postoji (D-026). Postoji, pa je drugi ukinut umesto da se prenese u PDC auth
+engine: platform superadmin je najjača stvar u sistemu, a dva ulaza su duplo
+veća površina za jednu osobu koja ionako koristi jedan.
 
-Redosled na produkciji: `--list` → uporediti sa očekivanih pet → `--dry-run` →
+Uklonjeno: roster unos `"milan"` i lokalni `internal_users` red
+(`user_3GXrf2…`). Pre brisanja provereno da na taj red ne pokazuje **nijedan**
+od 34 stranih ključeva ka `internal_users` — nula redova u svakoj tabeli.
+
+Test `test_the_operator_has_exactly_one_way_in` tvrdi da postoji tačno jedan
+superadmin unos i da je `member("milan")` `None`. Superadmin nalog koji se vrati
+u roster je promena pristupa koju niko nije pregledao; tu bi se videla.
+
+> ⚠️ **Na produkciji tek treba izvršiti.** Ovaj commit menja kod i lokalnu bazu;
+> produkciona baza je zasebna. Redosled: `--list` (potvrditi da je red bez
+> članstava i bez claimed slučajeva) → `provision_staff.py --revoke --delete
+> --external-id <id> --dry-run` → bez `--dry-run`.
+
+### 14.6 Redosled na produkciji
+
+Redosled: `--list` → uporediti sa očekivanih pet → `--dry-run` →
 `--activate` po osobi → predati linkove → `--list` dok svih pet ne bude `ready`.

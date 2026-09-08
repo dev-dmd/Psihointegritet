@@ -36,7 +36,7 @@ different sides.
     python scripts/platform_accounts.py --activate --person maria
     python scripts/platform_accounts.py --activate --email sanjaneuer@gmail.com
     python scripts/platform_accounts.py --activate --all
-    python scripts/platform_accounts.py --reset --email drazic.milan@gmail.com
+    python scripts/platform_accounts.py --reset --email milan.drazic@dmdevelon.website
 
 Inside a deployed container there is no `uv`; the built virtualenv is already on
 PATH, so drop the prefix:
