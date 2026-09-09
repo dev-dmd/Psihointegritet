@@ -11,18 +11,12 @@ import {
   isTemporaryAccessHost,
   resolveHostBinding,
 } from "@/lib/tenant/domain-registry";
-import {
-  hasRoutePrefix,
-  isSurfaceAllowedOnHost,
-  normalizePathname,
-  platformRoutePrefixes,
-} from "@/lib/routes/match";
+import { isSurfaceAllowedOnHost, normalizePathname } from "@/lib/routes/match";
 import {
   decideProxyRoute,
   proxyFallbackLocale,
 } from "@/lib/routes/proxy-locale";
 import { servedFromTenantSegment } from "@/lib/routes/tenant-rewrite";
-import { deploymentSlugFromEnv } from "@/lib/tenant/deployment-slug";
 
 /**
  * Next.js 16 renamed the `middleware` convention to `proxy`; Clerk v7 supports
@@ -49,18 +43,6 @@ function isProtectedPath(pathname: string): boolean {
   );
 }
 
-/**
- * Surfaces that belong to the platform, not to any tenant: the owners' work
- * area and the operator console. They answer on the platform host and are never
- * rewritten onto a tenant segment, because which organization an owner is
- * working in comes from their membership rather than from the address bar.
- */
-const PLATFORM_PATH_PREFIXES = platformRoutePrefixes();
-
-function isPlatformPath(pathname: string): boolean {
-  return hasRoutePrefix(pathname, PLATFORM_PATH_PREFIXES);
-}
-
 export default async function proxy(request: NextRequest) {
   // Captured before anything else: `NextResponse.rewrite` does not mutate
   // `request.nextUrl`, but relying on that leaves the invariant implicit. The
@@ -80,17 +62,14 @@ export default async function proxy(request: NextRequest) {
   }
 
   // A host that resolves to nobody is refused. That is what stops a stray
-  // domain pointed at this project from serving some tenant's site — and on a
-  // preview deployment, whose hostname no table can list, it is what lets the
-  // deployment's own tenant binding still answer.
+  // domain pointed at this project from serving some tenant's site, and what
+  // makes `nepostojeci.localhost` a 404 rather than an empty tenant.
   const binding = resolveHostBinding(host, {
     env: process.env.DEPLOYMENT_ENV,
-    slug: deploymentSlugFromEnv(),
   });
   if (!binding) {
     return new NextResponse("Not found", { status: 404 });
   }
-  const { tenant, isPlatform: onPlatformHost } = binding;
 
   // The platform host serves its own front page, never a tenant's. `app/(public)`
   // still holds the founding tenant's ~26 pages, and falling through to those
@@ -98,10 +77,8 @@ export default async function proxy(request: NextRequest) {
   // identity D-080 retired and the hole phase 2b closed.
   //
   // A rewrite rather than a redirect, so the platform answers 200 at its own
-  // root instead of bouncing every visitor to sign-in. A host that is *also* a
-  // tenant keeps its own home page, which is why this reads `!tenant` rather
-  // than naming a hostname.
-  if (onPlatformHost && !tenant && normalizePathname(externalPath) === "/") {
+  // root instead of bouncing every visitor to sign-in.
+  if (binding.kind === "platform" && normalizePathname(externalPath) === "/") {
     return withSurface(
       NextResponse.rewrite(new URL(PLATFORM_HOME_ROUTE + search, request.url)),
       "platform",
@@ -113,12 +90,7 @@ export default async function proxy(request: NextRequest) {
   // Each surface answers on the host that owns it, and nowhere else. Checked
   // before the auth gate on purpose: sending someone to sign in on a domain
   // that will not serve the page afterwards is a worse answer than 404.
-  if (
-    !isSurfaceAllowedOnHost(externalPath, {
-      isTenant: tenant !== undefined,
-      isPlatform: onPlatformHost,
-    })
-  ) {
+  if (!isSurfaceAllowedOnHost(externalPath, binding.kind)) {
     return new NextResponse("Not found", { status: 404 });
   }
 
@@ -177,10 +149,7 @@ export default async function proxy(request: NextRequest) {
   // Owner surfaces stay where they are. Their organization comes from the
   // signed-in person, so wrapping them in a tenant segment would assert the
   // wrong thing — that the domain decides which tenant an owner is managing.
-  // On a host that is both — the founding tenant's domain today — only the
-  // owner surfaces are the platform's. Its public pages and its clients belong
-  // to the tenant, and must be stamped as such.
-  if (onPlatformHost && (isPlatformPath(externalPath) || !tenant)) {
+  if (binding.kind === "platform") {
     return withSurface(
       decision.kind === "rewrite"
         ? NextResponse.rewrite(new URL(internalPath + search, request.url))
@@ -191,7 +160,7 @@ export default async function proxy(request: NextRequest) {
     );
   }
 
-  if (!tenant) return NextResponse.next();
+  const { tenant } = binding;
 
   // Not everything on a tenant host lives under that tenant's segment: the auth
   // pages and the Route Handlers are top-level files, the client area is scoped

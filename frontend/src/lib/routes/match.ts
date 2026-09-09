@@ -11,6 +11,7 @@ import {
   platformRouteIds,
   routeDefinition,
 } from "@/lib/routes/platform-routes";
+import type { Surface } from "@/lib/tenant/domain-registry";
 
 /**
  * Reverse matching: external path → the route it identifies.
@@ -264,16 +265,23 @@ export function isHostNeutralPath(pathname: string): boolean {
  * site.** Adding a page to the public tree cannot widen what a platform-only
  * host serves, because nothing here enumerates that tree.
  *
+ * Takes the resolved `Surface` rather than a `{ isTenant, isPlatform }` pair,
+ * for the same reason `HostBinding` is a union: the pair could say *both*, and
+ * a rule whose inputs can contradict each other is a rule with a case nobody
+ * wrote down. One host, one surface, decided once by `resolveHostBinding`.
+ *
  * Refusing rather than redirecting is deliberate. The alternative sends someone
  * to sign in on a domain that will not serve the page afterwards, which reads
  * as a broken login rather than as the wrong address.
  */
 export function isSurfaceAllowedOnHost(
   pathname: string,
-  host: { isTenant: boolean; isPlatform: boolean },
+  surface: Surface,
 ): boolean {
-  if (isHostNeutralPath(pathname)) return host.isTenant || host.isPlatform;
-  if (hasRoutePrefix(pathname, platformRoutePrefixes())) return host.isPlatform;
-  if (hasRoutePrefix(pathname, clientRoutePrefixes())) return host.isTenant;
-  return host.isTenant;
+  if (isHostNeutralPath(pathname)) return true;
+  if (hasRoutePrefix(pathname, platformRoutePrefixes())) {
+    return surface === "platform";
+  }
+  if (hasRoutePrefix(pathname, clientRoutePrefixes())) return surface === "tenant";
+  return surface === "tenant";
 }
