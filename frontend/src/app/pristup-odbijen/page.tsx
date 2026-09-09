@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 
 import { getTranslations } from "next-intl/server";
 
+import { AccessDeniedActions } from "@/features/auth/access-denied-actions";
+import { SIGN_IN_PATH } from "@/lib/routes/auth-paths";
 import { PLATFORM_NAME } from "@/lib/tenant/domain-registry";
 
 /**
@@ -31,6 +33,19 @@ export default async function AccessDeniedPage() {
       <p className="text-coffee/70 mt-5 text-[17px] leading-[1.7]">
         {t("accessDeniedLead")}
       </p>
+
+      {/* Without these the page is a trap. The session is valid, so the proxy
+          turns a signed-in visitor away from `/prijava` and sends them right
+          back here — leaving "clear your cookies" as the only way to try a
+          different account. */}
+      <AccessDeniedActions
+        signInPath={SIGN_IN_PATH}
+        copy={{
+          signOutLabel: t("accessDeniedSignOut"),
+          workingLabel: t("working"),
+          homeLabel: t("backToSite"),
+        }}
+      />
     </main>
   );
 }

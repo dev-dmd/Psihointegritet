@@ -67,6 +67,7 @@ export const screens: Widen<EnScreens> = {
     accessDeniedTitle: "Nalog još nema dodeljen pristup",
     accessDeniedLead:
       "Prijava je uspela, ali ovom nalogu još nije dodeljena uloga ni organizacija. Obratite se administratoru vaše organizacije.",
+    accessDeniedSignOut: "Odjavite se i probajte drugi nalog",
   },
   overview: {
     morning: "Dobro jutro",

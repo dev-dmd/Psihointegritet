@@ -111,6 +111,32 @@ BAZA
 | **`ENVIRONMENT`** | **`staging`** ⛔ | `staging` | — |
 | **`CORS_ORIGINS`** | **`["https://qa.psihointegritet.com"]`** ⛔ | isto | — |
 
+> ⚠️ **`EMAIL_BASE_URL` ne pripada ovoj tabeli.** Čita ga `os.getenv` **unutar FastAPI
+> procesa** (`infrastructure/email/layout.py`), jer mejl sastavlja backend na Railway-u —
+> Next ne šalje nijedan. Postavljen na Vercel-u ne bi radio ništa. Vidi §1.3a.
+
+### 1.3a Railway env — `EMAIL_BASE_URL` (2026-09-09)
+
+Origin od kojeg se gradi svaki link u mejlu. Fallback je `https://p-digital-center.com`,
+pa okruženje **bez** ove promenljive šalje linkove na produkciju — što je tačno ono što
+se izbegava: token se onda troši na pogrešnom deploy-u (D-080).
+
+| Railway environment | Vrednost | Ko je pokriven |
+| --- | --- | --- |
+| `production` | `https://p-digital-center.com` | produkcija — **postaviti eksplicitno**, ne oslanjati se na fallback koji je tačan slučajno |
+| `staging` | `https://staging.psihointegritet.com` | **i staging i QA** |
+
+**Zašto jedna vrednost za oba:** posle 2026-09-09 QA i staging frontend gađaju **isti**
+backend (`diligent-serenity-staging`), a to je jedan Railway environment sa jednom
+vrednošću. Link iz registracije na QA-u stiže sa staging hosta — i radi, jer je token
+red u istoj bazi koju oba fronta koriste. Nije lepo, ali je ispravno, i ništa ne ide na
+produkciju.
+
+**Šta bi trebalo da se ne radi:** izvoditi origin iz `Origin`/`Referer` zaglavlja
+zahteva. Zaglavlje kontroliše pozivalac, pa bi link u mejlu vodio gde on kaže — to je
+phishing vektor, ne konfiguracija. Ako per-host ikada zatreba, ispravan oblik je
+allow-lista dozvoljenih origin-a u env-u, sa fallback-om na prvu.
+
 ### 1.4 Nalazi koji nisu bili u planu, a mereni su
 
 | # | Nalaz | Ozbiljnost | Gde se rešava |

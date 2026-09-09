@@ -71,6 +71,7 @@ export const screens = {
     accessDeniedTitle: "This account has no access yet",
     accessDeniedLead:
       "Sign-in succeeded, but this account has not been given a role or an organization yet. Please contact your organization's administrator.",
+    accessDeniedSignOut: "Sign out and try another account",
   },
   overview: {
     morning: "Good morning",

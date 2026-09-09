@@ -47,6 +47,20 @@ services:
       MIGRATION_DATABASE_URL: postgresql+psycopg://psihointegritet:local_only_change_me@postgres:5432/psihointegritet
       REDIS_URL: redis://redis:6379/0
       CORS_ORIGINS: '["http://localhost:3007"]'
+      # Where a link in an email points. Without it the backend falls back to
+      # the production origin, so a local registration would mail a link that
+      # opens production and spends its token on the wrong deployment.
+      EMAIL_BASE_URL: ${EMAIL_BASE_URL:-http://localhost:3007}
+      # Empty by default, which is the correct local state: the mailer reports
+      # itself unconfigured and every send is skipped with a warning. Export a
+      # real key only to test delivery — every address in the local database is
+      # a real mailbox somewhere.
+      #
+      # The link is deliberately NOT logged when there is no mailer. Whoever
+      # reads the log would hold the account, and a one-time link is a
+      # credential wherever it is written down. `scripts/platform_accounts.py
+      # --reset` is how you get one locally.
+      RESEND_API_KEY: ${RESEND_API_KEY:-}
     ports:
       - "8001:8000"
     depends_on:

@@ -313,7 +313,7 @@ async def forgot_password(
         path=RESET_PASSWORD_PATH,
         subject="Postavite novu lozinku",
         render=password_reset_email,
-        failure="password_reset_email_failed",
+        kind="password_reset",
     )
 
 
@@ -339,7 +339,7 @@ async def resend_verification(
         path=VERIFY_EMAIL_PATH,
         subject="Potvrdite svoju adresu",
         render=email_verification_email,
-        failure="verification_email_failed",
+        kind="email_verification",
     )
 
 
@@ -349,7 +349,7 @@ async def _send_link_email(
     path: str,
     subject: str,
     render: Callable[[str | None, str], str],
-    failure: str,
+    kind: str,
 ) -> None:
     """Deliver one link, and never let delivery become the caller's problem.
 
@@ -360,7 +360,10 @@ async def _send_link_email(
     """
     client = ResendClient()
     if not client.configured:
-        logger.warning("link_email_not_sent", reason="resend_unconfigured", kind=failure)
+        # Not a failure — local development and any environment without a
+        # mailer land here, and the token is already minted. Logged under its
+        # own event so "no mailer configured" never reads as "delivery broke".
+        logger.warning("link_email_skipped", reason="resend_unconfigured", kind=kind)
         return
     try:
         await client.send(
@@ -371,7 +374,7 @@ async def _send_link_email(
             )
         )
     except Exception:
-        logger.exception(failure)
+        logger.exception("link_email_failed", kind=kind)
 
 
 @router.post("/logout", status_code=status.HTTP_204_NO_CONTENT)

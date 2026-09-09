@@ -1,5 +1,6 @@
 "use client";
 
+import type { Route } from "next";
 import { useRouter } from "next/navigation";
 
 import { SIGN_OUT_PATH } from "@/lib/routes/auth-paths";
@@ -11,6 +12,11 @@ import { SIGN_OUT_PATH } from "@/lib/routes/auth-paths";
  * lands on that practice's home page, an owner on the platform's. One
  * implementation, correct on both, because it never names a host.
  *
+ * `destination` exists for the one place where home is the wrong answer:
+ * somebody stranded on `/pristup-odbijen` is signing out precisely in order to
+ * try another account, and dropping them on the home page makes them find the
+ * sign-in form again for no reason.
+ *
  * `refresh()` after `replace()` matters — the server components above this one
  * resolved with a session, and without it the shell would keep rendering the
  * signed-in view until something else invalidated the cache.
@@ -19,7 +25,9 @@ import { SIGN_OUT_PATH } from "@/lib/routes/auth-paths";
  * refuses `fetch(` inside a `.tsx`, and it is right to — data access does not
  * belong in a component file.
  */
-export function useSignOut(): () => Promise<void> {
+export function useSignOut(
+  destination: Route = "/" as Route,
+): () => Promise<void> {
   const router = useRouter();
 
   return async () => {
@@ -27,7 +35,7 @@ export function useSignOut(): () => Promise<void> {
     // a no-op that still runs — the engine changes what the route does, not
     // whether anybody calls it.
     await fetch(SIGN_OUT_PATH, { method: "POST" });
-    router.replace("/");
+    router.replace(destination);
     router.refresh();
   };
 }
