@@ -20,19 +20,37 @@ def test_the_platform_auth_routes_are_registered() -> None:
     assert f"{BASE}/register" in paths
     assert f"{BASE}/logout" in paths
     assert f"{BASE}/password/reset" in paths
+    assert f"{BASE}/password/forgot" in paths
+    assert f"{BASE}/email/verify/resend" in paths
 
 
-def test_there_is_no_endpoint_that_hands_out_a_reset_token() -> None:
-    """Issuing a reset link is only safe once something can deliver it.
+def test_no_endpoint_can_hand_a_one_time_token_back_to_its_caller() -> None:
+    """The rule that outlived the reason it was first written down.
 
-    Until a mailer exists the token is issued by an operator script. A route
-    that returned one — or logged it — would be a way to take over any account
-    by naming its address, which is the opposite of what a reset is for.
+    This used to assert that `/password/forgot` did not exist at all, because
+    nothing could deliver a link and a route returning one would be a way to
+    take over any account by naming its address. There is a mailer now, so the
+    route exists — but the property it was protecting has not changed: a link is
+    a credential, it goes to the mailbox and nowhere else, and the caller learns
+    nothing.
+
+    Asserted against the schema rather than a live response so it fails when
+    somebody *declares* a body, which is the moment the mistake is cheap.
     """
     paths = create_app().openapi()["paths"]
 
-    assert f"{BASE}/password/forgot" not in paths
-    assert f"{BASE}/password/request" not in paths
+    for path in (f"{BASE}/password/forgot", f"{BASE}/email/verify/resend"):
+        responses = paths[path]["post"]["responses"]
+        assert "204" in responses, f"{path} must answer 204"
+        assert "200" not in responses, f"{path} must not answer with a body"
+        # 204 is the only *outcome*. A 404 for an unknown address would answer
+        # "does this person have an account" as loudly as a body would, so no
+        # status may depend on what was found. 422 is exempt and only 422: it
+        # is FastAPI's answer to a malformed body, decided before anything is
+        # looked up, so it cannot vary with the address.
+        assert set(responses) <= {"204", "422"}, (
+            f"{path} declares {sorted(responses)}; only 204 may depend on the request"
+        )
 
 
 async def test_sign_out_refuses_an_unauthenticated_call() -> None:

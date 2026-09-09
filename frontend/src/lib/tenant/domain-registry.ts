@@ -36,31 +36,6 @@ export interface TenantDomainConfig {
   /** Canonical public origin — the value canonical tags and sitemaps use. */
   publicUrl: string;
   /**
-   * Which backend answers for this tenant **in production**.
-   *
-   * Production is the only environment that serves more than one tenant, so it
-   * is the only one that cannot name its backend in a single environment
-   * variable. Every other environment is bound to one tenant and one backend
-   * (`NEXT_PUBLIC_API_URL`): staging talks to the staging backend, a laptop to
-   * `localhost:8001`.
-   *
-   * The name says `production` because the first version of it did not, and a
-   * local sign-in silently called the production API, got a 401 for a
-   * development token, and rendered a workspace with no panels in it.
-   *
-   * **Transitional, and the wrong shape on purpose (D-081).** An API base
-   * belongs to an *environment*, not to a tenant — one production API, one
-   * staging API, with the tenant arriving per request as
-   * `organizationSlug → organization_id → scoped query`. This field exists only
-   * because two production backends genuinely exist today, each with its own
-   * database, which is the only tenant isolation there is until RLS lands. It
-   * is deleted when they become one; the rest of this table
-   * (`organizationSlug`, `domains`, `publicUrl`) is the part that stays.
-   *
-   * Plan: `documentations/PDC_CONSOLIDATION_MIGRATION_PLAN_v1_0.md`.
-   */
-  productionApiBaseUrl: string;
-  /**
    * Where this tenant's site can actually be reached **today**, when that is
    * not yet its canonical domain.
    *
@@ -105,8 +80,6 @@ export const TENANT_DOMAINS: readonly TenantDomainConfig[] = [
     // there is nothing for them to list here. See `tenantPathsEnabled`.
     domains: ["psihointegritet.com", "www.psihointegritet.com"],
     publicUrl: "https://psihointegritet.com",
-    productionApiBaseUrl:
-      "https://diligent-serenity-production-1b3e.up.railway.app",
     usesLegacyPublicTree: true,
   },
   {
@@ -117,8 +90,6 @@ export const TENANT_DOMAINS: readonly TenantDomainConfig[] = [
     domains: ["sanjaneuer.com", "www.sanjaneuer.com", "sanja-neuer.vercel.app"],
     publicUrl: "https://sanjaneuer.com",
     temporaryAccessUrl: "https://sanja-neuer.vercel.app",
-    productionApiBaseUrl:
-      "https://diligent-serenity-sanja-production.up.railway.app",
   },
 ];
 
@@ -152,8 +123,7 @@ export function tenantForHost(
  *
  * `!== "production"` rather than a list of the other three: `DEPLOYMENT_ENV` is
  * a Zod enum (`lib/validation/env.ts`), so a misspelling fails the build rather
- * than silently landing in the wrong branch, and the same shape already decides
- * the API base in `session/server-identity.ts`. The fail-open direction is
+ * than silently landing in the wrong branch. The fail-open direction is
  * narrow and covered — a registered domain binds by host *before* any path is
  * examined, so no production tenant is reachable this way.
  */

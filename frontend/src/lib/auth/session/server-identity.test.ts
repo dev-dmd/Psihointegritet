@@ -19,10 +19,8 @@ vi.mock("next/headers", () => ({ headers: headersMock }));
 
 import { getSessionIdentity } from "./server-identity";
 import {
-  TENANT_DOMAINS,
   TENANT_SLUG_HEADER,
   TENANT_SURFACE_HEADER,
-  tenantForSlug,
 } from "@/lib/tenant/domain-registry";
 
 /** Stand in for what the proxy stamps; no headers means no proxy ran. */
@@ -174,43 +172,29 @@ describe("which backend answers", () => {
     );
   });
 
-  it("asks only the tenant's own backend on a tenant surface", async () => {
-    onSurface("tenant", "sanja-neuer");
-    await getSessionIdentity();
-
-    const sanja = tenantForSlug("sanja-neuer")!;
-    const psiho = tenantForSlug("psihointegritet")!;
-    expect(fetchedHosts()).toEqual([`${sanja.productionApiBaseUrl}/api/v1/me`]);
-    // The isolation this whole slice exists for: her domain must not be able to
-    // reach another tenant's database, not even to ask who someone is.
-    expect(fetchedHosts().join(" ")).not.toContain(psiho.productionApiBaseUrl);
+  it("asks the one backend of this environment, whatever the surface", async () => {
+    // One production backend over one production database, one staging backend
+    // over one staging database — the API base belongs to the environment, not
+    // to a tenant (D-081). The registry no longer carries one.
+    for (const surface of ["platform", "tenant"] as const) {
+      fetchMock.mockClear();
+      onSurface(surface, surface === "tenant" ? "sanja-neuer" : undefined);
+      await getSessionIdentity();
+      expect(fetchedHosts()).toEqual(["https://api.test/api/v1/me"]);
+    }
   });
 
-  it("asks only the backend that issued the session, on the platform surface", async () => {
+  it("asks the backend that issued the session, and only it", async () => {
     onSurface("platform");
     await getSessionIdentity();
 
     // It used to ask every registered backend and merge the answers, which was
     // right while a session was a Clerk JWT any backend could verify. A PDC
     // session is a row in one database (D-083), so every other backend answers
-    // 401 by construction — a cross-tenant request per page load that can only
-    // ever return nothing.
+    // 401 by construction. On a tenant surface that was worse than useless:
+    // signing in at `sanjaneuer.com/prijava` got a session from the platform
+    // backend and had it checked against a different one, so it could not work.
     expect(fetchedHosts()).toEqual(["https://api.test/api/v1/me"]);
-  });
-
-  it("never reaches another tenant's backend to resolve a platform session", async () => {
-    onSurface("platform");
-    await getSessionIdentity();
-
-    const others = TENANT_DOMAINS.filter(
-      (tenant) => tenant.productionApiBaseUrl !== "https://api.test",
-    );
-    expect(others.length).toBeGreaterThan(0);
-    for (const tenant of others) {
-      expect(fetchedHosts().join(" ")).not.toContain(
-        tenant.productionApiBaseUrl,
-      );
-    }
   });
 
   it("reads an unknown session as signed out rather than as an error", async () => {

@@ -4,6 +4,7 @@ import {
   RESET_PASSWORD_PATH,
   SIGN_IN_PATH,
   SIGN_UP_PATH,
+  VERIFY_EMAIL_PATH,
 } from "@/lib/routes/auth-paths";
 import {
   PLATFORM_ROUTES,
@@ -233,6 +234,7 @@ const HOST_NEUTRAL_PREFIXES: readonly string[] = [
   SIGN_IN_PATH,
   SIGN_UP_PATH,
   RESET_PASSWORD_PATH,
+  VERIFY_EMAIL_PATH,
   ACCESS_DENIED_PATH,
   "/api",
 ];

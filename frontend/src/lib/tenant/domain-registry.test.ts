@@ -73,15 +73,18 @@ describe("hostname → organization", () => {
 });
 
 describe("tenant configuration", () => {
-  it("gives each tenant its own public URL and its own backend", () => {
+  it("gives each tenant its own public URL, and names no backend at all", () => {
     const sanja = tenantForSlug("sanja-neuer");
     const psiho = tenantForSlug("psihointegritet");
 
     expect(sanja?.publicUrl).toBe("https://sanjaneuer.com");
     expect(psiho?.publicUrl).toBe("https://psihointegritet.com");
-    // The reason the API target lives here rather than in one env variable:
-    // one project, two backends, two databases.
-    expect(sanja?.productionApiBaseUrl).not.toBe(psiho?.productionApiBaseUrl);
+    // An API base belongs to the *environment*, not to a tenant (D-081). The
+    // registry carried one per tenant only while two production backends
+    // genuinely existed; one production, one staging, and the field is gone.
+    for (const tenant of TENANT_DOMAINS) {
+      expect(Object.keys(tenant)).not.toContain("productionApiBaseUrl");
+    }
   });
 
   it("names the platform as itself, never as a tenant", () => {

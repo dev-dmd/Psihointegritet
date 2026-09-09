@@ -2,7 +2,17 @@ from datetime import datetime
 from enum import StrEnum
 from uuid import UUID, uuid4
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, String, UniqueConstraint, Uuid, func
+from sqlalchemy import (
+    Boolean,
+    DateTime,
+    ForeignKey,
+    Index,
+    String,
+    UniqueConstraint,
+    Uuid,
+    func,
+    text,
+)
 from sqlalchemy.orm import Mapped, mapped_column
 
 from psihointegritet.db.base import Base
@@ -29,6 +39,29 @@ class InternalUser(Base):
     # the drift `alembic check` reported as D19.
     __table_args__ = (
         UniqueConstraint("external_auth_id", name="uq_internal_users_external_auth_id"),
+        # One address, one identity — enforced by PostgreSQL rather than by a
+        # read-then-write in `register`, which is the race `/api/v1/me` already
+        # lost in production once.
+        #
+        # Without it, `platform_credentials.normalized_email` was the only guard,
+        # and it does not cover the state every provisioned person passes through:
+        # an operator creates the row with an address and no credential, and until
+        # the activation link is spent that address is unclaimed. Open registration
+        # would hand it to whoever asked first, with a duplicate `internal_users`
+        # row, and the real owner's activation would then fail on the credential
+        # constraint with no self-service way out.
+        #
+        # Functional on `lower(email)` because two rows differing only in case are
+        # the same mailbox, and partial because `NULL` means "no address yet" —
+        # Clerk left several such rows and they are not each other's duplicates.
+        # `text()` rather than the mapped attribute: `__table_args__` is
+        # evaluated before the columns below exist as class attributes.
+        Index(
+            "uq_internal_users_email",
+            text("lower(email)"),
+            unique=True,
+            postgresql_where=text("email IS NOT NULL"),
+        ),
     )
 
     id: Mapped[UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid4)

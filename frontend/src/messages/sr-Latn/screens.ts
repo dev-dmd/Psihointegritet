@@ -32,8 +32,20 @@ export const screens: Widen<EnScreens> = {
     authUnreachable:
       "Prijava trenutno nije dostupna. Nije do vaše lozinke — pokušajte ponovo za koji trenutak.",
     passwordTooShort: "Lozinka mora imati najmanje {count, number} znakova.",
-    forgotPassword:
-      "Zaboravili ste lozinku ili se prijavljujete prvi put? Zatražite link od administratora platforme.",
+    recoveryForgotAction: "Zaboravili ste lozinku?",
+    recoveryResendAction: "Niste dobili potvrdu adrese?",
+    recoveryForgotLead:
+      "Upišite adresu naloga. Ako nalog postoji, poslaćemo link za novu lozinku.",
+    recoveryResendLead:
+      "Upišite adresu naloga. Ako potvrda još nije obavljena, poslaćemo nov link.",
+    recoverySubmit: "Pošaljite link",
+    recoveryCancel: "Odustanite",
+    // Jedna rečenica za svaki ishod. Nalog postoji ili ne, adresa je već
+    // potvrđena ili nije, link je upravo poslat ili je zatražen prerano —
+    // razlika bi bila odgovor na pitanje „ko ovde ima nalog".
+    recoveryDoneLead:
+      "Ako nalog na toj adresi postoji, link je poslat. Proverite i neželjenu poštu — link važi jednom.",
+    recoveryAddressMissing: "Upišite email adresu.",
     noAccount: "Nemate nalog?",
     haveAccount: "Već imate nalog?",
     resetTitle: "Postavite novu lozinku",
@@ -41,6 +53,16 @@ export const screens: Widen<EnScreens> = {
     resetDoneTitle: "Lozinka je postavljena",
     resetDoneLead: "Možete se prijaviti novom lozinkom.",
     resetLinkMissing:
+      "Ova adresa ne nosi link. Otvorite u celosti onaj koji ste dobili.",
+    verifyTitle: "Potvrdite svoju adresu",
+    verifyLead:
+      "Nalog je otvoren, ali prijava nije moguća dok se adresa ne potvrdi. Link važi jednom.",
+    verifyAction: "Potvrdi adresu",
+    verifyDone: "Adresa je potvrđena",
+    verifyDoneLead: "Adresa je potvrđena. Sada se možete prijaviti.",
+    verifyFailed:
+      "Ovaj link više ne važi. Zatražite nov od administratora platforme.",
+    verifyLinkMissing:
       "Ova adresa ne nosi link. Otvorite u celosti onaj koji ste dobili.",
     accessDeniedTitle: "Nalog još nema dodeljen pristup",
     accessDeniedLead:

@@ -139,6 +139,22 @@ export async function revokeSession(token: string): Promise<void> {
   }
 }
 
+/**
+ * Spend a verification link, so this account may sign in.
+ *
+ * Deliberately not a GET on page load. Mail clients and link scanners fetch
+ * every URL in a message before anybody reads it, and a token spent by a
+ * scanner is a person who can never verify — so the page renders a button and
+ * this runs when they press it.
+ */
+export async function verifyEmail(
+  token: string,
+  fallbackMessage: string,
+): Promise<void> {
+  const response = await post("/email/verify", { token });
+  if (!response.ok) await refusalFrom(response, fallbackMessage);
+}
+
 export async function resetPassword(
   token: string,
   password: string,
@@ -146,4 +162,27 @@ export async function resetPassword(
 ): Promise<void> {
   const response = await post("/password/reset", { token, password });
   if (!response.ok) await refusalFrom(response, fallbackMessage);
+}
+
+/**
+ * Ask for a password-reset link, by naming an address.
+ *
+ * Returns nothing and throws only when the backend is unreachable. The backend
+ * answers 204 whether or not there is an account, and this deliberately does
+ * not try to learn more: an "unknown address" branch here would rebuild, in the
+ * browser, exactly the disclosure the 204 exists to prevent.
+ */
+export async function requestPasswordReset(email: string): Promise<void> {
+  const response = await post("/password/forgot", { email });
+  if (!response.ok) {
+    throw new PlatformAuthError(response.status, "");
+  }
+}
+
+/** Ask for a fresh verification link. Same contract, same silence. */
+export async function resendVerification(email: string): Promise<void> {
+  const response = await post("/email/verify/resend", { email });
+  if (!response.ok) {
+    throw new PlatformAuthError(response.status, "");
+  }
 }

@@ -3,6 +3,7 @@ import {
   RESET_PASSWORD_PATH,
   SIGN_IN_PATH,
   SIGN_UP_PATH,
+  VERIFY_EMAIL_PATH,
 } from "./auth-paths";
 import {
   clientRoutePrefixes,
@@ -95,6 +96,7 @@ export function reservedFirstSegments(): readonly string[] {
     SIGN_IN_PATH,
     SIGN_UP_PATH,
     RESET_PASSWORD_PATH,
+    VERIFY_EMAIL_PATH,
     ACCESS_DENIED_PATH,
     TENANT_ROUTE_PREFIX,
     PLATFORM_HOME_ROUTE,

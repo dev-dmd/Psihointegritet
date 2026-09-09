@@ -26,6 +26,16 @@ export const SIGN_UP_PATH = "/registracija";
 export const RESET_PASSWORD_PATH = "/nova-lozinka";
 
 /**
+ * Where a verification link lands.
+ *
+ * Beside `RESET_PASSWORD_PATH` and for the identical reason: the link is minted
+ * on a server, mailed, and opened days later, so the path must not shift with
+ * anybody's language. Mirrored by `VERIFY_EMAIL_PATH` in the backend router,
+ * which builds the URL that points here.
+ */
+export const VERIFY_EMAIL_PATH = "/potvrda-adrese";
+
+/**
  * Where a signed-in person lands when no surface will have them.
  *
  * An auth *outcome*, so it belongs with the auth paths rather than with either

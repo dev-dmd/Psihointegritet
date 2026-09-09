@@ -76,6 +76,24 @@ class AuthPolicy:
     activation_ttl: timedelta = timedelta(days=7)
     one_time_token_bytes: int = 32
 
+    #: How soon a **self-service** request may mint a second mail for the same
+    #: account. The one control standing between `/password/forgot` and a mail
+    #: bomb: the endpoint is unauthenticated and sends to an address the caller
+    #: chooses, so without it anybody can fill a stranger's inbox by holding
+    #: down a button.
+    #:
+    #: A cooldown rather than a request counter, because the thing worth
+    #: limiting is *messages sent*, not requests received. A request for an
+    #: address with no account sends nothing and is not worth remembering; a
+    #: repeat for a real one is answered by the link already in the mailbox.
+    #:
+    #: Short on purpose. Long enough that a held-down button sends one mail,
+    #: short enough that somebody who genuinely lost the first mail is not made
+    #: to wait — this is a nuisance control, not a security boundary, and the
+    #: security boundary is that the mail only ever goes to the account's own
+    #: address.
+    self_service_mail_cooldown: timedelta = timedelta(minutes=2)
+
     # ── Lockout ──────────────────────────────────────────────────────────────
     lockout_tiers: tuple[tuple[int, timedelta], ...] = LOCKOUT_TIERS
 

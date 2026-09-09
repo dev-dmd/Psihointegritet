@@ -4,7 +4,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, HTTPException, status
 from pydantic import BaseModel, ConfigDict, Field
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 
 from psihointegritet.api.dependencies import CurrentIdentity, DatabaseSession, RequireSuperadmin
@@ -82,25 +82,58 @@ async def ensure_internal_user(session: DatabaseSession, identity: CurrentIdenti
     guess. Under READ COMMITTED the conflicting insert waits for the winner to
     commit and the following SELECT sees the committed row, which is why the
     read has to come after the write rather than be reused from above.
+
+    **`DO NOTHING` names no index, deliberately.** There are now two that can
+    fire — `uq_internal_users_external_auth_id` and `uq_internal_users_email`
+    (AUTH-6) — and naming one suppresses only that one: a conflict on the other
+    raises the very `UniqueViolationError` this function exists to stop. The
+    bare form covers both, and the read-back below is what turns "some index
+    said no" into an answer.
+
+    A read-back that finds nothing is no longer impossible, and it is not an
+    internal error either: it means the address belongs to a **different**
+    identity. That is a real conflict a person has to resolve, so it is
+    reported as one rather than dressed up as a 500.
     """
     user = await _find_internal_user(session, identity.subject)
     if user is None:
         await session.execute(
             pg_insert(InternalUser)
             .values(external_auth_id=identity.subject, email=identity.email)
-            .on_conflict_do_nothing(index_elements=["external_auth_id"])
+            .on_conflict_do_nothing()
         )
         user = await _find_internal_user(session, identity.subject)
-        if user is None:  # pragma: no cover - the row exists or the insert raised
+        if user is None:
             raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Identity could not be registered.",
+                status_code=status.HTTP_409_CONFLICT,
+                detail="This address already belongs to another identity.",
             )
     # Applies to the row we ended up with, including one a racing request wrote
     # a moment ago, so a stale email cannot survive the race that created it.
+    #
+    # Checked before it is written rather than caught afterwards: an
+    # `IntegrityError` here would surface at commit, long past the point where
+    # anything can say which address caused it.
     if identity.email and user.email != identity.email:
+        if await _address_belongs_to_somebody_else(session, identity.email, user.id):
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="This address already belongs to another identity.",
+            )
         user.email = identity.email
     return user
+
+
+async def _address_belongs_to_somebody_else(
+    session: DatabaseSession, email: str, user_id: UUID
+) -> bool:
+    other = await session.scalar(
+        select(InternalUser.id).where(
+            func.lower(InternalUser.email) == email.lower(),
+            InternalUser.id != user_id,
+        )
+    )
+    return other is not None
 
 
 async def _find_internal_user(session: DatabaseSession, subject: str) -> InternalUser | None:

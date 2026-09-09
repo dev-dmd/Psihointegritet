@@ -505,19 +505,91 @@ lozinke) — mutacije su izvedene i potvrđene.
 
 ### 13.4 Namerno izostavljeno
 
-**Nema rute koja izdaje reset token.** Izdavanje linka je bezbedno tek kad
-postoji dostava; vraćanje tokena u odgovoru ili upis u log je preuzimanje
-naloga po email adresi. Do mailer-a link štampa
-`backend/scripts/issue_platform_reset.py` — ista komanda koju AUTH-5 aktivacija
-koristi, jer je „postavi prvu lozinku" ista operacija kao „zameni zaboravljenu".
+~~**Nema rute koja izdaje reset token.**~~ ✅ **Otvoreno 2026-09-09, pošto je
+preduslov ispunjen.** Postoje dve rute i obe šalju link na adresu koju je pozivalac
+otkucao — `POST /password/forgot` i `POST /email/verify/resend`. U prijavnoj formi
+stoje kao „Zaboravili ste lozinku?" i „Niste dobili potvrdu adrese?", ponuđene
+**svima i pre nego što se iko ne prijavi**: prompt koji se pojavljuje samo za poznate
+adrese odgovara na pitanje koje jedna generička poruka o neuspehu prijave postoji da
+odbije.
 
-**`email_verified_at` se upisuje ali se ne zahteva pri prijavi.** Nema mailer-a
-da bi verifikacija bila prohodna. Zatvoriti pre nego što platformski domen
-dobije saobraćaj.
+Tri pravila čine neautentifikovan mailer bezbednim, i sva tri su u `_request_link`:
+
+| Pravilo | Zašto |
+| --- | --- |
+| **Primalac nikad nije zahtev** | adresa se traži u bazi i šalje se **uskladištena**, pa ruta ne može da se uperi u drugo sanduče |
+| **204, uvek** | nema naloga · već verifikovan · nalog čeka aktivaciju · unutar cooldown-a — jedan odgovor pokriva sve, pa nijedna ruta ne odgovara na „ko ovde ima nalog" |
+| **Jedan živ link** | stariji se poništavaju **pre** kovanja novog, inače stariji mejl i dalje otvara nalog pošto je noviji iskorišćen |
+
+`AuthPolicy.self_service_mail_cooldown` (2 minuta) je ono što zadržan taster pretvara
+u jedan mejl. Cooldown a ne brojač zahteva: ograničava se **poslato**, ne primljeno —
+zahtev za adresu bez naloga ne šalje ništa i nije vredan pamćenja.
+
+Odbijeni su i nalozi **bez lozinke**: to je neko koga je operator provizionirao a niko
+nije aktivirao, i njemu treba aktivacioni link. „Potvrdite adresu da biste mogli da se
+prijavite" poslato osobi koja posle toga i dalje ne može da se prijavi je obećanje koje
+tok ne ispunjava.
+
+> ⚠️ **Šta i dalje nedostaje:** nema ograničenja po IP adresi. Pozivalac koji ima
+> spisak **poznatih** adresa i dalje može da izazove po jedan mejl po adresi po
+> cooldown-u. Mejl ide isključivo u sanduče tog naloga i ne govori ništa o nalogu, pa
+> je šteta naša reputacija pošiljaoca, ne nečija bezbednost — ali je stvarna, i mesto
+> za nju je rate limit na ivici, ne ovaj modul.
+
+Operatorska skripta (`scripts/platform_accounts.py --reset`) **ostaje** i **ne podleže
+cooldown-u**: odgovara na drugo pitanje — „ovaj čovek ne može da uđe, daj mi link" — a
+operator koji drži link nije sanduče koje se preplavljuje.
+
+~~**`email_verified_at` se upisuje ali se ne zahteva pri prijavi.**~~ ✅ **Zatvoreno
+2026-09-09 (AUTH-6).** Prijava odbija `NULL` sa `EMAIL_NOT_VERIFIED`, provera stoji
+**posle** verifikacije lozinke da prijava ne bi postala orakl o tome koje su adrese
+registrovane a nepotvrđene.
+
+> ⚠️ **Migracija `a3c85f01d247` je deo te izmene, ne kozmetika.** Kapija pretpostavlja
+> da lozinka bez verifikacije može doći samo iz samoregistracije, jer svaki
+> operatorski link žigoše kolonu kad se potroši. To važi **od commita koji je žigosanje
+> uveo**, a ne pre njega: nalozi koji su lozinku postavili ranije imaju `NULL` i kapija
+> bi ih zaključala u trenutku deploy-a — tačno ljude protiv kojih nije uperena. Migracija
+> upisuje `COALESCE(password_changed_at, created_at)`, jer je adresa dokazana kad je link
+> potrošen, ne kad je migracija otišla. Nalozi **bez** lozinke se ne diraju: oni nisu
+> dokazali ništa, a potrošnja njihovog linka žigoše kolonu sama.
 
 **Registracija je otvorena.** Nalog koji otvara nema nijedno članstvo ni
 superadmin flag, pa `resolve_staff_actor` odbija — privilegija dolazi iz
 `organization_memberships`, nikada iz činjenice da je neko prijavljen.
+
+> ⚠️ **Rupa nađena i zatvorena 2026-09-09: zauzimanje adrese koja čeka aktivaciju.**
+> `platform_credentials.normalized_email` je bio jedini čuvar, a on **ne pokriva stanje
+> kroz koje prolazi svaki provizioniran čovek**: operator napravi `internal_users` red sa
+> adresom i bez kredencijala, i dok se aktivacioni link ne potroši ta adresa je nezauzeta.
+> Reprodukovano lokalno: registracija na `elsa.browers@psihointegritet.com` — adresu koja
+> je provizionirana i čeka aktivaciju — vraćala je **201**, sa duplim `internal_users`
+> redom i zauzetim mestom za kredencijal. Aktivacija prave Else bi posle toga pukla na
+> `uq_platform_credentials_email`, bez ijednog samouslužnog izlaza.
+>
+> **Kapija za verifikaciju ovo ne zatvara.** Ona sprečava uljeza da se *prijavi*; ne
+> sprečava ga da *drži adresu*, a to je šteta.
+>
+> Migracija `b7d92e40a115` uvodi `uq_internal_users_email` — funkcionalan indeks nad
+> `lower(email)`, parcijalan nad `email IS NOT NULL` (jer `NULL` znači „još nema adresu",
+> a Clerk je ostavio nekoliko takvih redova i oni nisu međusobni duplikati). Posle njega
+> ista registracija vraća **409**, i za `ELSA.Browers@…` takođe — indeks nad sirovom
+> kolonom bi propustio jedno veliko slovo.
+>
+> **Dve posledice u kodu, obe neophodne:**
+> 1. `ensure_internal_user` je koristio `ON CONFLICT (external_auth_id) DO NOTHING`, što
+>    priguši sudar **samo na tom indeksu**. Sa dva indeksa u igri, sudar na drugom diže
+>    baš onaj `UniqueViolationError` zbog kojeg je ta funkcija i pisana (incident od
+>    2026-09-07). Sada je goli `DO NOTHING`, koji pokriva oba.
+> 2. Čitanje-nazad koje ne nađe red više nije nemoguće stanje: znači da adresa pripada
+>    **drugom** identitetu. To je sudar koji rešava čovek, pa je **409**, a ne 500.
+>    Isto važi i za putanju izmene adrese, provereno **pre** upisa — `IntegrityError` na
+>    commit-u imenuje indeks, ne adresu, i stiže daleko od zahteva koji ga je izazvao.
+>
+> `ActivationRefusal.EMAIL_TAKEN` **ostaje**. Indeks ne vidi jedini preostali procep:
+> kredencijal koji nadživi adresu sa kojom je napravljen (nalog se aktivira kao `a@…`,
+> provajder mu posle promeni adresu, i `a@…` je opet slobodna za provizionisanje).
+> `test_an_address_another_credential_still_holds_is_refused_not_guessed` gradi tačno to.
 
 
 ---
@@ -607,6 +679,10 @@ u roster je promena pristupa koju niko nije pregledao; tu bi se videla.
 > --external-id <id> --dry-run` → bez `--dry-run`.
 
 ### 14.6 Nalaz sa produkcije (2026-09-08)
+
+> ⚠️ **Dva zaključka iz ovog odeljka su 2026-09-09 mereni i oboreni — vidi §16.**
+> `drazic.milan@gmail.com` **postoji** na produkciji, i Sanjin identitet **već ima red**
+> u produkcijskoj platformskoj bazi. Ostatak odeljka stoji.
 
 `--list` na produkcionoj bazi Psihointegriteta vraća **četiri** identiteta sa
 adresom — elsa, john, maria, milan-dmdevelon — i četiri bez adrese. **Sanje nema.**
@@ -753,3 +829,77 @@ svako od njih jednom uđe na `p-digital-center.com/radni-prostor`.
 **Nije deo AUTH-6:** brisanje Clerk env promenljivih na Vercel-u i Railway-u i Clerk DNS zapisa
 (`clerk.`, `accounts.`, `clkmail`, DKIM). One su van repozitorijuma i ostaju **AUTH-9**; ništa ih
 više ne čita, pa ne kvare ništa dok stoje.
+
+---
+
+## 16. Produkcija, izmerena (2026-09-09)
+
+Prvi put očitano direktno: Railway CLI je instaliran, token osvežen, upit pušten kroz javni
+Postgres proxy. **Sve ispod je merenje, ne procena** — i menja tri stvari koje su do sada bile
+pretpostavka.
+
+### 16.1 Platformska produkcijska baza — devet identiteta, jedan može da uđe
+
+```
+created              email                                  pw   verified  subject
+2026-08-12 19:59:25  maria.bullock@psihointegritet.com      no   NO        user_3HhAuI4w…
+2026-08-12 19:59:25  elsa.browers@psihointegritet.com       no   NO        user_3HhAk6ZX…
+2026-08-12 19:59:25  john.francis@psihointegritet.com       no   NO        user_3HhAZZWp…
+2026-08-24 13:55:25  —                                      no   NO        user_3GmMkGXG…
+2026-09-05 22:07:06  —                                      no   NO        user_3GmLKkzr…
+2026-09-05 22:07:19  —                                      no   NO        user_3HpZQJ5s…
+2026-09-06 10:50:49  milan.drazic@dmdevelon.website         no   NO       *user_3Ix2Lvk9…
+2026-09-06 19:21:55  —                                      no   NO        user_3Iy2Vp5B…   ← Sanja
+2026-09-08 07:37:48  drazic.milan@gmail.com                 yes  NO        pdc:182865b8-…
+```
+
+**Aktivacija je već puštena** — sva četiri Psiho naloga stoje na „link sent, unused": kredencijal
+postoji, lozinku niko nije postavio. AUTH-6 korak 2 je time delimično izveden.
+
+**`drazic.milan@gmail.com` postoji, i jedini je nalog koji danas može da se prijavi.** Prefiks
+`pdc:` kaže odakle: nije prenet, nego **samoregistrovan kroz `/registracija`** 2026-09-08, dan
+posle provere iz §14.6. Otvorena registracija je namerna i dokumentovano bezbedna — nalog nema
+članstvo ni superadmin flag, pa `resolve_staff_actor` odbija sve — ali **D-084 je rekao da za
+jednu osobu postoji tačno jedan ulaz**, a ovo je drugi, sa lozinkom. Odluka je Milanova: obrisati
+red ili priznati da je registracija stvorila izuzetak koji D-084 nije predvideo.
+
+> ⚠️ **`email_verified_at` je `NULL` na svih devet**, uključujući jedini nalog sa lozinkom.
+> Docstring `PlatformAuthService.register` to i kaže: *„Nothing enforces it yet because there is no
+> mailer — worth closing before the platform domain sees traffic."* Platformski domen **jeste**
+> u saobraćaju od Faze 3. Time otvorena registracija prestaje da bude samo bezopasna: bilo ko sme
+> da zauzme bilo koju adresu, uključujući adresu osobe koja tek treba da bude provizionirana.
+
+### 16.2 Sanja ima dva identiteta, i živi je onaj koji već postoji na produkciji
+
+U bazi `sanja-production`:
+
+| subject | `internal_users.id` | članstva u `sanja-neuer` |
+| --- | --- | --- |
+| `user_3IxNmblGJWzd5JBmbgL8uUnEksz` | `3a0727ed-…` | org_admin, therapist — **disabled** |
+| **`user_3Iy2Vp5BNrUCDKyXB3ZxkNPYZHt`** | `8b328f49-…` | org_admin, therapist — **active** |
+
+**Živi je `user_3Iy2Vp5B…`** — i on **već ima red u produkcijskoj platformskoj bazi**, onaj bez
+adrese od 2026-09-06 19:21:55, nastao prvim dodirom `/api/v1/me`.
+
+Iz toga slede dve stvari:
+
+1. Provisioning Sanje na produkciji **nije kreiranje reda** nego dopuna postojećeg: email,
+   `display_name`, organizacija `sanja-neuer` (koja na produkciji **ne postoji** — tamo je samo
+   `psihointegritet`) i dva članstva. Jedna idempotentna komanda.
+2. **Pitanje mapiranja UUID-jeva otpada** za njen identitet — subject je isti sa obe strane.
+
+> Lokalna proba iz §15.3 je koristila **stariji** subject (`user_3IxNmbl…`), jer lokalna baza nosi
+> njega. Proba je i dalje dokazala mehaniku, ali produkcijska komanda mora nositi `user_3Iy2Vp5B…`.
+> Aktivirati pogrešan znači dati joj nalog bez ijedne uloge.
+
+### 16.3 Inventar `sanja-production` — pet redova, ne migracija
+
+52 tabele, **9 nepraznih**. Redova sa `organization_id = sanja-neuer`: **ukupno 5** — 4
+`organization_memberships` (2 aktivna, 2 disabled) i 1 `organization_audit_events`. Sve ostalo
+(`taxonomy_terms` 17, `therapist_matching_profiles` 3, …) pripada Psihointegritetu i zaostatak je
+od forka. **Nula booking-a, nula sadržaja, nula intake-a, nula klijenata.**
+
+Faza 8 iz plana konsolidacije — „migracija Sanjinih podataka", označena kao jedini destruktivan
+korak i vezana za GATE B — za podatke koji stvarno postoje svodi se na **jedan poziv
+`provision_staff.py`**. Dump pre gašenja i dalje treba, ali ne zato što je u toj bazi nešto
+nezamenljivo, nego zato što je to jeftino.

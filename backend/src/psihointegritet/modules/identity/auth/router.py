@@ -13,15 +13,36 @@ That is why there is no JWT here. A JWT would be readable by whoever holds it
 and revocable by nobody; an opaque token is a lookup against `auth_sessions`,
 where `revoked_at` ends a session the moment it is written.
 
-# What these routes deliberately do not do
+# The two endpoints that send mail to an address the caller chose
 
-*No password-reset request endpoint.* Issuing a reset token is only useful if
-something delivers it, and there is no mailer yet. Returning the token in a
-response, or writing it to a log, would each be a way to take over any account
-by naming its address. Until a mailer exists the token is issued by an operator
-script (`scripts/issue_platform_reset.py`) and the link below consumes it.
+`POST /password/forgot` and `POST /email/verify/resend` are unauthenticated and
+mail a one-time link to an address whoever calls them typed. Both were held back
+until there was something to make that safe, and there now is:
+
+- **The recipient is never the request.** The address is looked up and the
+  *stored* one is mailed, so the endpoint cannot be pointed at another mailbox.
+- **204, always.** No account, already verified, still inside the cooldown — one
+  answer covers all of them, so neither endpoint answers "does this person have
+  an account here". Sign-in spends an Argon2 verification to avoid answering
+  that question; it would be a poor trade to leave it lying beside the form.
+- **A cooldown per account** (`AuthPolicy.self_service_mail_cooldown`), which is
+  what stops a held-down button from filling somebody's inbox.
+
+What is still missing, and is worth naming rather than implying: there is no
+per-IP limit. A caller working through a list of *known* addresses can still
+make us send one mail per address per cooldown. The mail goes only to its own
+account's mailbox and says nothing about the account, so the harm is our sending
+reputation rather than anybody's security — but it is a real gap and the right
+place to close it is an edge rate limit, not this module.
+
+The operator script (`scripts/platform_accounts.py --reset`) stays. It answers a
+different question — "this person cannot get in, hand me a link" — and it is not
+subject to the cooldown, because an operator holding a link is not a mailbox
+being flooded.
 """
 
+from collections.abc import Callable
+from urllib.parse import quote
 from uuid import UUID
 
 from fastapi import APIRouter, HTTPException, Request, Response, status
@@ -29,12 +50,31 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from psihointegritet.api.dependencies import CurrentIdentity, DatabaseSession
 from psihointegritet.core.logging import get_logger
+from psihointegritet.infrastructure.email.layout import email_base_url
+from psihointegritet.infrastructure.email.resend_client import (
+    EmailEnvelope,
+    ResendClient,
+)
+from psihointegritet.infrastructure.email.templates import (
+    email_verification_email,
+    password_reset_email,
+)
 from psihointegritet.modules.identity.auth.platform_accounts import (
     AuthenticationError,
+    MailableLink,
     PasswordPolicyError,
     PlatformAuthService,
     RegistrationError,
 )
+
+#: Where the verification link lands. Mirrors `/nova-lozinka`: a stable,
+#: unlocalized path, because the link is minted on a server, mailed, and opened
+#: days later — it must not shift with anybody's language.
+VERIFY_EMAIL_PATH = "/potvrda-adrese"
+
+#: Where a reset link lands. The same page an activation link uses — setting a
+#: first password and replacing a forgotten one are one operation.
+RESET_PASSWORD_PATH = "/nova-lozinka"  # noqa: S105 - a route, not a credential
 
 router = APIRouter(prefix="/auth/platform", tags=["auth"])
 logger = get_logger(__name__)
@@ -122,6 +162,12 @@ async def sign_in(
     return SessionOut(token=issued.token, expires_at=issued.expires_at.isoformat())
 
 
+class VerifyEmailRequest(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    token: str = Field(min_length=1)
+
+
 @router.post(
     "/register",
     response_model=SessionOut,
@@ -134,17 +180,21 @@ async def register(
     response: Response,
     session: DatabaseSession,
 ) -> SessionOut:
-    """Create a platform account and sign it in.
+    """Create a platform account, sign it in, and mail its verification link.
 
     The account is created with no membership and no superadmin flag, so it can
     reach nothing: `resolve_staff_actor` refuses it. Authorization is
     PostgreSQL's answer and always was (rules §10.3), which is what makes an
     open registration endpoint safe rather than a privilege escalation.
+
+    What it was *not* safe against is address squatting, which is why the
+    verification link below is not optional: without it anyone could take the
+    address of a colleague who has not been provisioned yet.
     """
     _no_store(response)
     service = PlatformAuthService()
     try:
-        issued = await service.register(
+        account = await service.register(
             session,
             email=payload.email,
             password=payload.password,
@@ -164,7 +214,164 @@ async def register(
         ) from error
 
     await session.commit()
-    return SessionOut(token=issued.token, expires_at=issued.expires_at.isoformat())
+    # After the commit, never before: a mail promising a link that a rolled-back
+    # transaction never minted is worse than no mail at all. A send that fails
+    # leaves the account registered and unverified, which is exactly the state
+    # `/email/verify` and a re-registration attempt both already handle — so it
+    # is logged and swallowed rather than turned into a 500 for somebody whose
+    # account was created successfully.
+    await _send_verification_email(
+        email=payload.email,
+        display_name=payload.display_name,
+        token=account.verification_token,
+    )
+    return SessionOut(
+        token=account.session.token,
+        expires_at=account.session.expires_at.isoformat(),
+    )
+
+
+@router.post("/email/verify", status_code=status.HTTP_204_NO_CONTENT)
+async def verify_email(
+    payload: VerifyEmailRequest,
+    response: Response,
+    session: DatabaseSession,
+) -> None:
+    """Spend a verification link, so this account may sign in.
+
+    204 rather than a session: registration already signed the browser in, and
+    a link opened days later somewhere else must not hand that browser a
+    session it never authenticated for.
+    """
+    _no_store(response)
+    try:
+        await PlatformAuthService().verify_email(session, token=payload.token)
+    except PasswordPolicyError as error:
+        await session.rollback()
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(error)) from error
+    await session.commit()
+
+
+async def _send_verification_email(*, email: str, display_name: str | None, token: str) -> None:
+    client = ResendClient()
+    if not client.configured:
+        # Local development and any environment without a mailer. Loud in the
+        # log and nowhere else: the operator can still finish the account with
+        # `platform_accounts.py`, and the alternative — skipping verification
+        # when no mailer is configured — is the hole this closes.
+        logger.warning("verification_email_not_sent", reason="resend_unconfigured")
+        return
+    verify_url = _link(VERIFY_EMAIL_PATH, token)
+    try:
+        await client.send(
+            EmailEnvelope(
+                to=email,
+                subject="Potvrdite svoju adresu",
+                html=email_verification_email(display_name, verify_url),
+            )
+        )
+    except Exception:  # delivery must never fail an account that was created
+        logger.exception("verification_email_failed")
+
+
+def _link(path: str, token: str) -> str:
+    return f"{email_base_url()}{path}?token={quote(token, safe='')}"
+
+
+class AddressRequest(BaseModel):
+    """An address, and nothing else.
+
+    No password and no token on purpose. Both endpoints taking this body are
+    unauthenticated, and a field neither of them reads is a field somebody
+    later wires up.
+    """
+
+    email: str = Field(min_length=1, max_length=320)
+
+
+@router.post("/password/forgot", status_code=status.HTTP_204_NO_CONTENT)
+async def forgot_password(
+    payload: AddressRequest,
+    response: Response,
+    session: DatabaseSession,
+) -> None:
+    """Mail a reset link to the account at this address, if there is one.
+
+    **204 whatever happens** — no account, still inside the cooldown, mailer
+    down. The caller learns nothing about who has an account here, which is the
+    same promise `/login` makes and would be pointless to make there alone.
+    """
+    _no_store(response)
+    link = await PlatformAuthService().request_password_reset(session, email=payload.email)
+    # Committed before the send, and only then: a mail carrying a link that a
+    # rolled-back transaction never minted is worse than no mail at all.
+    await session.commit()
+    if link is None:
+        return
+    await _send_link_email(
+        link,
+        path=RESET_PASSWORD_PATH,
+        subject="Postavite novu lozinku",
+        render=password_reset_email,
+        failure="password_reset_email_failed",
+    )
+
+
+@router.post("/email/verify/resend", status_code=status.HTTP_204_NO_CONTENT)
+async def resend_verification(
+    payload: AddressRequest,
+    response: Response,
+    session: DatabaseSession,
+) -> None:
+    """Mail a fresh verification link, for a registration whose mail went astray.
+
+    204 on the same terms as `/password/forgot`, with one more case folded into
+    it: an address that is *already* verified is answered identically, so the
+    endpoint cannot be used to sort addresses into verified and not.
+    """
+    _no_store(response)
+    link = await PlatformAuthService().request_email_verification(session, email=payload.email)
+    await session.commit()
+    if link is None:
+        return
+    await _send_link_email(
+        link,
+        path=VERIFY_EMAIL_PATH,
+        subject="Potvrdite svoju adresu",
+        render=email_verification_email,
+        failure="verification_email_failed",
+    )
+
+
+async def _send_link_email(
+    link: MailableLink,
+    *,
+    path: str,
+    subject: str,
+    render: Callable[[str | None, str], str],
+    failure: str,
+) -> None:
+    """Deliver one link, and never let delivery become the caller's problem.
+
+    A send that fails is logged and swallowed. The token is already minted and
+    the response is already 204 by contract — turning a mailer outage into a
+    500 would tell the caller that the address exists, which is precisely what
+    the 204 is there to withhold.
+    """
+    client = ResendClient()
+    if not client.configured:
+        logger.warning("link_email_not_sent", reason="resend_unconfigured", kind=failure)
+        return
+    try:
+        await client.send(
+            EmailEnvelope(
+                to=link.email,
+                subject=subject,
+                html=render(link.display_name, _link(path, link.token)),
+            )
+        )
+    except Exception:
+        logger.exception(failure)
 
 
 @router.post("/logout", status_code=status.HTTP_204_NO_CONTENT)

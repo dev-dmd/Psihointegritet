@@ -12,10 +12,31 @@ Reusable HTML email layout wrapper for Psihointegritet platform.
 
 from __future__ import annotations
 
+import os
+
+#: Where a link in an email lands when nothing says otherwise.
+#:
+#: A last resort, not a default anyone should reach: the founding tenant's
+#: domain stopped being the platform's with D-080, and a verification link sent
+#: to that host would ask somebody to confirm their account on a *tenant's*
+#: site. Deployed environments set `EMAIL_BASE_URL`; local development is the
+#: only place this value is correct by accident.
+FALLBACK_EMAIL_BASE_URL = "https://p-digital-center.com"
+
+
+def email_base_url() -> str:
+    """The origin every emailed link is built from, per environment.
+
+    Env rather than a constant because a link is the one thing that has to
+    outlive the process that wrote it and still point somewhere real — a
+    staging mail whose button opens production is worse than no mail, since the
+    token it carries is spent on the wrong deployment (D-080).
+    """
+    return (os.getenv("EMAIL_BASE_URL") or FALLBACK_EMAIL_BASE_URL).rstrip("/")
+
 
 def _url(path: str) -> str:
-    base = "https://psihointegritet.com"
-    return f"{base.rstrip('/')}/{path.lstrip('/')}"
+    return f"{email_base_url()}/{path.lstrip('/')}"
 
 
 def email_button(label: str, url: str, bg_color: str = "#2e3b2e") -> str:

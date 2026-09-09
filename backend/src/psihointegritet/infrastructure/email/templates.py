@@ -8,6 +8,7 @@ Each function returns a complete HTML string ready to send via Resend.
 from __future__ import annotations
 
 from psihointegritet.infrastructure.email.layout import (
+    email_base_url,
     email_button,
     email_divider,
     wrap_email,
@@ -15,7 +16,7 @@ from psihointegritet.infrastructure.email.layout import (
 
 
 def _app_url(path: str) -> str:
-    return f"https://psihointegritet.com{path}"
+    return f"{email_base_url()}{path}"
 
 
 def review_requested_email(
@@ -226,4 +227,139 @@ def review_approved_email(
         title=f"Tekst odobren — {article_slug}",
         body_html=body,
         preheader=f'Sva odobrenja za "{article_slug}" su data.',
+    )
+
+
+def email_verification_email(display_name: str | None, verify_url: str) -> str:
+    """Confirm that whoever registered this address can actually read it.
+
+    The only thing standing between an open registration endpoint and somebody
+    claiming an address that is about to be provisioned to a colleague. It is
+    sent once, at registration, and the account cannot sign in until the link
+    in it is spent (`AuthFailureReason.EMAIL_NOT_VERIFIED`).
+
+    Addressed by name when there is one and impersonally when there is not —
+    never with the address itself, which would put it in a mail that may be
+    forwarded, and would confirm to a stranger that the address is registered.
+    """
+    greeting = (
+        f'Poštovani/a <strong style="color:#3a2e28;">{display_name}</strong>,'
+        if display_name
+        else "Poštovani/a,"
+    )
+    body = f"""
+    <!-- HERO -->
+    <tr>
+      <td class="content-cell" style="padding:0 32px 20px 32px;">
+        <h2 style="margin:0 0 8px 0;font-family:Georgia,'Times New Roman',serif;font-size:19px;font-weight:700;color:#3a2e28;line-height:1.3;">
+          Potvrdite svoju adresu
+        </h2>
+        <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:rgba(58,46,40,0.7);line-height:1.6;">
+          {greeting}
+        </p>
+      </td>
+    </tr>
+
+    <!-- CONTENT -->
+    <tr>
+      <td class="content-cell" style="padding:0 32px 20px 32px;">
+        <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:rgba(58,46,40,0.7);line-height:1.6;">
+          Nalog na ovoj adresi je upravo otvoren. Dok ne potvrdite adresu, prijava nije moguća.
+        </p>
+      </td>
+    </tr>
+
+    <!-- CTA -->
+    <tr>
+      <td class="content-cell" align="center" style="padding:0 32px 24px 32px;">
+        {email_button("Potvrdi adresu", verify_url)}
+      </td>
+    </tr>
+
+    {email_divider()}
+
+    <!-- FOOTNOTE -->
+    <tr>
+      <td class="content-cell" style="padding:0 32px 24px 32px;">
+        <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:13px;color:rgba(58,46,40,0.55);line-height:1.6;">
+          Link važi 24 sata i može se iskoristiti jednom.
+          <strong style="color:#3a2e28;">Ako niste vi otvorili ovaj nalog</strong>, ništa ne
+          preduzimajte — bez potvrde nalog ostaje neupotrebljiv i vaša adresa ostaje slobodna.
+        </p>
+      </td>
+    </tr>
+    """
+    return wrap_email(
+        title="Potvrdite svoju adresu",
+        body_html=body,
+        preheader="Potvrdite adresu da biste mogli da se prijavite.",
+    )
+
+
+def password_reset_email(display_name: str | None, reset_url: str) -> str:
+    """A link that sets a new password, requested by whoever typed the address.
+
+    Sent from `/password/forgot`, which anybody may call for any address. That
+    shapes the copy more than anything else here: this mail may well arrive for
+    somebody who did not ask for it, so it has to read as harmless to that
+    person and be explicit that ignoring it costs nothing.
+
+    It says nothing the recipient does not already know — no membership, no
+    organization, not even the address it was sent to. A mail that recites the
+    account back to its reader is a mail that hands all of it to whoever the
+    mailbox is later forwarded to.
+    """
+    greeting = (
+        f'Poštovani/a <strong style="color:#3a2e28;">{display_name}</strong>,'
+        if display_name
+        else "Poštovani/a,"
+    )
+    body = f"""
+    <!-- HERO -->
+    <tr>
+      <td class="content-cell" style="padding:0 32px 20px 32px;">
+        <h2 style="margin:0 0 8px 0;font-family:Georgia,'Times New Roman',serif;font-size:19px;font-weight:700;color:#3a2e28;line-height:1.3;">
+          Postavite novu lozinku
+        </h2>
+        <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:rgba(58,46,40,0.7);line-height:1.6;">
+          {greeting}
+        </p>
+      </td>
+    </tr>
+
+    <!-- CONTENT -->
+    <tr>
+      <td class="content-cell" style="padding:0 32px 20px 32px;">
+        <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:rgba(58,46,40,0.7);line-height:1.6;">
+          Neko je zatražio novu lozinku za nalog na ovoj adresi. Ako ste to bili vi,
+          postavite je preko dugmeta ispod.
+        </p>
+      </td>
+    </tr>
+
+    <!-- CTA -->
+    <tr>
+      <td class="content-cell" align="center" style="padding:0 32px 24px 32px;">
+        {email_button("Postavite lozinku", reset_url)}
+      </td>
+    </tr>
+
+    {email_divider()}
+
+    <!-- FOOTNOTE -->
+    <tr>
+      <td class="content-cell" style="padding:0 32px 24px 32px;">
+        <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:13px;color:rgba(58,46,40,0.55);line-height:1.6;">
+          Link važi jedan sat i može se iskoristiti jednom. Postavljanje nove lozinke
+          odjavljuje sve uređaje sa ovog naloga.
+          <strong style="color:#3a2e28;">Ako niste vi zatražili promenu</strong>, ništa ne
+          preduzimajte — lozinka ostaje ista dok se link ne iskoristi.
+        </p>
+      </td>
+    </tr>
+    """
+    return wrap_email(
+        title="Postavite novu lozinku",
+        body_html=body,
+        preheader="Link za postavljanje nove lozinke.",
     )

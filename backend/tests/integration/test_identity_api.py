@@ -3,6 +3,7 @@
 from uuid import uuid4
 
 import pytest
+from fastapi import HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -49,6 +50,55 @@ async def test_first_login_creates_neutral_user_idempotently(
         )
     )
     assert len(rows) == 1
+
+
+async def test_first_login_refuses_an_address_another_identity_holds(
+    db_session: AsyncSession,
+    identity: IdentityClaims,
+) -> None:
+    """A conflict a person has to resolve, reported as one.
+
+    `uq_internal_users_email` (AUTH-6) makes one address one identity. When a
+    provider hands a *new* subject an address somebody else already holds, the
+    insert does nothing and the read-back finds nothing — a state that was
+    impossible before the index and is a 500 only if you squint. It is a data
+    collision with exactly one honest answer: say whose it is not.
+    """
+    await ensure_internal_user(db_session, identity)
+    await db_session.flush()
+
+    newcomer = IdentityClaims(
+        subject=f"user_identity_api_{uuid4().hex}",
+        email=identity.email,
+        session_id="session_test",
+    )
+    with pytest.raises(HTTPException) as error:
+        await ensure_internal_user(db_session, newcomer)
+    assert error.value.status_code == status.HTTP_409_CONFLICT
+
+
+async def test_a_returning_login_cannot_take_an_address_off_somebody_else(
+    db_session: AsyncSession,
+    identity: IdentityClaims,
+) -> None:
+    """The same refusal on the update path, and caught *before* the write.
+
+    An `IntegrityError` raised at commit names the index, not the address, and
+    arrives far away from the request that caused it.
+    """
+    await ensure_internal_user(db_session, identity)
+    other = IdentityClaims(
+        subject=f"user_identity_api_{uuid4().hex}",
+        email=f"second.owner.{uuid4().hex[:8]}@example.com",
+        session_id="session_test",
+    )
+    await ensure_internal_user(db_session, other)
+    await db_session.flush()
+
+    moved = IdentityClaims(subject=other.subject, email=identity.email, session_id="session_test")
+    with pytest.raises(HTTPException) as error:
+        await ensure_internal_user(db_session, moved)
+    assert error.value.status_code == status.HTTP_409_CONFLICT
 
 
 async def test_me_returns_only_active_postgresql_roles(

@@ -35,8 +35,20 @@ export const screens = {
       "Sign-in is temporarily unavailable. This is not your password — please try again shortly.",
     passwordTooShort:
       "The password must be at least {count, number} characters.",
-    forgotPassword:
-      "Forgotten your password, or signing in for the first time? Ask the platform administrator for a link.",
+    recoveryForgotAction: "Forgotten your password?",
+    recoveryResendAction: "Didn't get the confirmation mail?",
+    recoveryForgotLead:
+      "Enter the account's address. If an account exists, we will send a link to set a new password.",
+    recoveryResendLead:
+      "Enter the account's address. If it is not confirmed yet, we will send a fresh link.",
+    recoverySubmit: "Send the link",
+    recoveryCancel: "Cancel",
+    // One sentence for every outcome. Account or no account, already confirmed
+    // or not, link just sent or asked for too soon — a difference here would
+    // answer the question "who has an account here".
+    recoveryDoneLead:
+      "If an account exists at that address, the link has been sent. Check the spam folder too — the link works once.",
+    recoveryAddressMissing: "Enter an email address.",
     noAccount: "No account?",
     haveAccount: "Already have an account?",
     resetTitle: "Set a new password",
@@ -45,6 +57,16 @@ export const screens = {
     resetDoneTitle: "The password is set",
     resetDoneLead: "You can sign in with the new password.",
     resetLinkMissing:
+      "This address carries no link. Open the one you were given in full.",
+    verifyTitle: "Confirm your address",
+    verifyLead:
+      "The account exists, but it cannot sign in until the address is confirmed. This link works once.",
+    verifyAction: "Confirm address",
+    verifyDone: "The address is confirmed",
+    verifyDoneLead: "The address is confirmed. You can sign in now.",
+    verifyFailed:
+      "This link is no longer valid. Ask the platform administrator for a new one.",
+    verifyLinkMissing:
       "This address carries no link. Open the one you were given in full.",
     accessDeniedTitle: "This account has no access yet",
     accessDeniedLead:

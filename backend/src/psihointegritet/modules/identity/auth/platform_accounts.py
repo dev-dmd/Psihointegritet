@@ -13,6 +13,8 @@ sign-in from being an oracle for "does this person have an account here". The
 `reason` field exists for logs, and is deliberately not part of any response.
 """
 
+from dataclasses import dataclass
+from datetime import UTC, datetime, timedelta
 from enum import StrEnum
 from uuid import UUID, uuid4
 
@@ -29,6 +31,7 @@ from psihointegritet.modules.identity.auth.policy import (
 )
 from psihointegritet.modules.identity.auth.sessions import IssuedSession, SessionService
 from psihointegritet.modules.identity.auth_models import (
+    AuthToken,
     PlatformCredential,
     TokenPurpose,
 )
@@ -50,6 +53,26 @@ class AuthFailureReason(StrEnum):
     WRONG_PASSWORD = "wrong_password"  # noqa: S105 - a reason label, not a credential
     ACCOUNT_DISABLED = "account_disabled"
     THROTTLED = "throttled"
+    #: Registered, has a password, never proved it can read the address.
+    #: Only self-registration produces this state — an account activated by an
+    #: operator is stamped verified the moment its link is spent.
+    EMAIL_NOT_VERIFIED = "email_not_verified"
+
+
+@dataclass(frozen=True, slots=True)
+class MailableLink:
+    """A one-time link and the little it takes to address the mail.
+
+    Returned instead of a bare token so the router does not have to go back to
+    the database for a display name — and, more importantly, so it mails the
+    address **this module** resolved rather than the one the caller typed. Those
+    differ by case and whitespace at least, and a mailer that trusts request
+    input is a mailer that can be pointed at a different mailbox.
+    """
+
+    email: str
+    display_name: str | None
+    token: str
 
 
 class AuthenticationError(Exception):
@@ -58,6 +81,20 @@ class AuthenticationError(Exception):
     def __init__(self, reason: AuthFailureReason) -> None:
         self.reason = reason
         super().__init__(reason.value)
+
+
+@dataclass(frozen=True, slots=True)
+class RegisteredAccount:
+    """What registration produced: a live session, and a link still to send.
+
+    The token is returned to the caller rather than mailed here, for the same
+    reason `issue_password_reset` does it: this module owns accounts, not
+    delivery. The route sends it; a script could print it; a test can read it
+    without a mailbox.
+    """
+
+    session: IssuedSession
+    verification_token: str
 
 
 class RegistrationError(Exception):
@@ -149,6 +186,19 @@ class PlatformAuthService:
             await self.lockout.record_failure(db, user_id=credential.user_id)
             raise AuthenticationError(AuthFailureReason.WRONG_PASSWORD)
 
+        # Checked *after* the password, deliberately: refusing an unverified
+        # account before it would turn sign-in into an oracle telling anyone
+        # which addresses are registered but unconfirmed. The password is
+        # correct by this point, so the person is the owner or already holds
+        # their credentials, and neither learns anything new.
+        #
+        # A password with no verification can only come from self-registration
+        # (`register`), because every operator-issued link stamps the column
+        # when it is spent. That is what makes this one condition enough,
+        # without a column recording how the account was created.
+        if credential.email_verified_at is None:
+            raise AuthenticationError(AuthFailureReason.EMAIL_NOT_VERIFIED)
+
         user = await db.get(InternalUser, credential.user_id)
         if user is None or not user.is_active:
             # A correct password on a disabled account still fails, and still
@@ -175,8 +225,8 @@ class PlatformAuthService:
         password: str,
         display_name: str | None = None,
         user_agent: str | None = None,
-    ) -> IssuedSession:
-        """Create a platform account and sign it in.
+    ) -> RegisteredAccount:
+        """Create a platform account, sign it in, and mint its proof-of-address.
 
         **Grants nothing.** The new row has no membership and no superadmin
         flag, so `resolve_staff_actor` refuses it with `NO_ACTIVE_STAFF_ROLE`
@@ -184,8 +234,17 @@ class PlatformAuthService:
         PostgreSQL's answer, never the provider's (rules §10.3); that is what
         makes an open registration endpoint safe to have at all.
 
-        `email_verified_at` stays `NULL`. Nothing enforces it yet because there
-        is no mailer — worth closing before the platform domain sees traffic.
+        `email_verified_at` stays `NULL`, and **that now refuses sign-in**
+        (`AuthFailureReason.EMAIL_NOT_VERIFIED`). Until it did, an open endpoint
+        on a live platform domain let anyone take any address — including the
+        address of somebody who had not been provisioned yet, which would have
+        made provisioning them impossible without an operator deleting a row.
+
+        A session is still issued: the browser that registered is the one that
+        proved nothing yet, and letting it hold a session it cannot use
+        anywhere is harmless — every surface asks PostgreSQL, and this account
+        has no membership. It is what lets the page say "check your mail"
+        instead of dropping the person at a sign-in form that will refuse them.
         """
         self._require_acceptable_password(password)
         normalized = normalize_email(email)
@@ -226,9 +285,41 @@ class PlatformAuthService:
             await db.rollback()
             raise RegistrationError("This address cannot be registered.") from error
 
-        return await self.sessions.issue_platform_session(
+        verification = await self.tokens.issue_for_user(
+            db,
+            purpose=TokenPurpose.EMAIL_VERIFICATION,
+            user_id=user_id,
+            ttl=self.policy.email_verification_ttl,
+        )
+        session = await self.sessions.issue_platform_session(
             db, user_id=user_id, user_agent=user_agent
         )
+        return RegisteredAccount(session=session, verification_token=verification.token)
+
+    async def verify_email(self, db: AsyncSession, *, token: str) -> UUID:
+        """Spend a verification link and mark the address proved.
+
+        Returns the account it belonged to. Idempotent only in the sense that
+        matters: the token is consumed atomically, so a link forwarded out of a
+        mailbox or clicked twice works exactly once.
+
+        Nothing else changes — no session is issued here. Registration already
+        signed the person in, and a link opened days later in a different
+        browser must not hand that browser a session it never authenticated
+        for.
+        """
+        consumed = await self.tokens.consume(db, token, purpose=TokenPurpose.EMAIL_VERIFICATION)
+        if consumed is None or consumed.user_id is None:
+            raise PasswordPolicyError("This link is no longer valid.")
+
+        credential = await db.get(PlatformCredential, consumed.user_id)
+        if credential is None:
+            raise PasswordPolicyError("This link is no longer valid.")
+
+        if credential.email_verified_at is None:
+            credential.email_verified_at = datetime.now(UTC)
+            await db.flush()
+        return consumed.user_id
 
     # ── Sign out ─────────────────────────────────────────────────────────────
 
@@ -256,6 +347,121 @@ class PlatformAuthService:
             db, purpose=TokenPurpose.PASSWORD_RESET, user_id=credential.user_id
         )
         return issued.token
+
+    # ── Self-service requests (from the sign-in form) ────────────────────────
+    #
+    # Both endpoints below are unauthenticated and both send mail to an address
+    # the caller chooses, which is the entire risk. Three rules make that safe,
+    # and all three are in `_request_link`:
+    #
+    # 1. **The mail only ever goes to the account's own address.** Nothing the
+    #    caller sends decides a recipient; the address is looked up and the
+    #    stored one is used.
+    # 2. **The answer is the same either way.** `None` for "no such account" and
+    #    `None` for "already on cooldown" are indistinguishable to the router,
+    #    which returns 204 regardless — so neither endpoint answers "does this
+    #    person have an account here", which is the question sign-in spends an
+    #    Argon2 verification to avoid answering.
+    # 3. **One live link at a time.** Older ones are spent before a new one is
+    #    minted, so a second request never leaves the first mail working.
+
+    async def request_password_reset(self, db: AsyncSession, *, email: str) -> MailableLink | None:
+        """A reset link somebody asked for by typing their address."""
+        credential = await self._credential_for(db, email)
+        if credential is None:
+            return None
+        return await self._request_link(
+            db,
+            credential=credential,
+            purpose=TokenPurpose.PASSWORD_RESET,
+            ttl=self.policy.password_reset_ttl,
+        )
+
+    async def request_email_verification(
+        self, db: AsyncSession, *, email: str
+    ) -> MailableLink | None:
+        """A fresh verification link, for a registration whose mail went astray.
+
+        Two accounts get `None`, and neither is a courtesy — a one-time link is
+        a credential, and one sent for no reason is a credential for no reason:
+
+        - **Already verified.** There is nothing left for the link to do.
+        - **No password yet.** That is an account an operator provisioned and
+          nobody has activated, and what it needs is the activation link, not
+          this one. Mailing "confirm your address so you can sign in" to
+          somebody who then still cannot sign in is a promise the flow does not
+          keep — and spending the link would stamp the column without moving
+          them one step closer to getting in.
+        """
+        credential = await self._credential_for(db, email)
+        if (
+            credential is None
+            or credential.email_verified_at is not None
+            or credential.password_hash is None
+        ):
+            return None
+        return await self._request_link(
+            db,
+            credential=credential,
+            purpose=TokenPurpose.EMAIL_VERIFICATION,
+            ttl=self.policy.email_verification_ttl,
+        )
+
+    async def _credential_for(self, db: AsyncSession, email: str) -> PlatformCredential | None:
+        return await db.scalar(
+            select(PlatformCredential).where(
+                PlatformCredential.normalized_email == normalize_email(email)
+            )
+        )
+
+    async def _request_link(
+        self,
+        db: AsyncSession,
+        *,
+        credential: PlatformCredential,
+        purpose: TokenPurpose,
+        ttl: timedelta,
+    ) -> MailableLink | None:
+        if await self._mailed_recently(db, purpose=purpose, user_id=credential.user_id):
+            return None
+
+        # Before minting, not after: a caller who requests twice must end up
+        # with one working link, not two, or the older mail keeps opening the
+        # account after the newer one has been used.
+        await self.tokens.invalidate_outstanding(db, purpose=purpose, user_id=credential.user_id)
+        issued = await self.tokens.issue_for_user(
+            db, purpose=purpose, user_id=credential.user_id, ttl=ttl
+        )
+        user = await db.get(InternalUser, credential.user_id)
+        return MailableLink(
+            email=credential.normalized_email,
+            display_name=user.display_name if user else None,
+            token=issued.token,
+        )
+
+    async def _mailed_recently(
+        self, db: AsyncSession, *, purpose: TokenPurpose, user_id: UUID
+    ) -> bool:
+        """Is there a live link of this purpose younger than the cooldown?
+
+        Derived from `auth_tokens` rather than from a counter of its own. A
+        token row *is* the record of a mail having been sent, so a separate
+        table would be a second thing to keep in step with the first — and the
+        rows are already deleted with the account they belong to.
+
+        `consumed_at IS NULL` matters: somebody who spent their link and now
+        needs another one is not the abuse this guards against.
+        """
+        since = datetime.now(UTC) - self.policy.self_service_mail_cooldown
+        recent = await db.scalar(
+            select(AuthToken.id).where(
+                AuthToken.user_id == user_id,
+                AuthToken.purpose == purpose,
+                AuthToken.consumed_at.is_(None),
+                AuthToken.created_at > since,
+            )
+        )
+        return recent is not None
 
     async def reset_password(self, db: AsyncSession, *, token: str, new_password: str) -> UUID:
         """Spend a reset token, set the password, and end every session.
@@ -288,6 +494,14 @@ class PlatformAuthService:
             raise PasswordPolicyError("This link is no longer valid.")
 
         credential.password_hash = self.passwords.hash(new_password)
+        # Spending this link *is* the proof. It reached the person either
+        # through their mailbox (`--reset`) or from an operator's hand
+        # (`--activate`, D-083 §8), and both are stronger evidence than a
+        # second mail round-trip would be. Without this the four accounts
+        # carried over from Clerk would set a password and then be refused for
+        # a verification they were never sent.
+        if credential.email_verified_at is None:
+            credential.email_verified_at = datetime.now(UTC)
         await db.flush()
 
         await self.tokens.invalidate_outstanding(

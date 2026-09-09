@@ -105,7 +105,7 @@ BAZA
 | --- | --- | --- | --- |
 | `PLATFORM_HOST` | `psihointegritet.com` | `qa.psihointegritet.com` | `staging.psihointegritet.com` |
 | `NEXT_PUBLIC_APP_URL` | `https://psihointegritet.com` | `https://qa.psihointegritet.com` | `https://staging.psihointegritet.com` |
-| `NEXT_PUBLIC_API_URL` | `…-production-1b3e.up.railway.app` | `…-features.up.railway.app` | `…-staging.up.railway.app` |
+| `NEXT_PUBLIC_API_URL` | `…-production-1b3e.up.railway.app` | ~~`…-features.up.railway.app`~~ → **`…-staging.up.railway.app`** (2026-09-09; **generička** vrednost, koju čitaju QA i PR previewi) | `…-staging.up.railway.app` |
 | `DEFAULT_ORGANIZATION_SLUG` | `psihointegritet` | `psihointegritet` | — |
 | `DEPLOYMENT_ENV` | `production` | `preview` | `staging` |
 | **`ENVIRONMENT`** | **`staging`** ⛔ | `staging` | — |
@@ -363,16 +363,22 @@ migracija verifikovana".
 | --- | --- | --- | --- |
 | `production` | ostaje | **jedini** production backend | — |
 | `staging` | ostaje | **jedini** non-production backend; QA i staging frontend oba na njega | Faza 7 |
-| `features` | **gasi se** | odlučeno 2026-09-09: ne procenjuje se posebno. `features` grana na frontendu konzumira **staging** bazu, pa zaseban backend environment nema potrošača. Gasi se zajedno sa Sanjinim environment-ima, uz svoj preduslov — Vercel Preview `NEXT_PUBLIC_API_URL` mora prvo sa `features` na staging, inače svaki preview deployment zove mrtav host | Faza 10 |
-| `sanja-production` | migration artifact | gasi se **tek** posle Faze 9 | Faza 10 |
-| `sanja-staging` | migration artifact | gasi se **tek** posle Faze 9 | Faza 10 |
+| `features` | **gasi se** | ✅ preduslov ispunjen 2026-09-09: Preview `NEXT_PUBLIC_API_URL` = `…-staging…`, QA rebuild-ovan i redeploy-ovan (Milan). Ostaje samo provera da vrednost stoji kao **generička** Preview vrednost, a ne kao override vezan za jednu granu — inače ad-hoc PR previewi i dalje gađaju mrtav host | **sada**, po toj proveri |
+| `sanja-production` | **gasi se** | jedini preduslov je da Sanjin identitet postoji u produkcijskoj platformskoj bazi (§5.6) | čim preduslov padne |
+| `sanja-staging` | **gasi se** | nema potrošača i nema podataka koje iko traži | odmah |
+
+> **Pravilo od 2026-09-09 (Milan):** **postoje tačno dva okruženja — `production` i `staging`.**
+> Sve ostalo se čisti. To više nije ishod Faze 10 nego ulazni uslov za sve što sledi: nijedan
+> sledeći zadatak ne sme da doda potrošača environment-u koji se gasi. Vidi §5.6.
 
 ### 5.3 `features` — nalaz i preporuka
 
 `features` **nije Sanja artifact** i ne tretira se kao takav. Merene činjenice:
 
 - `qa.psihointegritet.com` je na Vercel-u vezan za granu `features` (`gitBranch: features`);
-- `NEXT_PUBLIC_API_URL` za Preview pokazuje na `diligent-serenity-features.up.railway.app`;
+- ✅ **Zatvoreno 2026-09-09.** `NEXT_PUBLIC_API_URL` za Preview je prebačen na
+  `diligent-serenity-staging.up.railway.app`, a QA je rebuild-ovan i redeploy-ovan, pa vrednost
+  više nije samo u konfiguraciji nego i u bundle-u. Bilo je: pokazivao je na `…-features…`;
 - grana `features` postoji i tip joj je `b0ea228` — tačno merge-base;
 - sva 4 `main-only` commita su PR-ovi **iz** `features` — to je stvarni development tok, ne ostatak.
 
@@ -403,7 +409,7 @@ u planu — bolje ga izvesti nad praznim tenantom nego nad živim.
 | --- | --- | --- |
 | Faza 8 (migracija podataka) | iza **GATE B** | ide **pre** GATE B |
 | Odvojena baza kao granica izolacije (D-081) | važi dok RLS ne stigne | **prestaje da važi** za Sanju |
-| Faza 10 (`features`) | preduslov Vercel Preview → staging API | nepromenjeno |
+| Faza 10 (`features`) | preduslov Vercel Preview → staging API | **ispunjen 2026-09-09** — environment može da se briše |
 
 **Cena koja se prihvata, izričito.** D-081 je odvojenu bazu držao kao *jedinu* granicu izolacije
 dok RLS ne postoji. Ova odluka je uklanja pre nego što je zameni: između migracije i GATE B,
@@ -423,6 +429,55 @@ GATE B (Faza 6) postaje hitniji, ne manje hitan** — odlaganje RLS-a je sada od
 > Dakle **ne postoji konfiguracija u kojoj Sanja vidi svoj radni prostor dok su joj članstva u
 > zasebnoj bazi.** Ili ide na platformsku bazu, ili ne može da radi. Nema treće opcije, i zato
 > ovo nije preferencija nego preduslov `PDC-ONBOARD-1`.
+
+### 5.6 Dva okruženja, i šta je za to stvarno ostalo (2026-09-09)
+
+Merenje pre gašenja, jer je promenilo procenu rizika u dobrom smeru.
+
+**`sanja-production` backend danas nema nijednog potrošača.** Provereno u kodu: svaka javna ruta,
+booking, Kompas, privacy, research i `org-context` gađaju `NEXT_PUBLIC_API_URL` — jedan backend po
+deployment-u. `productionApiBaseUrl` iz registra imao je **tačno jednog** čitaoca,
+`server-identity.ts`, i to za `/api/v1/me` na tenant površini.
+
+**Taj jedan čitalac je bio pokvaren, ne koristan.** `platform-auth.ts` izdaje sesiju na
+`NEXT_PUBLIC_API_URL`, a sesija je opaque token u `auth_sessions` te baze. Identitet na tenant
+površini ju je tražio na Sanjinom backendu, koji je nikad nije video. **Prijava na
+`sanjaneuer.com` u produkciji zato nije mogla da radi** — ista greška kao platformski fan-out iz
+§5.5, samo na drugoj površini.
+
+Polje je obrisano; registar je sada `{organizationSlug, domains, publicUrl}` plus dva prelazna
+flag-a. **To zatvara i Fazu 11**, koja je bila upravo to brisanje.
+
+**Šta ostaje pre gašenja — jedina stvarna zavisnost je podatak, ne saobraćaj:**
+
+| Environment | Preduslov | Ko izvodi |
+| --- | --- | --- |
+| `sanja-staging` | nema — nijedan potrošač, nijedan podatak koji se traži | Milan, Railway |
+| `features` | ✅ **ispunjen 2026-09-09** — Preview `NEXT_PUBLIC_API_URL` → staging, QA rebuild + redeploy prošli. Preostaje jedna provera: da je to **generička** Preview vrednost (PR previewi je čitaju), a ne override na jednoj grani | Milan, Vercel pa Railway |
+| `sanja-production` | **Sanjin identitet mora prvo postojati u produkcijskoj platformskoj bazi** (`PDC_AUTH_ENGINE_PLAN_v1_0.md` §15.4, korak 1), inače se briše jedini red kojim ona može da uđe | Milan, Railway |
+
+> ⚠️ **Redosled se ne obrće.** Baza `sanja-production` drži njen `internal_users` red i njen
+> `external_auth_id`; produkcijska platformska baza ga danas nema (§14.6 auth plana: četiri
+> identiteta, Sanje među njima nema). Dump pre brisanja ostaje obavezan — ne zbog saobraćaja, nego
+> zato što je to jedini primerak tog reda.
+
+**Staging izmeren (2026-09-09).** `provision_staff.py --list` u Railway konzoli vraća četiri
+Psiho identiteta na **development** Clerk id-jevima (`user_3Hh7bq…`, `user_3GpXyBD…`, …), bez
+Sanje i bez `sanja-neuer` organizacije. Produkcija na istoj komandi vraća ista četiri imena na
+**production** id-jevima, takođe bez Sanje. Oba su time poznata stanja i oba su pokrivena.
+
+> `--list` te komande gleda **jednu organizaciju** (podrazumevano `DEFAULT_ORGANIZATION_SLUG`),
+> pa Sanju neće pokazati ni kad prođe — za nju je
+> `provision_staff.py --organization sanja-neuer --list`. Bez toga izgleda kao da migracija nije
+> uspela.
+
+**Python radi u Railway konzoli** — to je kanal koji ostaje kad CLI sa laptopa ne radi. Uslov je
+da skripta bude u deployovanom image-u, dakle komitovana i deployovana; do tada isti posao radi
+`scripts/pdc_cutover.sql` kroz Postgres → Data tab, bez deploy-a.
+
+**Ne mogu ovo da izvedem odavde** — nema `railway` CLI-ja, a `backend/.env.local` pokazuje na
+`postgres.railway.internal`, dostupan samo unutar Railway mreže. Kod i dokumentacija su spremni;
+tri koraka iz tabele su ručni.
 
 ### 5.5 Path-based tenant routing van produkcije (izvedeno 2026-09-09)
 
@@ -675,8 +730,8 @@ vlasnik tabela · 51 tabela naspram 31 u ADR-023 inventaru.
 | **7** | Jedan production + jedan staging backend; QA → staging | **GATE B** | Sanjin domen radi kroz **production** backend; QA i staging na istom API-ju | vrati `productionApiBaseUrl` u registry | **Ne** |
 | **8** | **Migracija Sanjinih podataka** u zajedničku bazu | **GATE B** + Faza 7 + inventar §10 + **dump** | row-count po tabeli; FK integritet; `organization_id` = Sanjin UUID u **target** bazi na svakom redu | restore iz dump-a; `sanja-production` je i dalje živ | ⚠️ **Da** |
 | **9** | Live cross-tenant testovi | Faza 8 | Sanjina sesija: 0 Psiho redova; Psiho sesija: 0 Sanja redova; smoke: booking, intake, content, Kompas | povratak na `sanja-production` preko registry-ja | **Ne** |
-| **10** | Gašenje `sanja-production` / `sanja-staging` **i `features`** environment-a i njihovih Postgres volume-a | Faza 9 zelena **≥7 dana** + verifikovan offline dump; za `features` dodatno: **Vercel Preview `NEXT_PUBLIC_API_URL` prebačen na staging backend** | environment nestao; produkcija netaknuta; preview deployment gađa staging API | **samo iz dump-a** | 🔴 **Da, nepovratno** |
-| **11** | Brisanje `productionApiBaseUrl` iz `domain-registry.ts` | Faza 10 | registry = `{organizationSlug, domains, publicUrl}`; build zelen | revert commit | **Ne** |
+| **10** | Gašenje `sanja-production` / `sanja-staging` **i `features`** environment-a i njihovih Postgres volume-a | **izmenjeno 2026-09-09 (§5.6):** više ne čeka Fazu 9. Po environment-u: `sanja-staging` odmah · `features` posle Vercel Preview `NEXT_PUBLIC_API_URL` → staging · `sanja-production` posle Sanjinog identiteta u platformskoj bazi. **Verifikovan offline dump ostaje obavezan za sva tri** | environment nestao; produkcija netaknuta; preview deployment gađa staging API | **samo iz dump-a** | 🔴 **Da, nepovratno** |
+| **11** ✅ | Brisanje `productionApiBaseUrl` iz `domain-registry.ts` — **izvedeno 2026-09-09, §5.6** | ~~Faza 10~~ — polje je imalo jednog čitaoca i taj je bio pokvaren, pa nije bilo šta da čeka | registry = `{organizationSlug, domains, publicUrl}`; build zelen ✅ | revert commit | **Ne** |
 
 ### 8.1 Provera zavisnosti — gde se redosled iz zadatka menja i zašto
 

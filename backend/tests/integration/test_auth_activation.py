@@ -383,7 +383,7 @@ async def test_an_identity_with_no_address_is_refused_by_name(
 
 
 @pytest.mark.asyncio
-async def test_two_identities_sharing_one_address_are_refused_not_guessed(
+async def test_an_address_another_credential_still_holds_is_refused_not_guessed(
     sessions: async_sessionmaker[AsyncSession],
     activation: PlatformActivationService,
     migrated: tuple[Organization, InternalUser],
@@ -393,21 +393,39 @@ async def test_two_identities_sharing_one_address_are_refused_not_guessed(
     Silently attaching the address to whichever row ran first would hand one
     person the other's workspace — and the two are told apart by nothing the
     application can see.
+
+    **The state this builds changed with `uq_internal_users_email`.** Two
+    `internal_users` rows carrying one address are now unwritable, so this used
+    to construct a row PostgreSQL refuses. What remains reachable — and is the
+    realistic shape anyway — is a credential outliving the address it was made
+    with: the first account activates as `a@…`, its provider address later
+    changes and `ensure_internal_user` updates the row, and `a@…` is then free
+    for somebody else to be provisioned with. The index is satisfied; the
+    credential still holds the address.
+
+    So this check is not made redundant by the index. It guards the one gap the
+    index cannot see, which is why it stays.
     """
     _, first = migrated
-    twin = InternalUser(
-        external_auth_id=f"user_{uuid4().hex[:8]}",
-        email=(first.email or "").upper(),
-    )
+    contested = (first.email or "").upper()
+
+    async with sessions() as session:
+        await activation.activate(session, first)
+        # The provider address moves on. The credential does not follow it —
+        # that is what leaves the old address held but unclaimed.
+        await session.execute(
+            update(InternalUser)
+            .where(InternalUser.id == first.id)
+            .values(email=f"moved.{uuid4().hex[:8]}@example.test")
+        )
+        await session.commit()
+
+    twin = InternalUser(external_auth_id=f"user_{uuid4().hex[:8]}", email=contested)
     async with sessions() as session:
         session.add(twin)
         await session.commit()
 
     try:
-        async with sessions() as session:
-            await activation.activate(session, first)
-            await session.commit()
-
         async with sessions() as session:
             with pytest.raises(ActivationError) as error:
                 await activation.activate(session, twin)

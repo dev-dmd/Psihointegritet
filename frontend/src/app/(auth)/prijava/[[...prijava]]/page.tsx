@@ -3,6 +3,7 @@ import Link from "next/link";
 
 import { getTranslations } from "next-intl/server";
 
+import { AccountRecovery } from "@/features/auth/account-recovery";
 import { AuthSurfaceLayout } from "@/features/auth/auth-surface-layout";
 import { CredentialsForm } from "@/features/auth/credentials-form";
 import { safeReturnPath } from "@/lib/auth/safe-return-path";
@@ -67,12 +68,25 @@ export default async function SignInPage({
           }}
         />
 
-        {/* Shown to everyone, always. A "forgot password" hint that appeared
-            only for known addresses would answer, to anyone who asked, which
-            addresses have accounts here. */}
-        <p className="text-coffee/55 mt-6 text-[14px] leading-[1.6]">
-          {t("forgotPassword")}
-        </p>
+        {/* Shown to everyone, always. Offered *before* anybody fails to sign
+            in, and never in response to a particular refusal: a recovery
+            prompt that appeared only for known addresses would answer, to
+            anyone who asked, which addresses have accounts here — the same
+            question the single generic sign-in message exists to refuse. */}
+        <AccountRecovery
+          copy={{
+            forgotAction: t("recoveryForgotAction"),
+            resendAction: t("recoveryResendAction"),
+            forgotLead: t("recoveryForgotLead"),
+            resendLead: t("recoveryResendLead"),
+            emailLabel: t("emailLabel"),
+            submitLabel: t("recoverySubmit"),
+            workingLabel: t("working"),
+            cancelLabel: t("recoveryCancel"),
+            doneLead: t("recoveryDoneLead"),
+            unreachable: t("authUnreachable"),
+          }}
+        />
 
         <p className="text-coffee/70 mt-6 text-[14px]">
           {t("noAccount")}{" "}

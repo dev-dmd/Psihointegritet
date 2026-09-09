@@ -11,7 +11,7 @@ from datetime import UTC, datetime, timedelta
 from uuid import UUID, uuid4
 
 import pytest
-from sqlalchemy import delete, select, update
+from sqlalchemy import delete, func, select, update
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
@@ -92,7 +92,15 @@ async def account(
     service: PlatformAuthService,
     email: str,
 ) -> AsyncIterator[InternalUser]:
-    """An existing account with a password already set."""
+    """An existing account with a password already set, and its address proved.
+
+    Verified on purpose: an account that can sign in is, by construction, one
+    whose one-time link has been spent — either mailed at registration or
+    handed over by an operator (`--activate`). A fixture without
+    `email_verified_at` would describe a state the product refuses, and every
+    sign-in test built on it would be measuring the refusal instead of the
+    thing it names.
+    """
     user = InternalUser(external_auth_id=f"user_{uuid4().hex[:8]}", email=email)
     async with sessions() as session:
         session.add(user)
@@ -102,6 +110,7 @@ async def account(
                 user_id=user.id,
                 normalized_email=email,
                 password_hash=service.passwords.hash(PASSWORD),
+                email_verified_at=datetime.now(UTC),
             )
         )
         await session.commit()
@@ -518,6 +527,201 @@ async def test_an_expired_reset_link_is_refused(
         assert row.consumed_at is None
 
 
+# ── Self-service requests from the sign-in form ──────────────────────────────
+
+
+@pytest.mark.asyncio
+async def test_a_self_service_reset_mails_the_stored_address_not_the_typed_one(
+    sessions: async_sessionmaker[AsyncSession],
+    service: PlatformAuthService,
+    account: InternalUser,
+    email: str,
+) -> None:
+    """The recipient is never request input.
+
+    An endpoint anybody may call, that mails a one-time link, must not let the
+    caller influence where it lands. Asked with different capitalisation here
+    because that is the cheapest version of the attack — and the one a
+    case-insensitive lookup makes easy to get wrong.
+    """
+    async with sessions() as session:
+        link = await service.request_password_reset(session, email=email.upper())
+        await session.commit()
+
+    assert link is not None
+    assert link.email == email
+
+
+@pytest.mark.asyncio
+async def test_a_second_reset_request_inside_the_cooldown_sends_nothing(
+    sessions: async_sessionmaker[AsyncSession],
+    service: PlatformAuthService,
+    account: InternalUser,
+    email: str,
+) -> None:
+    """What stops a held-down button from filling somebody's inbox."""
+    async with sessions() as session:
+        first = await service.request_password_reset(session, email=email)
+        await session.commit()
+    async with sessions() as session:
+        second = await service.request_password_reset(session, email=email)
+        await session.commit()
+
+    assert first is not None
+    assert second is None
+
+    async with sessions() as session:
+        live = await session.scalar(
+            select(func.count())
+            .select_from(AuthToken)
+            .where(AuthToken.user_id == account.id, AuthToken.consumed_at.is_(None))
+        )
+    assert live == 1
+
+
+@pytest.mark.asyncio
+async def test_a_request_past_the_cooldown_leaves_only_the_newest_link_alive(
+    sessions: async_sessionmaker[AsyncSession],
+    service: PlatformAuthService,
+    account: InternalUser,
+    email: str,
+) -> None:
+    """Two mails, one working link.
+
+    Otherwise the older mail still opens the account after the newer one has
+    been used — which is the whole reason `reset_password` spends outstanding
+    tokens, applied to the request side as well.
+    """
+    async with sessions() as session:
+        first = await service.request_password_reset(session, email=email)
+        await session.commit()
+    assert first is not None
+
+    # Age the first request past the cooldown rather than waiting for it.
+    async with sessions() as session:
+        await session.execute(
+            update(AuthToken)
+            .where(AuthToken.user_id == account.id)
+            .values(created_at=datetime.now(UTC) - timedelta(hours=1))
+        )
+        await session.commit()
+
+    async with sessions() as session:
+        second = await service.request_password_reset(session, email=email)
+        await session.commit()
+    assert second is not None
+
+    async with sessions() as session:
+        with pytest.raises(PasswordPolicyError):
+            await service.reset_password(session, token=first.token, new_password=NEW_PASSWORD)
+    async with sessions() as session:
+        await service.reset_password(session, token=second.token, new_password=NEW_PASSWORD)
+        await session.commit()
+
+
+@pytest.mark.asyncio
+async def test_a_self_service_request_for_an_unknown_address_produces_nothing(
+    sessions: async_sessionmaker[AsyncSession],
+    service: PlatformAuthService,
+) -> None:
+    """Indistinguishable, to the router, from a request inside the cooldown.
+
+    Both are `None` and both become 204, which is what keeps the endpoint from
+    answering "does this person have an account here" — the question sign-in
+    spends an Argon2 verification to avoid answering.
+    """
+    async with sessions() as session:
+        assert await service.request_password_reset(session, email="nobody@example.test") is None
+        assert (
+            await service.request_email_verification(session, email="nobody@example.test") is None
+        )
+
+
+@pytest.mark.asyncio
+async def test_verification_is_not_resent_to_an_address_already_verified(
+    sessions: async_sessionmaker[AsyncSession],
+    service: PlatformAuthService,
+    account: InternalUser,
+    email: str,
+) -> None:
+    """A live link in a mailbox for no reason is a credential for no reason.
+
+    The `account` fixture is verified by construction, so this is the state a
+    person reaches by clicking "resend" once too often after it already worked.
+    """
+    async with sessions() as session:
+        assert await service.request_email_verification(session, email=email) is None
+
+
+@pytest.mark.asyncio
+async def test_verification_is_not_resent_to_an_account_awaiting_activation(
+    sessions: async_sessionmaker[AsyncSession],
+    service: PlatformAuthService,
+    email: str,
+) -> None:
+    """What that account needs is the activation link, not this one.
+
+    A credential with no password is somebody an operator provisioned and
+    nobody has activated. Mailing them "confirm your address so you can sign
+    in" is a promise the flow does not keep: spending the link stamps the
+    column and leaves them exactly as locked out as before.
+    """
+    user = InternalUser(external_auth_id=f"user_{uuid4().hex[:8]}", email=email)
+    async with sessions() as session:
+        session.add(user)
+        await session.flush()
+        session.add(PlatformCredential(user_id=user.id, normalized_email=email))
+        await session.commit()
+
+    try:
+        async with sessions() as session:
+            assert await service.request_email_verification(session, email=email) is None
+    finally:
+        await _purge(sessions, user.id)
+
+
+@pytest.mark.asyncio
+async def test_an_unverified_account_can_ask_for_its_link_again(
+    sessions: async_sessionmaker[AsyncSession],
+    service: PlatformAuthService,
+    email: str,
+) -> None:
+    """The case the button exists for: the registration mail never arrived."""
+    async with sessions() as session:
+        created = await service.register(session, email=email, password=PASSWORD)
+        await session.commit()
+        user_id = (
+            await service.sessions.resolve(
+                session, created.session.token, kind=SessionKind.PLATFORM
+            )
+        ).user_id
+
+    try:
+        # The registration link is outstanding, so the cooldown applies to it.
+        async with sessions() as session:
+            await session.execute(
+                update(AuthToken)
+                .where(AuthToken.user_id == user_id)
+                .values(created_at=datetime.now(UTC) - timedelta(hours=1))
+            )
+            await session.commit()
+
+        async with sessions() as session:
+            link = await service.request_email_verification(session, email=email)
+            await session.commit()
+        assert link is not None
+
+        async with sessions() as session:
+            await service.verify_email(session, token=link.token)
+            await session.commit()
+
+        async with sessions() as session:
+            await service.authenticate(session, email=email, password=PASSWORD)
+            await session.commit()
+    finally:
+        await _purge(sessions, user_id)
+
+
 @pytest.mark.asyncio
 async def test_a_reset_for_an_unknown_address_issues_nothing(
     sessions: async_sessionmaker[AsyncSession],
@@ -564,11 +768,13 @@ async def test_registration_creates_an_account_that_can_reach_nothing(
     `organization_memberships`, never from having an account.
     """
     async with sessions() as session:
-        issued = await service.register(session, email=email, password=PASSWORD)
+        account_created = await service.register(session, email=email, password=PASSWORD)
         await session.commit()
 
     async with sessions() as session:
-        resolved = await service.sessions.resolve(session, issued.token, kind=SessionKind.PLATFORM)
+        resolved = await service.sessions.resolve(
+            session, account_created.session.token, kind=SessionKind.PLATFORM
+        )
         assert resolved is not None and resolved.user_id is not None
         user = await session.get(InternalUser, resolved.user_id)
         assert user is not None
@@ -577,8 +783,10 @@ async def test_registration_creates_an_account_that_can_reach_nothing(
         assert user.is_active is True
         credential = await session.get(PlatformCredential, resolved.user_id)
         assert credential is not None
-        # Nothing enforces verification yet — recorded so the gap is visible.
+        # Unverified until the mailed link is spent — and that now refuses
+        # sign-in, which is what stops an open endpoint being an address squat.
         assert credential.email_verified_at is None
+        assert account_created.verification_token
         user_id = resolved.user_id
 
     await _purge(sessions, user_id)
@@ -598,6 +806,49 @@ async def test_an_address_can_only_be_registered_once(
 
 
 @pytest.mark.asyncio
+async def test_registration_cannot_claim_an_address_awaiting_activation(
+    sessions: async_sessionmaker[AsyncSession],
+    service: PlatformAuthService,
+    email: str,
+) -> None:
+    """The gap every provisioned person passes through, closed at the database.
+
+    An operator creates the identity with an address and no credential; the
+    address stays unclaimed until the activation link is spent. Before
+    `uq_internal_users_email` existed, open registration handed that window to
+    whoever asked first — 201, a duplicate `internal_users` row, and the
+    credential slot taken. The real owner's activation then failed on the
+    credential constraint with nothing they could do about it.
+
+    The verification gate does not cover this. It stops the squatter signing
+    in; it does not stop them holding the address, which is the harm.
+
+    Asserted case-insensitively because a mailbox is one mailbox: an index on
+    the raw column would have let one capital letter walk straight through.
+    """
+    invited = InternalUser(external_auth_id=f"user_{uuid4().hex[:8]}", email=email)
+    async with sessions() as session:
+        session.add(invited)
+        await session.commit()
+
+    try:
+        async with sessions() as session:
+            with pytest.raises(RegistrationError):
+                await service.register(session, email=email.upper(), password=PASSWORD)
+
+        async with sessions() as session:
+            assert (
+                await session.scalar(
+                    select(func.count())
+                    .select_from(InternalUser)
+                    .where(func.lower(InternalUser.email) == email.lower())
+                )
+            ) == 1
+    finally:
+        await _purge(sessions, invited.id)
+
+
+@pytest.mark.asyncio
 async def test_registration_refuses_a_password_shorter_than_policy(
     sessions: async_sessionmaker[AsyncSession],
     service: PlatformAuthService,
@@ -613,3 +864,105 @@ async def test_registration_refuses_a_password_shorter_than_policy(
                 select(PlatformCredential).where(PlatformCredential.normalized_email == email)
             )
         ) is None
+
+
+@pytest.mark.asyncio
+async def test_a_registered_account_cannot_sign_in_before_it_proves_the_address(
+    sessions: async_sessionmaker[AsyncSession],
+    service: PlatformAuthService,
+    email: str,
+) -> None:
+    """The hole this closes: an open endpoint that could squat any address.
+
+    Without it, anyone could register the address of a colleague who has not
+    been provisioned yet, and provisioning them afterwards would need an
+    operator to delete a row.
+    """
+    async with sessions() as session:
+        created = await service.register(session, email=email, password=PASSWORD)
+        await session.commit()
+        user_id = (
+            await service.sessions.resolve(
+                session, created.session.token, kind=SessionKind.PLATFORM
+            )
+        ).user_id
+
+    async with sessions() as session:
+        with pytest.raises(AuthenticationError) as refusal:
+            await service.authenticate(session, email=email, password=PASSWORD)
+        assert refusal.value.reason is AuthFailureReason.EMAIL_NOT_VERIFIED
+
+    async with sessions() as session:
+        await service.verify_email(session, token=created.verification_token)
+        await session.commit()
+
+    async with sessions() as session:
+        issued = await service.authenticate(session, email=email, password=PASSWORD)
+        assert issued.token
+
+    await _purge(sessions, user_id)
+
+
+@pytest.mark.asyncio
+async def test_a_verification_link_is_spent_exactly_once(
+    sessions: async_sessionmaker[AsyncSession],
+    service: PlatformAuthService,
+    email: str,
+) -> None:
+    """A link forwarded out of a mailbox, or clicked twice, works once."""
+    async with sessions() as session:
+        created = await service.register(session, email=email, password=PASSWORD)
+        await session.commit()
+        user_id = (
+            await service.sessions.resolve(
+                session, created.session.token, kind=SessionKind.PLATFORM
+            )
+        ).user_id
+
+    async with sessions() as session:
+        await service.verify_email(session, token=created.verification_token)
+        await session.commit()
+
+    async with sessions() as session:
+        with pytest.raises(PasswordPolicyError):
+            await service.verify_email(session, token=created.verification_token)
+
+    await _purge(sessions, user_id)
+
+
+@pytest.mark.asyncio
+async def test_setting_a_password_from_a_link_proves_the_address_too(
+    sessions: async_sessionmaker[AsyncSession],
+    service: PlatformAuthService,
+    email: str,
+) -> None:
+    """Why the four accounts carried over from Clerk are not locked out.
+
+    They were activated by an operator, never sent a verification mail. The
+    link they *were* given is the proof, so spending it stamps the column —
+    otherwise every one of them would set a password and then be refused for a
+    verification nobody could send them.
+    """
+    user = InternalUser(external_auth_id=f"user_{uuid4().hex[:8]}", email=email)
+    async with sessions() as session:
+        session.add(user)
+        await session.flush()
+        session.add(PlatformCredential(user_id=user.id, normalized_email=email, password_hash=None))
+        await session.commit()
+
+    async with sessions() as session:
+        token = await service.issue_password_reset(session, email=email)
+        assert token is not None
+        await session.commit()
+
+    async with sessions() as session:
+        await service.reset_password(session, token=token, new_password=PASSWORD)
+        await session.commit()
+
+    async with sessions() as session:
+        credential = await session.get(PlatformCredential, user.id)
+        assert credential is not None and credential.email_verified_at is not None
+        issued = await service.authenticate(session, email=email, password=PASSWORD)
+        assert issued.token
+
+    await _purge(sessions, user.id)
