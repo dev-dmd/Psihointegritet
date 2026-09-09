@@ -103,7 +103,7 @@ BAZA
 
 | Ključ | Production | Preview | Preview/`staging` |
 | --- | --- | --- | --- |
-| `PLATFORM_HOST` | `psihointegritet.com` | `qa.psihointegritet.com` | `staging.psihointegritet.com` |
+| `PLATFORM_HOST` | ~~`psihointegritet.com`~~ → **`p-digital-center.com`** (mereno 2026-09-10; vidi napomenu ispod) | `qa.psihointegritet.com` | `staging.psihointegritet.com` |
 | `NEXT_PUBLIC_APP_URL` | `https://psihointegritet.com` | `https://qa.psihointegritet.com` | `https://staging.psihointegritet.com` |
 | `NEXT_PUBLIC_API_URL` | `…-production-1b3e.up.railway.app` | ~~`…-features.up.railway.app`~~ → **`…-staging.up.railway.app`** (2026-09-09; **generička** vrednost, koju čitaju QA i PR previewi) | `…-staging.up.railway.app` |
 | `DEFAULT_ORGANIZATION_SLUG` | `psihointegritet` | `psihointegritet` | — |
@@ -111,6 +111,14 @@ BAZA
 | **`ENVIRONMENT`** | **`staging`** ⛔ | `staging` | — |
 | **`CORS_ORIGINS`** | **`["https://qa.psihointegritet.com"]`** ⛔ | isto | — |
 
+> ✅ **`PLATFORM_HOST` na produkciji je već `p-digital-center.com`** — mereno 2026-09-10
+> uživo, ne pročitano iz konfiguracije: `p-digital-center.com/radni-prostor` vraća **200**, a
+> `psihointegritet.com/radni-prostor` **404**. To je tačno ponašanje, jer `resolveHostBinding`
+> proverava `tenantForHost` **pre** `isPlatformHost`, a `psihointegritet.com` je registrovan
+> tenant domen — pa dok god je `PLATFORM_HOST` bio vezan za njega, ta vrednost nikad nije ni
+> mogla da pobedi i vlasnički panel na produkciji ne bi imao host. Ranija vrednost u ovoj
+> tabeli je bila zastarela.
+>
 > ⚠️ **`EMAIL_BASE_URL` ne pripada ovoj tabeli.** Čita ga `os.getenv` **unutar FastAPI
 > procesa** (`infrastructure/email/layout.py`), jer mejl sastavlja backend na Railway-u —
 > Next ne šalje nijedan. Postavljen na Vercel-u ne bi radio ništa. Vidi §1.3a.

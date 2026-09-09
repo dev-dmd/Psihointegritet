@@ -12,6 +12,25 @@ concurrency:
   group: quality-${{ github.ref }}
   cancel-in-progress: true
 
+# Three jobs, and the shape is the point.
+#
+# `backend` and `frontend-checks` are independent and run side by side, so a
+# type error in one is reported while the other is still working rather than
+# after it. `e2e` is the expensive one — it installs a browser, builds the app,
+# starts a server and an API — and it waits for both, so a failure either side
+# cancels it before any of that cost is paid. Before this split, a backend
+# `pyright` failure and a full Playwright run happened in parallel and the
+# second was pure waste.
+#
+# `frontend-checks` still carries PostgreSQL and the API, and that is measured
+# rather than assumed: `npm run build` prerenders `/kompas/oblasti` and its
+# siblings from the backend, so a build with no API reachable fails at export.
+# Since the gate requires a green build before E2E may start, the build stays
+# here and the services stay with it. The API setup is therefore duplicated
+# between this job and `e2e` — GitHub service containers belong to one job and
+# cannot be shared — which is a real cost, paid to keep `e2e` from starting on
+# a frontend that does not build.
+
 jobs:
   backend:
     runs-on: ubuntu-latest
@@ -66,7 +85,7 @@ jobs:
       - run: uv run alembic check
       - run: uv run pytest
 
-  frontend:
+  frontend-checks:
     runs-on: ubuntu-latest
     services:
       postgres:
@@ -90,6 +109,87 @@ jobs:
       NEXT_PUBLIC_COMPASS_DEMO_PREVIEW: "false"
       # D-059 flag. CI keeps Kompas on so `compass.spec.ts` still covers it; the
       # deployed environments decide separately.
+      NEXT_PUBLIC_COMPASS_ENABLED: "true"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: 3.14.6
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24.13.1
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - working-directory: frontend
+        run: npm ci
+      # Everything that needs nothing but the checkout, first — a type error is
+      # reported in under two minutes instead of after the API has been built
+      # and started.
+      - working-directory: frontend
+        run: npm run typecheck
+      - working-directory: frontend
+        run: npm run lint
+      - working-directory: frontend
+        run: npm run format:check
+      - working-directory: frontend
+        run: npm run architecture:check
+      - working-directory: frontend
+        run: npm run test -- --run
+      - name: Prepare public API
+        working-directory: backend
+        env:
+          ALLOW_COMPASS_DEMO_SEED: "true"
+          COMPASS_DEMO_ORGANIZATION_SLUG: psihointegritet
+          ENVIRONMENT: development
+        run: |
+          uv sync --locked --all-groups
+          uv run alembic upgrade head
+          uv run python scripts/seed_compass_demo.py
+          # `.venv/bin/uvicorn`, not `uv run uvicorn` — see the note in `e2e`.
+          .venv/bin/uvicorn psihointegritet.main:app --host 127.0.0.1 --port 8001 >/tmp/psihointegritet-api.log 2>&1 &
+          for attempt in {1..30}; do
+            if curl --fail --silent http://127.0.0.1:8001/api/v1/health >/dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+          cat /tmp/psihointegritet-api.log
+          exit 1
+      - working-directory: frontend
+        run: npm run build
+      - name: Stop public API
+        if: always()
+        run: pkill -f "uvicorn psihointegritet.main:app" || true
+
+  e2e:
+    # Only after both. Everything below — a browser download, a production
+    # build, a database, an API process — is wasted work if either gate above
+    # has already said no.
+    needs: [backend, frontend-checks]
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:18.4-alpine
+        env:
+          POSTGRES_DB: psihointegritet
+          POSTGRES_USER: psihointegritet
+          POSTGRES_PASSWORD: local_only_change_me
+        ports:
+          - 5434:5432
+        options: >-
+          --health-cmd "pg_isready -U psihointegritet -d psihointegritet"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql+asyncpg://psihointegritet:local_only_change_me@localhost:5434/psihointegritet
+      MIGRATION_DATABASE_URL: postgresql+psycopg://psihointegritet:local_only_change_me@localhost:5434/psihointegritet
+      NEXT_PUBLIC_APP_URL: http://localhost:3007
+      NEXT_PUBLIC_API_URL: http://localhost:8001
+      NEXT_PUBLIC_COMPASS_DEMO_PREVIEW: "false"
       NEXT_PUBLIC_COMPASS_ENABLED: "true"
     steps:
       - uses: actions/checkout@v4
@@ -134,16 +234,10 @@ jobs:
           exit 1
       - working-directory: frontend
         run: npm ci
-      - working-directory: frontend
-        run: npm run typecheck
-      - working-directory: frontend
-        run: npm run lint
-      - working-directory: frontend
-        run: npm run format:check
-      - working-directory: frontend
-        run: npm run architecture:check
-      - working-directory: frontend
-        run: npm run test -- --run
+      # Rebuilt here rather than carried from `frontend-checks` as an artifact.
+      # `.next` is large and the upload/download round trip costs about what the
+      # build does, so passing it between jobs buys nothing — and a build made
+      # from this job's own checkout is one less thing that can be stale.
       - working-directory: frontend
         run: npm run build
       - working-directory: frontend

@@ -120,6 +120,22 @@ async def account(
     await _purge(sessions, user.id)
 
 
+async def _account_behind(service: PlatformAuthService, db: AsyncSession, token: str) -> UUID:
+    """The identity a session token names, one line after it was issued.
+
+    `resolve` is optional-returning because a token can be unknown, revoked or
+    expired — correct on the production path and impossible here, where
+    `register` handed this one over a statement ago. Asserted rather than
+    silenced with a cast: if a change ever stops registration issuing a usable
+    session, this fails naming that, instead of somewhere downstream on an
+    attribute of `None`.
+    """
+    resolved = await service.sessions.resolve(db, token, kind=SessionKind.PLATFORM)
+    assert resolved is not None, "register issued a session that does not resolve"
+    assert resolved.user_id is not None, "a platform session must name a user"
+    return resolved.user_id
+
+
 async def _purge(sessions: async_sessionmaker[AsyncSession], user_id: UUID) -> None:
     async with sessions() as session:
         await session.execute(delete(AuthToken).where(AuthToken.user_id == user_id))
@@ -690,11 +706,7 @@ async def test_an_unverified_account_can_ask_for_its_link_again(
     async with sessions() as session:
         created = await service.register(session, email=email, password=PASSWORD)
         await session.commit()
-        user_id = (
-            await service.sessions.resolve(
-                session, created.session.token, kind=SessionKind.PLATFORM
-            )
-        ).user_id
+        user_id = await _account_behind(service, session, created.session.token)
 
     try:
         # The registration link is outstanding, so the cooldown applies to it.
@@ -881,11 +893,7 @@ async def test_a_registered_account_cannot_sign_in_before_it_proves_the_address(
     async with sessions() as session:
         created = await service.register(session, email=email, password=PASSWORD)
         await session.commit()
-        user_id = (
-            await service.sessions.resolve(
-                session, created.session.token, kind=SessionKind.PLATFORM
-            )
-        ).user_id
+        user_id = await _account_behind(service, session, created.session.token)
 
     async with sessions() as session:
         with pytest.raises(AuthenticationError) as refusal:
@@ -913,11 +921,7 @@ async def test_a_verification_link_is_spent_exactly_once(
     async with sessions() as session:
         created = await service.register(session, email=email, password=PASSWORD)
         await session.commit()
-        user_id = (
-            await service.sessions.resolve(
-                session, created.session.token, kind=SessionKind.PLATFORM
-            )
-        ).user_id
+        user_id = await _account_behind(service, session, created.session.token)
 
     async with sessions() as session:
         await service.verify_email(session, token=created.verification_token)
