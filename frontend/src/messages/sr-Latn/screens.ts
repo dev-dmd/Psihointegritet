@@ -5,18 +5,43 @@ import type { Widen } from "@/messages/types";
 export const screens: Widen<EnScreens> = {
   platform: {
     tenantsHeading: "Tenanti",
-    signInSoonTitle: "Prijava je u izradi",
-    signInSoonLead:
-      "P. Digital Centar prelazi na sopstvenu prijavu. Prijava i registracija biće ponovo dostupne uskoro.",
-    signUpSoonTitle: "Registracija je u izradi",
-    signUpSoonLead:
-      "P. Digital Centar prelazi na sopstvenu prijavu. Registracija će biti ponovo dostupna uskoro.",
-    headedFor: "Krenuli ste na: {path}",
-    backToSite: "Nazad na sajt",
     landingTitle: "Marketing P. Digital Centar",
     landingLead:
       "Platforma za psihologe, psihoterapeute, konsultante i edukatore.",
     signIn: "Prijava",
+    backToSite: "Vrati se na sajt",
+    showPassword: "Prikaži lozinku",
+    hidePassword: "Sakrij lozinku",
+    signInTitle: "Prijava",
+    signInLead: "Vaš radni prostor na P. Digital Centru.",
+    signUpTitle: "Otvorite nalog",
+    signUpLead:
+      "Nalog sam po sebi ne daje pristup. Ulogu dodeljuje administrator vaše organizacije.",
+    emailLabel: "Email adresa",
+    passwordLabel: "Lozinka",
+    newPasswordLabel: "Nova lozinka",
+    nameLabel: "Ime i prezime",
+    nameOptional: "nije obavezno",
+    signInAction: "Prijavite se",
+    signUpAction: "Otvorite nalog",
+    resetAction: "Postavite lozinku",
+    working: "Trenutak…",
+    signInFailed: "Neispravna email adresa ili lozinka.",
+    registerFailed: "Nalog sa ovim podacima nije moguće otvoriti.",
+    resetFailed: "Ovaj link više ne važi.",
+    authUnreachable:
+      "Prijava trenutno nije dostupna. Nije do vaše lozinke — pokušajte ponovo za koji trenutak.",
+    passwordTooShort: "Lozinka mora imati najmanje {count, number} znakova.",
+    forgotPassword:
+      "Zaboravili ste lozinku ili se prijavljujete prvi put? Zatražite link od administratora platforme.",
+    noAccount: "Nemate nalog?",
+    haveAccount: "Već imate nalog?",
+    resetTitle: "Postavite novu lozinku",
+    resetLead: "Ovaj link važi jednom. Sve sesije ovog naloga biće odjavljene.",
+    resetDoneTitle: "Lozinka je postavljena",
+    resetDoneLead: "Možete se prijaviti novom lozinkom.",
+    resetLinkMissing:
+      "Ova adresa ne nosi link. Otvorite u celosti onaj koji ste dobili.",
     accessDeniedTitle: "Nalog još nema dodeljen pristup",
     accessDeniedLead:
       "Prijava je uspela, ali ovom nalogu još nije dodeljena uloga ni organizacija. Obratite se administratoru vaše organizacije.",

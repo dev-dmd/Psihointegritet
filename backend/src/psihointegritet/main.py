@@ -11,6 +11,7 @@ from psihointegritet.core.config import Settings, get_settings
 from psihointegritet.core.logging import configure_logging, get_logger
 from psihointegritet.core.observability import CorrelationIdMiddleware
 from psihointegritet.db.session import create_engine, create_session_factory
+from psihointegritet.infrastructure.auth.pdc_session import PdcSessionVerifier
 from psihointegritet.infrastructure.auth.unavailable import UnavailableTokenVerifier
 
 
@@ -20,6 +21,12 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
     engine = create_engine(settings)
     app.state.engine = engine
     app.state.session_factory = create_session_factory(engine)
+    # Mounted here rather than in `create_app` because it needs the session
+    # factory, and that needs the engine. Until this line runs the app still
+    # carries `UnavailableTokenVerifier`, so a request that somehow arrives
+    # before startup finishes is refused rather than crashing on a verifier
+    # that is not there.
+    app.state.token_verifier = PdcSessionVerifier(app.state.session_factory)
     get_logger(__name__).info("application_started", environment=settings.environment)
     yield
     await engine.dispose()
@@ -44,8 +51,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         lifespan=lifespan,
     )
     app.state.settings = settings
-    # No provider (D-083). Every bearer token is refused, so authenticated
-    # endpoints answer 401 instead of raising on a verifier that is not there.
+    # Fail-closed default, replaced by `PdcSessionVerifier` once the lifespan
+    # has an engine to read `auth_sessions` with. An app built but never started
+    # therefore refuses every bearer token instead of admitting anyone.
     app.state.token_verifier = UnavailableTokenVerifier()
 
     app.add_middleware(CorrelationIdMiddleware)

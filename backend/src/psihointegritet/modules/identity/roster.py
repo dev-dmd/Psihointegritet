@@ -154,27 +154,21 @@ TEAM: Mapping[str, TeamMember] = {
             CLERK_PRODUCTION: "user_3HhAZZWpZkRHiE7c9yWBmmXCZ7w",
         },
     ),
-    # Two entries, one person: Milan signs in with either address, and both are
-    # accounts on the *same* Clerk instance, so they cannot share one entry —
-    # `clerk_ids` holds one id per instance by design. The key therefore names
-    # the account, not the human. Deleting one as a "duplicate" would silently
-    # lock him out of whichever address he happened to use that day.
-    "milan": TeamMember(
-        key="milan",
-        display_name="Milan Dražić",
-        email="drazic.milan@gmail.com",
-        # `org_admin` and not `therapist`: the platform flag already grants both
-        # capabilities in every tenant (D-051), but a therapist membership would
-        # also make him selectable as a clinician, which he is not.
-        roles=frozenset({MembershipRole.ORG_ADMIN}),
-        therapist_slug=None,
-        clerk_ids={CLERK_DEVELOPMENT: "user_3GXrf2rAn8Ekdc3qgHtnWxHWSY4"},
-        superadmin=True,
-    ),
+    # One operator account, deliberately.
+    #
+    # There used to be two entries for Milan — `drazic.milan@gmail.com` was the
+    # development login that stood in until the dmdevelon account existed
+    # (D-026). It exists now, and the second address was retired 2026-09-08
+    # (D-084) rather than carried into the PDC auth engine: a platform
+    # superadmin is the strongest thing in the system, and two ways in is twice
+    # the surface for one person who only ever uses one of them.
     "milan-dmdevelon": TeamMember(
         key="milan-dmdevelon",
         display_name="Milan Dražić (dmdevelon)",
         email="milan.drazic@dmdevelon.website",
+        # `org_admin` and not `therapist`: the platform flag already grants both
+        # capabilities in every tenant (D-051), but a therapist membership would
+        # also make him selectable as a clinician, which he is not.
         roles=frozenset({MembershipRole.ORG_ADMIN}),
         therapist_slug=None,
         # Production id recorded 2026-09-06, after provisioning it by hand: the

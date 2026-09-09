@@ -393,9 +393,9 @@ Plus: rate limiting na sva četiri endpoint-a, Argon2id parametri, cookie atribu
 AUTH-0  vratiti Clerk u ispravno stanje                    ← §0, ODMAH
 AUTH-1  DB migracije: 4 tabele + legacy_clerk_id           bez potrošača
 AUTH-2  backend engine: argon2, tokeni, sesije, servisi    testovi, bez ruta
-AUTH-3  PdcSessionVerifier + /api/v1/auth/platform/*       Clerk JOŠ RADI paralelno
-AUTH-4  platform login/register UI na p-digital-center.com
-AUTH-5  migracija 5 identiteta + activation                svih 5 potvrdi prijavu
+AUTH-3  PdcSessionVerifier + /api/v1/auth/platform/*       ✅ 2026-09-08
+AUTH-4  platform login/register UI na p-digital-center.com  ✅ 2026-09-08
+AUTH-5  migracija 5 identiteta + activation                ✅ 2026-09-08 (alat + proba)
 AUTH-6  ── GATE ── Clerk se isključuje na platformi
 AUTH-7  tenant client: /api/v1/auth/client/* + tenant-branded UI
 AUTH-8  cross-tenant negativni testovi (§10)
@@ -429,3 +429,207 @@ osim onog u kojem smo sada, i koji AUTH-0 zatvara.
 > ne mogu da se prijave na njenom domenu, a to je preduslov njenog svakodnevnog rada. Ali je i
 > **najveći pojedinačni komad** u planu, pa AUTH-7 (klijenti) ide **posle** AUTH-6 (platforma),
 > da Sanja može da uđe u radni prostor pre nego što njeni klijenti dobiju svoj.
+
+
+---
+
+## 13. Šta je AUTH-3/4 stvarno isporučio (2026-09-08)
+
+### 13.1 Šav — dokazan, ne tvrđen
+
+`PdcSessionVerifier` razrešava opaque token u `auth_sessions` i vraća
+`IdentityClaims(subject=internal_users.external_auth_id, …)`. Test
+`test_business_authorization_cannot_tell_the_provider_changed` prosleđuje te
+claims **netaknutom** `resolve_staff_actor()` i tvrdi isti `StaffActor`.
+
+Verifier je **strogo platformski**: `kind = platform`, `user_id NOT NULL`,
+`client_id`/`organization_id` `NULL`, nije istekla, nije revoke-ovana, nalog
+`is_active`. Tenant-client sesija je validna sesija koja ovde **ne prolazi** —
+to je zaseban actor put u AUTH-7.
+
+### 13.2 Token nikada ne vidi browser
+
+```
+browser  ──HttpOnly pdc_platform_session──▶  Next.js route handler
+                                              │ getServerToken()
+                                              ▼
+                                   Authorization: Bearer <opaque>
+                                              │
+                                              ▼
+                              FastAPI → PdcSessionVerifier → IdentityClaims
+                                              │
+                                              ▼
+                                     resolve_staff_actor()
+```
+
+Odgovor route handler-a je `{ "ok": true }` i ništa više — oblik je namerno
+premali da ponese token. Test `puts the token in an HttpOnly cookie and nowhere
+in the body` pada ako iko doda token u telo odgovora. Nema JWT-a, nema
+`localStorage`, nema JS-readable kolačića.
+
+Kolačić: `httpOnly`, `secure` van development-a, `sameSite=lax`, `path=/`,
+**bez `domain`** (host-only), `expires` iz baze.
+
+### 13.3 Lockout — izmenjena politika zbog DoS-a
+
+Tvrd prag je zamenjen progresivnim kašnjenjem sa plafonom:
+
+| Uzastopnih grešaka | Zaključavanje |
+| --- | --- |
+| 5 | 1 minut |
+| 10 | 5 minuta |
+| 20+ | 15 minuta (plafon) |
+
+Tri svojstva zajedno čine da napadač koji zna email **ne može** da izbaci
+vlasnika iz naloga:
+
+1. **Eskalacija ima plafon.** Najduže zaključavanje koje politika uopšte može
+   da izrekne je 15 minuta, bez obzira koliko dugo napad traje.
+2. **Pokušaj tokom zaključavanja se ne broji.** Burst od 40 zahteva ostavlja
+   nalog na *prvom* nivou; svaki sledeći nivo košta napadača pun čekan
+   interval koji ne može da preskoči.
+3. **Reset lozinke briše lockout.** Ko čita mejl, ulazi odmah — ne čeka da
+   napadač prestane.
+
+Oba svojstva pokrivena su testovima koji **padaju** protiv verovatnih grešaka
+(brojanje tokom zaključavanja; provera lockout-a tek posle verifikacije
+lozinke) — mutacije su izvedene i potvrđene.
+
+### 13.4 Namerno izostavljeno
+
+**Nema rute koja izdaje reset token.** Izdavanje linka je bezbedno tek kad
+postoji dostava; vraćanje tokena u odgovoru ili upis u log je preuzimanje
+naloga po email adresi. Do mailer-a link štampa
+`backend/scripts/issue_platform_reset.py` — ista komanda koju AUTH-5 aktivacija
+koristi, jer je „postavi prvu lozinku" ista operacija kao „zameni zaboravljenu".
+
+**`email_verified_at` se upisuje ali se ne zahteva pri prijavi.** Nema mailer-a
+da bi verifikacija bila prohodna. Zatvoriti pre nego što platformski domen
+dobije saobraćaj.
+
+**Registracija je otvorena.** Nalog koji otvara nema nijedno članstvo ni
+superadmin flag, pa `resolve_staff_actor` odbija — privilegija dolazi iz
+`organization_memberships`, nikada iz činjenice da je neko prijavljen.
+
+
+---
+
+## 14. AUTH-5 — aktivacija postojećih identiteta (2026-09-08)
+
+### 14.1 Šta se menja, a šta ne
+
+| | |
+| --- | --- |
+| **menja se** | dodaje se `platform_credentials` red sa `password_hash = NULL` |
+| **ne menja se** | `internal_users.id`, `external_auth_id`, `display_name`, `is_superadmin`, sva članstva, i svaki red koji na njih pokazuje |
+
+`internal_users.id` je strani ključ ispod termina, intake slučajeva, vlasništva
+nad sadržajem, publication event-ova i audit redova. Migracija koja bi „ponovo
+kreirala" naloge tiho bi odvojila terapeuta od sopstvenog caseload-a dok bi svi
+ekrani i dalje renderovali. Zato ovde ništa ne upisuje `internal_users` red i
+ništa ne dira `organization_memberships`.
+
+**Clerk lozinke se ne prenose.** Nikada nisu bile naše da ih čitamo. Svako
+dobija jednokratni link i bira lozinku koju niko drugi nikada nije držao.
+
+### 14.2 Zašto `external_auth_id` ostaje u `user_…` obliku
+
+Namerno, iako `legacy_clerk_id` kolona postoji za preimenovanje.
+
+`external_auth_id` je sada neproziran subject koji engine čita iz reda koji je
+već učitao — njegov istorijski oblik ne košta ništa. Ali `roster.py`,
+`provision_staff.py` i `provision_team.py` i dalje **traže nalog po toj
+vrednosti**. Preimenovanje danas znači da sledeći
+`provision_staff.py --person maria` ne nalazi ništa i pravi **drugu** Mariju.
+
+Preimenovanje ide zajedno sa uklanjanjem Clerk ključeva iz ta tri modula —
+dakle AUTH-9, ne AUTH-5.
+
+### 14.3 Alat
+
+Jedna komanda, `backend/scripts/platform_accounts.py`, zamenila je
+`issue_platform_reset.py`:
+
+```
+python scripts/platform_accounts.py --list
+python scripts/platform_accounts.py --activate --person maria --dry-run
+python scripts/platform_accounts.py --activate --email sanjaneuer@gmail.com
+python scripts/platform_accounts.py --activate --all
+python scripts/platform_accounts.py --reset  --email milan.drazic@dmdevelon.website
+```
+
+`--list` daje ceo cutover kao tabelu (`needs activation` / `link sent, unused` /
+`ready` / `no address` / `deactivated`), sortiranu tako da nezavršeno ide prvo —
+čitanje ime po ime je način da peta osoba bude zaboravljena.
+
+**Link se štampa jednom i ne upisuje se u log.** Dok nije potrošen, on je
+kredencijal.
+
+Aktivacioni link traje **7 dana** (`AuthPolicy.activation_ttl`), za razliku od
+sata koliko traje običan reset: predaje se van kanala, osobi koja ga ne
+očekuje. Nema zasebnog `TokenPurpose.ACTIVATION` — „postavi prvu lozinku" i
+„zameni zaboravljenu" su ista operacija, troše isti token i sleću na istu
+stranicu; razlikuje se samo trajanje, pa se samo trajanje prosleđuje.
+
+### 14.4 Proba izvedena na lokalnoj bazi
+
+`--dry-run` → aktivacija → link → `/nova-lozinka` → prijava → `/api/v1/me`
+vratio `userId = user_3IxNmb…` (nepromenjen Clerk subject) i članstvo
+`sanja-neuer: org_admin, therapist`. Ponovljeni link → 422. Proba je zatim
+poništena; lozinku koju sam izmislio Sanja ne nasleđuje.
+
+### 14.5 `drazic.milan@gmail.com` je povučen (D-084)
+
+Taj nalog je bio development login koji je stajao dok dmdevelon nalog ne
+postoji (D-026). Postoji, pa je drugi ukinut umesto da se prenese u PDC auth
+engine: platform superadmin je najjača stvar u sistemu, a dva ulaza su duplo
+veća površina za jednu osobu koja ionako koristi jedan.
+
+Uklonjeno: roster unos `"milan"` i lokalni `internal_users` red
+(`user_3GXrf2…`). Pre brisanja provereno da na taj red ne pokazuje **nijedan**
+od 34 stranih ključeva ka `internal_users` — nula redova u svakoj tabeli.
+
+Test `test_the_operator_has_exactly_one_way_in` tvrdi da postoji tačno jedan
+superadmin unos i da je `member("milan")` `None`. Superadmin nalog koji se vrati
+u roster je promena pristupa koju niko nije pregledao; tu bi se videla.
+
+> ⚠️ **Na produkciji tek treba izvršiti.** Ovaj commit menja kod i lokalnu bazu;
+> produkciona baza je zasebna. Redosled: `--list` (potvrditi da je red bez
+> članstava i bez claimed slučajeva) → `provision_staff.py --revoke --delete
+> --external-id <id> --dry-run` → bez `--dry-run`.
+
+### 14.6 Nalaz sa produkcije (2026-09-08)
+
+`--list` na produkcionoj bazi Psihointegriteta vraća **četiri** identiteta sa
+adresom — elsa, john, maria, milan-dmdevelon — i četiri bez adrese. **Sanje nema.**
+
+To je očekivano i nije greška: produkcija ima **dve baze** (D-081 ih spaja tek u
+Fazi 7–8), a Sanjin identitet živi u bazi `sanja-production` okruženja. Aktivacija
+se zato pušta **dva puta, po jednom u svakom okruženju**.
+
+Ali iz toga sledi stvar koju treba znati pre nego što joj se preda link:
+
+> ⚠️ **Prijava na platformu pita tačno jedan backend.** `platform-auth.ts` koristi
+> `NEXT_PUBLIC_API_URL`, namerno — izdavanje sesije u više baza nije ispravno.
+> `/api/v1/me` se posle toga grana po svim backend-ovima i spaja članstva, ali
+> *prijava* se dešava na jednom mestu. Dakle Sanjin `platform_credentials` red
+> mora postojati u bazi na koju `NEXT_PUBLIC_API_URL` pokazuje, čak i ako njena
+> članstva ostaju u njenoj bazi.
+>
+> Proveriti pre aktivacije: `--list` u `sanja-production` okruženju, pa uporediti
+> `external_auth_id` sa onim što `NEXT_PUBLIC_API_URL` baza zna. Ako je Sanja samo
+> u svojoj bazi, prijava na `p-digital-center.com` joj neće raditi dok se baze ne
+> spoje (Faza 7–8) ili dok joj identitet ne postoji i u platformskoj bazi.
+
+`drazic.milan@gmail.com` (D-084) **na produkciji ne postoji** — roster nikada nije
+imao produkcioni Clerk id za taj nalog, i nijedan od četiri reda bez adrese ne nosi
+ni email ni članstvo. Nema šta da se briše; stavka je zatvorena odsustvom.
+
+Domen je proveren uživo: `p-digital-center.com/nova-lozinka` vraća 200, pa je
+podrazumevani `--base-url` ispravan. `psihointegritet.com/radni-prostor` vraća 404,
+što potvrđuje da je `PLATFORM_HOST` prebačen (Faza 3 + 4a zatvorene).
+
+### 14.7 Redosled na produkciji
+
+Redosled: `--list` → uporediti sa očekivanih pet → `--dry-run` →
+`--activate` po osobi → predati linkove → `--list` dok svih pet ne bude `ready`.

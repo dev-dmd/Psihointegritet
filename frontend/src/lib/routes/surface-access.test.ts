@@ -1,17 +1,18 @@
 import { describe, expect, it } from "vitest";
 
 import { PUBLIC_ROUTES } from "./platform-routes";
-import { PLATFORM_HOME_ROUTE } from "@/lib/tenant/domain-registry";
+import {
+  PLATFORM_HOME_ROUTE,
+  type Surface,
+} from "@/lib/tenant/domain-registry";
 import {
   hasRoutePrefix,
   isHostNeutralPath,
   isSurfaceAllowedOnHost,
 } from "./match";
 
-const tenantOnly = { isTenant: true, isPlatform: false };
-const platformOnly = { isTenant: false, isPlatform: true };
-/** The founding tenant's domain today: its own site *and* the workspace. */
-const both = { isTenant: true, isPlatform: true };
+const tenantOnly: Surface = "tenant";
+const platformOnly: Surface = "platform";
 
 describe("which host may serve which surface", () => {
   it("keeps owner surfaces off a tenant's domain", () => {
@@ -31,12 +32,6 @@ describe("which host may serve which surface", () => {
     for (const path of ["/nalog", "/account"]) {
       expect(isSurfaceAllowedOnHost(path, platformOnly)).toBe(false);
       expect(isSurfaceAllowedOnHost(path, tenantOnly)).toBe(true);
-    }
-  });
-
-  it("serves both from a host that is genuinely both", () => {
-    for (const path of ["/radni-prostor", "/nalog", "/usluge", "/"]) {
-      expect(isSurfaceAllowedOnHost(path, both)).toBe(true);
     }
   });
 
@@ -96,18 +91,14 @@ describe("which host may serve which surface", () => {
     expect(isSurfaceAllowedOnHost("/apiary", platformOnly)).toBe(false);
   });
 
-  it("leaves the founding tenant's domain serving both surfaces", () => {
-    // The fix must not cost anything today: psihointegritet.com is genuinely
-    // both, so its public tree, its clients and the workspace all still answer.
-    for (const path of [
-      "/",
-      "/kompas",
-      "/usluge",
-      "/nalog",
-      "/radni-prostor",
-    ]) {
-      expect(isSurfaceAllowedOnHost(path, both)).toBe(true);
+  it("serves a tenant its whole surface, and none of the platform's", () => {
+    // No host is "both" any more: psihointegritet.com is a tenant domain and
+    // p-digital-center.com is the platform. A tenant host answers for its
+    // public tree and its clients, and refuses the workspace.
+    for (const path of ["/", "/kompas", "/usluge", "/nalog"]) {
+      expect(isSurfaceAllowedOnHost(path, tenantOnly)).toBe(true);
     }
+    expect(isSurfaceAllowedOnHost("/radni-prostor", tenantOnly)).toBe(false);
   });
 
   it("applies to nested paths, not just the root of a surface", () => {
@@ -134,13 +125,13 @@ describe("which host may serve which surface", () => {
   it("lets an access-denied outcome answer on every host", () => {
     // A signed-in person with no role reaches it from the platform and from a
     // tenant domain alike, so it cannot belong to either surface.
-    for (const host of [platformOnly, tenantOnly, both]) {
+    for (const host of [platformOnly, tenantOnly]) {
       expect(isSurfaceAllowedOnHost("/pristup-odbijen", host)).toBe(true);
     }
   });
 
   it("lets the post-auth dispatcher answer on every host", () => {
-    for (const host of [platformOnly, tenantOnly, both]) {
+    for (const host of [platformOnly, tenantOnly]) {
       expect(isSurfaceAllowedOnHost("/api/auth/landing", host)).toBe(true);
     }
   });

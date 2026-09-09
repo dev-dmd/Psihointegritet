@@ -16,6 +16,7 @@ from psihointegritet.modules.content.taxonomy_router import (
 from psihointegritet.modules.content.taxonomy_router import router as taxonomy_router
 from psihointegritet.modules.diagnostics.router import router as diagnostics_router
 from psihointegritet.modules.guidance.router import public_router, team_router
+from psihointegritet.modules.identity.auth.router import router as platform_auth_router
 from psihointegritet.modules.identity.router import router as identity_router
 from psihointegritet.modules.identity.router import superadmin_router as identity_superadmin_router
 from psihointegritet.modules.organizations.router import (
@@ -31,6 +32,7 @@ from psihointegritet.modules.research.router import router as research_router
 
 api_v1_router = APIRouter(prefix="/api/v1")
 api_v1_router.include_router(health.router)
+api_v1_router.include_router(platform_auth_router)
 api_v1_router.include_router(identity_router)
 api_v1_router.include_router(identity_superadmin_router)
 api_v1_router.include_router(public_router)

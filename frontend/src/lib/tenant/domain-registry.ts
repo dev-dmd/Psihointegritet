@@ -100,12 +100,10 @@ export interface TenantDomainConfig {
 export const TENANT_DOMAINS: readonly TenantDomainConfig[] = [
   {
     organizationSlug: "psihointegritet",
-    domains: [
-      "psihointegritet.com",
-      "www.psihointegritet.com",
-      "staging.psihointegritet.com",
-      "qa.psihointegritet.com",
-    ],
+    // Production hosts only. Staging and QA reach this tenant as
+    // `psihointegritet.<platform host>`, resolved by `tenantSlugFromHost`
+    // rather than listed here — see `resolveHostBinding`.
+    domains: ["psihointegritet.com", "www.psihointegritet.com"],
     publicUrl: "https://psihointegritet.com",
     productionApiBaseUrl:
       "https://diligent-serenity-production-1b3e.up.railway.app",
@@ -239,54 +237,129 @@ export function resolvePlatformHost(
 }
 
 /**
- * What a host resolves to, once every rule has been applied.
+ * The tenant a non-production host names in its leftmost label, or `null` when
+ * it names none.
  *
- * `null` means nobody's — the request is refused.
+ * Outside production a tenant is reached as `<slug>.<platform host>` —
+ * `psihointegritet.localhost`, `sanja-neuer.staging.p-digital-center.com` —
+ * so that a laptop and a staging deployment resolve tenants exactly the way
+ * production does: from the host, through the registry. The alternative, a
+ * path prefix like `/sanja-neuer/tim`, would mean development exercises a
+ * different resolver than the one that ships, and would need a reserved-word
+ * list kept in sync with every platform route forever.
+ *
+ * **Naming a tenant is not being one.** This returns the label; only
+ * `tenantForSlug` decides whether it belongs to anybody, and `resolveHostBinding`
+ * refuses the request when it does not. A single label, so `a.b.localhost`
+ * resolves to nothing rather than to a tenant called `a`.
  */
-export interface HostBinding {
-  tenant: TenantDomainConfig | undefined;
-  isPlatform: boolean;
+export function tenantSlugFromHost(host: string | null | undefined): string | null {
+  const normalized = normalizeHost(host);
+  if (normalized === "") return null;
+
+  for (const platform of platformHosts()) {
+    const suffix = `.${platform}`;
+    if (!normalized.endsWith(suffix)) continue;
+    const label = normalized.slice(0, -suffix.length);
+    if (label === "" || label.includes(".")) continue;
+    return label;
+  }
+  return null;
 }
 
 /**
- * Which tenant and which surfaces this host may serve.
+ * Is this host inside a platform host's namespace at all?
  *
- * Three answers, in order of how specific they are:
+ * Separate from `tenantSlugFromHost` because "names no valid tenant" and "has
+ * nothing to do with us" must not get the same answer. `a.b.localhost` yields
+ * no slug, but it is still a name beneath the platform, so serving it the
+ * platform would give the same page two addresses — and would do it under a
+ * hostname shaped like a tenant's.
+ */
+function isUnderPlatformHost(host: string | null | undefined): boolean {
+  const normalized = normalizeHost(host);
+  if (normalized === "") return false;
+  return platformHosts().some((platform) =>
+    normalized.endsWith(`.${platform}`),
+  );
+}
+
+/**
+ * What a host resolves to, once every rule has been applied.
  *
- * 1. A **registered domain** names its tenant, and separately may also be the
- *    platform host — the founding tenant's domain is both today.
- * 2. A **deployment URL without a custom domain** — every Vercel preview gets
- *    one — names nothing, because no table can list a hostname that is minted
- *    per deployment. There the deployment's own tenant binding is still true
- *    and still the answer, which is C2(a) surviving exactly where it remains
- *    correct rather than as a general fallback. Such a host serves both
- *    surfaces, so a branch can be reviewed end to end from its preview link.
+ * A discriminated union rather than `{ tenant?, isPlatform }`, because that
+ * shape let a host be **both** — and while the founding tenant's domain was
+ * also the platform's, it genuinely was. It no longer is anywhere: production
+ * separates them by domain, and outside production the platform host and
+ * `<slug>.<platform host>` are different hosts too. Keeping the old shape would
+ * keep "both" representable, and every consumer would have to keep asking which
+ * half of it to trust — the ambiguity that put the owners' workspace and a
+ * tenant's public tree on one address.
+ *
+ * `null` means nobody's — the request is refused.
+ */
+export type HostBinding =
+  | { kind: "platform" }
+  | { kind: "tenant"; tenant: TenantDomainConfig };
+
+const PLATFORM_BINDING: HostBinding = { kind: "platform" };
+
+/**
+ * Which surface this host serves, and for a tenant surface, whose.
+ *
+ * One rule, applied the same way in every environment: **the host names the
+ * tenant, and the registry decides whether that tenant exists.** What differs
+ * between environments is only how the host spells it — a custom domain in
+ * production, a `<slug>.` label on the platform host everywhere else.
+ *
+ * In order of how specific each answer is:
+ *
+ * 1. A **registered domain** names its tenant. Production's custom domains stay
+ *    explicit mappings; nothing is inferred from their shape.
+ * 2. The **platform host** serves the platform and no tenant. `localhost` and
+ *    `127.0.0.1` are platform hosts too, so a laptop opens P. Digital Centar
+ *    rather than somebody's public site.
  * 3. **Production refuses anything else.** A host nobody registered must not
  *    reach a tenant's site, and on production there is no deployment URL to
  *    excuse: the domain is either ours or it is somebody pointing DNS at us.
+ * 4. Outside production, `<slug>.<platform host>` names a tenant — **and is
+ *    refused when the slug belongs to nobody.** A hostname is an assertion, not
+ *    a permission: `nepostojeci.localhost` is a 404, never a blank tenant.
+ * 5. A **deployment URL** — `p-digital-center-<hash>.vercel.app`, minted per
+ *    deployment and listable by no table — serves the platform, so a branch can
+ *    still be reviewed from its preview link. It reaches no tenant, because it
+ *    names none.
+ *
+ * The tenant no longer arrives from `DEFAULT_ORGANIZATION_SLUG`. That fallback
+ * attached the founding tenant to any unrecognised non-production host,
+ * including the bare platform host — which is why `localhost:3007` served
+ * Psihointegritet's home page instead of the platform's, and why staging could
+ * not tell the two surfaces apart at all.
  */
 export function resolveHostBinding(
   host: string | null | undefined,
-  deployment: { env: string | null | undefined; slug: string },
+  deployment: { env: string | null | undefined },
 ): HostBinding | null {
-  const tenant = tenantForHost(host);
-  const isPlatform = isPlatformHost(host);
-  if (tenant) return { tenant, isPlatform };
+  const registered = tenantForHost(host);
+  if (registered) return { kind: "tenant", tenant: registered };
 
-  // Production is literal: a host that names no tenant serves no tenant. The
-  // platform host legitimately owns none, and anything else is refused.
-  if (deployment.env === "production") {
-    return isPlatform ? { tenant: undefined, isPlatform } : null;
+  if (isPlatformHost(host)) return PLATFORM_BINDING;
+
+  // Production is literal: a host that names no tenant serves no tenant.
+  if (deployment.env === "production") return null;
+
+  const slug = tenantSlugFromHost(host);
+  if (slug !== null) {
+    const tenant = tenantForSlug(slug);
+    return tenant ? { kind: "tenant", tenant } : null;
   }
 
-  // Everywhere else the deployment is bound to one tenant, and no host names
-  // it — `localhost` and a preview URL are both unlistable. Note this applies
-  // to `localhost` *even though it is the platform host*: a laptop is the
-  // platform and the tenant at once, and treating it as platform-only left
-  // `/nalog` answering 404 on a developer's own machine.
-  const bound = tenantForSlug(deployment.slug);
-  if (bound) return { tenant: bound, isPlatform: true };
-  return isPlatform ? { tenant: undefined, isPlatform } : null;
+  // Beneath the platform host but naming no tenant — `a.b.localhost`. Refused
+  // rather than served the platform, which would hand one page a second
+  // address under a tenant-shaped name.
+  if (isUnderPlatformHost(host)) return null;
+
+  return PLATFORM_BINDING;
 }
 
 /**

@@ -7,18 +7,45 @@
 export const screens = {
   platform: {
     tenantsHeading: "Tenants",
-    signInSoonTitle: "Sign-in is being rebuilt",
-    signInSoonLead:
-      "P. Digital Centar is moving to its own authentication. Sign-in and registration will be available again shortly.",
-    signUpSoonTitle: "Registration is being rebuilt",
-    signUpSoonLead:
-      "P. Digital Centar is moving to its own authentication. Registration will be available again shortly.",
-    headedFor: "You were headed for: {path}",
-    backToSite: "Back to the site",
     landingTitle: "Marketing P. Digital Centar",
     landingLead:
       "Platform for psychologists, psychotherapists, consultants and educators.",
     signIn: "Sign in",
+    backToSite: "Back to the site",
+    showPassword: "Show password",
+    hidePassword: "Hide password",
+    signInTitle: "Sign in",
+    signInLead: "Your workspace on P. Digital Centar.",
+    signUpTitle: "Open an account",
+    signUpLead:
+      "An account on its own grants no access. Your organization's administrator assigns the role.",
+    emailLabel: "Email address",
+    passwordLabel: "Password",
+    newPasswordLabel: "New password",
+    nameLabel: "Name and surname",
+    nameOptional: "optional",
+    signInAction: "Sign in",
+    signUpAction: "Open the account",
+    resetAction: "Set the password",
+    working: "One moment…",
+    signInFailed: "Incorrect email address or password.",
+    registerFailed: "This account could not be opened.",
+    resetFailed: "This link is no longer valid.",
+    authUnreachable:
+      "Sign-in is temporarily unavailable. This is not your password — please try again shortly.",
+    passwordTooShort:
+      "The password must be at least {count, number} characters.",
+    forgotPassword:
+      "Forgotten your password, or signing in for the first time? Ask the platform administrator for a link.",
+    noAccount: "No account?",
+    haveAccount: "Already have an account?",
+    resetTitle: "Set a new password",
+    resetLead:
+      "This link works once. Every session of this account will be signed out.",
+    resetDoneTitle: "The password is set",
+    resetDoneLead: "You can sign in with the new password.",
+    resetLinkMissing:
+      "This address carries no link. Open the one you were given in full.",
     accessDeniedTitle: "This account has no access yet",
     accessDeniedLead:
       "Sign-in succeeded, but this account has not been given a role or an organization yet. Please contact your organization's administrator.",

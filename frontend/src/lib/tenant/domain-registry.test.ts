@@ -7,12 +7,21 @@ import {
   isPlatformHost,
   isTemporaryAccessHost,
   normalizeHost,
+  type HostBinding,
   resolveHostBinding,
   resolvePlatformHost,
   tenantForHost,
   tenantForSlug,
   tenantSiteUrl,
+  tenantSlugFromHost,
 } from "./domain-registry";
+
+/** The bound tenant's slug, or `undefined` when the host serves the platform. */
+function boundTenant(binding: HostBinding | null): string | undefined {
+  return binding?.kind === "tenant"
+    ? binding.tenant.organizationSlug
+    : undefined;
+}
 
 const originalPlatformHost = process.env.PLATFORM_HOST;
 
@@ -138,87 +147,147 @@ describe("PLATFORM_HOST on a deployed environment", () => {
 });
 
 describe("host binding", () => {
-  const preview = { env: "preview", slug: "psihointegritet" };
-  const production = { env: "production", slug: "psihointegritet" };
+  const development = { env: "development" };
+  const preview = { env: "preview" };
+  const staging = { env: "staging" };
+  const production = { env: "production" };
 
   it("binds a registered domain to its tenant", () => {
-    expect(
-      resolveHostBinding("sanjaneuer.com", production)?.tenant
-        ?.organizationSlug,
-    ).toBe("sanja-neuer");
+    expect(boundTenant(resolveHostBinding("sanjaneuer.com", production))).toBe(
+      "sanja-neuer",
+    );
   });
 
   it("refuses an unregistered host in production", () => {
     // The whole point of the registry: a domain someone points at this project
-    // must not serve a tenant's site, and production has no preview URL to
-    // excuse an unknown name.
+    // must not serve a tenant's site.
     expect(resolveHostBinding("nepoznat.com", production)).toBeNull();
   });
 
-  it("falls back to the deployment's own tenant on a preview URL", () => {
-    // Every Vercel preview gets a hostname minted per deployment, which no
-    // table can list. Without this a feature branch 404s in full and the
-    // fail-closed rule reads as a broken deploy.
-    const binding = resolveHostBinding("pdc-abc123.vercel.app", preview);
+  it("never reads a tenant out of a production hostname", () => {
+    // Production custom domains stay explicit mappings. If the `<slug>.` rule
+    // applied here, buying `psihointegritet.p-digital-center.com` — or merely
+    // pointing it at us — would be enough to serve somebody's site.
+    process.env.PLATFORM_HOST = "p-digital-center.com";
 
-    expect(binding?.tenant?.organizationSlug).toBe("psihointegritet");
-    // Both surfaces, so a branch can be reviewed end to end from one link.
-    expect(binding?.isPlatform).toBe(true);
-  });
-
-  it("does not let the preview fallback reach production", () => {
-    expect(resolveHostBinding("pdc-abc123.vercel.app", production)).toBeNull();
-  });
-
-  it("refuses a preview bound to a tenant nobody registered", () => {
     expect(
-      resolveHostBinding("pdc-abc123.vercel.app", {
-        env: "preview",
-        slug: "ne-postoji",
-      }),
+      resolveHostBinding("psihointegritet.p-digital-center.com", production),
+    ).toBeNull();
+    expect(resolveHostBinding("www.p-digital-center.com", production)).toBeNull();
+  });
+
+  it("gives a laptop the platform, not somebody's public site", () => {
+    // The regression this rewrite exists for. `localhost:3007` used to inherit
+    // DEFAULT_ORGANIZATION_SLUG and serve the founding tenant's home page, so
+    // the platform had no address at all on a developer's machine.
+    expect(resolveHostBinding("localhost:3007", development)?.kind).toBe(
+      "platform",
+    );
+    expect(resolveHostBinding("127.0.0.1:3007", development)?.kind).toBe(
+      "platform",
+    );
+  });
+
+  it("reaches a tenant on a laptop through its own subdomain", () => {
+    // Same resolver as production: the host names the tenant. What differs is
+    // only how it spells it.
+    expect(
+      boundTenant(resolveHostBinding("psihointegritet.localhost", development)),
+    ).toBe("psihointegritet");
+    expect(
+      boundTenant(resolveHostBinding("sanja-neuer.localhost:3007", development)),
+    ).toBe("sanja-neuer");
+  });
+
+  it("refuses a hostname that names a tenant nobody registered", () => {
+    // A hostname is an assertion, not a permission. An unknown slug is a 404,
+    // never an empty tenant and never a fallback to the founding one.
+    expect(resolveHostBinding("ne-postoji.localhost", development)).toBeNull();
+
+    process.env.PLATFORM_HOST = "staging.p-digital-center.com";
+    expect(
+      resolveHostBinding("ne-postoji.staging.p-digital-center.com", staging),
     ).toBeNull();
   });
 
-  it("prefers the registered domain over the deployment binding", () => {
-    // A preview aliased to a tenant's own domain is that tenant, not whatever
-    // the deployment happens to be bound to.
-    const binding = resolveHostBinding("sanjaneuer.com", preview);
+  it("uses the platform host of the environment it is running in", () => {
+    process.env.PLATFORM_HOST = "staging.p-digital-center.com";
 
-    expect(binding?.tenant?.organizationSlug).toBe("sanja-neuer");
+    expect(
+      resolveHostBinding("staging.p-digital-center.com", staging)?.kind,
+    ).toBe("platform");
+    expect(
+      boundTenant(
+        resolveHostBinding("sanja-neuer.staging.p-digital-center.com", staging),
+      ),
+    ).toBe("sanja-neuer");
+
+    process.env.PLATFORM_HOST = "qa.p-digital-center.com";
+
+    expect(resolveHostBinding("qa.p-digital-center.com", preview)?.kind).toBe(
+      "platform",
+    );
+    expect(
+      boundTenant(
+        resolveHostBinding("psihointegritet.qa.p-digital-center.com", preview),
+      ),
+    ).toBe("psihointegritet");
   });
 
-  it("reports a host that is both tenant and platform as both", () => {
+  it("reads one label, so a deeper name resolves to nobody", () => {
+    // `a.psihointegritet.localhost` must not become the tenant `a`, nor
+    // silently become `psihointegritet`.
+    expect(tenantSlugFromHost("a.psihointegritet.localhost")).toBeNull();
+    expect(
+      resolveHostBinding("a.psihointegritet.localhost", development),
+    ).toBeNull();
+  });
+
+  it("serves the platform from a deployment URL", () => {
+    // Every Vercel preview gets a hostname minted per deployment, which no
+    // table can list and which names no tenant. It answers for the platform so
+    // a branch is still reviewable from its link — and reaches no tenant,
+    // because it claims to be none.
+    process.env.PLATFORM_HOST = "qa.p-digital-center.com";
+
+    expect(resolveHostBinding("pdc-abc123.vercel.app", preview)?.kind).toBe(
+      "platform",
+    );
+  });
+
+  it("does not let a deployment URL reach production", () => {
+    expect(resolveHostBinding("pdc-abc123.vercel.app", production)).toBeNull();
+  });
+
+  it("prefers the registered domain over every later rule", () => {
+    // A preview aliased to a tenant's own domain is that tenant.
+    expect(boundTenant(resolveHostBinding("sanjaneuer.com", preview))).toBe(
+      "sanja-neuer",
+    );
+  });
+
+  it("keeps a tenant domain a tenant even if it is named as the platform", () => {
+    // A misconfiguration, and the failure has a safe direction: the tenant wins,
+    // so the workspace 404s on somebody's public domain rather than the domain
+    // quietly serving owner surfaces.
     process.env.PLATFORM_HOST = "psihointegritet.com";
     const binding = resolveHostBinding("psihointegritet.com", production);
 
-    expect(binding?.tenant?.organizationSlug).toBe("psihointegritet");
-    expect(binding?.isPlatform).toBe(true);
+    expect(binding?.kind).toBe("tenant");
+    expect(boundTenant(binding)).toBe("psihointegritet");
   });
 
-  it("gives a laptop both roles at once", () => {
-    // `localhost` is the platform host, but it is also where the developer's
-    // own tenant is served. Treating it as platform-only left /nalog answering
-    // 404 on a machine that has no other host to offer.
-    const binding = resolveHostBinding("localhost:3007", {
-      env: "development",
-      slug: "psihointegritet",
-    });
-
-    expect(binding?.tenant?.organizationSlug).toBe("psihointegritet");
-    expect(binding?.isPlatform).toBe(true);
-  });
-
-  it("reports a platform-only host as owning no tenant", () => {
+  it("reports the platform host as serving no tenant", () => {
     process.env.PLATFORM_HOST = "p-digital-center.com";
     const binding = resolveHostBinding("p-digital-center.com", production);
 
-    expect(binding?.tenant).toBeUndefined();
-    expect(binding?.isPlatform).toBe(true);
+    expect(binding?.kind).toBe("platform");
+    expect(boundTenant(binding)).toBeUndefined();
   });
 });
 
 describe("temporary access host (sanjaneuer.com DNS unavailable)", () => {
-  const production = { env: "production", slug: "psihointegritet" };
+  const production = { env: "production" };
 
   it("resolves the temporary host to its tenant, and only it", () => {
     expect(tenantForHost("sanja-neuer.vercel.app")?.organizationSlug).toBe(
@@ -291,7 +360,7 @@ describe("temporary access host (sanjaneuer.com DNS unavailable)", () => {
     // B2 invariants do not soften because the hostname is temporary: owner
     // surfaces stay off it, the client area stays on it.
     const binding = resolveHostBinding("sanja-neuer.vercel.app", production);
-    expect(binding?.tenant?.organizationSlug).toBe("sanja-neuer");
-    expect(binding?.isPlatform).toBe(false);
+    expect(binding?.kind).toBe("tenant");
+    expect(boundTenant(binding)).toBe("sanja-neuer");
   });
 });

@@ -1,26 +1,27 @@
 import { NextResponse } from "next/server";
 
-import {
-  PLATFORM_SESSION_COOKIE,
-  TENANT_SESSION_COOKIE,
-} from "@/lib/auth/session/cookies";
+import { getServerToken } from "@/lib/auth/session/server-session";
+import { revokeSession } from "@/lib/auth/session/platform-auth";
+import { clearSessionCookies } from "@/lib/auth/session/session-cookie";
 
 /**
  * End the session.
  *
- * Clears both cookies rather than working out which one applies. They are
- * host-only and mutually exclusive in practice, so deleting the pair costs
- * nothing and cannot leave the wrong one behind — the failure mode worth
- * avoiding is a signed-out person still carrying a session for the other
- * surface.
+ * Two steps, in this order and both unconditional: revoke the row in
+ * `auth_sessions` so the token is dead everywhere, then clear the cookies so
+ * this browser stops presenting it.
  *
- * Today there is nothing to clear (D-083). The auth engine adds the row
- * revocation in `auth_sessions`; the response shape does not change.
+ * The revocation is best-effort by design. If the backend is unreachable the
+ * cookies are still cleared — somebody who clicked "sign out" must end up
+ * signed out of the browser in front of them, and a stranded row expiring on
+ * its own schedule is a smaller problem than a sign-out that appears to fail.
  */
 export async function POST() {
+  const token = await getServerToken();
+  if (token) await revokeSession(token);
+
   const response = NextResponse.json({ ok: true });
-  response.cookies.delete(PLATFORM_SESSION_COOKIE);
-  response.cookies.delete(TENANT_SESSION_COOKIE);
+  clearSessionCookies(response);
   // The answer depends on who asked; a shared cache must never reuse it.
   response.headers.set("Cache-Control", "private, no-store");
   return response;

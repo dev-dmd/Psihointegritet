@@ -1,5 +1,10 @@
 import type { ReactNode } from "react";
 
+import Link from "next/link";
+
+import { ArrowLeftIcon } from "@heroicons/react/24/outline";
+import { getTranslations } from "next-intl/server";
+
 import { PLATFORM_NAME } from "@/lib/tenant/domain-registry";
 
 /**
@@ -21,16 +26,20 @@ import { PLATFORM_NAME } from "@/lib/tenant/domain-registry";
  * not a bug, and it is exactly why this component takes the *return* surface
  * rather than the current URL as its input once that lands.
  */
-export function AuthSurfaceLayout({
+export async function AuthSurfaceLayout({
   surface,
   children,
 }: {
   surface: "tenant" | "platform";
   children: ReactNode;
 }) {
+  const t = await getTranslations("screens.platform");
+  const back = <BackToSite label={t("backToSite")} />;
+
   if (surface !== "platform") {
     return (
-      <main className="flex min-h-screen items-center justify-center px-4 py-16">
+      <main className="flex min-h-screen flex-col items-center justify-center px-4 py-16">
+        <div className="w-full max-w-[420px]">{back}</div>
         {children}
       </main>
     );
@@ -59,8 +68,32 @@ export function AuthSurfaceLayout({
         <p className="text-coffee mb-8 font-serif text-[22px] lg:hidden">
           {PLATFORM_NAME}
         </p>
+        <div className="w-full max-w-[420px]">{back}</div>
         {children}
       </div>
     </main>
+  );
+}
+
+/**
+ * The way out, above the form on every surface.
+ *
+ * Host-relative on purpose: `/` is the practitioner's own site on her domain
+ * and the platform landing on ours. One link, correct on both, because it never
+ * names a host — the same discipline `signOut` follows.
+ *
+ * Above the heading rather than below the form: somebody who landed here by
+ * accident, or who was bounced from a protected route, should not have to read
+ * past a password field to find their way back.
+ */
+function BackToSite({ label }: { label: string }) {
+  return (
+    <Link
+      href="/"
+      className="text-coffee/60 hover:text-coffee mb-6 inline-flex items-center gap-1.5 text-[14px] transition-colors"
+    >
+      <ArrowLeftIcon className="size-4" aria-hidden />
+      {label}
+    </Link>
   );
 }

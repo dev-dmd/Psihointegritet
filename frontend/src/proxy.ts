@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 import { PROTECTED_ROUTE_PREFIXES, SIGN_IN_URL } from "@/lib/auth/routes";
+import { PLATFORM_SESSION_COOKIE } from "@/lib/auth/session/cookies";
 import {
   PLATFORM_HOME_ROUTE,
   TENANT_ROUTE_PREFIX,
@@ -10,18 +11,12 @@ import {
   isTemporaryAccessHost,
   resolveHostBinding,
 } from "@/lib/tenant/domain-registry";
-import {
-  clientRoutePrefixes,
-  hasRoutePrefix,
-  isSurfaceAllowedOnHost,
-  normalizePathname,
-  platformRoutePrefixes,
-} from "@/lib/routes/match";
+import { isSurfaceAllowedOnHost, normalizePathname } from "@/lib/routes/match";
 import {
   decideProxyRoute,
   proxyFallbackLocale,
 } from "@/lib/routes/proxy-locale";
-import { deploymentSlugFromEnv } from "@/lib/tenant/deployment-slug";
+import { servedFromTenantSegment } from "@/lib/routes/tenant-rewrite";
 
 /**
  * Next.js 16 renamed the `middleware` convention to `proxy`; Clerk v7 supports
@@ -48,23 +43,6 @@ function isProtectedPath(pathname: string): boolean {
   );
 }
 
-/**
- * Surfaces that belong to the platform, not to any tenant: the owners' work
- * area and the operator console. They answer on the platform host and are never
- * rewritten onto a tenant segment, because which organization an owner is
- * working in comes from their membership rather than from the address bar.
- */
-const CLIENT_PATH_PREFIXES = clientRoutePrefixes();
-const PLATFORM_PATH_PREFIXES = platformRoutePrefixes();
-
-function isClientPath(pathname: string): boolean {
-  return hasRoutePrefix(pathname, CLIENT_PATH_PREFIXES);
-}
-
-function isPlatformPath(pathname: string): boolean {
-  return hasRoutePrefix(pathname, PLATFORM_PATH_PREFIXES);
-}
-
 export default async function proxy(request: NextRequest) {
   // Captured before anything else: `NextResponse.rewrite` does not mutate
   // `request.nextUrl`, but relying on that leaves the invariant implicit. The
@@ -84,17 +62,14 @@ export default async function proxy(request: NextRequest) {
   }
 
   // A host that resolves to nobody is refused. That is what stops a stray
-  // domain pointed at this project from serving some tenant's site — and on a
-  // preview deployment, whose hostname no table can list, it is what lets the
-  // deployment's own tenant binding still answer.
+  // domain pointed at this project from serving some tenant's site, and what
+  // makes `nepostojeci.localhost` a 404 rather than an empty tenant.
   const binding = resolveHostBinding(host, {
     env: process.env.DEPLOYMENT_ENV,
-    slug: deploymentSlugFromEnv(),
   });
   if (!binding) {
     return new NextResponse("Not found", { status: 404 });
   }
-  const { tenant, isPlatform: onPlatformHost } = binding;
 
   // The platform host serves its own front page, never a tenant's. `app/(public)`
   // still holds the founding tenant's ~26 pages, and falling through to those
@@ -102,10 +77,8 @@ export default async function proxy(request: NextRequest) {
   // identity D-080 retired and the hole phase 2b closed.
   //
   // A rewrite rather than a redirect, so the platform answers 200 at its own
-  // root instead of bouncing every visitor to sign-in. A host that is *also* a
-  // tenant keeps its own home page, which is why this reads `!tenant` rather
-  // than naming a hostname.
-  if (onPlatformHost && !tenant && normalizePathname(externalPath) === "/") {
+  // root instead of bouncing every visitor to sign-in.
+  if (binding.kind === "platform" && normalizePathname(externalPath) === "/") {
     return withSurface(
       NextResponse.rewrite(new URL(PLATFORM_HOME_ROUTE + search, request.url)),
       "platform",
@@ -117,12 +90,7 @@ export default async function proxy(request: NextRequest) {
   // Each surface answers on the host that owns it, and nowhere else. Checked
   // before the auth gate on purpose: sending someone to sign in on a domain
   // that will not serve the page afterwards is a worse answer than 404.
-  if (
-    !isSurfaceAllowedOnHost(externalPath, {
-      isTenant: tenant !== undefined,
-      isPlatform: onPlatformHost,
-    })
-  ) {
+  if (!isSurfaceAllowedOnHost(externalPath, binding.kind)) {
     return new NextResponse("Not found", { status: 404 });
   }
 
@@ -143,16 +111,23 @@ export default async function proxy(request: NextRequest) {
     return response;
   }
 
-  // Protected routes bounce to sign-in, unconditionally.
+  // Protected routes bounce to sign-in when no session cookie is present.
   //
-  // There is no session to check: Clerk is gone (D-083) and the PDC auth engine
-  // is a later slice. Until it lands, "is this person signed in" has one honest
-  // answer everywhere, and the redirect is what makes that visible instead of
-  // rendering an empty panel.
+  // **Presence, not verification, and deliberately so.** The proxy runs on every
+  // request and cannot reach the database; asking it to validate would mean a
+  // network round trip per navigation, or a token it could check itself — which
+  // is a JWT, which is a session nobody can revoke. So this is a coarse gate
+  // that saves an obvious round trip, and nothing more.
   //
-  // The engine restores the condition here — `if (isProtectedPath(...) &&
-  // !(await hasSession(request)))` — and nothing else on this path changes.
-  if (isProtectedPath(externalPath)) {
+  // A forged cookie gets past it and reaches the page, where `getServerIdentity`
+  // presents the token to the backend, the backend finds no live row in
+  // `auth_sessions`, and the guard redirects. Authorization is the backend's
+  // answer, never the proxy's (rules v0.3 §5.4) — the proxy is an optimisation
+  // that must never be the thing standing between somebody and a panel.
+  if (
+    isProtectedPath(externalPath) &&
+    !request.cookies.has(PLATFORM_SESSION_COOKIE)
+  ) {
     const signInUrl = new URL(SIGN_IN_URL, request.url);
     // The **external**, pre-rewrite path. `/prijava` reads `redirect_url` to
     // return the visitor where they were actually headed; without it every
@@ -174,10 +149,7 @@ export default async function proxy(request: NextRequest) {
   // Owner surfaces stay where they are. Their organization comes from the
   // signed-in person, so wrapping them in a tenant segment would assert the
   // wrong thing — that the domain decides which tenant an owner is managing.
-  // On a host that is both — the founding tenant's domain today — only the
-  // owner surfaces are the platform's. Its public pages and its clients belong
-  // to the tenant, and must be stamped as such.
-  if (onPlatformHost && (isPlatformPath(externalPath) || !tenant)) {
+  if (binding.kind === "platform") {
     return withSurface(
       decision.kind === "rewrite"
         ? NextResponse.rewrite(new URL(internalPath + search, request.url))
@@ -188,22 +160,18 @@ export default async function proxy(request: NextRequest) {
     );
   }
 
-  if (!tenant) return NextResponse.next();
+  const { tenant } = binding;
 
-  // The client area stays where it is and is scoped by the stamp instead of by
-  // a rewrite. These routes are behind authentication and request-time already,
-  // so the guard can read which tenant the visitor arrived at; moving five
-  // pages under the tenant segment would buy nothing this slice needs.
+  // Not everything on a tenant host lives under that tenant's segment: the auth
+  // pages and the Route Handlers are top-level files, the client area is scoped
+  // by the stamp instead, and the founding tenant's public tree has not moved
+  // yet. `servedFromTenantSegment` states all three in one place, beside the
+  // reason each one is there.
   //
-  // What matters is that it is the *host* that decides: a client who signs in
-  // on `sanjaneuer.com` stays in Sanja's space and never meets another
-  // tenant's account page.
-  const isClientSurface = isClientPath(internalPath);
-
-  // The founding tenant's ~26 public pages still live in `app/(public)` with
-  // copy written for that one organization; PDC-1 moves them under the tenant
-  // segment together with the page model. Until then they pass through.
-  if (isClientSurface || tenant.usesLegacyPublicTree) {
+  // What matters either way is that the *host* decides the tenant: a client who
+  // signs in on `sanjaneuer.com` stays in Sanja's space and never meets another
+  // tenant's account page. The stamp carries that, not the URL shape.
+  if (!servedFromTenantSegment(internalPath, tenant)) {
     return withSurface(
       decision.kind === "rewrite"
         ? NextResponse.rewrite(new URL(internalPath + search, request.url))

@@ -334,7 +334,7 @@ migracija verifikovana".
 | --- | --- | --- | --- |
 | `production` | ostaje | **jedini** production backend | — |
 | `staging` | ostaje | **jedini** non-production backend; QA i staging frontend oba na njega | Faza 7 |
-| `features` | **procenjuje se posebno** | vidi §5.3 | Faza 7 |
+| `features` | **gasi se** | odlučeno 2026-09-09: ne procenjuje se posebno. `features` grana na frontendu konzumira **staging** bazu, pa zaseban backend environment nema potrošača. Gasi se zajedno sa Sanjinim environment-ima, uz svoj preduslov — Vercel Preview `NEXT_PUBLIC_API_URL` mora prvo sa `features` na staging, inače svaki preview deployment zove mrtav host | Faza 10 |
 | `sanja-production` | migration artifact | gasi se **tek** posle Faze 9 | Faza 10 |
 | `sanja-staging` | migration artifact | gasi se **tek** posle Faze 9 | Faza 10 |
 
@@ -543,7 +543,7 @@ vlasnik tabela · 51 tabela naspram 31 u ADR-023 inventaru.
 | **7** | Jedan production + jedan staging backend; QA → staging | **GATE B** | Sanjin domen radi kroz **production** backend; QA i staging na istom API-ju | vrati `productionApiBaseUrl` u registry | **Ne** |
 | **8** | **Migracija Sanjinih podataka** u zajedničku bazu | **GATE B** + Faza 7 + inventar §10 + **dump** | row-count po tabeli; FK integritet; `organization_id` = Sanjin UUID u **target** bazi na svakom redu | restore iz dump-a; `sanja-production` je i dalje živ | ⚠️ **Da** |
 | **9** | Live cross-tenant testovi | Faza 8 | Sanjina sesija: 0 Psiho redova; Psiho sesija: 0 Sanja redova; smoke: booking, intake, content, Kompas | povratak na `sanja-production` preko registry-ja | **Ne** |
-| **10** | Gašenje `sanja-production` / `sanja-staging` environment-a i njihovih Postgres volume-a | Faza 9 zelena **≥7 dana** + verifikovan offline dump | environment nestao; produkcija netaknuta | **samo iz dump-a** | 🔴 **Da, nepovratno** |
+| **10** | Gašenje `sanja-production` / `sanja-staging` **i `features`** environment-a i njihovih Postgres volume-a | Faza 9 zelena **≥7 dana** + verifikovan offline dump; za `features` dodatno: **Vercel Preview `NEXT_PUBLIC_API_URL` prebačen na staging backend** | environment nestao; produkcija netaknuta; preview deployment gađa staging API | **samo iz dump-a** | 🔴 **Da, nepovratno** |
 | **11** | Brisanje `productionApiBaseUrl` iz `domain-registry.ts` | Faza 10 | registry = `{organizationSlug, domains, publicUrl}`; build zelen | revert commit | **Ne** |
 
 ### 8.1 Provera zavisnosti — gde se redosled iz zadatka menja i zašto

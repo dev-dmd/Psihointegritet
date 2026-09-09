@@ -111,9 +111,19 @@ async def _seed_committed(
         return fixture
 
 
-async def _cleanup(session_factory: async_sessionmaker[AsyncSession], org_id: UUID) -> None:
+async def _cleanup(session_factory: async_sessionmaker[AsyncSession], fx: _Fixture) -> None:
+    """Remove the tenant *and* the reviewer.
+
+    Deleting the organization cascades through everything scoped to it, which
+    covers all of this fixture except one row: `internal_users` is global, so
+    every run used to leave a `race-user-…` identity behind. Harmless to the
+    tests, but they accumulate — and `platform_accounts.py --list`, which an
+    operator reads during the auth cutover to see who still needs activating,
+    fills up with them.
+    """
     async with session_factory() as session:
-        await session.execute(delete(Organization).where(Organization.id == org_id))
+        await session.execute(delete(Organization).where(Organization.id == fx.org_id))
+        await session.execute(delete(InternalUser).where(InternalUser.id == fx.user_id))
         await session.commit()
 
 
@@ -210,7 +220,7 @@ class TestAppointmentOverlapRace:
                 )
                 assert len(result.scalars().all()) == 1
         finally:
-            await _cleanup(session_factory, fx.org_id)
+            await _cleanup(session_factory, fx)
 
     async def test_double_confirm_same_request_only_one_appointment(
         self, session_factory: async_sessionmaker[AsyncSession]
@@ -244,7 +254,7 @@ class TestAppointmentOverlapRace:
                 )
                 assert len(result.scalars().all()) == 1
         finally:
-            await _cleanup(session_factory, fx.org_id)
+            await _cleanup(session_factory, fx)
 
     async def test_different_organizations_do_not_conflict(
         self, session_factory: async_sessionmaker[AsyncSession]
@@ -268,8 +278,8 @@ class TestAppointmentOverlapRace:
             assert result_a is not None
             assert result_b is not None
         finally:
-            await _cleanup(session_factory, fx_a.org_id)
-            await _cleanup(session_factory, fx_b.org_id)
+            await _cleanup(session_factory, fx_a)
+            await _cleanup(session_factory, fx_b)
 
 
 # ── Booking config upsert race ───────────────────────────────────────────────
@@ -316,4 +326,4 @@ class TestBookingConfigUpsertRace:
                 )
                 assert len(result.scalars().all()) == 1
         finally:
-            await _cleanup(session_factory, fx.org_id)
+            await _cleanup(session_factory, fx)
