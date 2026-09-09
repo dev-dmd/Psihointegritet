@@ -31,9 +31,10 @@ services:
   backend:
     build: ./backend
     profiles: ["backend"]
-    env_file:
-      - path: ./backend/.env.compose.local
-        required: false
+    # No `env_file`. It existed only to hand the container the public Clerk
+    # verifier values, and Clerk is gone (D-083, AUTH-6). Every variable the
+    # backend needs is named below, so a stale `.env.compose.local` can no
+    # longer quietly override `DATABASE_URL` and point local dev at production.
     environment:
       ENVIRONMENT: development
       # Which tenant this local backend serves (C2(a): one runtime, one

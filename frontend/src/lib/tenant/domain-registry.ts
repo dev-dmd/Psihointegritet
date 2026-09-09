@@ -253,7 +253,9 @@ export function resolvePlatformHost(
  * refuses the request when it does not. A single label, so `a.b.localhost`
  * resolves to nothing rather than to a tenant called `a`.
  */
-export function tenantSlugFromHost(host: string | null | undefined): string | null {
+export function tenantSlugFromHost(
+  host: string | null | undefined,
+): string | null {
   const normalized = normalizeHost(host);
   if (normalized === "") return null;
 
@@ -299,8 +301,7 @@ function isUnderPlatformHost(host: string | null | undefined): boolean {
  * `null` means nobody's — the request is refused.
  */
 export type HostBinding =
-  | { kind: "platform" }
-  | { kind: "tenant"; tenant: TenantDomainConfig };
+  { kind: "platform" } | { kind: "tenant"; tenant: TenantDomainConfig };
 
 const PLATFORM_BINDING: HostBinding = { kind: "platform" };
 

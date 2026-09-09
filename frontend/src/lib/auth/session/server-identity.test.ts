@@ -186,70 +186,48 @@ describe("which backend answers", () => {
     expect(fetchedHosts().join(" ")).not.toContain(psiho.productionApiBaseUrl);
   });
 
-  it("asks every backend on the shared platform surface", async () => {
+  it("asks only the backend that issued the session, on the platform surface", async () => {
     onSurface("platform");
     await getSessionIdentity();
 
-    // Each database holds only its own memberships, so no single backend can
-    // answer which organizations an owner belongs to.
-    expect(fetchedHosts().sort()).toEqual(
-      TENANT_DOMAINS.map(
-        (tenant) => `${tenant.productionApiBaseUrl}/api/v1/me`,
-      ).sort(),
-    );
+    // It used to ask every registered backend and merge the answers, which was
+    // right while a session was a Clerk JWT any backend could verify. A PDC
+    // session is a row in one database (D-083), so every other backend answers
+    // 401 by construction — a cross-tenant request per page load that can only
+    // ever return nothing.
+    expect(fetchedHosts()).toEqual(["https://api.test/api/v1/me"]);
   });
 
-  it("merges memberships the tenants report separately", async () => {
+  it("never reaches another tenant's backend to resolve a platform session", async () => {
     onSurface("platform");
-    const [first, second] = TENANT_DOMAINS;
-    fetchMock.mockImplementation(async (url: string) =>
-      String(url).startsWith(first!.productionApiBaseUrl)
-        ? new Response(
-            JSON.stringify(
-              backendIdentity({
-                memberships: [
-                  {
-                    organizationSlug: first!.organizationSlug,
-                    roles: ["org_admin"],
-                  },
-                ],
-              }),
-            ),
-          )
-        : new Response(
-            JSON.stringify(
-              backendIdentity({
-                memberships: [
-                  {
-                    organizationSlug: second!.organizationSlug,
-                    roles: ["therapist"],
-                  },
-                ],
-              }),
-            ),
-          ),
-    );
+    await getSessionIdentity();
 
-    const identity = await getSessionIdentity();
-    expect(
-      identity?.memberships
-        .map((membership) => membership.organizationSlug)
-        .sort(),
-    ).toEqual([first!.organizationSlug, second!.organizationSlug].sort());
+    const others = TENANT_DOMAINS.filter(
+      (tenant) => tenant.productionApiBaseUrl !== "https://api.test",
+    );
+    expect(others.length).toBeGreaterThan(0);
+    for (const tenant of others) {
+      expect(fetchedHosts().join(" ")).not.toContain(
+        tenant.productionApiBaseUrl,
+      );
+    }
   });
 
-  it("treats a backend that does not know the account as no memberships", async () => {
+  it("reads an unknown session as signed out rather than as an error", async () => {
     onSurface("platform");
-    const [first] = TENANT_DOMAINS;
-    fetchMock.mockImplementation(async (url: string) =>
-      String(url).startsWith(first!.productionApiBaseUrl)
-        ? new Response(JSON.stringify(backendIdentity()))
-        : new Response("", { status: 403 }),
-    );
+    fetchMock.mockResolvedValue(new Response("", { status: 401 }));
 
-    // An owner of one practice simply has nothing from the other; 403 is an
-    // ordinary answer here, not a failure.
-    await expect(getSessionIdentity()).resolves.not.toBeNull();
+    // `getServerToken` documents this: an expired, revoked or forged cookie is
+    // "a token the backend does not know, which reads as not signed in". It has
+    // to redirect to sign-in — throwing would show an error page to everyone
+    // whose session simply aged out, which is everyone, eventually.
+    await expect(getSessionIdentity()).resolves.toBeNull();
+  });
+
+  it("reads a refused session as signed out too", async () => {
+    onSurface("platform");
+    fetchMock.mockResolvedValue(new Response("", { status: 403 }));
+    await expect(getSessionIdentity()).resolves.toBeNull();
   });
 
   it("still fails when a backend is genuinely broken", async () => {

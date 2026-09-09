@@ -173,7 +173,9 @@ describe("host binding", () => {
     expect(
       resolveHostBinding("psihointegritet.p-digital-center.com", production),
     ).toBeNull();
-    expect(resolveHostBinding("www.p-digital-center.com", production)).toBeNull();
+    expect(
+      resolveHostBinding("www.p-digital-center.com", production),
+    ).toBeNull();
   });
 
   it("gives a laptop the platform, not somebody's public site", () => {
@@ -195,7 +197,9 @@ describe("host binding", () => {
       boundTenant(resolveHostBinding("psihointegritet.localhost", development)),
     ).toBe("psihointegritet");
     expect(
-      boundTenant(resolveHostBinding("sanja-neuer.localhost:3007", development)),
+      boundTenant(
+        resolveHostBinding("sanja-neuer.localhost:3007", development),
+      ),
     ).toBe("sanja-neuer");
   });
 

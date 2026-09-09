@@ -1,6 +1,9 @@
 # PDC Auth Engine — audit i plan zamene Clerk-a
 
-**Datum:** 2026-09-07 · **Vlasnik:** Milan Dražić (CTO) · **Status:** audit + plan, **bez implementacije**
+**Datum:** 2026-09-07 · **Vlasnik:** Milan Dražić (CTO)
+**Status (2026-09-09):** AUTH-1…AUTH-6 **isporučeni**. Otvoreno: aktivacija pet naloga na
+produkciji (§15.4) → onda AUTH-7 (tenant klijenti). Odeljci 0–12 su **originalni audit od
+2026-09-07** i namerno se ne prepravljaju; §13–§15 beleže šta je stvarno isporučeno.
 **Odluka:** D-083 (predložena) · **Prethodi:** D-081, **D-082 (scope gate)**, ADR-023, `PDC_CONSOLIDATION_MIGRATION_PLAN_v1_1.md`
 **Referenca:** Marysoll `AUTH-SESSION-COOKIE-COLLISION.md`, `AuthUser.ts`, `TenantUser.ts`, `tenant-auth/*` — **kao izvor granica i grešaka, ne kao izvor koda**
 
@@ -8,6 +11,11 @@
 
 ## 0. Jedna stvar pre svega ostalog
 
+> ⛔ **Prevaziđeno — pročitati kao istoriju, ne kao uputstvo.** AUTH-0 nikada nije izveden:
+> Clerk nije vraćen nego uklonjen (`371abb6`), a zamenio ga je PDC auth engine (§13–§15).
+> Preporuka ispod bi danas vratila zavisnost koje više nema. Ostavljeno jer objašnjava
+> zašto je redosled u §11 baš takav.
+>
 > 🔴 **Prijava je u produkciji trenutno pokvarena.** Clerk primary domen je prebačen na
 > `p-digital-center.com`, stari FAPI `clerk.psihointegritet.com` ne odgovara (TLS handshake failure,
 > 3/3), a produkcija i dalje šalje `pk_live_…cHNpaG9pbnRlZ3JpdGV0…`.
@@ -396,7 +404,7 @@ AUTH-2  backend engine: argon2, tokeni, sesije, servisi    testovi, bez ruta
 AUTH-3  PdcSessionVerifier + /api/v1/auth/platform/*       ✅ 2026-09-08
 AUTH-4  platform login/register UI na p-digital-center.com  ✅ 2026-09-08
 AUTH-5  migracija 5 identiteta + activation                ✅ 2026-09-08 (alat + proba)
-AUTH-6  ── GATE ── Clerk se isključuje na platformi
+AUTH-6  ── GATE ── Clerk se isključuje na platformi        ✅ kod 2026-09-09 · §15
 AUTH-7  tenant client: /api/v1/auth/client/* + tenant-branded UI
 AUTH-8  cross-tenant negativni testovi (§10)
 AUTH-9  ── GATE ── uklanjanje @clerk/nextjs, env, DNS
@@ -633,3 +641,115 @@ podrazumevani `--base-url` ispravan. `psihointegritet.com/radni-prostor` vraća 
 
 Redosled: `--list` → uporediti sa očekivanih pet → `--dry-run` →
 `--activate` po osobi → predati linkove → `--list` dok svih pet ne bude `ready`.
+
+---
+
+## 15. AUTH-6 — Clerk je isključen, prijava je dokazana (2026-09-09)
+
+### 15.1 Šta je AUTH-6 zatekao
+
+Clerk **već nije bio u kodu** — `371abb6` ga je uklonio pre AUTH-1, pa je AUTH-0 („vratiti Clerk
+u ispravno stanje") preskočen i nikada izveden. Provereno ovde ponovo, jer je gate: nijedan
+`@clerk/*` import, nijedna zavisnost u `package.json`, nijedno Clerk polje u `Settings`,
+`infrastructure/auth/` drži samo `identity.py`, `pdc_session.py` i `unavailable.py`. Sve što grep
+još nalazi po `frontend/src` su komentari koji objašnjavaju istoriju.
+
+Ostalo je **četiri mesta van koda** koja Clerk još traže, i jedno od njih je kvarilo posao:
+
+| Mesto | Šta je radilo | Rešenje |
+| --- | --- | --- |
+| **`scripts/start-dev.sh`** | 🔴 `exit 1` ako `CLERK_ISSUER`/`CLERK_JWKS_URL` nisu popunjeni — **svež klon nije mogao da digne lokalni dev** za verifier koji ne postoji | ceo `prepare_backend_clerk_verifier()` obrisan |
+| `compose.yaml` | `env_file: backend/.env.compose.local` — postojao samo da doda te Clerk vrednosti | uklonjen; svaka promenljiva se sada imenuje eksplicitno, pa zastareo fajl više ne može tiho da pregazi `DATABASE_URL` i uperi lokalni dev na produkciju |
+| `.github/workflows/quality.yml` | `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` + `CLERK_SECRET_KEY` sa 20 redova obrazloženja o handshake-u | obrisano — `lib/validation/env.ts` ih više ne validira |
+| `backend/.env.example`, `frontend/.env.example`, `.env.compose.local.example` | četiri/tri mrtve promenljive; treći fajl je ceo bio Clerk | promenljive obrisane, fajl obrisan |
+
+### 15.2 Nalaz koji je AUTH-6 otkrio: cross-backend spajanje članstava je mrtvo
+
+`server-identity.ts` je na platformskoj površini pitao **svaki** registrovani backend i spajao
+članstva. To je bilo ispravno pod Clerk-om: sesija je bila JWT koji svaki backend proverava svojim
+JWKS-om.
+
+**Pod D-083 to ne može da radi.** PDC sesija je opaque token u `auth_sessions`, a
+`PdcSessionVerifier` ga traži u **svojoj** bazi. Sesija izdata na platformskom backend-u u
+Sanjinoj bazi ne postoji, pa njen backend vraća 401 — uvek, po konstrukciji. Fan-out je bio jedan
+cross-tenant zahtev po učitavanju stranice koji nije mogao da vrati ništa.
+
+Izmereno na živom backendu, ne izvedeno: token koji nije u `auth_sessions` → **401**.
+
+Posledica se izgovara naglas jer odlučuje migraciju: **čovek čija su članstva u bazi koja nije
+izdala njegovu sesiju ne vidi ta članstva uopšte, i ne postoji konfiguracija koja ih vraća.**
+Zato Sanjin identitet mora u platformsku bazu (`PDC_CONSOLIDATION_MIGRATION_PLAN_v1_1.md` §5.4) —
+to nije preferencija nego preduslov.
+
+**Uz to je popravljen defekt koji bi pogodio svakoga.** `server-session.ts` piše da istekao ili
+povučen cookie „reads as not signed in", ali je `loadBackendIdentity` u tom slučaju **bacao**
+grešku (`known.length === 0`). Istekla sesija bi dala error boundary umesto preusmerenja na
+prijavu — a sesija ističe svakome. Sada 401/403 vraća `null`, guard preusmerava na `/prijava`.
+
+### 15.3 Proba izvedena nad pravom bazom (lokalno)
+
+Nije pretpostavljeno — pušteno je celo. Lokalna baza je pritom **već ciljno stanje**: jedna baza,
+obe organizacije, svih pet identiteta uključujući Sanju.
+
+```
+1. alembic upgrade head
+2. provision_organization.py --list   → psihointegritet · sanja-neuer  (obe, jedna baza)
+3. platform_accounts.py --list        → 7 identiteta · 0 može da se prijavi
+4. platform_accounts.py --activate --all --dry-run  → tačno pet imena
+5. platform_accounts.py --activate --email sanjaneuer@gmail.com   → link
+6. POST /api/v1/auth/platform/password/reset  {token, password}   → 204
+7. POST /api/v1/auth/platform/login           {email, password}   → 200, opaque token
+8. GET  /api/v1/me  Authorization: Bearer <token>                 → 200
+      memberships: [{"organizationSlug":"sanja-neuer","roles":["org_admin","therapist"]}]
+9. GET  /api/v1/me  sa tokenom koji nije u auth_sessions          → 401
+10. platform_accounts.py --list       → sanjaneuer@gmail.com = **ready**
+```
+
+Korak **8** je poenta: kad su identitet i članstva u istoj bazi koja je izdala sesiju, Sanjin radni
+prostor se razrešava. Korak **9** je isti dokaz sa druge strane — to je tačno ono što bi njen
+zasebni backend odgovorio.
+
+> Ruta je `/api/v1/auth/platform/password/reset`, **ne** `/reset-password`. Zapisano jer je prvi
+> pokušaj bio pogrešan i vratio 404.
+
+Gates: **872 frontend testova** (100 fajlova) i **649 backend** zeleni, `tsc`, `eslint`, `ruff`,
+`pyright` čisti. `format:check` je bio **crven na `main` pre ovog rada** — `4e15cb2` je ostavio
+`match.ts`, `domain-registry.ts` i `domain-registry.test.ts` neformatirane; popravljeno usput.
+
+### 15.4 Šta AUTH-6 još traži, a ne može odavde
+
+Sve ispod dodiruje **produkciju** i nijedno se ne može izvesti sa ovog laptopa: nema `railway`
+CLI-ja, a `backend/.env.local` pokazuje na `postgres.railway.internal`, koji je dostupan samo
+unutar Railway mreže.
+
+**Korak 1 — Sanjin identitet u platformsku bazu.** Danas je nema (§14.6: `--list` na produkciji
+vraća četiri adrese). Njen produkcijski `external_auth_id` se čita iz `sanja-production`
+okruženja i **prenosi doslovno**, da bi kasnija migracija podataka umela da spoji njena dva reda:
+
+```bash
+# u sanja-production okruženju — samo čitanje
+railway run -- python scripts/platform_accounts.py --list
+
+# u production okruženju
+railway run -- python scripts/provision_organization.py --slug sanja-neuer \
+    --display-name "Sanja Neuer" --ui-locale sr-Latn --default-content-locale sr-Latn --dry-run
+railway run -- python scripts/provision_staff.py --organization sanja-neuer \
+    --external-id <njen produkcijski id> --email sanjaneuer@gmail.com \
+    --roles org_admin,therapist --dry-run
+```
+
+> ⚠️ `internal_users.id` se **ne** može zadati — generiše ga baza. Njen platformski red zato
+> dobija **nov UUID**, dok stari ostaje u `sanja-production`. To je već predviđeno: §10.2 plana
+> konsolidacije traži da se jednakost UUID-jeva ne pretpostavlja. Spajanje ta dva reda pri
+> migraciji podataka ide **preko `external_auth_id`**, i zato on mora biti prepisan tačno.
+
+**Korak 2 — aktivacija svih pet.** `--list` → `--dry-run` → `--activate` po osobi → predati
+linkove → `--list` dok svih pet ne bude `ready`. Link je kredencijal dok je nepotrošen: ne loguje
+se i ne šalje kanalom koji ostaje zapisan.
+
+**Korak 3 — GATE.** Gate se zatvara kad `--list` na produkciji pokaže **pet puta `ready`** i kad
+svako od njih jednom uđe na `p-digital-center.com/radni-prostor`.
+
+**Nije deo AUTH-6:** brisanje Clerk env promenljivih na Vercel-u i Railway-u i Clerk DNS zapisa
+(`clerk.`, `accounts.`, `clkmail`, DKIM). One su van repozitorijuma i ostaju **AUTH-9**; ništa ih
+više ne čita, pa ne kvare ništa dok stoje.

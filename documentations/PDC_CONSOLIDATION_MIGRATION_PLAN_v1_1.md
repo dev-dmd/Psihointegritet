@@ -235,6 +235,10 @@ CDN/SSL", a ne samo „Invalid DNS".
 
 ### 3.3 Potvrda uživo
 
+> ✅ **Zastarelo od 2026-09-09 — ispravljeno.** Mereno stanje ispod je ono od 2026-09-07,
+> pre nego što je Faza 4b izvedena. Za današnje stanje vidi **§3.6**. Ostavljeno je
+> zapisano zato što §3.4 isključuje uzroke na osnovu baš ovih merenja.
+
 ```
 https://sanjaneuer.com       → connection timed out (parking IP ne odgovara na :443)
 https://www.sanjaneuer.com   → SSL: unexpected eof while reading
@@ -271,6 +275,31 @@ Brisanje email zapisa bi oborilo Sanjinu poštu, koja nije deo ove migracije.
 > **Kritično:** ovo se izvodi **tek posle Faze 1** (`main` sadrži B2). Ako se DNS uperi ranije,
 > `sanjaneuer.com` će stići na produkciju koja nema host routing i **servirati Psihointegritet
 > sajt na Sanjinom domenu**. To je tačno ono što `TODO.md` B2-6 već upozorava.
+
+---
+
+### 3.6 Izvedeno — Faza 4b je zatvorena (2026-09-09)
+
+Namecheap zapisi su promenjeni i Vercel je sam izdao sertifikat. Provereno uživo, svaki
+kriterijum prihvatanja iz tabele faza posebno:
+
+| Kriterijum | Mereno | Rezultat |
+| --- | --- | --- |
+| `dig +short A sanjaneuer.com` | `216.150.1.1` | ✅ tačno vrednost iz §3.5 |
+| `dig +short CNAME www.sanjaneuer.com` | `cname.vercel-dns.com.` | ✅ |
+| HTTPS odgovara | `https://sanjaneuer.com` → **200** | ✅ (bilo: connection timed out) |
+| Let's Encrypt sertifikat | issuer `Let's Encrypt CN=YR2`, `notBefore` **2026-09-08 19:16:08 UTC** | ✅ izdat sam, bez ručnog koraka |
+| **Sajt je Sanjin, a ne Psihointegritetov** | `<title>Sanja Neuer — Konsultacije i mentorstvo …</title>` | ✅ host routing iz B2 radi u produkciji |
+| `www` | **308** na apex | ✅ `www` politika (N5) |
+| **Pošta nije oborena** | MX = `eforward1–5.registrar-servers.com` | ✅ §3.5 „ne dirati MX" ispoštovano |
+
+Peti red je ovde važniji nego što izgleda. On je **prvi produkcijski dokaz** da jedan Vercel
+projekat servira dva tenanta po host-u: isti deployment koji na `psihointegritet.com` daje
+Psiho sajt, na `sanjaneuer.com` daje Sanjin. Do sada je to tvrdio samo test.
+
+**Time su Faze 1–4b zatvorene.** Sledeća otvorena stavka u ovom dokumentu je **Faza 5**
+(request-scoped tenant context, GATE A) — ali vidi §5.4: pravac je izmenjen odlukom od
+2026-09-09 i redosled faza 5–10 se preispituje pre nego što Faza 5 krene.
 
 ---
 
@@ -354,6 +383,46 @@ pokaže na staging backend (Faza 7), `features` Railway environment gubi jedinog
 **Ali se ne gasi u Fazi 7.** Ostaje kao izolovan environment za migracije koje bi razbile staging,
 dok se ne potvrdi da ga niko ne koristi. Odluka o gašenju je **zaseban zadatak posle Faze 11**, ne
 deo ove migracije. Ne brisati bez audita — kako zadatak i traži.
+
+### 5.4 Izmena pravca (Milan, 2026-09-09) — Sanja ide na zajedničku bazu odmah
+
+Zapisano kao **pravac**, ne kao izvršen korak. Redosled izvođenja se bira tek pošto se
+pregleda šta još koči (vidi §8 i `PDC_AUTH_ENGINE_PLAN_v1_0.md` §15).
+
+**Odluka:** Sanjin identitet i podaci prelaze na **platformsku produkcijsku bazu** sada, a ne
+posle GATE B. `staging` baza postaje jedina test/produkcijska proba. `sanja-production`,
+`sanja-staging` **i `features`** se brišu.
+
+**Obrazloženje (Milan):** dok Sanja ne radi u sistemu, njenih podataka je najmanje što će ikada
+biti. Svaki dan odlaganja migraciju čini skupljom, a Faza 8 je ionako jedini destruktivan korak
+u planu — bolje ga izvesti nad praznim tenantom nego nad živim.
+
+**Šta ovo menja u odnosu na v1.1 kako je napisan:**
+
+| Stavka | v1.1 | Posle ove odluke |
+| --- | --- | --- |
+| Faza 8 (migracija podataka) | iza **GATE B** | ide **pre** GATE B |
+| Odvojena baza kao granica izolacije (D-081) | važi dok RLS ne stigne | **prestaje da važi** za Sanju |
+| Faza 10 (`features`) | preduslov Vercel Preview → staging API | nepromenjeno |
+
+**Cena koja se prihvata, izričito.** D-081 je odvojenu bazu držao kao *jedinu* granicu izolacije
+dok RLS ne postoji. Ova odluka je uklanja pre nego što je zameni: između migracije i GATE B,
+dva tenanta dele bazu sa aplikacionom autorizacijom kao jedinim slojem — bez fail-closed
+poslednje linije iz ADR-023 §2.2. To je svesno prihvaćen rizik nad **jednim tenantom bez
+klijentskih podataka**, i on raste svakim danom posle Sanjinog onboarding-a. **Iz toga sledi da
+GATE B (Faza 6) postaje hitniji, ne manje hitan** — odlaganje RLS-a je sada odluka sa rokom.
+
+> **Nalaz koji ovu odluku pretvara iz opcije u nužnost (2026-09-09).** Cross-backend spajanje
+> članstava iz `server-identity.ts` **više ne radi** — i to nije regresija nego posledica D-083.
+> Pod Clerk-om je token bio JWT koji svaki backend proverava svojim JWKS-om, pa je Sanjin backend
+> mogao da odgovori na `/api/v1/me`. PDC sesija je **opaque token u tabeli `auth_sessions`**, a
+> `PdcSessionVerifier` je traži u **svojoj** bazi. Sesija izdata na platformskom backend-u u
+> Sanjinoj bazi ne postoji → njen backend vraća 401 → `loadBackendIdentity` to tretira kao
+> „ovaj backend te ne poznaje" i članstva ispadaju.
+>
+> Dakle **ne postoji konfiguracija u kojoj Sanja vidi svoj radni prostor dok su joj članstva u
+> zasebnoj bazi.** Ili ide na platformsku bazu, ili ne može da radi. Nema treće opcije, i zato
+> ovo nije preferencija nego preduslov `PDC-ONBOARD-1`.
 
 ---
 
@@ -529,15 +598,15 @@ vlasnik tabela · 51 tabela naspram 31 u ADR-023 inventaru.
 
 | Phase | Change | Preconditions | Verification | Rollback | Destructive? |
 | --- | --- | --- | --- | --- | --- |
-| **0** | Audit (ovaj dokument) | — | dokument izglasan | — | **Ne** |
-| **1** | `merge --no-ff staging → main` | Faza 0; staging zelen | `tree(main) == tree(origin/staging)`; CI zelen | `git revert -m 1 <merge>` | **Ne** |
-| **2** | Production deploy `main`; `ENVIRONMENT=production` (N1) | Faza 1 | `psihointegritet.com` 200; `x-pdc-surface` prisutan; `/radni-prostor` radi | Vercel *Instant Rollback* na `29ae344` | **Ne** |
-| **2b** | **Platform-host surface fix** — public tree fail-closed bez tenanta; `/` → 307 `/prijava` | Faza 2 | 11 testova u `surface-access.test.ts`; nula regresije na `psihointegritet.com` | revert PR (pravilo je jedna grana) | **Ne** |
-| **2c** | **`/api/v1/me` first-login race** (N10) — `ON CONFLICT DO NOTHING` + autoritativan read | Faza 2b | concurrency test pada pre / prolazi posle; **Maria realna prijava bez error boundary-ja** | revert PR; DB nepromenjena | **Ne** |
-| **2d** | **Platform shell** — landing, surface-aware `/prijava`, post-auth dispatcher, staff-scoped workspace org | Faza 2c | 857 testova; build diff = +3 rute, statika 32 vs baseline 30 | revert PR | **Ne** |
-| **3** | `PLATFORM_HOST=p-digital-center.com`; `NEXT_PUBLIC_APP_URL`; `CORS_ORIGINS` (N2); `www` politika (N5) | **Faze 2b–2d deployovane**; **Maria smoke zelen ✅**; **Clerk cutover §9.2 izveden**; `NEXT_PUBLIC_APP_URL` **se NE menja** (§8.5) | `p-digital-center.com/radni-prostor` traži prijavu i radi; `psihointegritet.com` je **samo** tenant | vrati `PLATFORM_HOST` na `psihointegritet.com` + redeploy | **Ne** (reverzibilno) |
-| **4a** | `psihointegritet.com` → tenant-only | Faza 3 | `/` = Psiho sajt; `/radni-prostor` na njemu **404** | isto kao Faza 3 | **Ne** |
-| **4b** | **Namecheap DNS za `sanjaneuer.com`** (§3.5) | **Faza 1 MORA biti gotova** | `dig +short A sanjaneuer.com` = `216.150.1.1`; `misconfigured:false`; LE cert; sajt = Sanjin | vrati parking zapise | **Ne** (ali vidljivo javno) |
+| **0** ✅ | Audit (ovaj dokument) | — | dokument izglasan | — | **Ne** |
+| **1** ✅ | `merge --no-ff staging → main` | Faza 0; staging zelen | `tree(main) == tree(origin/staging)`; CI zelen | `git revert -m 1 <merge>` | **Ne** |
+| **2** ✅ | Production deploy `main`; `ENVIRONMENT=production` (N1) | Faza 1 | `psihointegritet.com` 200; `x-pdc-surface` prisutan; `/radni-prostor` radi | Vercel *Instant Rollback* na `29ae344` | **Ne** |
+| **2b** ✅ | **Platform-host surface fix** — public tree fail-closed bez tenanta; `/` → 307 `/prijava` | Faza 2 | 11 testova u `surface-access.test.ts`; nula regresije na `psihointegritet.com` | revert PR (pravilo je jedna grana) | **Ne** |
+| **2c** ✅ | **`/api/v1/me` first-login race** (N10) — `ON CONFLICT DO NOTHING` + autoritativan read | Faza 2b | concurrency test pada pre / prolazi posle; **Maria realna prijava bez error boundary-ja** | revert PR; DB nepromenjena | **Ne** |
+| **2d** ✅ | **Platform shell** — landing, surface-aware `/prijava`, post-auth dispatcher, staff-scoped workspace org | Faza 2c | 857 testova; build diff = +3 rute, statika 32 vs baseline 30 | revert PR | **Ne** |
+| **3** ✅ | `PLATFORM_HOST=p-digital-center.com`; `NEXT_PUBLIC_APP_URL`; `CORS_ORIGINS` (N2); `www` politika (N5) | **Faze 2b–2d deployovane**; **Maria smoke zelen ✅**; **Clerk cutover §9.2 izveden**; `NEXT_PUBLIC_APP_URL` **se NE menja** (§8.5) | `p-digital-center.com/radni-prostor` traži prijavu i radi; `psihointegritet.com` je **samo** tenant | vrati `PLATFORM_HOST` na `psihointegritet.com` + redeploy | **Ne** (reverzibilno) |
+| **4a** ✅ | `psihointegritet.com` → tenant-only | Faza 3 | `/` = Psiho sajt; `/radni-prostor` na njemu **404** | isto kao Faza 3 | **Ne** |
+| **4b** ✅ | **Namecheap DNS za `sanjaneuer.com`** (§3.5) — **izvedeno 2026-09-09, §3.6** | **Faza 1 MORA biti gotova** | `dig +short A sanjaneuer.com` = `216.150.1.1`; `misconfigured:false`; LE cert; sajt = Sanjin — **sve zeleno (§3.6)** | vrati parking zapise | **Ne** (ali vidljivo javno) |
 | **5** | Request-scoped tenant context | Faza 4 | **GATE A** u celosti | revert PR; `settings` fallback se vraća | **Ne** |
 | **6** | RLS + uloge bez BYPASSRLS | **GATE A** | **GATE B** u celosti | `DROP POLICY` + `DISABLE RLS` + `DATABASE_URL` na staru ulogu | **Ne** (ali menja DB) |
 | **7** | Jedan production + jedan staging backend; QA → staging | **GATE B** | Sanjin domen radi kroz **production** backend; QA i staging na istom API-ju | vrati `productionApiBaseUrl` u registry | **Ne** |

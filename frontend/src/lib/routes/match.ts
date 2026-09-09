@@ -282,6 +282,7 @@ export function isSurfaceAllowedOnHost(
   if (hasRoutePrefix(pathname, platformRoutePrefixes())) {
     return surface === "platform";
   }
-  if (hasRoutePrefix(pathname, clientRoutePrefixes())) return surface === "tenant";
+  if (hasRoutePrefix(pathname, clientRoutePrefixes()))
+    return surface === "tenant";
   return surface === "tenant";
 }

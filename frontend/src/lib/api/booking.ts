@@ -2,7 +2,7 @@
 
 Public endpoints go through same-origin Route Handler proxies
 (``/api/booking/...``). Staff endpoints go through the same proxies
-which forward the Clerk session token to FastAPI.
+which forward the PDC session token to FastAPI (D-083).
 
 Every function validates the response at the boundary with Zod.
 */
