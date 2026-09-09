@@ -7,6 +7,7 @@ import {
   resolveTenantSurfaceOrganization,
   surfaceOfRequest,
 } from "@/lib/tenant/active-organization";
+import { serverEnv } from "@/lib/validation/env";
 
 /**
  * Where Clerk sends someone once they are signed in.
@@ -26,6 +27,7 @@ export async function GET(request: Request) {
     surface: (await surfaceOfRequest()) ?? "platform",
     tenantSlug: await resolveTenantSurfaceOrganization(),
     locale: await getUiLocale(),
+    deploymentEnv: serverEnv.DEPLOYMENT_ENV,
   });
 
   const target =

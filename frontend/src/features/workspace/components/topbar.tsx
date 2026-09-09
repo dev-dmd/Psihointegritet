@@ -109,10 +109,13 @@ export function WorkspaceTopbar() {
         </button>
       ) : null}
       <BackToSiteButton
-        // Where the site *answers*, not what it is called. Sanja's canonical
-        // domain has no DNS yet, and a "go to site" button that opens a dead
-        // address is the one thing this button must never do.
-        href={tenant ? tenantSiteUrl(tenant) : "/"}
+        // Where the site *answers*, not what it is called — and in the
+        // environment doing the asking. Sanja's canonical domain had no DNS for
+        // a while, and outside production her site lives at `/sanja-neuer` on
+        // this very host; a "go to site" button that opens a dead address, or
+        // walks an owner off the environment they are testing, is the one thing
+        // this button must never do.
+        href={tenant ? tenantSiteUrl(tenant, process.env.DEPLOYMENT_ENV) : "/"}
         className="border-coffee/12 text-coffee hover:border-sage bg-surface"
       />
       <button

@@ -12,8 +12,10 @@ import {
   resolvePlatformHost,
   tenantForHost,
   tenantForSlug,
+  legacyPublicTreeTenant,
+  tenantBasePath,
+  tenantPathsEnabled,
   tenantSiteUrl,
-  tenantSlugFromHost,
 } from "./domain-registry";
 
 /** The bound tenant's slug, or `undefined` when the host serves the platform. */
@@ -190,17 +192,19 @@ describe("host binding", () => {
     );
   });
 
-  it("reaches a tenant on a laptop through its own subdomain", () => {
-    // Same resolver as production: the host names the tenant. What differs is
-    // only how it spells it.
+  it("no longer reads a tenant out of a subdomain, in any environment", () => {
+    // `<slug>.<platform host>` used to name a tenant outside production. It
+    // does not any more: outside production a tenant is named by the path
+    // (`tenantPathPrefix`), because a subdomain there needs wildcard DNS and a
+    // wildcard certificate, and `*.localhost` resolves in browsers but not in
+    // `curl` or Playwright — so the environments that most needed to reach a
+    // tenant were the ones that could not.
     expect(
-      boundTenant(resolveHostBinding("psihointegritet.localhost", development)),
-    ).toBe("psihointegritet");
+      resolveHostBinding("psihointegritet.localhost", development),
+    ).toBeNull();
     expect(
-      boundTenant(
-        resolveHostBinding("sanja-neuer.localhost:3007", development),
-      ),
-    ).toBe("sanja-neuer");
+      resolveHostBinding("sanja-neuer.localhost:3007", development),
+    ).toBeNull();
   });
 
   it("refuses a hostname that names a tenant nobody registered", () => {
@@ -220,11 +224,10 @@ describe("host binding", () => {
     expect(
       resolveHostBinding("staging.p-digital-center.com", staging)?.kind,
     ).toBe("platform");
+    // Beneath it names nobody — the tenant arrives as `/sanja-neuer` instead.
     expect(
-      boundTenant(
-        resolveHostBinding("sanja-neuer.staging.p-digital-center.com", staging),
-      ),
-    ).toBe("sanja-neuer");
+      resolveHostBinding("sanja-neuer.staging.p-digital-center.com", staging),
+    ).toBeNull();
 
     process.env.PLATFORM_HOST = "qa.p-digital-center.com";
 
@@ -232,16 +235,13 @@ describe("host binding", () => {
       "platform",
     );
     expect(
-      boundTenant(
-        resolveHostBinding("psihointegritet.qa.p-digital-center.com", preview),
-      ),
-    ).toBe("psihointegritet");
+      resolveHostBinding("psihointegritet.qa.p-digital-center.com", preview),
+    ).toBeNull();
   });
 
-  it("reads one label, so a deeper name resolves to nobody", () => {
+  it("refuses a deeper name beneath the platform too", () => {
     // `a.psihointegritet.localhost` must not become the tenant `a`, nor
-    // silently become `psihointegritet`.
-    expect(tenantSlugFromHost("a.psihointegritet.localhost")).toBeNull();
+    // silently become `psihointegritet`, nor fall through to the platform.
     expect(
       resolveHostBinding("a.psihointegritet.localhost", development),
     ).toBeNull();
@@ -330,9 +330,13 @@ describe("temporary access host (sanjaneuer.com DNS unavailable)", () => {
   it("sends a person to where the site actually answers", () => {
     const sanja = tenantForSlug("sanja-neuer");
     const psiho = tenantForSlug("psihointegritet");
-    expect(tenantSiteUrl(sanja!)).toBe("https://sanja-neuer.vercel.app");
+    expect(tenantSiteUrl(sanja!, "production")).toBe(
+      "https://sanja-neuer.vercel.app",
+    );
     // A tenant whose own domain works is untouched by any of this.
-    expect(tenantSiteUrl(psiho!)).toBe("https://psihointegritet.com");
+    expect(tenantSiteUrl(psiho!, "production")).toBe(
+      "https://psihointegritet.com",
+    );
   });
 
   it("marks only the stand-in as unindexable", () => {
@@ -366,5 +370,38 @@ describe("temporary access host (sanjaneuer.com DNS unavailable)", () => {
     const binding = resolveHostBinding("sanja-neuer.vercel.app", production);
     expect(binding?.kind).toBe("tenant");
     expect(boundTenant(binding)).toBe("sanja-neuer");
+  });
+});
+
+describe("how tenants are addressed per environment", () => {
+  it("uses real domains in production and paths everywhere else", () => {
+    expect(tenantPathsEnabled("production")).toBe(false);
+    for (const env of ["development", "preview", "staging", undefined, null]) {
+      expect(tenantPathsEnabled(env)).toBe(true);
+    }
+  });
+
+  it("keeps an owner testing on staging inside staging", () => {
+    const sanja = tenantForSlug("sanja-neuer")!;
+    // The bug this fixes: "go to site" opened the live site from every
+    // non-production environment, so nothing downstream of it was testable.
+    expect(tenantSiteUrl(sanja, "staging")).toBe("/sanja-neuer");
+    expect(tenantSiteUrl(sanja, "development")).toBe("/sanja-neuer");
+    expect(tenantSiteUrl(sanja, "production")).toMatch(/^https:\/\//);
+  });
+
+  it("gives links the same prefix the proxy strips", () => {
+    expect(tenantBasePath("sanja-neuer", "staging")).toBe("/sanja-neuer");
+    expect(tenantBasePath("sanja-neuer", "production")).toBe("");
+  });
+
+  it("names exactly one tenant whose public tree has not moved yet", () => {
+    // Derived from the flag, so it disappears with the flag in PDC-1 rather
+    // than outliving the reason it was written.
+    const legacy = legacyPublicTreeTenant();
+    expect(legacy?.organizationSlug).toBe("psihointegritet");
+    expect(
+      TENANT_DOMAINS.filter((tenant) => tenant.usesLegacyPublicTree),
+    ).toHaveLength(1);
   });
 });

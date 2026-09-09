@@ -1,8 +1,22 @@
 import {
+  ACCESS_DENIED_PATH,
+  RESET_PASSWORD_PATH,
+  SIGN_IN_PATH,
+  SIGN_UP_PATH,
+} from "./auth-paths";
+import {
   clientRoutePrefixes,
   hasRoutePrefix,
   isHostNeutralPath,
+  normalizePathname,
 } from "./match";
+import { platformRootSegments } from "./platform-routes";
+import {
+  PLATFORM_HOME_ROUTE,
+  TENANT_ROUTE_PREFIX,
+  type TenantDomainConfig,
+  tenantForSlug,
+} from "@/lib/tenant/domain-registry";
 
 /**
  * Whether a path on a tenant host is served from that tenant's own segment.
@@ -41,4 +55,89 @@ export function servedFromTenantSegment(
   if (hasRoutePrefix(pathname, clientRoutePrefixes())) return false;
   if (tenant.usesLegacyPublicTree) return false;
   return true;
+}
+
+/**
+ * Paths that exist only as the *result* of a rewrite, never as an address.
+ *
+ * `/s/<slug>/…` is where a tenant's pages physically live and `/platform-home`
+ * is what the platform host's `/` becomes. Reaching either directly would give
+ * one page a second URL — and in the tenant segment's case, a URL that names a
+ * tenant the host has no business serving. Bare `/s` is included: it is not a
+ * route, and letting it through only to 404 later reads as a missing page.
+ */
+export function isInternalOnlyPath(pathname: string): boolean {
+  const normalized = normalizePathname(pathname);
+  return (
+    normalized === TENANT_ROUTE_PREFIX ||
+    normalized.startsWith(`${TENANT_ROUTE_PREFIX}/`) ||
+    normalized === PLATFORM_HOME_ROUTE
+  );
+}
+
+/**
+ * First path segments this application owns, so none of them may name a tenant.
+ *
+ * **Derived, never hand-written.** A hand-written list is how a locale gets
+ * added, a route root moves, and `/nalog` silently becomes a tenant slug — the
+ * same failure `platformRootSegments()` was written to prevent for CMS slugs.
+ * Every entry here comes from the module that already owns that name.
+ *
+ * Public route roots (`usluge`, `kompas`, `tim`) are deliberately **absent**.
+ * The platform host never serves a tenant's public tree — `isSurfaceAllowedOnHost`
+ * refuses it — so the root `[documentSlug]` catch-all is unreachable from here
+ * and creates no ambiguity. Reserving them would instead forbid a future tenant
+ * from being slugged `tim`, which is a real name.
+ */
+export function reservedFirstSegments(): readonly string[] {
+  const segments = new Set(platformRootSegments());
+  for (const path of [
+    SIGN_IN_PATH,
+    SIGN_UP_PATH,
+    RESET_PASSWORD_PATH,
+    ACCESS_DENIED_PATH,
+    TENANT_ROUTE_PREFIX,
+    PLATFORM_HOME_ROUTE,
+  ]) {
+    const first = path.split("/")[1];
+    if (first) segments.add(first);
+  }
+  segments.add("api");
+  return [...segments].sort();
+}
+
+const RESERVED_FIRST_SEGMENTS: ReadonlySet<string> = new Set(
+  reservedFirstSegments(),
+);
+
+export interface TenantPathPrefix {
+  tenant: TenantDomainConfig;
+  /** `/sanja-neuer` — re-attached to redirect targets and to the return path. */
+  prefix: string;
+  /** The path with the prefix removed; `/` when the prefix was the whole path. */
+  path: string;
+}
+
+/**
+ * The tenant a first path segment names, or `null` when it names none.
+ *
+ * This is how every environment except production addresses a tenant:
+ * `staging.example.com/sanja-neuer/…` rather than a subdomain that would need
+ * wildcard DNS and a wildcard certificate to exist at all.
+ *
+ * **Naming a tenant is not being one.** An unregistered slug returns `null`
+ * rather than an empty tenant, so the request continues as a platform path and
+ * meets the ordinary refusal — the same answer, and the same reason, as
+ * `resolveHostBinding` gives a hostname nobody registered.
+ */
+export function tenantPathPrefix(pathname: string): TenantPathPrefix | null {
+  const normalized = normalizePathname(pathname);
+  const first = normalized.split("/")[1];
+  if (!first || RESERVED_FIRST_SEGMENTS.has(first)) return null;
+
+  const tenant = tenantForSlug(first);
+  if (!tenant) return null;
+
+  const rest = normalized.slice(`/${first}`.length);
+  return { tenant, prefix: `/${first}`, path: rest === "" ? "/" : rest };
 }

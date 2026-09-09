@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 
 import { cn } from "@/helpers/cn";
 import { useUiLocale } from "@/i18n/use-ui-locale";
+import { useTenantBasePath } from "@/lib/tenant/use-tenant-base-path";
 import { localizedPath } from "@/lib/routes/localized-path";
 import { accountBookingPath } from "@/features/account/booking-entry";
 
@@ -50,6 +51,7 @@ export function NextAppointmentCard({
   const status = useTranslations("account.status");
   const formatLabel = useTranslations("account.format");
   const locale = useUiLocale();
+  const basePath = useTenantBasePath();
   const { longDateTime, shortDate } = useRequestFormatting();
 
   if (isPending) {
@@ -135,7 +137,7 @@ export function NextAppointmentCard({
       </div>
 
       <Link
-        href={localizedPath("account.appointments", { locale })}
+        href={localizedPath("account.appointments", { locale, basePath })}
         className="border-panel-canvas/30 text-panel-canvas hover:border-meadow hover:text-meadow mt-4 flex min-h-[46px] w-full items-center justify-center rounded-full border-[1.5px] px-4 text-[13.5px] font-semibold no-underline transition-colors"
       >
         {t("allAppointments")}

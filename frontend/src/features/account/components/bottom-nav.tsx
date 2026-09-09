@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl";
 
 import { cn } from "@/helpers/cn";
 import { useUiLocale } from "@/i18n/use-ui-locale";
+import { useTenantBasePath } from "@/lib/tenant/use-tenant-base-path";
 import { localizedPath } from "@/lib/routes/localized-path";
 import { isRouteActive } from "@/lib/routes/match";
 
@@ -21,6 +22,7 @@ import { accountNavItems } from "../nav";
 export function AccountBottomNav() {
   const pathname = usePathname();
   const locale = useUiLocale();
+  const basePath = useTenantBasePath();
   const t = useTranslations("account.nav");
 
   return (
@@ -30,7 +32,7 @@ export function AccountBottomNav() {
         return (
           <Link
             key={item.routeId}
-            href={localizedPath(item.routeId, { locale })}
+            href={localizedPath(item.routeId, { locale, basePath })}
             aria-current={active ? "page" : undefined}
             className="flex min-h-12 flex-col items-center justify-end gap-[3px] py-1 no-underline"
           >

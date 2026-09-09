@@ -9,6 +9,7 @@ import {
   TENANT_DOMAINS,
   tenantSiteUrl,
 } from "@/lib/tenant/domain-registry";
+import { serverEnv } from "@/lib/validation/env";
 
 /**
  * The platform's own front page.
@@ -54,13 +55,15 @@ export default async function PlatformHomePage() {
       </Link>
 
       {/* Deliberately unstyled, and built from the registry rather than a
-          second list of links to keep in step. `tenantSiteUrl` prefers a
-          tenant's temporary host, so Sanja resolves to the address that
-          actually answers and reverts to her own domain the day that field is
-          deleted.
+          second list of links to keep in step. `tenantSiteUrl` answers for the
+          environment asking: a production domain in production, and the
+          `/<slug>` path everywhere else, so a link from staging stays on
+          staging. In production it prefers a tenant's temporary host, so Sanja
+          resolves to the address that actually answers and reverts to her own
+          domain the day that field is deleted.
 
-          Plain <a>, not <Link>: these are cross-origin, and typed routes only
-          know about this app's own paths. */}
+          Plain <a>, not <Link>: in production these are cross-origin, and typed
+          routes only know about this app's own paths. */}
       <section className="mt-12">
         <h2 className="text-coffee/60 text-[13px] font-semibold tracking-wide uppercase">
           {t("tenantsHeading")}
@@ -69,10 +72,10 @@ export default async function PlatformHomePage() {
           {TENANT_DOMAINS.map((tenant) => (
             <li key={tenant.organizationSlug}>
               <a
-                href={tenantSiteUrl(tenant)}
+                href={tenantSiteUrl(tenant, serverEnv.DEPLOYMENT_ENV)}
                 className="text-coffee/80 hover:text-coffee text-[15px] underline"
               >
-                {tenantSiteUrl(tenant)}
+                {tenantSiteUrl(tenant, serverEnv.DEPLOYMENT_ENV)}
               </a>
             </li>
           ))}

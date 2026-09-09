@@ -25,6 +25,12 @@ const nextConfig: NextConfig = {
       process.env.DEFAULT_ORGANIZATION_SLUG,
       process.env.DEPLOYMENT_ENV,
     ),
+    // Same reason, one layer up: the workspace topbar is a Client Component and
+    // has to know whether tenants are addressed by domain or by path, or its
+    // "go to site" button sends an owner testing on staging to the live site.
+    // Build-time is the right shape — a deployment does not change environment
+    // while it runs — and it is not a secret.
+    DEPLOYMENT_ENV: process.env.DEPLOYMENT_ENV ?? "development",
   },
   reactCompiler: true,
   poweredByHeader: false,

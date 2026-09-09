@@ -3,20 +3,25 @@ import { afterEach, describe, expect, it } from "vitest";
 import type { Identity } from "@/lib/auth/identity";
 import { resolveLanding } from "@/lib/auth/post-auth-landing";
 
+// Production, so the cross-origin return leg is the one being asserted. The
+// non-production shape — a same-origin `/sanja-neuer/nalog` — has its own test.
 const platform = {
   surface: "platform",
   tenantSlug: null,
   locale: "sr-Latn",
+  deploymentEnv: "production",
 } as const;
 const onPsiho = {
   surface: "tenant",
   tenantSlug: "psihointegritet",
   locale: "sr-Latn",
+  deploymentEnv: "production",
 } as const;
 const onSanja = {
   surface: "tenant",
   tenantSlug: "sanja-neuer",
   locale: "sr-Latn",
+  deploymentEnv: "production",
 } as const;
 
 function identity(overrides: Partial<Identity> = {}): Identity {
@@ -108,6 +113,18 @@ describe("where a person lands after signing in", () => {
         platform,
       ),
     ).toEqual({ kind: "tenant", url: "https://sanja-neuer.vercel.app/nalog" });
+  });
+
+  it("keeps that return leg inside the environment they signed in to", () => {
+    // On staging the same person must land on staging, not on the live site.
+    // Same-origin, so `safeReturnPath` — which refuses absolute URLs — accepts
+    // it, which the production shape never could.
+    expect(
+      resolveLanding(identity({ memberships: [clientAt("sanja-neuer")] }), {
+        ...platform,
+        deploymentEnv: "staging",
+      }),
+    ).toEqual({ kind: "tenant", url: "/sanja-neuer/nalog" });
   });
 
   it("refuses to guess when a client belongs to more than one practice", () => {

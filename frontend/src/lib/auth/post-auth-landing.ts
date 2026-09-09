@@ -34,6 +34,14 @@ export interface LandingContext {
   /** The tenant whose host this is, when on a tenant surface. */
   tenantSlug: string | null;
   locale: UiLocale;
+  /**
+   * Which deployment this is, so a client sent to their practitioner's site
+   * lands in the environment they signed in to rather than on the live one.
+   *
+   * Supplied by the caller rather than read here, for the same reason `surface`
+   * is: this module stays a pure function of the request's context.
+   */
+  deploymentEnv: string | null;
 }
 
 export type Landing =
@@ -92,7 +100,10 @@ export function resolveLanding(
 
   const home = soleClientTenant(identity, context);
   if (home)
-    return { kind: "tenant", url: `${tenantSiteUrl(home)}${clientPath}` };
+    return {
+      kind: "tenant",
+      url: `${tenantSiteUrl(home, context.deploymentEnv)}${clientPath}`,
+    };
 
   return { kind: "denied" };
 }

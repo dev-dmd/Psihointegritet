@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useFormatter, useTranslations } from "next-intl";
 
 import { useUiLocale } from "@/i18n/use-ui-locale";
+import { useTenantBasePath } from "@/lib/tenant/use-tenant-base-path";
 import { localizedPath } from "@/lib/routes/localized-path";
 
 import { nextRequest } from "../appointment-view";
@@ -35,6 +36,7 @@ function greetingKey(): "morning" | "afternoon" | "evening" {
 export function ScreenPocetna({ firstName }: { firstName: string | null }) {
   const t = useTranslations("account.home");
   const locale = useUiLocale();
+  const basePath = useTenantBasePath();
   const format = useFormatter();
   const { data, isPending, isError } = useMyAppointmentRequests();
 
@@ -82,7 +84,7 @@ export function ScreenPocetna({ firstName }: { firstName: string | null }) {
         </Link>
 
         <Link
-          href={localizedPath("account.programs", { locale })}
+          href={localizedPath("account.programs", { locale, basePath })}
           className="border-warm/45 bg-warm/18 hover:bg-warm/30 flex min-h-[108px] flex-col justify-between gap-2.5 rounded-[20px] border p-[18px] no-underline transition-colors"
         >
           <span className="bg-surface text-badge-wait flex h-9 w-9 items-center justify-center rounded-xl">
@@ -100,7 +102,7 @@ export function ScreenPocetna({ firstName }: { firstName: string | null }) {
       </div>
 
       <Link
-        href={localizedPath("account.programs", { locale })}
+        href={localizedPath("account.programs", { locale, basePath })}
         className="border-line bg-surface hover:shadow-panel-card block rounded-[20px] border p-5 no-underline transition-shadow"
       >
         <span className="mb-2.5 flex items-center justify-between gap-2.5">

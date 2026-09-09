@@ -424,6 +424,69 @@ GATE B (Faza 6) postaje hitniji, ne manje hitan** — odlaganje RLS-a je sada od
 > zasebnoj bazi.** Ili ide na platformsku bazu, ili ne može da radi. Nema treće opcije, i zato
 > ovo nije preferencija nego preduslov `PDC-ONBOARD-1`.
 
+### 5.5 Path-based tenant routing van produkcije (izvedeno 2026-09-09)
+
+**Menja pravilo uvedeno commitom `4e15cb2`**, koje je glasilo „host imenuje tenanta, isto u svakom
+okruženju" i van produkcije tenanta dohvatalo kao `<slug>.<PLATFORM_HOST>`. Novo pravilo:
+
+| | Kako se imenuje tenant |
+| --- | --- |
+| **production** | registrovan domen — `sanjaneuer.com`, `psihointegritet.com` |
+| **staging · preview (QA) · development** | **prva putanja** na platformskom hostu — `/sanja-neuer` |
+
+Model je preuzet sa Marysoll platforme, gde se ceo tok testira na jednom staging hostu.
+`DEPLOYMENT_ENV` nema vrednost `qa` i ne dobija je — QA radi kao `preview` i time automatski
+dobija path mod.
+
+**Zašto se subdomenska šema nije zadržala paralelno.** Dva razloga, oba merena:
+
+1. `sanja-neuer.staging.…` traži wildcard DNS **i** wildcard sertifikat — infrastrukturu koju za
+   test okruženje niko ne kupuje — a `*.localhost` se razrešava u Chrome-u i Firefox-u, ali ne i u
+   `curl`-u ni u Playwright-u. Okruženja kojima je tenant najpotrebniji bila su ona koja do njega
+   nisu mogla.
+2. **Korektnost, ne ukus.** Linkovi unutar tenantovih stranica van produkcije moraju nositi
+   `/<slug>`, a te stranice su prerenderovane (`dynamicParams = false`), pa se prefiks odlučuje na
+   build-u. To je ispravno samo ako invarijanta „van produkcije se tenantu prilazi putanjom" važi
+   apsolutno. Dve šeme bi prerenderovale `/sanja-neuer/tim` i servirale ga na
+   `sanja-neuer.staging.…`, dakle tu putanju dvaput.
+
+**Rezervisana lista prvih segmenata**, koju je stari komentar naveo kao cenu ovog modela, ispala je
+besplatna: `reservedFirstSegments()` je izvodi iz `platformRootSegments()` (već postojao, za CMS
+rezervisane slugove), četiri konstante iz `auth-paths.ts` i tri iz `domain-registry.ts`. Ništa se
+ne piše rukom, pa ništa ne može da se raziđe, a test tvrdi da nijedan registrovan slug nije
+rezervisan segment.
+
+**Dva defekta zatečena i popravljena usput:**
+
+1. `decideProxyRoute` je vraćao `internal + search`, a proxy dodavao `search` još jednom — na tri
+   grane. Duplirani query.
+2. Zbog toga je `servedFromTenantSegment` dobijao putanju sa query stringom, promašivao klijentski
+   prefiks i prepisivao `/account?tab=x` na tenant segment gde ništa ne postoji. **Svaki klijentski
+   URL sa query stringom na Sanjinom domenu je davao 404.** Latentno samo zato što AUTH-7 još ne
+   postoji.
+
+Popravljeno je i ponašanje isteklog cookie-ja: `server-session.ts` tvrdi da 401 „reads as not
+signed in", a kod je bacao grešku — istekla sesija je davala error boundary umesto prijave.
+
+**Isporučeno:** `proxy.ts` (dve putanje — `requestPath` za povratak posle prijave, `surfacePath` za
+svaku routing odluku), `tenant-rewrite.ts` (`tenantPathPrefix`, `reservedFirstSegments`,
+`isInternalOnlyPath`), `domain-registry.ts` (`tenantPathsEnabled`, `tenantBasePath`,
+`legacyPublicTreeTenant`; `tenantSlugFromHost` obrisan), environment-svesni `tenantSiteUrl` na tri
+pozivna mesta, i `basePath` u `localizedPath` sa `TenantBasePathProvider` za klijentski panel.
+**Nov `src/proxy.test.ts`** — proxy do sada nije imao nijedan test, a sav rizik je u redosledu
+koraka; 16 slučajeva, od kojih polovina tvrdi produkcijsko ponašanje bajt za bajt.
+
+**Van obima, namerno:** tenant prefiks u linkovima Psihointegritetovog javnog stabla (~30 literala
+u 17 fajlova). Duboki linkovi rade (`/psihointegritet/usluge` → 200), navigacija unutar stranice ne
+— to stablo se u PDC-1 seli pod `app/s/[organizationSlug]`, gde prefiks dolazi iz route parametra i
+posao nestaje.
+
+**Provereno uživo na `localhost:3007`:** `/` → platform · `/sanja-neuer` → njen sajt ·
+`/sanja-neuer/nalog` → 307 na `/prijava?redirect_url=%2Fsanja-neuer%2Fnalog` ·
+`/psihointegritet/usluge` → Psiho stranica · `/sanja-neuer/radni-prostor` → 404 · `/s/sanja-neuer` →
+404 · `/ne-postoji` → 404 · `sanja-neuer.localhost` → 404. Build zadržava `● /s/sanja-neuer`, dakle
+rendering ugovor (SSG) nije dirnut.
+
 ---
 
 ## 6. Backend request-scoped tenancy — plan zamene `DEFAULT_ORGANIZATION_SLUG`

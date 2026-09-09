@@ -9,7 +9,11 @@ import { AccountTopbar } from "@/features/account/components/topbar";
 import { profileNameOf } from "@/features/account/identity-display";
 import { getInitials } from "@/lib/auth/initials";
 import { requireClient } from "@/lib/auth/guards";
+import { getActiveOrganizationSlug } from "@/lib/tenant/active-organization";
+import { tenantBasePath } from "@/lib/tenant/domain-registry";
+import { TenantBasePathProvider } from "@/lib/tenant/use-tenant-base-path";
 import { resolveWorkspaceLocale } from "@/lib/tenant/workspace-locale";
+import { serverEnv } from "@/lib/validation/env";
 import { getPlatformMessages } from "@/messages";
 import { QueryProvider } from "@/providers/query-provider";
 
@@ -57,26 +61,37 @@ export default async function ClientLayout({
   const locale = await resolveWorkspaceLocale();
   const { account, common } = getPlatformMessages(locale);
 
+  // Outside production this panel is reached at `/<slug>/nalog`, so every link
+  // below has to carry that prefix. Resolved here, once, from the tenant the
+  // proxy already stamped on the request — the same source `requireClient`
+  // above used to decide whose panel this is.
+  const basePath = tenantBasePath(
+    await getActiveOrganizationSlug(),
+    serverEnv.DEPLOYMENT_ENV,
+  );
+
   return (
     <NextIntlClientProvider locale={locale} messages={{ account, common }}>
-      <QueryProvider>
-        <div className="bg-canvas flex min-h-screen justify-center lg:justify-start">
-          <AccountSidebar
-            displayName={profileNameOf(identity)}
-            email={identity.email}
-            initials={getInitials(firstName, lastName, identity.email)}
-          />
-          <div className="bg-panel-canvas relative flex min-h-screen w-full max-w-[480px] flex-col shadow-[0_30px_80px_-30px_rgba(58,46,40,0.35)] lg:ml-[264px] lg:max-w-none lg:shadow-none">
-            <AccountTopbar
+      <TenantBasePathProvider basePath={basePath}>
+        <QueryProvider>
+          <div className="bg-canvas flex min-h-screen justify-center lg:justify-start">
+            <AccountSidebar
+              displayName={profileNameOf(identity)}
+              email={identity.email}
               initials={getInitials(firstName, lastName, identity.email)}
             />
-            <main className="w-full flex-1 self-center px-[22px] pt-[22px] pb-8 lg:max-w-[780px] lg:px-8 lg:pt-8 lg:pb-14">
-              {children}
-            </main>
-            <AccountBottomNav />
+            <div className="bg-panel-canvas relative flex min-h-screen w-full max-w-[480px] flex-col shadow-[0_30px_80px_-30px_rgba(58,46,40,0.35)] lg:ml-[264px] lg:max-w-none lg:shadow-none">
+              <AccountTopbar
+                initials={getInitials(firstName, lastName, identity.email)}
+              />
+              <main className="w-full flex-1 self-center px-[22px] pt-[22px] pb-8 lg:max-w-[780px] lg:px-8 lg:pt-8 lg:pb-14">
+                {children}
+              </main>
+              <AccountBottomNav />
+            </div>
           </div>
-        </div>
-      </QueryProvider>
+        </QueryProvider>
+      </TenantBasePathProvider>
     </NextIntlClientProvider>
   );
 }

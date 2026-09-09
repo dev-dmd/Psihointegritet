@@ -8,6 +8,7 @@ import { useTranslations } from "next-intl";
 import { useSignOut } from "@/lib/auth/session/use-sign-out";
 import { cn } from "@/helpers/cn";
 import { useUiLocale } from "@/i18n/use-ui-locale";
+import { useTenantBasePath } from "@/lib/tenant/use-tenant-base-path";
 import { localizedPath } from "@/lib/routes/localized-path";
 import { isRouteActive } from "@/lib/routes/match";
 
@@ -39,6 +40,7 @@ export function AccountSidebar({
 }: AccountSidebarProps) {
   const pathname = usePathname();
   const locale = useUiLocale();
+  const basePath = useTenantBasePath();
   const t = useTranslations("account");
   const common = useTranslations("common");
   const signOut = useSignOut();
@@ -64,7 +66,7 @@ export function AccountSidebar({
           return (
             <Link
               key={item.routeId}
-              href={localizedPath(item.routeId, { locale })}
+              href={localizedPath(item.routeId, { locale, basePath })}
               aria-current={active ? "page" : undefined}
               className={cn(
                 "flex items-center gap-3 rounded-xl px-3 py-[11px] text-sm font-semibold no-underline transition-colors duration-200",

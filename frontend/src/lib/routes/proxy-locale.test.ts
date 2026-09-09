@@ -32,15 +32,15 @@ describe("decideProxyRoute", () => {
       "/api/content/entries",
       "/api/compass/taxonomy",
     ]) {
-      expect(decideProxyRoute(path, "", SR)).toEqual({ kind: "pass" });
-      expect(decideProxyRoute(path, "", "en")).toEqual({ kind: "pass" });
+      expect(decideProxyRoute(path, SR)).toEqual({ kind: "pass" });
+      expect(decideProxyRoute(path, "en")).toEqual({ kind: "pass" });
     }
   });
 
   it("never touches auth routes", () => {
     // Clerk holds these paths in its own configuration (D-077 Amendment §10).
     for (const path of ["/prijava", "/prijava/sso-callback", "/registracija"]) {
-      expect(decideProxyRoute(path, "", SR)).toEqual({ kind: "pass" });
+      expect(decideProxyRoute(path, SR)).toEqual({ kind: "pass" });
     }
   });
 
@@ -51,41 +51,37 @@ describe("decideProxyRoute", () => {
       "/kompas/oblasti",
       "/nista",
     ]) {
-      expect(decideProxyRoute(path, "", SR)).toEqual({ kind: "pass" });
+      expect(decideProxyRoute(path, SR)).toEqual({ kind: "pass" });
     }
   });
 
   it("rewrites English public paths onto the existing public pages", () => {
-    expect(
-      decideProxyRoute("/team/maria-bullock", "?source=profile", "en"),
-    ).toEqual({
+    expect(decideProxyRoute("/team/maria-bullock", "en")).toEqual({
       kind: "rewrite",
-      internal: "/tim/maria-bullock?source=profile",
+      internal: "/tim/maria-bullock",
     });
-    expect(decideProxyRoute("/book", "?source=header", "en")).toEqual({
+    expect(decideProxyRoute("/book", "en")).toEqual({
       kind: "rewrite",
-      internal: "/zakazi?source=header",
+      internal: "/zakazi",
     });
   });
 
   it("rewrites a Serbian workspace path onto the English physical route", () => {
-    expect(decideProxyRoute("/radni-prostor/podesavanja", "", SR)).toEqual({
+    expect(decideProxyRoute("/radni-prostor/podesavanja", SR)).toEqual({
       kind: "rewrite",
       internal: "/workspace/settings",
     });
   });
 
-  it("carries dynamic params and query through the rewrite", () => {
-    expect(
-      decideProxyRoute("/radni-prostor/kompas/sadrzaj/abc", "?tab=content", SR),
-    ).toEqual({
+  it("carries dynamic params through the rewrite", () => {
+    expect(decideProxyRoute("/radni-prostor/kompas/sadrzaj/abc", SR)).toEqual({
       kind: "rewrite",
-      internal: "/workspace/compass/content/abc?tab=content",
+      internal: "/workspace/compass/content/abc",
     });
   });
 
   it("rewrites the client panel too, now that it is English on disk", () => {
-    expect(decideProxyRoute("/nalog/termini", "", SR)).toEqual({
+    expect(decideProxyRoute("/nalog/termini", SR)).toEqual({
       kind: "rewrite",
       internal: "/account/appointments",
     });
@@ -95,10 +91,10 @@ describe("decideProxyRoute", () => {
     // An English organization asks for the path that is on disk, so there is
     // nothing to rewrite. The condition is path equality, not locale — which is
     // what let the client panel move without touching the proxy.
-    expect(decideProxyRoute("/account/appointments", "", "en")).toEqual({
+    expect(decideProxyRoute("/account/appointments", "en")).toEqual({
       kind: "pass",
     });
-    expect(decideProxyRoute("/workspace/settings", "", "en")).toEqual({
+    expect(decideProxyRoute("/workspace/settings", "en")).toEqual({
       kind: "pass",
     });
   });
@@ -111,30 +107,45 @@ describe("decideProxyRoute", () => {
    * Serbian. Both spellings are now accepted and rewritten.
    */
   it("serves an English path on a Serbian organization", () => {
-    expect(decideProxyRoute("/workspace/settings", "", SR)).toEqual({
+    expect(decideProxyRoute("/workspace/settings", SR)).toEqual({
       kind: "pass",
     });
   });
 
   it("serves a Serbian path on an English organization", () => {
-    expect(decideProxyRoute("/radni-prostor/klijenti", "", "en")).toEqual({
+    expect(decideProxyRoute("/radni-prostor/klijenti", "en")).toEqual({
       kind: "rewrite",
       internal: "/workspace/clients",
     });
   });
 
-  it("preserves query when rewriting either spelling", () => {
-    expect(
-      decideProxyRoute("/radni-prostor/usluge", "?tab=pricing", "en"),
-    ).toEqual({ kind: "rewrite", internal: "/workspace/services?tab=pricing" });
+  it("returns a path and never a query string", () => {
+    // The proxy owns the query. A decision that carried one was appended to a
+    // second time (`/x?a=1?a=1`), and made `servedFromTenantSegment` — which
+    // compares whole segments — stop recognising `/account?tab=x` as the client
+    // area, rewriting it onto a tenant segment where nothing exists.
+    for (const path of [
+      "/radni-prostor/usluge",
+      "/team/maria-bullock",
+      "/nalog/termini",
+    ]) {
+      const decision = decideProxyRoute(path, "en");
+      if (decision.kind === "rewrite") {
+        expect(decision.internal).not.toContain("?");
+      }
+    }
+    expect(decideProxyRoute("/radni-prostor/usluge", "en")).toEqual({
+      kind: "rewrite",
+      internal: "/workspace/services",
+    });
   });
 
   it("redirects the retired /dostupnost alias to the canonical schedule path", () => {
-    expect(decideProxyRoute("/radni-prostor/dostupnost", "", SR)).toEqual({
+    expect(decideProxyRoute("/radni-prostor/dostupnost", SR)).toEqual({
       kind: "redirect",
       target: "/radni-prostor/raspored",
     });
-    expect(decideProxyRoute("/workspace/availability", "", SR)).toEqual({
+    expect(decideProxyRoute("/workspace/availability", SR)).toEqual({
       kind: "redirect",
       target: "/radni-prostor/raspored",
     });
@@ -157,10 +168,10 @@ describe("decideProxyRoute", () => {
               ...(definition.params ? { params } : {}),
             } as never);
 
-            const first = decideProxyRoute(path, "", locale);
+            const first = decideProxyRoute(path, locale);
             if (first.kind !== "redirect") continue;
 
-            const second = decideProxyRoute(first.target, "", locale);
+            const second = decideProxyRoute(first.target, locale);
             expect(
               second.kind,
               `${path} @ ${locale} redirected to ${first.target}, which redirects again`,
@@ -171,15 +182,15 @@ describe("decideProxyRoute", () => {
     });
 
     it("settles a trailing slash without bouncing", () => {
-      const first = decideProxyRoute("/radni-prostor/termini/", "", SR);
+      const first = decideProxyRoute("/radni-prostor/termini/", SR);
       expect(first.kind).toBe("rewrite");
     });
 
     it("resolves every alias in one hop", () => {
-      const alias = decideProxyRoute("/radni-prostor/dostupnost", "", SR);
+      const alias = decideProxyRoute("/radni-prostor/dostupnost", SR);
       expect(alias.kind).toBe("redirect");
       if (alias.kind !== "redirect") return;
-      expect(decideProxyRoute(alias.target, "", SR).kind).not.toBe("redirect");
+      expect(decideProxyRoute(alias.target, SR).kind).not.toBe("redirect");
     });
   });
 });

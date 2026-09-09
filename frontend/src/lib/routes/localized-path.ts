@@ -45,6 +45,16 @@ export type LocalizedPathOptions<Id extends PlatformRouteId> = {
   locale: UiLocale;
   /** Extra query values. Keys and values are never translated. */
   query?: Record<string, string | undefined>;
+  /**
+   * The tenant prefix this environment addresses a tenant by — `/sanja-neuer`
+   * outside production, `""` in it (`tenantBasePath`).
+   *
+   * It belongs here rather than at each call site because this is where the one
+   * `as Route` cast lives: prefixing a link anywhere else would mean a second
+   * cast, and `typedRoutes` knows nothing about either shape. Surfaces that are
+   * not inside a tenant — the workspace, superadmin — simply never pass it.
+   */
+  basePath?: string;
 } & ParamsArg<Id> &
   TabArg<Id>;
 
@@ -94,7 +104,8 @@ export function localizedPath<Id extends PlatformRouteId>(
   const definition = routeDefinition(routeId);
   const template = definition.paths[options.locale];
   const path = substitute(template, options.params, routeId);
-  return `${path}${queryString(options.tab, options.query)}` as Route;
+  const basePath = options.basePath ?? "";
+  return `${basePath}${path}${queryString(options.tab, options.query)}` as Route;
 }
 
 /**
@@ -104,8 +115,10 @@ export function localizedPath<Id extends PlatformRouteId>(
  * would leak `/workspace/...` into a Serbian user's address bar.
  */
 export function internalPath<Id extends PlatformRouteId>(
+  // No `basePath`: this is the filesystem route the proxy rewrites *to*, and
+  // the prefix has already been stripped by the time anything builds one.
   routeId: Id,
-  options: Omit<LocalizedPathOptions<Id>, "locale">,
+  options: Omit<LocalizedPathOptions<Id>, "locale" | "basePath">,
 ): string {
   const definition = routeDefinition(routeId);
   const path = substitute(definition.internal, options.params, routeId);

@@ -20,6 +20,19 @@ import {
  * redirect loop — are both cheaper to prove against a pure function than
  * against an edge runtime.
  */
+/**
+ * Both `internal` and `target` are **paths, never paths with a query string.**
+ *
+ * They used to carry one, and it cost two bugs at once. The proxy appended the
+ * query a second time, so a rewritten path arrived as `/usluge?a=1?a=1`; and
+ * `servedFromTenantSegment` — which compares whole segments — stopped
+ * recognising `/account?tab=x` as the client area and rewrote it onto a tenant
+ * segment where nothing exists.
+ *
+ * The query belongs to the proxy because the proxy is what builds URLs. A
+ * decision value that smuggles one is a value every consumer has to remember to
+ * strip, and the two consumers above did not.
+ */
 export type ProxyRouteDecision =
   | { kind: "pass" }
   | { kind: "rewrite"; internal: string }
@@ -102,7 +115,6 @@ function aliasTarget(pathname: string): PlatformRouteId | undefined {
  */
 export function decideProxyRoute(
   pathname: string,
-  search: string,
   fallbackLocale: UiLocale,
 ): ProxyRouteDecision {
   const normalized = normalizePathname(pathname);
@@ -112,7 +124,7 @@ export function decideProxyRoute(
   if (alias !== undefined) {
     return {
       kind: "redirect",
-      target: localizedPath(alias, { locale: fallbackLocale }) + search,
+      target: localizedPath(alias, { locale: fallbackLocale }),
     };
   }
 
@@ -126,7 +138,7 @@ export function decideProxyRoute(
     );
     return internal === normalized
       ? { kind: "pass" }
-      : { kind: "rewrite", internal: internal + search };
+      : { kind: "rewrite", internal };
   }
 
   // Rewrite whenever the external path differs from the physical one — not
@@ -139,7 +151,7 @@ export function decideProxyRoute(
   } as never);
   if (internal === normalized) return { kind: "pass" };
 
-  return { kind: "rewrite", internal: internal + search };
+  return { kind: "rewrite", internal };
 }
 
 export { isUiLocale };

@@ -100,9 +100,9 @@ export interface TenantDomainConfig {
 export const TENANT_DOMAINS: readonly TenantDomainConfig[] = [
   {
     organizationSlug: "psihointegritet",
-    // Production hosts only. Staging and QA reach this tenant as
-    // `psihointegritet.<platform host>`, resolved by `tenantSlugFromHost`
-    // rather than listed here — see `resolveHostBinding`.
+    // Production hosts only. Staging, QA and a laptop reach this tenant as
+    // `<platform host>/psihointegritet` — a path prefix, not a hostname — so
+    // there is nothing for them to list here. See `tenantPathsEnabled`.
     domains: ["psihointegritet.com", "www.psihointegritet.com"],
     publicUrl: "https://psihointegritet.com",
     productionApiBaseUrl:
@@ -137,19 +137,80 @@ export function tenantForHost(
 }
 
 /**
- * The address to *send someone to* for this tenant's site.
+ * Whether tenants are addressed by a path prefix on the platform host.
  *
- * Prefers the temporary host precisely because the canonical one may not
- * resolve yet: "Idi na sajt" has to open a page, and a link to a dead domain
- * is worse than a link to an ugly one. Falls back to `publicUrl`, which is
- * what every tenant with a working domain uses — and what Sanja goes back to
- * the moment `temporaryAccessUrl` is deleted.
+ * True everywhere except production. Production tenants have real domains and
+ * must keep them: the whole point of the product is that someone booking with
+ * Sanja sees her address, not ours.
+ *
+ * Nowhere else can have that. A tenant on staging would have to be
+ * `sanja-neuer.staging.<host>`, which needs wildcard DNS and a wildcard
+ * certificate — infrastructure nobody is buying for a test environment — and
+ * `*.localhost` resolves in two browsers and in neither `curl` nor Playwright.
+ * So the environments that most need to serve a tenant were the ones that
+ * could not.
+ *
+ * `!== "production"` rather than a list of the other three: `DEPLOYMENT_ENV` is
+ * a Zod enum (`lib/validation/env.ts`), so a misspelling fails the build rather
+ * than silently landing in the wrong branch, and the same shape already decides
+ * the API base in `session/server-identity.ts`. The fail-open direction is
+ * narrow and covered — a registered domain binds by host *before* any path is
+ * examined, so no production tenant is reachable this way.
+ */
+export function tenantPathsEnabled(env: string | null | undefined): boolean {
+  return env !== "production";
+}
+
+/**
+ * The prefix every in-tenant link carries in this environment: `/sanja-neuer`
+ * outside production, `""` in it.
+ *
+ * One rule with two consumers — the proxy strips it on the way in, the link
+ * builders add it on the way out — because a prefix stripped by one rule and
+ * added by another is a prefix that drifts.
+ */
+export function tenantBasePath(
+  slug: string,
+  env: string | null | undefined,
+): string {
+  return tenantPathsEnabled(env) ? `/${slug}` : "";
+}
+
+/**
+ * The address to *send someone to* for this tenant's site, **in the environment
+ * asking**.
+ *
+ * Outside production this is a same-origin path, which is the point: an owner
+ * testing on staging who clicks "go to site" must stay on staging. It used to
+ * return the production URL unconditionally, so every such click left the
+ * environment under test — and the post-sign-in redirect sent a client from
+ * staging to the live site.
+ *
+ * In production it prefers the temporary host precisely because the canonical
+ * one may not resolve yet: "Idi na sajt" has to open a page, and a link to a
+ * dead domain is worse than a link to an ugly one.
  *
  * Never use this for canonical, sitemaps or anything an indexer reads. That is
- * `publicUrl`, always.
+ * `publicUrl`, always — and it stays absolute in every environment.
  */
-export function tenantSiteUrl(tenant: TenantDomainConfig): string {
+export function tenantSiteUrl(
+  tenant: TenantDomainConfig,
+  env: string | null | undefined,
+): string {
+  const basePath = tenantBasePath(tenant.organizationSlug, env);
+  if (basePath !== "") return basePath;
   return tenant.temporaryAccessUrl ?? tenant.publicUrl;
+}
+
+/**
+ * The one tenant whose public pages have not moved under `app/s/` yet.
+ *
+ * Derived from the flag rather than named, so it disappears with the flag when
+ * PDC-1 moves that tree — a hardcoded `"psihointegritet"` would outlive the
+ * reason it was written.
+ */
+export function legacyPublicTreeTenant(): TenantDomainConfig | undefined {
+  return TENANT_DOMAINS.find((tenant) => tenant.usesLegacyPublicTree);
 }
 
 /**
@@ -236,43 +297,42 @@ export function resolvePlatformHost(
   return "";
 }
 
-/**
- * The tenant a non-production host names in its leftmost label, or `null` when
- * it names none.
+/*
+ * There used to be a `tenantSlugFromHost` here, reading a tenant out of
+ * `<slug>.<platform host>` so that a laptop and a staging deployment resolved
+ * tenants exactly the way production does. It is gone, and its two arguments
+ * deserve answers rather than deletion, because both were true.
  *
- * Outside production a tenant is reached as `<slug>.<platform host>` —
- * `psihointegritet.localhost`, `sanja-neuer.staging.p-digital-center.com` —
- * so that a laptop and a staging deployment resolve tenants exactly the way
- * production does: from the host, through the registry. The alternative, a
- * path prefix like `/sanja-neuer/tim`, would mean development exercises a
- * different resolver than the one that ships, and would need a reserved-word
- * list kept in sync with every platform route forever.
+ * *"Development would exercise a different resolver than the one that ships."*
+ * It now does, and the cost is paid deliberately. The resolvers differ by
+ * exactly one step — a path prefix stripped before anything else — after which
+ * the pipeline is identical to production's, host binding included. What the
+ * subdomain scheme bought with that symmetry it paid for by making the one host
+ * that has to work unreachable: `sanja-neuer.staging.<host>` needs wildcard DNS
+ * and a wildcard certificate, and `*.localhost` resolves in two browsers and in
+ * neither `curl` nor Playwright.
  *
- * **Naming a tenant is not being one.** This returns the label; only
- * `tenantForSlug` decides whether it belongs to anybody, and `resolveHostBinding`
- * refuses the request when it does not. A single label, so `a.b.localhost`
- * resolves to nothing rather than to a tenant called `a`.
+ * *"It would need a reserved-word list kept in sync with every platform route
+ * forever."* This turned out to be free. `reservedFirstSegments()` derives the
+ * list from `platformRootSegments()` — which already existed, for the CMS
+ * reserved-slug list — plus four constants in `auth-paths.ts` and three here.
+ * Nothing is hand-written, so nothing can drift, and a test asserts no
+ * registered tenant slug collides with it.
+ *
+ * There is also a correctness reason the two schemes cannot simply coexist:
+ * links inside a tenant's pages must carry `/<slug>` outside production, and
+ * those pages are prerendered, so the prefix is decided at build time. Two ways
+ * in would prerender `/sanja-neuer/tim` and then serve it under
+ * `sanja-neuer.staging.<host>`, which is that path twice.
+ *
+ * `isUnderPlatformHost` below now does the whole job: `sanja-neuer.localhost`
+ * is beneath a platform host, names no tenant, and is refused.
  */
-export function tenantSlugFromHost(
-  host: string | null | undefined,
-): string | null {
-  const normalized = normalizeHost(host);
-  if (normalized === "") return null;
-
-  for (const platform of platformHosts()) {
-    const suffix = `.${platform}`;
-    if (!normalized.endsWith(suffix)) continue;
-    const label = normalized.slice(0, -suffix.length);
-    if (label === "" || label.includes(".")) continue;
-    return label;
-  }
-  return null;
-}
 
 /**
  * Is this host inside a platform host's namespace at all?
  *
- * Separate from `tenantSlugFromHost` because "names no valid tenant" and "has
+ * Separate from the tenant lookup because "names no valid tenant" and "has
  * nothing to do with us" must not get the same answer. `a.b.localhost` yields
  * no slug, but it is still a name beneath the platform, so serving it the
  * platform would give the same page two addresses — and would do it under a
@@ -291,9 +351,9 @@ function isUnderPlatformHost(host: string | null | undefined): boolean {
  *
  * A discriminated union rather than `{ tenant?, isPlatform }`, because that
  * shape let a host be **both** — and while the founding tenant's domain was
- * also the platform's, it genuinely was. It no longer is anywhere: production
- * separates them by domain, and outside production the platform host and
- * `<slug>.<platform host>` are different hosts too. Keeping the old shape would
+ * also the platform's, it genuinely was. It no longer is: production separates
+ * them by domain, and outside production the platform host serves the platform
+ * while a tenant is named by the path beneath it. Keeping the old shape would
  * keep "both" representable, and every consumer would have to keep asking which
  * half of it to trust — the ambiguity that put the owners' workspace and a
  * tenant's public tree on one address.
@@ -308,10 +368,10 @@ const PLATFORM_BINDING: HostBinding = { kind: "platform" };
 /**
  * Which surface this host serves, and for a tenant surface, whose.
  *
- * One rule, applied the same way in every environment: **the host names the
- * tenant, and the registry decides whether that tenant exists.** What differs
- * between environments is only how the host spells it — a custom domain in
- * production, a `<slug>.` label on the platform host everywhere else.
+ * **A hostname only ever names a tenant through the registry.** Nothing is
+ * inferred from a host's shape, in any environment. Outside production a tenant
+ * is named by the *path* instead (`tenantPathPrefix`), which the proxy applies
+ * after this function has already answered — so this stays purely about hosts.
  *
  * In order of how specific each answer is:
  *
@@ -323,9 +383,9 @@ const PLATFORM_BINDING: HostBinding = { kind: "platform" };
  * 3. **Production refuses anything else.** A host nobody registered must not
  *    reach a tenant's site, and on production there is no deployment URL to
  *    excuse: the domain is either ours or it is somebody pointing DNS at us.
- * 4. Outside production, `<slug>.<platform host>` names a tenant — **and is
- *    refused when the slug belongs to nobody.** A hostname is an assertion, not
- *    a permission: `nepostojeci.localhost` is a 404, never a blank tenant.
+ * 4. **Anything beneath a platform host is refused** — `sanja-neuer.localhost`,
+ *    `a.b.localhost` alike. It once named a tenant; now a name shaped like a
+ *    tenant's, that the registry does not list as a domain, is nobody's.
  * 5. A **deployment URL** — `p-digital-center-<hash>.vercel.app`, minted per
  *    deployment and listable by no table — serves the platform, so a branch can
  *    still be reviewed from its preview link. It reaches no tenant, because it
@@ -349,14 +409,8 @@ export function resolveHostBinding(
   // Production is literal: a host that names no tenant serves no tenant.
   if (deployment.env === "production") return null;
 
-  const slug = tenantSlugFromHost(host);
-  if (slug !== null) {
-    const tenant = tenantForSlug(slug);
-    return tenant ? { kind: "tenant", tenant } : null;
-  }
-
-  // Beneath the platform host but naming no tenant — `a.b.localhost`. Refused
-  // rather than served the platform, which would hand one page a second
+  // Beneath the platform host — `sanja-neuer.localhost`, `a.b.localhost`.
+  // Refused rather than served the platform, which would hand one page a second
   // address under a tenant-shaped name.
   if (isUnderPlatformHost(host)) return null;
 
